@@ -699,7 +699,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.chooseRegionAction.setChecked(False)
         chooser = RegionChooser(self)
-        chooser.new_region_chosen.connect(handleRegionChosen)
+        chooser.finished.connect(handleRegionChosen)
         chooser.show()
 
     def addMessageToIntelChat(self, message, timeA=time.time()):
@@ -1065,6 +1065,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
 
 
 class JumpbridgeChooser(QtWidgets.QDialog):
+    set_jumpbridge_url = pyqtSignal(str)
     def __init__(self, parent, url):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath("vi/ui/JumpbridgeChooser.ui"), self)
@@ -1083,7 +1084,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
             self.set_jumpbridge_url.emit(url)
             self.accept()
         except Exception as e:
-            QMessageBox.critical(None, "Finding Jumpbridgedata failed", "Error: {0}".format(str(e)), "OK")
+            QMessageBox.critical(None, "Finding Jumpbridgedata failed", "Error: {0}".format(str(e)))
 
     def choosePath(self):
         path = QFileDialog.getOpenFileName(self, caption="Open JB Text File")[0]

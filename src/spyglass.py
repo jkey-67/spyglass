@@ -33,7 +33,7 @@ from vi.ui import viui, systemtray
 from vi.cache import cache
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
-from PyQt5.QtWidgets import  QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMessageBox
 import sip
 
 

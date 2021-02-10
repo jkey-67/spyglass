@@ -11,3 +11,6 @@ PyYAML==5.1.2
 requests==2.22.0
 six==1.12.0
 urllib3==1.25.3
+
+
+pacmn -S altgraph beautifulsoup4 future pyglet PyQt5 PyQt5-sip PyQt5-stubs PyQtWebEngine pyttsx3 PyYAML requests six urllib3
