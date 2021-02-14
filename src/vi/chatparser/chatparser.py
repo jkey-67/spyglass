@@ -57,11 +57,20 @@ class ChatParser(object):
             if currentTime - fileTime < maxDiff:
                 self.addFile(fullPath)
 
+    def roomName(self, filename):
+        # Checking if we must do anything with the changed file.
+        # We only need those which name is in the rooms-list
+        # EvE names the file like room_20210210_223941_1350114619.txt, so we don't need
+        # the last 31 chars
+        noIdStr = filename[:filename.rindex("_")]
+        noTimeStr = noIdStr[:noIdStr.rindex("_")]
+        return noTimeStr[:noTimeStr.rindex("_")]
+          
     def addFile(self, path):
         lines = None
         content = ""
         filename = os.path.basename(path)
-        roomname = filename[:-20]
+        roomname = self.roomName(filename)
         try:
             with open(path, "r", encoding='utf-16-le') as f:
                 content = f.read()
@@ -195,13 +204,8 @@ class ChatParser(object):
         messages = []
         if path in self.ignoredPaths:
             return []
-        # Checking if we must do anything with the changed file.
-        # We only need those which name is in the rooms-list
-        # EvE names the file like room_20140913_200737.txt, so we don't need
-        # the last 20 chars
         filename = os.path.basename(path)
-        roomname = filename[:-31]
-        print( roomname )
+        roomname = self.roomName(filename)
         if path not in self.fileData:
             # seems eve created a new file. New Files have 12 lines header
             self.fileData[path] = {"lines": 13}
