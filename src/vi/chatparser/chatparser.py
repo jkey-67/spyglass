@@ -57,11 +57,14 @@ class ChatParser(object):
             if currentTime - fileTime < maxDiff:
                 self.addFile(fullPath)
 
+    def roomNameFromFileName(self, filename ):
+        return filename[:-31]
+
     def addFile(self, path):
         lines = None
         content = ""
         filename = os.path.basename(path)
-        roomname = filename[:-20]
+        roomname = self.roomNameFromFileName( filename )
         try:
             with open(path, "r", encoding='utf-16-le') as f:
                 content = f.read()
@@ -177,7 +180,8 @@ class ChatParser(object):
 
         # Finding the pure message
         text = line[userEnds + 1:].strip()  # text will the text to work an
-        if username in ("EVE-System", "EVE System"):
+        print ( text )
+        if username in ("EVE-System", "EVE System" ):
             if ":" in text:
                 system = text.split(":")[1].strip().replace("*", "").upper()
                 status = states.LOCATION
@@ -200,8 +204,7 @@ class ChatParser(object):
         # EvE names the file like room_20140913_200737.txt, so we don't need
         # the last 20 chars
         filename = os.path.basename(path)
-        roomname = filename[:-31]
-        print( roomname )
+        roomname = self.roomNameFromFileName( filename )
         if path not in self.fileData:
             # seems eve created a new file. New Files have 12 lines header
             self.fileData[path] = {"lines": 13}
