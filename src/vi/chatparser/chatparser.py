@@ -57,9 +57,15 @@ class ChatParser(object):
             if currentTime - fileTime < maxDiff:
                 self.addFile(fullPath)
 
-    def roomNameFromFileName(self, filename ):
-        return filename[:-31]
-
+    def roomNameFromFileName(self, filename):
+        # Checking if we must do anything with the changed file.
+        # We only need those which name is in the rooms-list
+        # EvE names the file like room_20210210_223941_1350114619.txt, so we don't need
+        # the last 31 chars
+        noIdStr = filename[:filename.rindex("_")]
+        noTimeStr = noIdStr[:noIdStr.rindex("_")]
+        return noTimeStr[:noTimeStr.rindex("_")]
+          
     def addFile(self, path):
         lines = None
         content = ""
@@ -199,10 +205,6 @@ class ChatParser(object):
         messages = []
         if path in self.ignoredPaths:
             return []
-        # Checking if we must do anything with the changed file.
-        # We only need those which name is in the rooms-list
-        # EvE names the file like room_20140913_200737.txt, so we don't need
-        # the last 20 chars
         filename = os.path.basename(path)
         roomname = self.roomNameFromFileName( filename )
         if path not in self.fileData:
@@ -248,4 +250,4 @@ class Message(object):
         return x.__key() == y.__key()
 
     def __hash__(self):
-        return hash(self.__key())
+        return hash(self.__key())        
