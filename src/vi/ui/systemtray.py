@@ -110,7 +110,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         return self.contextMenu().distanceGroup
 
     def quit(self):
-        self.quit.emit()
+        self.quit_signal.emit()
 
     def switchAlarm(self):
         newValue = not self.showAlarm

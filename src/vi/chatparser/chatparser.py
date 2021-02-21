@@ -20,10 +20,11 @@
 import datetime
 import os
 import time
+import logging
 
 from bs4 import BeautifulSoup
 from vi import states
-from PyQt5.QtWidgets import  QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 
 from .parser_functions import parseStatus
 from .parser_functions import parseUrls, parseShips, parseSystems
@@ -74,10 +75,11 @@ class ChatParser(object):
         try:
             with open(path, "r", encoding='utf-16-le') as f:
                 content = f.read()
+            logging.info("Add room " + roomname + " to list.")
         except Exception as e:
             self.ignoredPaths.append(path)
             QMessageBox.warning(None, "Read a log file failed!",
-                                "File: {0} - problem: {1}".format(path, str(e)), "OK")
+                                "File: {0} - problem: {1}".format(path, str(e)), QMessageBox.Ok)
             return None
 
         lines = content.split("\n")

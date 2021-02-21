@@ -37,7 +37,16 @@
       </property>
       <widget class="QWidget" name="mapwidget" native="true">
        <layout class="QGridLayout" name="gridLayout_3">
-        <property name="margin">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
          <number>0</number>
         </property>
         <property name="spacing">
@@ -63,7 +72,16 @@
              </size>
             </property>
             <layout class="QGridLayout" name="gridLayout_5">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
               <number>0</number>
              </property>
              <item row="0" column="0">
@@ -185,7 +203,7 @@
            </widget>
           </item>
           <item>
-           <widget class="PanningWebView" name="mapView" native="true">
+           <widget class="PanningWebView" name="mapView">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
               <horstretch>0</horstretch>
@@ -209,7 +227,7 @@
             <property name="layoutDirection">
              <enum>Qt::LeftToRight</enum>
             </property>
-            <property name="url" stdset="0">
+            <property name="url">
              <url>
               <string>about:blank</string>
              </url>
@@ -237,10 +255,19 @@
         <string>All Intel (past 20 minutes)</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_6">
-        <property name="horizontalSpacing">
+        <property name="leftMargin">
          <number>5</number>
         </property>
-        <property name="margin">
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <property name="horizontalSpacing">
          <number>5</number>
         </property>
         <item row="1" column="0">
@@ -314,7 +341,7 @@
      <x>0</x>
      <y>0</y>
      <width>936</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -672,7 +699,7 @@
   <customwidget>
    <class>QWebView</class>
    <extends>QWidget</extends>
-   <header>QtWebKitWidgets/QWebView</header>
+   <header location="global">QtWebKitWidgets/QWebView</header>
   </customwidget>
   <customwidget>
    <class>PanningWebView</class>

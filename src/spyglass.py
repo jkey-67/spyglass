@@ -95,7 +95,7 @@ class Application(QApplication):
                     chatLogDirectory = os.path.join(home, "My Documents", "EVE", "logs", "Chatlogs")
         if not os.path.exists(chatLogDirectory):
             # None of the paths for logs exist, bailing out
-            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, "Quit")
+            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, QMessageBox.Quit)
             sys.exit(1)
 
         # Setting local directory for cache and logging
@@ -116,7 +116,7 @@ class Application(QApplication):
             logLevel = logging.DEBUG  # For Testing
         backGroundColor = spyglassCache.getFromCache("background_color")
         if backGroundColor:
-            self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
+            self.setStyleSheet("background-color: %s;" % backGroundColor)
 
         self.processEvents()
 
@@ -137,9 +137,9 @@ class Application(QApplication):
         logging.critical("")
         logging.critical("------------------- Spyglass %s starting up -------------------", version.VERSION)
         logging.critical("")
-        logging.debug("Looking for chat logs at: %s", chatLogDirectory)
-        logging.debug("Cache maintained here: %s", cache.Cache.PATH_TO_CACHE)
-        logging.debug("Writing logs to: %s", spyglassLogDirectory)
+        logging.critical("Looking for chat logs at: %s", chatLogDirectory)
+        logging.critical("Cache maintained here: %s", cache.Cache.PATH_TO_CACHE)
+        logging.critical("Writing logs to: %s", spyglassLogDirectory)
 
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()

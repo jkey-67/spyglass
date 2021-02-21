@@ -45,9 +45,9 @@ from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread, 
 from vi.ui.systemtray import TrayContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser import ChatParser
-from PyQt5.QtWidgets import  QAction
-from PyQt5.QtWidgets import  QActionGroup
-from PyQt5.QtWidgets import  QMessageBox
+from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QActionGroup
+from PyQt5.QtWidgets import QMessageBox
 
 # Timer intervals
 MESSAGE_EXPIRY_SECS = 20 * 60
@@ -58,7 +58,7 @@ CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 class MainWindow(QtWidgets.QMainWindow):
 
     chat_message_added = pyqtSignal(object, object)
-
+    avatar_loaded = pyqtSignal(object, object)
     def __init__(self, pathToLogs, trayIcon, backGroundColor):
 
         QtWidgets.QMainWindow.__init__(self)
@@ -270,7 +270,7 @@ class MainWindow(QtWidgets.QMainWindow):
                        "Check for a newer version and inform the maintainer.\n\nError: {0} {1}".format(type(e),
                                                                                                        str(e))
             logging.warning(diagText)
-            QMessageBox.warning(None, "Using map from cache", diagText, "Ok")
+            QMessageBox.warning(None, "Using map from cache", diagText, QMessageBox.Ok)
 
         # Load the jumpbridges
         logging.critical("Load jump bridges")
@@ -675,7 +675,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
             logging.error("Error: {0}".format(str(e)))
-            QMessageBox.warning(None, "Loading jumpbridges failed!", "Error: {0}".format(str(e)), "OK")
+            QMessageBox.warning(None, "Loading jumpbridges failed!", "Error: {0}".format(str(e)), QMessageBox.Ok)
 
     def handleRegionMenuItemSelected(self, menuAction=None):
         self.catchRegionAction.setChecked(False)
@@ -897,6 +897,8 @@ class ChatroomsChooser(QtWidgets.QDialog):
 
 
 class RegionChooser(QtWidgets.QDialog):
+    new_region_chosen = pyqtSignal()
+
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath("vi/ui/RegionChooser.ui"), self)

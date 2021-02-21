@@ -19,6 +19,7 @@
 
 import logging
 import yaml
+import os
 
 from vi.resources import resourcePath
 
@@ -37,16 +38,16 @@ class Styles:
     def __init__(self):
 
         # default theme
-        with open(resourcePath("vi/ui/res/styles/light.css")) as default:
+        with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.css"))) as default:
             Styles.defaultStyle = default.read()
-        with open(resourcePath("vi/ui/res/styles/light.yaml")) as default:
+        with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.yaml"))) as default:
             Styles.defaultCommons = yaml.full_load(default)
         default = None
 
         # dark theme
-        with open(resourcePath("vi/ui/res/styles/abyss.css")) as dark:
+        with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.css"))) as dark:
             Styles.darkStyle = dark.read()
-        with open(resourcePath("vi/ui/res/styles/abyss.yaml")) as dark:
+        with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.yaml"))) as dark:
             Styles.darkCommons = yaml.full_load(dark)
         dark = None
 
@@ -94,5 +95,5 @@ class TextInverter():
 
 if __name__ == "__main__":
     inv = TextInverter()
-    print ("50E661")
-    print (inv.getTextColourFromBackground("50E661"))
+    print("50E661")
+    print(inv.getTextColourFromBackground("50E661"))
