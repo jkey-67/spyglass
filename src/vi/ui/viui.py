@@ -34,7 +34,8 @@ from PyQt5 import QtGui, uic, QtCore, QtWidgets
 from PyQt5.QtCore import QPoint, QByteArray, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog
-from PyQt5.QtWebEngineWidgets import QWebEnginePage
+from PyQt5.QtWebKitWidgets import QWebView, QWebPage
+
 from vi import amazon_s3, evegate
 from vi import dotlan, filewatcher
 from vi import states
