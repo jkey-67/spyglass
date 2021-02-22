@@ -17,7 +17,7 @@
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 
-from PyQt5.QtWebEngineWidgets  import QWebEngineView
+from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import *
 from PyQt5 import QtCore
@@ -26,7 +26,7 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtCore import QEvent
 
 
-class PanningWebView(QWebEngineView):
+class PanningWebView(QWebView):
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()
         self.pressed = False
@@ -45,7 +45,7 @@ class PanningWebView(QWebEngineView):
         else:
             if self.ignored.count(mouseEvent):
                 self.ignored.remove(mouseEvent)
-                return QWebEngineView.mousePressEvent(self, mouseEvent)
+                return QWebView.mousePressEvent(self, mouseEvent)
 
             if not self.pressed and not self.scrolling and mouseEvent.modifiers() == QtCore.Qt.NoModifier:
                 if mouseEvent.buttons() == QtCore.Qt.LeftButton:
@@ -56,12 +56,12 @@ class PanningWebView(QWebEngineView):
 
                     self.position = mouseEvent.pos()
                     frame = self.page().mainFrame()
-                    xTuple = frame.evaluateJavaScript("window.scrollX").toInt()
-                    yTuple = frame.evaluateJavaScript("window.scrollY").toInt()
-                    self.offset = QPoint(xTuple[0], yTuple[0])
+                    xTuple = frame.evaluateJavaScript("window.scrollX")
+                    yTuple = frame.evaluateJavaScript("window.scrollY")
+                    self.offset = QPoint(xTuple, yTuple)
                     return
 
-        return QWebEngineView.mousePressEvent(self, mouseEvent)
+        return QWebView.mousePressEvent(self, mouseEvent)
 
     def mouseReleaseEvent(self, mouseEvent):
         if self.clickedInScrollBar:
@@ -69,7 +69,7 @@ class PanningWebView(QWebEngineView):
         else:
             if self.ignored.count(mouseEvent):
                 self.ignored.remove(mouseEvent)
-                return QWebEngineView.mousePressEvent(self, mouseEvent)
+                return QWebView.mousePressEvent(self, mouseEvent)
 
             if self.scrolling:
                 self.pressed = False
@@ -104,14 +104,14 @@ class PanningWebView(QWebEngineView):
                 delta = mouseEvent.pos() - self.position
                 p = self.offset - delta
                 frame = self.page().mainFrame()
-                frame.evaluateJavaScript("window.scrollTo(%1, %2);".arg(p.x()).arg(p.y()));
+                frame.evaluateJavaScript("window.scrollTo({0}, {1})".format(p.x(), format(p.y() ) ) )
                 return
 
             if self.pressed:
                 self.pressed = False
                 self.scrolling = True
                 return
-        return QWebEngineView.mouseMoveEvent(self, mouseEvent)
+        return QWebView.mouseMoveEvent(self, mouseEvent)
 
     def pointInScroller(self, position, orientation):
         rect = self.page().mainFrame().scrollBarGeometry(orientation)
