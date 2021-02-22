@@ -66,11 +66,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if backGroundColor:
             self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
-        uic.loadUi(resourcePath('vi/ui/MainWindow.ui'), self)
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "MainWindow.ui")), self)
         self.setWindowTitle(
             "Spyglass " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
-        self.taskbarIconQuiescent = QtGui.QIcon(resourcePath("vi/ui/res/logo_small.png"))
-        self.taskbarIconWorking = QtGui.QIcon(resourcePath("vi/ui/res/logo_small_green.png"))
+        self.taskbarIconQuiescent = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
+        self.taskbarIconWorking = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
         self.setWindowIcon(self.taskbarIconQuiescent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
 
@@ -252,7 +252,7 @@ class MainWindow(QtWidgets.QMainWindow):
             regionName = "Providence"
         svg = None
         try:
-            with open(resourcePath("vi/ui/res/mapdata/{0}.svg".format(regionName))) as svgFile:
+            with open(resourcePath(os.path("vi", "ui", "res", "mapdata/{0}.svg".format(regionName)))) as svgFile:
                 svg = svgFile.read()
         except Exception as e:
             pass
@@ -454,6 +454,8 @@ class MainWindow(QtWidgets.QMainWindow):
             for action in self.opacityGroup.actions():
                 if action.opacity == newValue:
                     action.setChecked(True)
+                else:
+                    action.setChecked(False)
         action = self.opacityGroup.checkedAction()
         self.setWindowOpacity(action.opacity)
 
