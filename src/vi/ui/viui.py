@@ -34,7 +34,7 @@ from PyQt5 import QtGui, uic, QtCore, QtWidgets
 from PyQt5.QtCore import QPoint, QByteArray, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog
-from PyQt5.QtWebKitWidgets import QWebView, QWebPage
+from PyQt5.QtWebEngineWidgets import QWebEngineView,QWebEnginePage
 
 from vi import amazon_s3, evegate
 from vi import dotlan, filewatcher
@@ -78,6 +78,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pathToLogs = pathToLogs
         self.mapTimer = QtCore.QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
+        self.mapView.renderProcessTerminated.connect( self.onRenderProcessTerminated)
         self.clipboardTimer = QtCore.QTimer(self)
         self.oldClipboardContent = ""
         self.trayIcon = trayIcon
@@ -90,6 +91,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frameButton.setVisible(False)
         self.scanIntelForKosRequestsEnabled = True
         self.initialMapPosition = None
+        self.oldSvg = None
         self.mapPositionsDict = {}
 
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
@@ -214,8 +216,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.rescanNowAction.triggered.connect(self.rescanIntel)
         self.clearIntelAction.triggered.connect(self.clearIntelChat)
         self.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
-        # TODO: Figure out how to do the scrolling...
-        #self.mapView.page().mainFrame().scrollPosition.connect(self.mapPositionChanged)
+        self.mapView.page().scrollPositionChanged.connect(self.mapPositionChanged)
 
     def setupThreads(self):
         # Set up threads and their connections
@@ -600,22 +601,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self.systems[newSystem].addLocatedCharacter(char)
             self.setMapContent(self.dotlan.svg)
 
-    def setMapContent(self, content):
-        # TODO: Fix scrolling
-        # if self.initialMapPosition is None:
-        #     scrollPosition = self.mapView.page().mainFrame().scrollPosition()
-        # else:
-        #     scrollPosition = self.initialMapPosition
-        self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
-        # self.mapView.page().mainFrame().setScrollPosition(scrollPosition)
-        #TODO: Fix link delegation
-        # self.mapView.page().setLinkDelegationPolicy(QWebEnginePage.DelegateAllLinks)
+    def onRenderProcessTerminated(self,state, code):
+        self.mapView.setScrollPosition(self.initialMapPosition)
+        self.initialMapPosition = None
+        return
 
+    def setMapContent(self, content):
+        if (( self.oldSvg != None) and (  self.oldSvg == content)):
+            return
+
+        if self.initialMapPosition is None:
+            scrollPosition = self.mapView.scrollPosition()
+        else:
+            scrollPosition = self.initialMapPosition
+        self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
+        self.mapView.setScrollPosition(scrollPosition)
         # Make sure we have positioned the window before we nil the initial position;
         # even though we set it, it may not take effect until the map is fully loaded
-        # scrollPosition = self.mapView.page().mainFrame().scrollPosition()
-        # if scrollPosition.x() or scrollPosition.y():
-        #     self.initialMapPosition = None
+        self.oldSvg = content
 
     def loadInitialMapPositions(self, newDictionary):
         self.mapPositionsDict = newDictionary
@@ -630,11 +633,10 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception:
             pass
 
-    def mapPositionChanged(self, dx, dy, rectToScroll):
+    def mapPositionChanged(self, scrollPosition):
         regionName = self.cache.getFromCache("region_name")
-        # if regionName:
-            # scrollPosition = self.mapView.page().mainFrame().scrollPosition()
-            # self.mapPositionsDict[regionName] = (scrollPosition.x(), scrollPosition.y())
+        if regionName:
+            self.mapPositionsDict[regionName] = (scrollPosition.x(), scrollPosition.y())
 
     def showChatroomChooser(self):
         chooser = ChatroomsChooser(self)
@@ -827,9 +829,8 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
     def updateMapView(self):
-        logging.debug("Updating map start")
         self.setMapContent(self.dotlan.svg)
-        logging.debug("Updating map complete")
+
 
     def zoomMapIn(self):
         self.mapView.setZoomFactor(self.mapView.zoomFactor() + 0.1)

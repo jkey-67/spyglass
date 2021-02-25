@@ -27,6 +27,7 @@ from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
 
 from PyQt5 import QtGui, QtWidgets
+from PyQt5.QtCore import QCoreApplication
 
 from vi import version, PanningWebView
 from vi.ui import viui, systemtray
@@ -58,7 +59,6 @@ backGroundColor = "#c6d9ec"
 class Application(QApplication):
     def __init__(self, args):
         super(Application, self).__init__(args)
-
         splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png")))
         splash.show()
 

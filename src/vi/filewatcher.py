@@ -44,7 +44,7 @@ DEFAULT_MAX_AGE = 60 * 60 * 24
 
 class FileWatcher(QtCore.QThread):
 
-    file_change = pyqtSignal(str, name="file_change")
+    file_change = pyqtSignal( int,int, name="position_changed")
 
     def __init__(self, path, maxAge=DEFAULT_MAX_AGE):
         QtCore.QThread.__init__(self)
