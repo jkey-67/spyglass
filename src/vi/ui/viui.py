@@ -31,7 +31,7 @@ import logging
 from PyQt5.QtGui import *
 from PyQt5 import QtGui, uic, QtCore, QtWidgets
 
-from PyQt5.QtCore import QPoint, QByteArray, pyqtSignal
+from PyQt5.QtCore import QPoint,QPointF, QByteArray, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog
 from PyQt5.QtWebEngineWidgets import QWebEngineView,QWebEnginePage
@@ -77,8 +77,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.pathToLogs = pathToLogs
         self.mapTimer = QtCore.QTimer(self)
-        self.mapTimer.timeout.connect(self.updateMapView)
-        self.mapView.renderProcessTerminated.connect( self.onRenderProcessTerminated)
+        #self.mapTimer.timeout.connect(self.updateMapView)
+        self.mapView.page().loadFinished.connect(self.onLoadFinished)
         self.clipboardTimer = QtCore.QTimer(self)
         self.oldClipboardContent = ""
         self.trayIcon = trayIcon
@@ -93,6 +93,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialMapPosition = None
         self.oldSvg = None
         self.mapPositionsDict = {}
+        self.ignoreCount = 1
 
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
 
@@ -294,7 +295,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.mapView.contextMenu = self.trayIcon.contextMenu()
 
             # Clicking links
-            # self.mapView.linkClicked[const QUrl&].connect(self.mapLinkClicked)
+            #self.mapView.linkClicked.connect(self.mapLinkClicked)
 
             # Also set up our app menus
             if not regionName:
@@ -601,7 +602,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.systems[newSystem].addLocatedCharacter(char)
             self.setMapContent(self.dotlan.svg)
 
-    def onRenderProcessTerminated(self,state, code):
+    def onLoadFinished(self, fin):
         self.mapView.setScrollPosition(self.initialMapPosition)
         self.initialMapPosition = None
         return
@@ -609,13 +610,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def setMapContent(self, content):
         if (( self.oldSvg != None) and (  self.oldSvg == content)):
             return
-
-        if self.initialMapPosition is None:
-            scrollPosition = self.mapView.scrollPosition()
-        else:
-            scrollPosition = self.initialMapPosition
+        self.ignoreCount = 1
         self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
-        self.mapView.setScrollPosition(scrollPosition)
+        self.setInitialMapPositionForRegion(None)
+        # self.mapView.setScrollPosition(self.initialMapPosition)
         # Make sure we have positioned the window before we nil the initial position;
         # even though we set it, it may not take effect until the map is fully loaded
         self.oldSvg = content
@@ -627,16 +625,24 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if not regionName:
                 regionName = self.cache.getFromCache("region_name")
-            if regionName:
+            if regionName :
                 xy = self.mapPositionsDict[regionName]
-                self.initialMapPosition = QPoint(xy[0], xy[1])
+                self.initialMapPosition = QPointF(xy[0], xy[1])
         except Exception:
             pass
 
     def mapPositionChanged(self, scrollPosition):
         regionName = self.cache.getFromCache("region_name")
-        if regionName:
+        if regionName and ( self.ignoreCount == 0 ):
             self.mapPositionsDict[regionName] = (scrollPosition.x(), scrollPosition.y())
+            xy = self.mapPositionsDict[regionName]
+            logging.critical("mapPositionChanged CPoint({0},{1})".format(xy[0], xy[1]))
+        elif ( self.ignoreCount == 1 ):
+            self.ignoreCount = 2
+            self.setInitialMapPositionForRegion(None)
+            self.mapView.setScrollPosition(self.initialMapPosition)
+        else:
+            self.ignoreCount = 0
 
     def showChatroomChooser(self):
         chooser = ChatroomsChooser(self)
@@ -831,7 +837,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def updateMapView(self):
         self.setMapContent(self.dotlan.svg)
 
-
     def zoomMapIn(self):
         self.mapView.setZoomFactor(self.mapView.zoomFactor() + 0.1)
 
@@ -1017,7 +1022,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
     SHOW_AVATAR = True
     questionMarkPixmap = None
 
-    mark_system = pyqtSignal()
+    mark_system = pyqtSignal(str)
 
     def __init__(self, message):
         QtWidgets.QWidget.__init__(self)

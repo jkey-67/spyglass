@@ -335,7 +335,7 @@ class System(object):
 
     def setJumpbridgeColor(self, color):
         idName = self.name + u"_jb_marker"
-        for element in self.mapSoup.select(u"#" + idName):
+        for element in self.mapSoup.select("#" + idName):
             element.decompose()
         coords = self.mapCoordinates
         offsetPoint = self.getTransformOffsetPoint()
@@ -384,12 +384,14 @@ class System(object):
 
     def removeLocatedCharacter(self, charname):
         idName = self.name + u"_loc"
-
         if charname in self.__locatedCharacters:
             self.__locatedCharacters.remove(charname)
             if not self.__locatedCharacters:
-                for element in self.mapSoup.select("#" + idName):
-                    element.decompose()
+                try:
+                    for element in self.mapSoup.select("#"+idName):
+                        element.decompose()
+                except Exception:
+                    pass
 
     def addNeighbour(self, neighbourSystem):
         """

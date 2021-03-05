@@ -234,17 +234,12 @@ def getSystemStatistics():
     try:
         if jumpData is None:
             jumpData = {}
-            url = "https://api.eveonline.com/map/Jumps.xml.aspx"
-            content = requests.get(url).text
-            soup = BeautifulSoup(content, 'html.parser')
+            url = "https://esi.evetech.net/latest/universe/system_jumps/?datasource=tranquility"
+            resp = requests.get(url).json()
+            for row in resp:
+                jumpData[int(row["system_id"])] = int(row["ship_jumps"])
 
-            for result in soup.select("result"):
-                for row in result.select("row"):
-                    jumpData[int(row["solarsystemid"])] = int(row["shipjumps"])
-
-            cacheUntil = datetime.datetime.strptime(soup.select("cacheduntil")[0].text, "%Y-%m-%d %H:%M:%S")
-            diff = cacheUntil - currentEveTime()
-            cache.putIntoCache(cacheKey, json.dumps(jumpData), diff.seconds)
+            cache.putIntoCache(cacheKey, json.dumps(jumpData), 60)
         else:
             jumpData = json.loads(jumpData)
 
@@ -254,19 +249,14 @@ def getSystemStatistics():
 
         if systemData is None:
             systemData = {}
-            url = "https://api.eveonline.com/map/Kills.xml.aspx"
-            content = requests.get(url).text
-            soup = BeautifulSoup(content, 'html.parser')
+            url = "https://esi.evetech.net/latest/universe/system_kills/?datasource=tranquility"
+            resp = requests.get(url).json()
+            for row in resp:
+                systemData[int(row["system_id"])] = {"ship": int(row["ship_kills"]),
+                                                        "faction": int(row["npc_kills"]),
+                                                        "pod": int(row["pod_kills"])}
 
-            for result in soup.select("result"):
-                for row in result.select("row"):
-                    systemData[int(row["solarsystemid"])] = {"ship": int(row["shipkills"]),
-                                                             "faction": int(row["factionkills"]),
-                                                             "pod": int(row["podkills"])}
-
-            cacheUntil = datetime.datetime.strptime(soup.select("cacheduntil")[0].text, "%Y-%m-%d %H:%M:%S")
-            diff = cacheUntil - currentEveTime()
-            cache.putIntoCache(cacheKey, json.dumps(systemData), diff.seconds)
+            cache.putIntoCache(cacheKey, json.dumps(systemData), 60 )
         else:
             systemData = json.loads(systemData)
     except Exception as e:
