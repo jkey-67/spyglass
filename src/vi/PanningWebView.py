@@ -45,8 +45,10 @@ class PanningWebView(QWebEngineView):
 
     def setScrollPosition(self, pos: QPoint):
         if(  ( pos != None ) and ( pos != self.scrollPosition())):
-            self.page().runJavaScript("window.scrollTo({0}, {1})".format(pos.x(), pos.y()))
-            logging.critical("window.scrollTo({0}, {1})".format(pos.x(), pos.y()))
+            cnt_size = self.page().contentsSize()
+            cnt_fac = self.page().zoomFactor()
+            self.page().runJavaScript("window.scrollTo({0}, {1})".format(pos.x()/cnt_fac, pos.y()/cnt_fac))
+            logging.critical("window.scrollTo({0},{1}, size {2} zoom {3})".format(pos.x(), pos.y(),cnt_size,cnt_fac))
 
     #event filter to split mouse messages
     def eventFilter(self, source, event) -> bool:
