@@ -127,10 +127,6 @@ class PanningWebView(QWebEngineView):
     def pointInScroller(self, position, orientation):
         child = super().children()
         rc = super().childrenRect()
-        ch =self.childAt(position)
-        return False
-        # rect = self.page().scrollPosition()scrollBarGeometry(orientation)
-        leftTop = self.mapToGlobal(QtCore.QPoint(rect.left(), rect.top()))
-        rightBottom = self.mapToGlobal(QtCore.QPoint(rect.right(), rect.bottom()))
-        globalRect = QtCore.QRect(leftTop.x(), leftTop.y(), rightBottom.x(), rightBottom.y())
-        return globalRect.contains(self.mapToGlobal(position))
+        rc.setHeight(rc.height()-16)
+        rc.setWidth(rc.width() - 16)
+        return not rc.contains( position);
