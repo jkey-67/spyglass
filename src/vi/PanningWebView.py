@@ -24,7 +24,6 @@ from PyQt5 import QtCore
 
 from PyQt5.QtCore import QPoint, QPointF
 from PyQt5.QtCore import QEvent, Qt
-import logging
 
 class PanningWebView(QWebEngineView):
     def __init__(self, parent=None):
@@ -40,7 +39,6 @@ class PanningWebView(QWebEngineView):
         qApp.installEventFilter(self)
 
     def scrollPosition(self) -> QPointF:
-        logging.critical("scrollPosition from page {0}".format(self.page().scrollPosition()))
         return self.page().scrollPosition()
 
     def setScrollPosition(self, pos: QPoint):
@@ -48,7 +46,6 @@ class PanningWebView(QWebEngineView):
             cnt_size = self.page().contentsSize()
             cnt_fac = self.page().zoomFactor()
             self.page().runJavaScript("window.scrollTo({0}, {1})".format(pos.x()/cnt_fac, pos.y()/cnt_fac))
-            logging.critical("window.scrollTo({0},{1}, size {2} zoom {3})".format(pos.x(), pos.y(),cnt_size,cnt_fac))
 
     #event filter to split mouse messages
     def eventFilter(self, source, event) -> bool:
@@ -98,13 +95,6 @@ class PanningWebView(QWebEngineView):
             self.scrolling = False
             self.handIsClosed = False
             qApp.restoreOverrideCursor()
-            #event1 = QMouseEvent(QEvent.MouseButtonPress, self.position, QtCore.Qt.LeftButton, QtCore.Qt.LeftButton,
-            #                     QtCore.Qt.NoModifier)
-            #event2 = QMouseEvent(mouseEvent)
-            #self.ignored.append(event1)
-            #self.ignored.append(event2)
-            #qApp.postEvent(self, event1)
-            #qApp.postEvent(self, event2)
             return True
         return False
 
@@ -126,7 +116,10 @@ class PanningWebView(QWebEngineView):
 
     def pointInScroller(self, position, orientation):
         child = super().children()
-        rc = super().childrenRect()
-        rc.setHeight(rc.height()-16)
-        rc.setWidth(rc.width() - 16)
-        return not rc.contains( position);
+        rcPage = self.page().contentsSize()
+        rcCli = super().childrenRect()
+        if (rcCli.width()<rcPage.width()):
+            rcCli.setWidth(rcCli.width() - 16)
+        if ( rcCli.height() < rcPage.height()):
+            rcCli.setHeight(rcCli.height()-16)
+        return not rcCli.contains(position)

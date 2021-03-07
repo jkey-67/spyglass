@@ -25,6 +25,7 @@ import math
 import time
 import requests
 import logging
+import sys
 
 from bs4 import BeautifulSoup
 from vi import states
@@ -47,8 +48,7 @@ class Map(object):
     """
         The map including all information from dotlan
     """
-
-    DOTLAN_BASIC_URL = u"http://evemaps.dotlan.net/svg/{0}.svg"
+    DOTLAN_BASIC_URL = u"https://evemaps.dotlan.net/svg/{0}.svg"
     styles = Styles()
 
     @property
@@ -57,9 +57,11 @@ class Map(object):
         for system in self.systems.values():
             system.update()
         # Update the marker
+
         if not self.marker["opacity"] == "0":
             now = time.time()
-            newValue = (1 - (now - float(self.marker["activated"])) / 10)
+            delta = now - float(self.marker["activated"])
+            newValue = float(self.marker["opacity"]) - 0.1#(1.0 - delta / 100.0)
             if newValue < 0:
                 newValue = "0"
             self.marker["opacity"] = newValue
@@ -93,6 +95,7 @@ class Map(object):
                     raise DotlanException(t)
         # Create soup from the svg
         self.soup = BeautifulSoup(svg, 'html.parser')
+
         self.systems = self._extractSystemsFromSoup(self.soup)
         self.systemsById = {}
         for system in self.systems.values():
@@ -388,9 +391,12 @@ class System(object):
             self.__locatedCharacters.remove(charname)
             if not self.__locatedCharacters:
                 try:
-                    for element in self.mapSoup.select("#"+idName):
-                        element.decompose()
-                except Exception:
+                    elem = self.mapSoup.find(id=idName)
+                    if(elem is not None):
+                        logging.critical("Decompose {0}".format(str(elem)))
+                        elem.decompose()
+                except Exception as e:
+                    logging.critical( "Error in removeLocatedCharacter  {0}".format(str(e)))
                     pass
 
     def addNeighbour(self, neighbourSystem):

@@ -29,7 +29,7 @@ import vi.version
 
 import logging
 from PyQt5.QtGui import *
-from PyQt5 import QtGui, uic, QtCore, QtWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets, uic
 
 from PyQt5.QtCore import QPoint,QPointF, QByteArray, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
@@ -77,7 +77,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.pathToLogs = pathToLogs
         self.mapTimer = QtCore.QTimer(self)
-        #self.mapTimer.timeout.connect(self.updateMapView)
+        self.mapTimer.timeout.connect(self.updateMapView)
         self.mapView.page().loadFinished.connect(self.onLoadFinished)
         self.clipboardTimer = QtCore.QTimer(self)
         self.oldClipboardContent = ""
@@ -560,9 +560,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def changeStatisticsVisibility(self):
         newValue = self.dotlan.changeStatisticsVisibility()
         self.statisticsButton.setChecked(newValue)
-        self.updateMapView()
         if newValue:
             self.statisticsThread.requestStatistics()
+            self.updateMapView()
 
     def clipboardChanged(self, mode=0):
         if not (mode == 0 and self.kosClipboardActiveAction.isChecked() and self.clipboard.mimeData().hasText()):
@@ -636,7 +636,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if regionName and ( self.ignoreCount == 0 ):
             self.mapPositionsDict[regionName] = (scrollPosition.x(), scrollPosition.y())
             xy = self.mapPositionsDict[regionName]
-            logging.critical("mapPositionChanged CPoint({0},{1})".format(xy[0], xy[1]))
+            #logging.critical("mapPositionChanged CPoint({0},{1})".format(xy[0], xy[1]))
         elif ( self.ignoreCount == 1 ):
             self.ignoreCount = 2
             self.setInitialMapPositionForRegion(None)
@@ -681,8 +681,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         if len(parts) == 3:
                             data.append(parts)
             else:
-                data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
-            self.dotlan.setJumpbridges(data)
+                #data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
+                data = None
+            #self.dotlan.setJumpbridges(data)
             self.cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
             logging.error("Error: {0}".format(str(e)))

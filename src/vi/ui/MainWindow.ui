@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>936</width>
-    <height>695</height>
+    <width>1108</width>
+    <height>731</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -340,7 +340,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>936</width>
+     <width>1108</width>
      <height>24</height>
     </rect>
    </property>
@@ -697,13 +697,13 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QWebView</class>
+   <class>QWebEngineView</class>
    <extends>QWidget</extends>
-   <header location="global">QtWebKitWidgets/QWebView</header>
+   <header location="global">QtWebEngineWidgets/QWebEngineView</header>
   </customwidget>
   <customwidget>
    <class>PanningWebView</class>
-   <extends>QWebView</extends>
+   <extends>QWebEngineView</extends>
    <header>vi/PanningWebView</header>
   </customwidget>
  </customwidgets>
