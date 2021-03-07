@@ -56,15 +56,14 @@ class Map(object):
         # Re-render all systems
         for system in self.systems.values():
             system.update()
-        # Update the marker
 
-        if not self.marker["opacity"] == "0":
-            now = time.time()
-            delta = now - float(self.marker["activated"])
-            newValue = float(self.marker["opacity"]) - 0.1#(1.0 - delta / 100.0)
-            if newValue < 0:
-                newValue = "0"
-            self.marker["opacity"] = newValue
+        # Update the marker, the marker should be visible for 20s
+        if float(self.marker["opacity"]) > 0.0:
+            delta = time.time() - float(self.marker["activated"])
+            newOpacity = (1.0-delta/20.0)
+            if newOpacity < 0:
+                newOpacity=0.0
+            self.marker["opacity"] = newOpacity
         content = str(self.soup)
         return content
 
@@ -357,8 +356,8 @@ class System(object):
         x = self.mapCoordinates["center_x"] + offsetPoint[0]
         y = self.mapCoordinates["center_y"] + offsetPoint[1]
         marker["transform"] = "translate({x},{y})".format(x=x, y=y)
-        marker["opacity"] = "1"
-        marker["activated"] = timeA
+        marker["opacity"] = 1.0
+        marker["activated"] = time.time()
 
     def addLocatedCharacter(self, charname):
         idName = self.name + u"_loc"
