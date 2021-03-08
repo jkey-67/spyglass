@@ -70,7 +70,7 @@ class Application(QApplication):
         if len(sys.argv) > 1:
             chatLogDirectory = sys.argv[1]
 
-        print(sys.platform  )
+        print("Platform is {0}".format(sys.platform))
 
         if not os.path.exists(chatLogDirectory):
             if sys.platform.startswith("darwin"):
@@ -80,7 +80,7 @@ class Application(QApplication):
                                                     "Eve Online",
                                                     "p_drive", "User", "My Documents", "EVE", "logs", "Chatlogs")
             elif sys.platform.startswith("linux"):
-                chatLogDirectory = os.path.join(os.path.expanduser("~"), "EVE", "logs", "Chatlogs")
+                chatLogDirectory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
             elif sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
                 #import ctypes.wintypes
                 #buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
@@ -93,11 +93,18 @@ class Application(QApplication):
                 # Now I need to just make sure... Some old pcs could still be on XP
                 if not os.path.exists(chatLogDirectory):
                     chatLogDirectory = os.path.join(home, "My Documents", "EVE", "logs", "Chatlogs")
+
+        # todo show select folder dialog if path is not valid
+        if not os.path.exists(chatLogDirectory):
+            chatLogDirectory = QtWidgets.QFileDialog.getExistingDirectory(None, caption="Select EVE Online chat  logfiles directory", directory=chatLogDirectory)
+
         if not os.path.exists(chatLogDirectory):
             # None of the paths for logs exist, bailing out
+
             QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, QMessageBox.Quit)
             sys.exit(1)
 
+        print("Using chatlog directry {0}".format(chatLogDirectory))
         # Setting local directory for cache and logging
         spyglassDir = os.path.join(os.path.dirname(os.path.dirname(chatLogDirectory)), "spyglass")
         if not os.path.exists(spyglassDir):

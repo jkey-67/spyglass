@@ -95,6 +95,8 @@ def parseShips(rtext):
                     textReplace(text, formatted)
                     return True
 
+def isCharName( name ):
+    return False
 
 def parseSystems(systems, rtext, foundSystems):
     systemNames = systems.keys()
@@ -131,7 +133,9 @@ def parseSystems(systems, rtext, foundSystems):
                         # '_____ GATE' mentioned in message, which is not what we're
                         # interested in, so go to checking next word.
                         continue
-
+                if (words[idx + 1].upper() == 'CLR') or (words[idx + 1].upper() == 'CLEAR'):
+                    if (isCharName( words[idx ]+ " "+words[idx + 1])):
+                        continue
             upperWord = word.upper()
             if upperWord != word and upperWord in WORDS_TO_IGNORE: continue
             if upperWord in systemNames:  # - direct hit on name
@@ -166,7 +170,8 @@ def parseSystems(systems, rtext, foundSystems):
                         formattedText = formatSystem(text, word, system)
                         textReplace(text, formattedText)
                         return True
-
+    #if ( len(foundSystems) > 1):
+    #todo check for sytemname clear/clr here
     return False
 
 
