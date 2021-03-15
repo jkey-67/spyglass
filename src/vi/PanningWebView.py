@@ -18,12 +18,32 @@
 ###########################################################################
 
 from PyQt5.QtWebEngineWidgets import *
+from PyQt5.QtWebEngineCore import *
 from PyQt5.QtWidgets import QApplication, qApp
 from PyQt5.QtGui import *
 from PyQt5 import QtCore
 
 from PyQt5.QtCore import QPoint, QPointF
 from PyQt5.QtCore import QEvent, Qt
+import webbrowser
+class WebEnginePage(QWebEnginePage):
+    linkClicked = QtCore.pyqtSignal(QtCore.QUrl)
+    def acceptNavigationRequest(self, url:QtCore.QUrl, nav_type, isMainFrame):
+        if nav_type == QWebEnginePage.NavigationTypeLinkClicked:
+            self.linkClicked.emit(url)
+            #webbrowser.open(url.url())
+            return False
+        elif nav_type == QWebEnginePage.NavigationTypeTyped:
+            return True
+        elif nav_type == QWebEnginePage.NavigationTypeReload:
+            return False
+        elif nav_type == QWebEnginePage.NavigationTypeRedirect:
+            return False
+        else:
+            return False
+
+    def javaScriptConsoleMessage(self, QWebEnginePage_JavaScriptConsoleMessageLevel, p_str, p_int, p_str_1):
+        return
 
 class PanningWebView(QWebEngineView):
     def __init__(self, parent=None):
@@ -34,6 +54,9 @@ class PanningWebView(QWebEngineView):
         self.positionMousePress = None
         self.scrollMousePress = None
         self.handIsClosed = False
+        profile = QWebEngineProfile(self)
+        self.wepPage = WebEnginePage(profile, self)
+        self.setPage(self.wepPage)
         self.page().setBackgroundColor(Qt.transparent)
         self.setAutoFillBackground(False)
         qApp.installEventFilter(self)

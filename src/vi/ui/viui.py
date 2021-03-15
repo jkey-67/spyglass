@@ -28,6 +28,7 @@ import threading
 import vi.version
 
 import logging
+from bs4 import BeautifulSoup
 from PyQt5.QtGui import *
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 
@@ -79,6 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapTimer = QtCore.QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
         self.mapView.page().loadFinished.connect(self.onLoadFinished)
+        self.mapView.page().loadStarted.connect(self.onLoadStarted)
         self.clipboardTimer = QtCore.QTimer(self)
         self.oldClipboardContent = ""
         self.trayIcon = trayIcon
@@ -91,7 +93,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frameButton.setVisible(False)
         self.scanIntelForKosRequestsEnabled = True
         self.initialMapPosition = None
-        self.oldSvg = None
         self.mapPositionsDict = {}
         self.ignoreCount = 1
 
@@ -295,7 +296,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.mapView.contextMenu = self.trayIcon.contextMenu()
 
             # Clicking links
-            #self.mapView.linkClicked.connect(self.mapLinkClicked)
+            self.mapView.wepPage.linkClicked.connect(self.mapLinkClicked)
 
             # Also set up our app menus
             if not regionName:
@@ -582,17 +583,19 @@ class MainWindow(QtWidgets.QMainWindow):
                     break
             self.oldClipboardContent = contentTuple
 
-    def mapLinkClicked(self, url):
+    def mapLinkClicked(self, url:QtCore.QUrl):
         systemName = str(url.path().split("/")[-1]).upper()
-        system = self.systems[str(systemName)]
-        sc = SystemChat(self, SystemChat.SYSTEM, system, self.chatEntries, self.knownPlayerNames)
-        self.chat_message_added.connect(sc.addChatEntry)
-        self.avatar_loaded.connect(sc.newAvatarAvailable)
-        sc.location_set.connect(self.setLocation)
-        sc.show()
+        if str(systemName) in self.systems.keys():
+            system = self.systems[str(systemName)]
+            sc = SystemChat(self, SystemChat.SYSTEM, system, self.chatEntries, self.knownPlayerNames)
+            self.chat_message_added.connect(sc.addChatEntry)
+            self.avatar_loaded.connect(sc.newAvatarAvailable)
+            sc.location_set.connect(self.setLocation)
+            sc.repaint_needed.connect(self.update)
+            sc.show()
 
-    def markSystemOnMap(self, systemname, timeA=time.time()):
-        self.systems[str(systemname)].mark(timeA)
+    def markSystemOnMap(self, systemname):
+        self.systems[str(systemname)].mark(time.time())
         self.updateMapView()
 
     def setLocation(self, char, newSystem):
@@ -602,21 +605,19 @@ class MainWindow(QtWidgets.QMainWindow):
             self.systems[newSystem].addLocatedCharacter(char)
             self.setMapContent(self.dotlan.svg)
 
+    def onLoadStarted(self):
+        self.mapView.setUpdatesEnabled(False)
+
     def onLoadFinished(self, fin):
         self.mapView.setScrollPosition(self.initialMapPosition)
         self.initialMapPosition = None
-        return
+        QtWidgets.qApp.processEvents()
 
     def setMapContent(self, content):
-        if (( self.oldSvg != None) and (  self.oldSvg == content)):
-            return
         self.ignoreCount = 1
         self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
-        self.setInitialMapPositionForRegion(None)
-        # self.mapView.setScrollPosition(self.initialMapPosition)
-        # Make sure we have positioned the window before we nil the initial position;
-        # even though we set it, it may not take effect until the map is fully loaded
-        self.oldSvg = content
+
+
 
     def loadInitialMapPositions(self, newDictionary):
         self.mapPositionsDict = newDictionary
@@ -641,7 +642,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ignoreCount = 2
             self.setInitialMapPositionForRegion(None)
             self.mapView.setScrollPosition(self.initialMapPosition)
+            QtWidgets.qApp.processEvents()
         else:
+            self.mapView.setUpdatesEnabled(True)
             self.ignoreCount = 0
 
     def showChatroomChooser(self):
@@ -683,7 +686,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 #data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
                 data = None
-            #self.dotlan.setJumpbridges(data)
+            self.dotlan.setJumpbridges(data)
             self.cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
             logging.error("Error: {0}".format(str(e)))
@@ -953,11 +956,11 @@ class RegionChooser(QtWidgets.QDialog):
 
 class SystemChat(QtWidgets.QDialog):
     SYSTEM = 0
-
+    location_set = QtCore.pyqtSignal(str,str)
+    repaint_needed = QtCore.pyqtSignal()
     def __init__(self, parent, chatType, selector, chatEntries, knownPlayerNames):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath("vi/ui/SystemChat.ui"), self)
-        self.parent = parent
         self.chatType = 0
         self.selector = selector
         self.chatEntries = []
@@ -974,6 +977,7 @@ class SystemChat(QtWidgets.QDialog):
         self.alarmButton.clicked.connect(self.setSystemAlarm)
         self.clearButton.clicked.connect(self.setSystemClear)
         self.locationButton.clicked.connect(self.locationSet)
+        self.dotlanButton.clicked.connect(self.openDotlan)
 
     def _addMessageToChat(self, message, avatarPixmap):
         scrollToBottom = False
@@ -986,7 +990,7 @@ class SystemChat(QtWidgets.QDialog):
         self.chat.addItem(listWidgetItem)
         self.chat.setItemWidget(listWidgetItem, entry)
         self.chatEntries.append(entry)
-        entry.mark_system.connect(self.parent.markSystemOnMap)
+        #entry.mark_system.connect(super(MainWindow,self.parent()).markSystemOnMap)
         if scrollToBottom:
             self.chat.scrollToBottom()
 
@@ -996,6 +1000,15 @@ class SystemChat(QtWidgets.QDialog):
             avatarPixmap = entry.avatarLabel.pixmap()
             if self.selector in message.systems:
                 self._addMessageToChat(message, avatarPixmap)
+
+    def openDotlan(self):
+        try:
+            url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
+            webbrowser.open(url)
+        except webbrowser.Error as e:
+            logging.critical( "Unable to open browser {0}".format(e))
+            return
+
 
     def locationSet(self):
         char = str(self.playerNamesBox.currentText())
@@ -1008,11 +1021,11 @@ class SystemChat(QtWidgets.QDialog):
 
     def setSystemAlarm(self):
         self.system.setStatus(states.ALARM)
-        self.parent.updateMapView()
+        self.repaint_needed.emit()
 
     def setSystemClear(self):
         self.system.setStatus(states.CLEAR)
-        self.parent.updateMapView()
+        self.repaint_needed.emit()
 
     def closeDialog(self):
         self.accept()
@@ -1090,7 +1103,6 @@ class JumpbridgeChooser(QtWidgets.QDialog):
             self.formatInfoField.setPlainText(f.read())
 
     def savePath(self):
-
         try:
             url = str(self.urlField.text())
             self.set_jumpbridge_url.emit(url)
