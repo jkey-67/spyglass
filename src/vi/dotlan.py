@@ -220,7 +220,7 @@ class Map(object):
             tuples with 3 values (sys1, connection, sys2)
         """
         soup = self.soup
-        for bridge in soup.select(".jumpbridge"):
+        for bridge in soup.select("#jumpbridge"):
             bridge.decompose()
         jumps = soup.select("#jumps")[0]
         colorCount = 0

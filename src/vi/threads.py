@@ -18,6 +18,7 @@
 ###########################################################################
 
 import time
+import os
 import datetime
 import logging
 import pyttsx3
@@ -69,7 +70,7 @@ class AvatarFindThread(QThread):
                 logging.debug("AvatarFindThread getting avatar for %s" % charname)
                 avatar = None
                 if charname == "SPYGLASS":
-                    with open(resourcePath("vi/ui/res/logo_small.png"), "rb") as f:
+                    with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
                 if not avatar:
                     avatar = cache.getAvatar(charname)

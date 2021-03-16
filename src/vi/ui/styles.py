@@ -36,20 +36,23 @@ class Styles:
     currentStyle = "light"
 
     def __init__(self):
+        try:
+            # default theme
+            with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.css"))) as default:
+                Styles.defaultStyle = default.read()
+            with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.yaml"))) as default:
+                Styles.defaultCommons = yaml.full_load(default)
+            default = None
 
-        # default theme
-        with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.css"))) as default:
-            Styles.defaultStyle = default.read()
-        with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.yaml"))) as default:
-            Styles.defaultCommons = yaml.full_load(default)
-        default = None
+            # dark theme
+            with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.css"))) as dark:
+                Styles.darkStyle = dark.read()
+            with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.yaml"))) as dark:
+                Styles.darkCommons = yaml.full_load(dark)
+            dark = None
+        except Exception as e:
+            logging.critical(e)
 
-        # dark theme
-        with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.css"))) as dark:
-            Styles.darkStyle = dark.read()
-        with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.yaml"))) as dark:
-            Styles.darkCommons = yaml.full_load(dark)
-        dark = None
 
     def getStyles(self):
         return self.styleList
@@ -79,7 +82,7 @@ class Styles:
 
 class TextInverter():
     def getTextColourFromBackground(self, colour):
-        if colour[0] is '#':
+        if colour[0] == '#':
             colour = colour[1:]
         red = int(colour[0:2], 16)
         green = int(colour[2:4], 16)

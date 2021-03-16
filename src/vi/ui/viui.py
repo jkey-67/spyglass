@@ -152,10 +152,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # then resize other platforms as needed
         #
         if sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
-            font = self.statisticsButton.font()
-            font.setPointSize(8)
-            self.statisticsButton.setFont(font)
-            self.jumpbridgesButton.setFont(font)
+            # todo:why changingsize 8, should be managed by css
+            #font = self.statisticsButton.font()
+            #font.setPointSize(8)
+            #self.statisticsButton.setFont(font)
+            #self.jumpbridgesButton.setFont(font)
+            pass
         elif sys.platform.startswith("linux"):
             pass
 
@@ -256,7 +258,7 @@ class MainWindow(QtWidgets.QMainWindow):
             regionName = "Providence"
         svg = None
         try:
-            with open(resourcePath(os.path("vi", "ui", "res", "mapdata/{0}.svg".format(regionName)))) as svgFile:
+            with open(resourcePath(os.path("vi", "ui", "res", "mapdata","{0}.svg".format(regionName)))) as svgFile:
                 svg = svgFile.read()
         except Exception as e:
             pass
@@ -595,14 +597,15 @@ class MainWindow(QtWidgets.QMainWindow):
             sc.show()
 
     def markSystemOnMap(self, systemname):
-        self.systems[str(systemname)].mark(time.time())
-        self.updateMapView()
+        if str(systemname) is self.systems.keys():
+            self.systems[str(systemname)].mark(time.time())
+            self.updateMapView()
 
-    def setLocation(self, char, newSystem):
+    def setLocation(self, char, systemname):
         for system in self.systems.values():
             system.removeLocatedCharacter(char)
-        if not newSystem == "?" and newSystem in self.systems:
-            self.systems[newSystem].addLocatedCharacter(char)
+        if not systemname == "?" and systemname in self.systems.keys():
+            self.systems[systemname].addLocatedCharacter(char)
             self.setMapContent(self.dotlan.svg)
 
     def onLoadStarted(self):
@@ -616,8 +619,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def setMapContent(self, content):
         self.ignoreCount = 1
         self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
-
-
 
     def loadInitialMapPositions(self, newDictionary):
         self.mapPositionsDict = newDictionary
@@ -796,15 +797,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showInfo(self):
         infoDialog = QtWidgets.QDialog(self)
-        uic.loadUi(resourcePath("vi/ui/Info.ui"), infoDialog)
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "Info.ui")), infoDialog)
         infoDialog.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        infoDialog.logoLabel.setPixmap(QtGui.QPixmap(resourcePath("vi/ui/res/logo.png")))
+        infoDialog.logoLabel.setPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "logo.png"))))
         infoDialog.closeButton.clicked.connect(infoDialog.accept)
         infoDialog.show()
 
     def showSoundSetup(self):
         dialog = QtWidgets.QDialog(self)
-        uic.loadUi(resourcePath("vi/ui/SoundSetup.ui"), dialog)
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "SoundSetup.ui")), dialog)
         dialog.volumeSlider.setValue(SoundManager().soundVolume)
         dialog.volumeSlider.valueChanged[int].connect(SoundManager().setSoundVolume)
         dialog.testSoundButton.clicked.connect(SoundManager().playSound)
@@ -889,7 +890,7 @@ class ChatroomsChooser(QtWidgets.QDialog):
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath("vi/ui/ChatroomsChooser.ui"), self)
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatroomsChooser.ui"), self))
         self.defaultButton.clicked.connect(self.setDefaults)
         self.cancelButton.clicked.connect(self.accept)
         self.saveButton.clicked.connect(self.saveClicked)
@@ -914,7 +915,7 @@ class RegionChooser(QtWidgets.QDialog):
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath("vi/ui/RegionChooser.ui"), self)
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "RegionChooser.ui")), self)
         self.cancelButton.clicked.connect(self.accept)
         self.saveButton.clicked.connect(self.saveClicked)
         cache = Cache()
@@ -935,7 +936,7 @@ class RegionChooser(QtWidgets.QDialog):
                 correct = False
                 # Fallback -> ships vintel with this map?
                 try:
-                    with open(resourcePath("vi/ui/res/mapdata/{0}.svg".format(text))) as _:
+                    with open(resourcePath(os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(text)))) as _:
                         correct = True
                 except Exception as e:
                     logging.error(e)
@@ -960,7 +961,7 @@ class SystemChat(QtWidgets.QDialog):
     repaint_needed = QtCore.pyqtSignal()
     def __init__(self, parent, chatType, selector, chatEntries, knownPlayerNames):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath("vi/ui/SystemChat.ui"), self)
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "SystemChat.ui")), self)
         self.chatType = 0
         self.selector = selector
         self.chatEntries = []
@@ -1041,14 +1042,16 @@ class ChatEntryWidget(QtWidgets.QWidget):
     def __init__(self, message):
         QtWidgets.QWidget.__init__(self)
         if not self.questionMarkPixmap:
-            self.questionMarkPixmap = QtGui.QPixmap(resourcePath("vi/ui/res/qmark.png")).scaledToHeight(32)
-        uic.loadUi(resourcePath("vi/ui/ChatEntry.ui"), self)
+            self.questionMarkPixmap = QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "qmark.png"))).scaledToHeight(32)
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatEntry.ui")), self)
         self.avatarLabel.setPixmap(self.questionMarkPixmap)
         self.message = message
         self.updateText()
         self.textLabel.linkActivated['QString'].connect(self.linkClicked)
         if sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
-            ChatEntryWidget.TEXT_SIZE = 8
+            #todo:why size 8 should be managed by css
+            #ChatEntryWidget.TEXT_SIZE = 8
+            pass
         self.changeFontSize(self.TEXT_SIZE)
         if not ChatEntryWidget.SHOW_AVATAR:
             self.avatarLabel.setVisible(False)
@@ -1093,13 +1096,13 @@ class JumpbridgeChooser(QtWidgets.QDialog):
     set_jumpbridge_url = pyqtSignal(str)
     def __init__(self, parent, url):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath("vi/ui/JumpbridgeChooser.ui"), self)
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "JumpbridgeChooser.ui")), self)
         self.saveButton.clicked.connect(self.savePath)
         self.cancelButton.clicked.connect(self.accept)
         self.fileChooser.clicked.connect(self.choosePath)
         self.urlField.setText(url)
         # loading format explanation from textfile
-        with open(resourcePath("docs/jumpbridgeformat.txt")) as f:
+        with open(resourcePath(os.path.join("docs", "jumpbridgeformat.txt"))) as f:
             self.formatInfoField.setPlainText(f.read())
 
     def savePath(self):
