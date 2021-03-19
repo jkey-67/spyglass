@@ -19,7 +19,6 @@
 
 import time
 import os
-import datetime
 import logging
 import pyttsx3
 import threading
@@ -29,7 +28,6 @@ import queue
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
 from vi import evegate
 from vi import koschecker
-from vi import states
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 
