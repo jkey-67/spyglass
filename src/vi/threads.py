@@ -190,7 +190,6 @@ class MapStatisticsThread(QThread):
                 requestData = {"result": "error", "text": str(e)}
             self.lastStatisticsUpdate = time.time()
             self.refreshTimer.start(self.pollRate)
-            # self.emit(SIGNAL("statistic_data_update"), requestData)
             self.statistic_data_update.emit(requestData)
             logging.debug("MapStatisticsThread emitted statistic_data_update")
 
