@@ -83,7 +83,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     # Min seconds between two notifications
     MIN_WAIT_NOTIFICATION = 15
 
-    alarm_distance = pyqtSignal(int)
+    alarm_distance = pyqtSignal()
     change_frameless = pyqtSignal()
     quit_signal = pyqtSignal()
 
