@@ -320,6 +320,7 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.critical("Updating the map")
         self.updateMapView()
         self.setInitialMapPositionForRegion(regionName)
+        #todo:why using timer for painting
         self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
         # Allow the file watcher to run now that all else is set up
         self.filewatcherThread.paused = False
@@ -593,11 +594,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.chat_message_added.connect(sc.addChatEntry)
             self.avatar_loaded.connect(sc.newAvatarAvailable)
             sc.location_set.connect(self.setLocation)
-            sc.repaint_needed.connect(self.update)
+            sc.repaint_needed.connect(self.updateMapView)
             sc.show()
 
     def markSystemOnMap(self, systemname):
-        if str(systemname) is self.systems.keys():
+        if str(systemname) in self.systems.keys():
             self.systems[str(systemname)].mark(time.time())
             self.updateMapView()
 
