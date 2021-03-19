@@ -121,6 +121,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.changeSound(disable=True)
         else:
             self.changeSound()
+            SoundManager().playSound("request")
 
         # Set up Transparency menu - fill in opacity values and make connections
         self.opacityGroup = QActionGroup(self.menu)
@@ -891,7 +892,7 @@ class ChatroomsChooser(QtWidgets.QDialog):
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatroomsChooser.ui"), self))
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatroomsChooser.ui")), self)
         self.defaultButton.clicked.connect(self.setDefaults)
         self.cancelButton.clicked.connect(self.accept)
         self.saveButton.clicked.connect(self.saveClicked)
