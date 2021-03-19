@@ -18,7 +18,6 @@
 ###########################################################################
 
 from PyQt5.QtWebEngineWidgets import *
-from PyQt5.QtWebEngineCore import *
 from PyQt5.QtWidgets import QApplication, qApp
 from PyQt5.QtGui import *
 from PyQt5 import QtCore
@@ -31,7 +30,6 @@ class WebEnginePage(QWebEnginePage):
     def acceptNavigationRequest(self, url:QtCore.QUrl, nav_type, isMainFrame):
         if nav_type == QWebEnginePage.NavigationTypeLinkClicked:
             self.linkClicked.emit(url)
-            #webbrowser.open(url.url())
             return False
         elif nav_type == QWebEnginePage.NavigationTypeTyped:
             return True
@@ -50,7 +48,6 @@ class PanningWebView(QWebEngineView):
         super(PanningWebView, self).__init__()
         self.pressed = False
         self.scrolling = False
-        self.ignored = []
         self.positionMousePress = None
         self.scrollMousePress = None
         self.handIsClosed = False
@@ -72,23 +69,22 @@ class PanningWebView(QWebEngineView):
 
     #event filter to split mouse messages
     def eventFilter(self, source, event) -> bool:
-        if ((source.parent() == self) and (event.type() == QEvent.MouseButtonPress)):
-            return self.mousePressEvent(event)
-        if ((source.parent() == self) and (event.type() == QEvent.MouseMove)):
-            return self.mouseMoveEvent(event)
-        if ((source.parent() == self) and (event.type() == QEvent.MouseButtonRelease)):
-            return self.mouseReleaseEvent(event)
-        return False
+        try:
+            if ((source.parent() == self) and (event.type() == QEvent.MouseButtonPress)):
+                return self.mousePressEvent(event)
+            if ((source.parent() == self) and (event.type() == QEvent.MouseMove)):
+                return self.mouseMoveEvent(event)
+            if ((source.parent() == self) and (event.type() == QEvent.MouseButtonRelease)):
+                return self.mouseReleaseEvent(event)
+            return False
+        except:
+            return False
 
     def mousePressEvent(self, mouseEvent:QMouseEvent) -> bool:
         pos = mouseEvent.pos()
         if self.pointInScroller(pos, QtCore.Qt.Vertical) or self.pointInScroller(pos, QtCore.Qt.Horizontal):
             return False
         else:
-            if self.ignored.count(mouseEvent):
-                self.ignored.remove(mouseEvent)
-                return False
-
             if not self.pressed and not self.scrolling and mouseEvent.modifiers() == QtCore.Qt.NoModifier:
                 if mouseEvent.buttons() == QtCore.Qt.LeftButton:
                     self.pressed = True
@@ -101,10 +97,6 @@ class PanningWebView(QWebEngineView):
         return False
 
     def mouseReleaseEvent(self, mouseEvent:QMouseEvent) -> bool:
-        if self.ignored.count(mouseEvent):
-            self.ignored.remove(mouseEvent)
-            return False
-
         if self.scrolling:
             self.pressed = False
             self.scrolling = False
