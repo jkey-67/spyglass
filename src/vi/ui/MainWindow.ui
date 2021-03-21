@@ -653,7 +653,7 @@
     <string>Provi / Catch</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>providencecatch</string>
+    <string>providence-catch</string>
    </property>
   </action>
   <action name="providenceCatchCompactRegionAction">
@@ -664,7 +664,7 @@
     <string>Provi / Catch (compact)</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>Providence-catch</string>
+    <string>providence-catch-compact</string>
    </property>
   </action>
   <action name="queriousRegionAction">
