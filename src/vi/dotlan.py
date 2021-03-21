@@ -69,22 +69,26 @@ class Map(object):
 
     def __init__(self, region, svgFile=None):
         self.region = region
+
         cache = Cache()
         self.outdatedCacheError = None
-
+        if self.region == "Providencecatch" or  self.region ==  "providence-catch-compact":
+            region_to_load = "Providence-catch"
+        else:
+            region_to_load = self.region
         # Get map from dotlan if not in the cache
         if not svgFile:
             svg = cache.getFromCache("map_" + self.region)
         else:
             svg = svgFile
-        if not svg:
+        if not svg or svg.startswith( "region not found"):
             try:
-                svg = self._getSvgFromDotlan(self.region)
+                svg = self._getSvgFromDotlan(region_to_load)
                 cache.putIntoCache("map_" + self.region, svg, evegate.secondsTillDowntime() + 60 * 60)
             except Exception as e:
                 self.outdatedCacheError = e
                 svg = cache.getFromCache("map_" + self.region, True)
-                if not svg:
+                if not svg or svg.startswith( "region not found"):
                     t = "No Map in cache, nothing from dotlan. Must give up " \
                         "because this happened:\n{0} {1}\n\nThis could be a " \
                         "temporary problem (like dotlan is not reachable), or " \
@@ -94,13 +98,16 @@ class Map(object):
                     raise DotlanException(t)
         # Create soup from the svg
         self.soup = BeautifulSoup(svg, 'html.parser')
-
+        for scr in self.soup.findAll('script'):
+            scr.extract()
+        for tag in self.soup.findAll(attrs={"onload": True}):
+            del (tag["onload"])
         self.systems = self._extractSystemsFromSoup(self.soup)
         self.systemsById = {}
         for system in self.systems.values():
             self.systemsById[system.systemId] = system
-        scale = 1
-        if self.region == "Providence-catch": scale = 0.9
+        scale = 1.0
+
         self._prepareSvg(self.soup, self.systems, scale)
         self._connectNeighbours()
         self._jumpMapsVisible = False
@@ -392,7 +399,7 @@ class System(object):
                 try:
                     elem = self.mapSoup.find(id=idName)
                     if(elem is not None):
-                        logging.critical("Decompose {0}".format(str(elem)))
+                        logging.info("Decompose {0}".format(str(elem)))
                         elem.decompose()
                 except Exception as e:
                     logging.critical( "Error in removeLocatedCharacter  {0}".format(str(e)))
