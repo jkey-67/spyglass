@@ -613,7 +613,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def onLoadFinished(self, fin):
         #self.mapView.setScrollPosition(self.initialMapPosition)
         self.initialMapPosition = None
-        QtWidgets.qApp.processEvents()
 
     def setMapContent(self, content):
         if self.currContent != content:
@@ -644,7 +643,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ignoreCount = 2
             self.setInitialMapPositionForRegion(None)
             self.mapView.setScrollPosition(self.initialMapPosition)
-            QtWidgets.qApp.processEvents()
         else:
             self.mapView.setUpdatesEnabled(True)
             self.ignoreCount = 0
@@ -884,7 +882,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 chars = nSystem.getLocatedCharacters()
                                 if len(chars) > 0 and message.user not in chars:
                                     self.trayIcon.showNotification(message, system.name, ", ".join(chars), distance)
-                self.updateMapView()
+        self.updateMapView()
 
 
 class ChatroomsChooser(QtWidgets.QDialog):

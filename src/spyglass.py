@@ -146,13 +146,12 @@ class Application(QApplication):
         logging.critical("")
         logging.critical(" Looking for chat logs at: {0}".format(chatLogDirectory))
         logging.critical(" Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE))
-        logging.critical("  Writing logs to: {0}".format(spyglassLogDirectory))
+        logging.critical(" Writing logs to: {0}".format(spyglassLogDirectory))
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()
         self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, backGroundColor)
         self.mainWindow.show()
         self.mainWindow.raise_()
-        self.processEvents()
         splash.finish(self.mainWindow)
 
 
