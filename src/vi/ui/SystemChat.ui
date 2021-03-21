@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>343</width>
-    <height>300</height>
+    <width>390</width>
+    <height>327</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -150,6 +150,13 @@
              <widget class="QPushButton" name="clearButton">
               <property name="text">
                <string>Set clear</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="dotlanButton">
+              <property name="text">
+               <string>Open Dotlan</string>
               </property>
              </widget>
             </item>

@@ -25,6 +25,7 @@ import math
 import time
 import requests
 import logging
+import sys
 
 from bs4 import BeautifulSoup
 from vi import states
@@ -47,8 +48,7 @@ class Map(object):
     """
         The map including all information from dotlan
     """
-
-    DOTLAN_BASIC_URL = u"http://evemaps.dotlan.net/svg/{0}.svg"
+    DOTLAN_BASIC_URL = u"https://evemaps.dotlan.net/svg/{0}.svg"
     styles = Styles()
 
     @property
@@ -56,34 +56,39 @@ class Map(object):
         # Re-render all systems
         for system in self.systems.values():
             system.update()
-        # Update the marker
-        if not self.marker["opacity"] == "0":
-            now = time.time()
-            newValue = (1 - (now - float(self.marker["activated"])) / 10)
-            if newValue < 0:
-                newValue = "0"
-            self.marker["opacity"] = newValue
+
+        # Update the marker, the marker should be visible for 20s
+        if float(self.marker["opacity"]) > 0.0:
+            delta = time.time() - float(self.marker["activated"])
+            newOpacity = (1.0-delta/20.0)
+            if newOpacity < 0:
+                newOpacity=0.0
+            self.marker["opacity"] = newOpacity
         content = str(self.soup)
         return content
 
     def __init__(self, region, svgFile=None):
         self.region = region
+
         cache = Cache()
         self.outdatedCacheError = None
-
+        if self.region == "Providencecatch" or  self.region == "Providence-catch-compact":
+            region_to_load = "providence-catch"
+        else:
+            region_to_load = self.region
         # Get map from dotlan if not in the cache
         if not svgFile:
             svg = cache.getFromCache("map_" + self.region)
         else:
             svg = svgFile
-        if not svg:
+        if not svg or svg.startswith( "region not found"):
             try:
-                svg = self._getSvgFromDotlan(self.region)
+                svg = self._getSvgFromDotlan(region_to_load)
                 cache.putIntoCache("map_" + self.region, svg, evegate.secondsTillDowntime() + 60 * 60)
             except Exception as e:
                 self.outdatedCacheError = e
                 svg = cache.getFromCache("map_" + self.region, True)
-                if not svg:
+                if not svg or svg.startswith( "region not found"):
                     t = "No Map in cache, nothing from dotlan. Must give up " \
                         "because this happened:\n{0} {1}\n\nThis could be a " \
                         "temporary problem (like dotlan is not reachable), or " \
@@ -93,12 +98,19 @@ class Map(object):
                     raise DotlanException(t)
         # Create soup from the svg
         self.soup = BeautifulSoup(svg, 'html.parser')
+        for scr in self.soup.findAll('script'):
+            scr.extract()
+        for tag in self.soup.findAll(attrs={"onload": True}):
+            del (tag["onload"])
         self.systems = self._extractSystemsFromSoup(self.soup)
         self.systemsById = {}
         for system in self.systems.values():
             self.systemsById[system.systemId] = system
-        scale = 1
-        if self.region == "Providence-catch": scale = 0.9
+        if "compact" in self.region:
+            scale = 0.9
+        else:
+            scale = 1.0
+
         self._prepareSvg(self.soup, self.systems, scale)
         self._connectNeighbours()
         self._jumpMapsVisible = False
@@ -218,7 +230,7 @@ class Map(object):
             tuples with 3 values (sys1, connection, sys2)
         """
         soup = self.soup
-        for bridge in soup.select(".jumpbridge"):
+        for bridge in soup.select("#jumpbridge"):
             bridge.decompose()
         jumps = soup.select("#jumps")[0]
         colorCount = 0
@@ -335,7 +347,7 @@ class System(object):
 
     def setJumpbridgeColor(self, color):
         idName = self.name + u"_jb_marker"
-        for element in self.mapSoup.select(u"#" + idName):
+        for element in self.mapSoup.select("#" + idName):
             element.decompose()
         coords = self.mapCoordinates
         offsetPoint = self.getTransformOffsetPoint()
@@ -354,8 +366,8 @@ class System(object):
         x = self.mapCoordinates["center_x"] + offsetPoint[0]
         y = self.mapCoordinates["center_y"] + offsetPoint[1]
         marker["transform"] = "translate({x},{y})".format(x=x, y=y)
-        marker["opacity"] = "1"
-        marker["activated"] = timeA
+        marker["opacity"] = 1.0
+        marker["activated"] = time.time()
 
     def addLocatedCharacter(self, charname):
         idName = self.name + u"_loc"
@@ -384,12 +396,17 @@ class System(object):
 
     def removeLocatedCharacter(self, charname):
         idName = self.name + u"_loc"
-
         if charname in self.__locatedCharacters:
             self.__locatedCharacters.remove(charname)
             if not self.__locatedCharacters:
-                for element in self.mapSoup.select("#" + idName):
-                    element.decompose()
+                try:
+                    elem = self.mapSoup.find(id=idName)
+                    if(elem is not None):
+                        logging.info("Decompose {0}".format(str(elem)))
+                        elem.decompose()
+                except Exception as e:
+                    logging.critical( "Error in removeLocatedCharacter  {0}".format(str(e)))
+                    pass
 
     def addNeighbour(self, neighbourSystem):
         """

@@ -89,7 +89,7 @@ class SoundManager(metaclass=Singleton):
             if self.useSpokenNotifications:
                 audioFile = None
             else:
-                audioFile = resourcePath("vi/ui/res/{0}".format(self.SOUNDS[name]))
+                audioFile = resourcePath(os.path.join("vi", "ui", "res", "{0}".format(self.SOUNDS[name])))
             self._soundThread.queue.put((audioFile, message, abbreviatedMessage))
 
     def quit(self):

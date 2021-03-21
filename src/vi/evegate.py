@@ -37,6 +37,17 @@ def charnameToId(name):
     try:
         url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search={}&strict=true"
         content = requests.get(url.format(name)).json()
+        if "character" in content.keys():
+            for idFound in content["character"]:
+                url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=idFound)
+                details = requests.get(url.format(name)).json()
+                if "name" in details.keys():
+                    name_found = details["name"]
+                    if name_found.lower() == name.lower():
+                        return idFound
+            return None
+        else:
+            return None
         return content["character"][0]
 
     except Exception as e:
@@ -74,6 +85,7 @@ def namesToIds(names):
     try:
         # not in cache? asking the EVE API
         if len(apiCheckNames) > 0:
+            # todo:change to esi
             url = "https://api.eveonline.com/eve/CharacterID.xml.aspx"
             content = requests.get(url, params={'names': ','.join(apiCheckNames)}).text
             soup = BeautifulSoup(content, 'html.parser')
@@ -137,7 +149,7 @@ def getAvatarForPlayer(charname):
     try:
         charId = charnameToId(charname)
         if charId:
-            imageUrl = "http://image.eveonline.com/Character/{id}_{size}.jpg"
+            imageUrl = "https://images.evetech.net/characters/{id}/portrait?tenant=tranquility&size={size}"
             avatar = requests.get(imageUrl.format(id=charId, size=32)).content
     except Exception as e:
         logging.error("Exception during getAvatarForPlayer: %s", e)
@@ -146,24 +158,22 @@ def getAvatarForPlayer(charname):
 
 
 def checkPlayername(charname):
-    """ Checking on evegate for an exiting playername
+    """ Checking on esi for an exiting exact player name
         returns 1 if exists, 0 if not and -1 if an error occured
     """
-    baseUrl = "https://gate.eveonline.com/Profile/"
-
-    queryCharname = requests.utils.quote(charname)
-    url = baseUrl + queryCharname
-    result = -1
-
     try:
-        urlopen(url)
-        result = 1
-    except HTTPError as e:
-        if ("404") in str(e):
-            result = 0
+        baseUrl = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en&search={charname}&strict=true"
+        content = requests.get(baseUrl.format(charname=charname)).json()
+        if "character" in content.keys():
+            if len(content["character"]):
+                return 1
+            else:
+                return 0
+        else:
+            return -1
     except Exception as e:
         logging.error("Exception on checkPlayername: %s", e)
-    return result
+    return -1
 
 
 def currentEveTime():
@@ -177,7 +187,6 @@ def eveEpoch():
     """
     return time.mktime(datetime.datetime.utcnow().timetuple())
 
-
 def getCharinfoForCharId(charId):
     cacheKey = u"_".join(("playerinfo_id_", str(charId)))
     cache = Cache()
@@ -187,6 +196,7 @@ def getCharinfoForCharId(charId):
     else:
         try:
             charId = int(charId)
+            #todo:change to esi
             url = "https://api.eveonline.com/eve/CharacterInfo.xml.aspx"
             content = requests.get(url, params={'characterID': charId}).text
             soup = BeautifulSoup(content, 'html.parser')
@@ -234,17 +244,12 @@ def getSystemStatistics():
     try:
         if jumpData is None:
             jumpData = {}
-            url = "https://api.eveonline.com/map/Jumps.xml.aspx"
-            content = requests.get(url).text
-            soup = BeautifulSoup(content, 'html.parser')
+            url = "https://esi.evetech.net/latest/universe/system_jumps/?datasource=tranquility"
+            resp = requests.get(url).json()
+            for row in resp:
+                jumpData[int(row["system_id"])] = int(row["ship_jumps"])
 
-            for result in soup.select("result"):
-                for row in result.select("row"):
-                    jumpData[int(row["solarsystemid"])] = int(row["shipjumps"])
-
-            cacheUntil = datetime.datetime.strptime(soup.select("cacheduntil")[0].text, "%Y-%m-%d %H:%M:%S")
-            diff = cacheUntil - currentEveTime()
-            cache.putIntoCache(cacheKey, json.dumps(jumpData), diff.seconds)
+            cache.putIntoCache(cacheKey, json.dumps(jumpData), 60)
         else:
             jumpData = json.loads(jumpData)
 
@@ -254,19 +259,14 @@ def getSystemStatistics():
 
         if systemData is None:
             systemData = {}
-            url = "https://api.eveonline.com/map/Kills.xml.aspx"
-            content = requests.get(url).text
-            soup = BeautifulSoup(content, 'html.parser')
+            url = "https://esi.evetech.net/latest/universe/system_kills/?datasource=tranquility"
+            resp = requests.get(url).json()
+            for row in resp:
+                systemData[int(row["system_id"])] = {"ship": int(row["ship_kills"]),
+                                                        "faction": int(row["npc_kills"]),
+                                                        "pod": int(row["pod_kills"])}
 
-            for result in soup.select("result"):
-                for row in result.select("row"):
-                    systemData[int(row["solarsystemid"])] = {"ship": int(row["shipkills"]),
-                                                             "faction": int(row["factionkills"]),
-                                                             "pod": int(row["podkills"])}
-
-            cacheUntil = datetime.datetime.strptime(soup.select("cacheduntil")[0].text, "%Y-%m-%d %H:%M:%S")
-            diff = cacheUntil - currentEveTime()
-            cache.putIntoCache(cacheKey, json.dumps(systemData), diff.seconds)
+            cache.putIntoCache(cacheKey, json.dumps(systemData), 60 )
         else:
             systemData = json.loads(systemData)
     except Exception as e:
@@ -379,3 +379,14 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
              u'Freedom Extension', u'Sisters of EVE', u'President', u'Expert Housing', u'Deep Core Mining Inc.',
              u'Senate', u"Mordu's Legion", u'State Protectorate', u'Jove Navy', u'X-Sense', u'Corporate Police Force',
              u'Minmatar Mining Corporation', u'Supreme Court')
+
+
+# The main application for testing
+if __name__ == "__main__":
+    res = getCharinfoForCharId( charnameToId( "Nele McCool" ))
+    res = getAvatarForPlayer("Dae\'M");
+    res = checkPlayername( "Nele McCool" )
+    res = getAvatarForPlayer( "Nele McCool")
+    res = checkPlayername("Rovengard Ogaster")
+    res = checkPlayername("121%2011%2011%2011")
+    res = getAvatarForPlayer("121%2011%2011%2011")

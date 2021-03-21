@@ -18,8 +18,8 @@
 ###########################################################################
 
 import time
+import os
 
-# import range
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import  QAction, QActionGroup
@@ -88,7 +88,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     quit_signal = pyqtSignal()
 
     def __init__(self, app):
-        self.icon = QIcon(resourcePath("vi/ui/res/logo_small.png"))
+        self.icon = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
         QSystemTrayIcon.__init__(self, self.icon, app)
         self.setToolTip("Your Spyglass Information Service! :)")
         self.lastNotifications = {}
@@ -110,7 +110,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         return self.contextMenu().distanceGroup
 
     def quit(self):
-        self.quit.emit()
+        self.quit_signal.emit()
 
     def switchAlarm(self):
         newValue = not self.showAlarm

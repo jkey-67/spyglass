@@ -17,105 +17,146 @@
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 
-from PyQt5.QtWebEngineWidgets  import QWebEngineView
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWebEngineWidgets import *
+from PyQt5.QtWidgets import QApplication, qApp
 from PyQt5.QtGui import *
 from PyQt5 import QtCore
 
-from PyQt5.QtCore import QPoint
-from PyQt5.QtCore import QEvent
+from PyQt5.QtCore import QPoint, QPointF
+from PyQt5.QtCore import QEvent, Qt
+import webbrowser
+class WebEnginePage(QWebEnginePage):
+    linkClicked = QtCore.pyqtSignal(QtCore.QUrl)
+    def acceptNavigationRequest(self, url:QtCore.QUrl, nav_type, isMainFrame):
+        if nav_type == QWebEnginePage.NavigationTypeLinkClicked:
+            self.linkClicked.emit(url)
+            return False
+        elif nav_type == QWebEnginePage.NavigationTypeTyped:
+            return True
+        elif nav_type == QWebEnginePage.NavigationTypeReload:
+            return False
+        elif nav_type == QWebEnginePage.NavigationTypeRedirect:
+            return False
+        else:
+            return False
 
+    #def javaScriptConsoleMessage(self, QWebEnginePage_JavaScriptConsoleMessageLevel, p_str, p_int, p_str_1):
+        #print(p_str)
+        #print( "{0} {1} {2}".format(p_str,p_int,p_str_1))
+        #return
 
 class PanningWebView(QWebEngineView):
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()
         self.pressed = False
         self.scrolling = False
-        self.ignored = []
-        self.position = None
-        self.offset = 0
+        self.positionMousePress = None
+        self.scrollMousePress = None
         self.handIsClosed = False
-        self.clickedInScrollBar = False
+        profile = QWebEngineProfile(self)
+        self.wepPage = WebEnginePage(profile, None)
+        self.setPage(self.wepPage)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.page().setBackgroundColor(Qt.transparent)
+        self.setAutoFillBackground(False)
+        qApp.installEventFilter(self)
+        self.script = QWebEngineScript()
+        self.PrepareScripts()
 
-    def mousePressEvent(self, mouseEvent):
+    def PrepareScripts(self,pos=None):
+        self.script.setName("preset_positions")
+        if ( pos == None):
+            pos = self.scrollPosition()
+        cnt_fac = self.page().zoomFactor()
+        fnc = """
+            (function() {{
+                window.scrollTo({0},{1});
+                console.log('preset_positions');
+            }})""".format(pos.x()/cnt_fac, pos.y()/cnt_fac)
+        self.script.setSourceCode(fnc)
+        self.script.setInjectionPoint(QWebEngineScript.DocumentReady)
+        self.script.setRunsOnSubFrames(False)
+        self.script.setWorldId(QWebEngineScript.ApplicationWorld)
+        self.page().scripts().insert(self.script)
+
+    def scrollPosition(self) -> QPointF:
+        return self.page().scrollPosition()
+
+    def setScrollPosition(self, pos: QPoint):
+        if(  ( pos != None ) and ( pos != self.scrollPosition())):
+            cnt_size = self.page().contentsSize()
+            cnt_fac = self.page().zoomFactor()
+            self.PrepareScripts(pos)
+            self.page().runJavaScript("window.scrollTo({0}, {1})".format(pos.x()/cnt_fac, pos.y()/cnt_fac))
+
+    #event filter to split mouse messages
+    def eventFilter(self, source, event) -> bool:
+        try:
+            if ((source.parent() == self) and (event.type() == QEvent.MouseButtonPress)):
+                return self.mousePressEvent(event)
+            if ((source.parent() == self) and (event.type() == QEvent.MouseMove)):
+                return self.mouseMoveEvent(event)
+            if ((source.parent() == self) and (event.type() == QEvent.MouseButtonRelease)):
+                return self.mouseReleaseEvent(event)
+            return False
+        except:
+            return False
+
+    def mousePressEvent(self, mouseEvent:QMouseEvent) -> bool:
         pos = mouseEvent.pos()
-
         if self.pointInScroller(pos, QtCore.Qt.Vertical) or self.pointInScroller(pos, QtCore.Qt.Horizontal):
-            self.clickedInScrollBar = True
+            return False
         else:
-            if self.ignored.count(mouseEvent):
-                self.ignored.remove(mouseEvent)
-                return QWebEngineView.mousePressEvent(self, mouseEvent)
-
             if not self.pressed and not self.scrolling and mouseEvent.modifiers() == QtCore.Qt.NoModifier:
                 if mouseEvent.buttons() == QtCore.Qt.LeftButton:
                     self.pressed = True
                     self.scrolling = False
                     self.handIsClosed = False
-                    QApplication.setOverrideCursor(QtCore.Qt.OpenHandCursor)
+                    qApp.setOverrideCursor(QtCore.Qt.OpenHandCursor)
+                    self.scrollMousePress = self.scrollPosition()
+                    self.positionMousePress = mouseEvent.pos()
+                    return True
+        return False
 
-                    self.position = mouseEvent.pos()
-                    frame = self.page().mainFrame()
-                    xTuple = frame.evaluateJavaScript("window.scrollX").toInt()
-                    yTuple = frame.evaluateJavaScript("window.scrollY").toInt()
-                    self.offset = QPoint(xTuple[0], yTuple[0])
-                    return
+    def mouseReleaseEvent(self, mouseEvent:QMouseEvent) -> bool:
+        if self.scrolling:
+            self.pressed = False
+            self.scrolling = False
+            self.handIsClosed = False
+            self.positionMousePress = None
+            qApp.restoreOverrideCursor()
+            return True
 
-        return QWebEngineView.mousePressEvent(self, mouseEvent)
+        if self.pressed:
+            self.pressed = False
+            self.scrolling = False
+            self.handIsClosed = False
+            qApp.restoreOverrideCursor()
+            return True
+        return False
 
-    def mouseReleaseEvent(self, mouseEvent):
-        if self.clickedInScrollBar:
-            self.clickedInScrollBar = False
-        else:
-            if self.ignored.count(mouseEvent):
-                self.ignored.remove(mouseEvent)
-                return QWebEngineView.mousePressEvent(self, mouseEvent)
-
-            if self.scrolling:
-                self.pressed = False
-                self.scrolling = False
-                self.handIsClosed = False
-                QApplication.restoreOverrideCursor()
-                return
-
-            if self.pressed:
-                self.pressed = False
-                self.scrolling = False
-                self.handIsClosed = False
-                QApplication.restoreOverrideCursor()
-
-                event1 = QMouseEvent(QEvent.MouseButtonPress, self.position, QtCore.Qt.LeftButton, QtCore.Qt.LeftButton,
-                                     QtCore.Qt.NoModifier)
-                event2 = QMouseEvent(mouseEvent)
-                self.ignored.append(event1)
-                self.ignored.append(event2)
-                QApplication.postEvent(self, event1)
-                QApplication.postEvent(self, event2)
-                return
-        return QWebView.mouseReleaseEvent(self, mouseEvent)
-
-    def mouseMoveEvent(self, mouseEvent):
-        if not self.clickedInScrollBar:
+    def mouseMoveEvent(self, mouseEvent:QMouseEvent) -> bool:
             if self.scrolling:
                 if not self.handIsClosed:
                     QApplication.restoreOverrideCursor()
                     QApplication.setOverrideCursor(QtCore.Qt.ClosedHandCursor)
                     self.handIsClosed = True
-                delta = mouseEvent.pos() - self.position
-                p = self.offset - delta
-                frame = self.page().mainFrame()
-                frame.evaluateJavaScript("window.scrollTo(%1, %2);".arg(p.x()).arg(p.y()));
-                return
-
+                if (self.scrollMousePress != None):
+                    delta = mouseEvent.pos() - self.positionMousePress
+                    self.setScrollPosition(self.scrollMousePress - delta)
+                return True
             if self.pressed:
                 self.pressed = False
                 self.scrolling = True
-                return
-        return QWebEngineView.mouseMoveEvent(self, mouseEvent)
+                return True
+            return False
 
     def pointInScroller(self, position, orientation):
-        rect = self.page().mainFrame().scrollBarGeometry(orientation)
-        leftTop = self.mapToGlobal(QtCore.QPoint(rect.left(), rect.top()))
-        rightBottom = self.mapToGlobal(QtCore.QPoint(rect.right(), rect.bottom()))
-        globalRect = QtCore.QRect(leftTop.x(), leftTop.y(), rightBottom.x(), rightBottom.y())
-        return globalRect.contains(self.mapToGlobal(position))
+        child = super().children()
+        rcPage = self.page().contentsSize()
+        rcCli = super().childrenRect()
+        if (rcCli.width()<rcPage.width()):
+            rcCli.setWidth(rcCli.width() - 16)
+        if ( rcCli.height() < rcPage.height()):
+            rcCli.setHeight(rcCli.height()-16)
+        return not rcCli.contains(position)
