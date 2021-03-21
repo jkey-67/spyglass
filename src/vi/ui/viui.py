@@ -71,6 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
 
         self.pathToLogs = pathToLogs
+        self.currContent = None
         self.mapTimer = QtCore.QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
         self.mapView.page().loadFinished.connect(self.onLoadFinished)
@@ -89,6 +90,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialMapPosition = None
         self.mapPositionsDict = {}
         self.ignoreCount = 1
+
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
 
         # Load user's toon names
@@ -157,11 +159,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.wireUpUIConnections()
         self.recallCachedSettings()
         self.setupThreads()
-        self.setupMap(True)
 
         initialTheme = self.cache.getFromCache("theme")
         if initialTheme:
             self.changeTheme(initialTheme)
+        else:
+            self.setupMap(True)
 
     def paintEvent(self, event):
         opt = QStyleOption()
@@ -214,6 +217,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearIntelAction.triggered.connect(self.clearIntelChat)
         self.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
         self.mapView.page().scrollPositionChanged.connect(self.mapPositionChanged)
+        self.mapView.wepPage.linkClicked.connect(self.mapLinkClicked)
 
     def setupThreads(self):
         # Set up threads and their connections
@@ -292,9 +296,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.mapView.contextMenuEvent = mapContextMenuEvent
             self.mapView.contextMenu = self.trayIcon.contextMenu()
-
-            # Clicking links
-            self.mapView.wepPage.linkClicked.connect(self.mapLinkClicked)
 
             # Also set up our app menus
             if not regionName:
@@ -610,13 +611,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapView.setUpdatesEnabled(False)
 
     def onLoadFinished(self, fin):
-        self.mapView.setScrollPosition(self.initialMapPosition)
+        #self.mapView.setScrollPosition(self.initialMapPosition)
         self.initialMapPosition = None
         QtWidgets.qApp.processEvents()
 
     def setMapContent(self, content):
-        self.ignoreCount = 1
-        self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
+        if self.currContent != content:
+            print("setMapContent {0}".format(time.time()))
+            self.ignoreCount = 1
+            self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
+            self.currContent = content
 
     def loadInitialMapPositions(self, newDictionary):
         self.mapPositionsDict = newDictionary

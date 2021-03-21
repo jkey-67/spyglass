@@ -40,10 +40,10 @@ class WebEnginePage(QWebEnginePage):
         else:
             return False
 
-    def javaScriptConsoleMessage(self, QWebEnginePage_JavaScriptConsoleMessageLevel, p_str, p_int, p_str_1):
+    #def javaScriptConsoleMessage(self, QWebEnginePage_JavaScriptConsoleMessageLevel, p_str, p_int, p_str_1):
         #print(p_str)
         #print( "{0} {1} {2}".format(p_str,p_int,p_str_1))
-        return
+        #return
 
 class PanningWebView(QWebEngineView):
     def __init__(self, parent=None):
@@ -63,7 +63,6 @@ class PanningWebView(QWebEngineView):
         self.PrepareScripts()
 
     def PrepareScripts(self,pos=None):
-        #
         self.script.setName("preset_positions")
         if ( pos == None):
             pos = self.scrollPosition()
@@ -86,8 +85,8 @@ class PanningWebView(QWebEngineView):
         if(  ( pos != None ) and ( pos != self.scrollPosition())):
             cnt_size = self.page().contentsSize()
             cnt_fac = self.page().zoomFactor()
-            self.page().runJavaScript("window.scrollTo({0}, {1})".format(pos.x()/cnt_fac, pos.y()/cnt_fac))
             self.PrepareScripts(pos)
+            self.page().runJavaScript("window.scrollTo({0}, {1})".format(pos.x()/cnt_fac, pos.y()/cnt_fac))
 
     #event filter to split mouse messages
     def eventFilter(self, source, event) -> bool:

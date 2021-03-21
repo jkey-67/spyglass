@@ -74,7 +74,6 @@ class Application(QApplication):
 
         splash.showMessage("  Detected platform is {0}".format(sys.platform), color=Qt.QColor(198, 198, 0))
         splash.repaint()
-        self.processEvents()
 
         if not os.path.exists(chatLogDirectory):
             if sys.platform.startswith("darwin"):
@@ -102,7 +101,6 @@ class Application(QApplication):
         if not os.path.exists(chatLogDirectory):
             chatLogDirectory = QtWidgets.QFileDialog.getExistingDirectory(None, caption="Select EVE Online chat  logfiles directory", directory=chatLogDirectory)
 
-        self.processEvents()
         if not os.path.exists(chatLogDirectory):
             # None of the paths for logs exist, bailing out
             QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, QMessageBox.Close )
@@ -110,7 +108,7 @@ class Application(QApplication):
 
         splash.showMessage("  Using directory {0}".format(chatLogDirectory), color=Qt.QColor(198, 198, 0))
         splash.repaint()
-        self.processEvents()
+
         # Setting local directory for cache and logging
         spyglassDir = os.path.join(os.path.dirname(os.path.dirname(chatLogDirectory)), "spyglass")
         if not os.path.exists(spyglassDir):
@@ -123,7 +121,7 @@ class Application(QApplication):
 
         splash.showMessage("  Init database", color=Qt.QColor(198, 198, 0))
         splash.repaint()
-        self.processEvents()
+
         spyglassCache = Cache()
         logLevel = spyglassCache.getFromCache("logging_level")
         if not logLevel:
@@ -138,7 +136,6 @@ class Application(QApplication):
         self.setStyleSheet(css)
         del css
 
-        self.processEvents()
 
         # Setup logging for console and rotated log files
         formatter = logging.Formatter('%(asctime)s| %(message)s', datefmt='%m/%d %I:%M:%S')
@@ -148,7 +145,7 @@ class Application(QApplication):
         logFilename = spyglassLogDirectory + "/output.log"
         splash.showMessage("  Using logfile {0}".format(logFilename), color=Qt.QColor(198, 198, 0))
         splash.repaint()
-        self.processEvents()
+
         fileHandler = RotatingFileHandler(maxBytes=(1048576 * 5), backupCount=7, filename=logFilename, mode='a')
         fileHandler.setFormatter(formatter)
         rootLogger.addHandler(fileHandler)
@@ -162,19 +159,16 @@ class Application(QApplication):
         logging.critical("")
         splash.showMessage(" Looking for chat logs at: {0}".format(chatLogDirectory), color=Qt.QColor(198, 198, 0))
         splash.repaint()
-        self.processEvents()
         splash.showMessage(" Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE), color=Qt.QColor(198, 198, 0))
         splash.repaint()
-        self.processEvents()
         splash.showMessage("  Writing logs to: {0}".format(spyglassLogDirectory), color=Qt.QColor(198, 198, 0))
         splash.repaint()
-        self.processEvents()
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()
-        self.processEvents()
         self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, backGroundColor)
         self.mainWindow.show()
         self.mainWindow.raise_()
+        self.processEvents()
         splash.finish(self.mainWindow)
 
 
