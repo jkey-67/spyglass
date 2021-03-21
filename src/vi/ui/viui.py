@@ -233,9 +233,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filewatcherThread.file_change.connect(self.logFileChanged)
         self.filewatcherThread.start()
 
-        self.versionCheckThread = amazon_s3.NotifyNewVersionThread()
-        self.versionCheckThread.newer_version.connect(self.notifyNewerVersion)
-        self.versionCheckThread.start()
+        #self.versionCheckThread = amazon_s3.NotifyNewVersionThread()
+        #self.versionCheckThread.newer_version.connect(self.notifyNewerVersion)
+        #self.versionCheckThread.start()
 
         self.statisticsThread = MapStatisticsThread()
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
@@ -617,7 +617,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setMapContent(self, content):
         if self.currContent != content:
-            print("setMapContent {0}".format(time.time()))
             self.ignoreCount = 1
             self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
             self.currContent = content

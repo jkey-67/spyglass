@@ -62,8 +62,6 @@ class Application(QApplication):
         super(Application, self).__init__(args)
         splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png")))
         splash.show()
-        splash.showMessage("  Starting up Spyglass...", color=Qt.QColor(198,198,0))
-        splash.repaint()
         if version.SNAPSHOT:
             QMessageBox.critical(None, "Snapshot", "This is a snapshot release... Use as you will....")
 
@@ -71,9 +69,6 @@ class Application(QApplication):
         chatLogDirectory = ""
         if len(sys.argv) > 1:
             chatLogDirectory = sys.argv[1]
-
-        splash.showMessage("  Detected platform is {0}".format(sys.platform), color=Qt.QColor(198, 198, 0))
-        splash.repaint()
 
         if not os.path.exists(chatLogDirectory):
             if sys.platform.startswith("darwin"):
@@ -106,9 +101,6 @@ class Application(QApplication):
             QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, QMessageBox.Close )
             sys.exit(1)
 
-        splash.showMessage("  Using directory {0}".format(chatLogDirectory), color=Qt.QColor(198, 198, 0))
-        splash.repaint()
-
         # Setting local directory for cache and logging
         spyglassDir = os.path.join(os.path.dirname(os.path.dirname(chatLogDirectory)), "spyglass")
         if not os.path.exists(spyglassDir):
@@ -118,9 +110,6 @@ class Application(QApplication):
         spyglassLogDirectory = os.path.join(spyglassDir, "logs")
         if not os.path.exists(spyglassLogDirectory):
             os.mkdir(spyglassLogDirectory)
-
-        splash.showMessage("  Init database", color=Qt.QColor(198, 198, 0))
-        splash.repaint()
 
         spyglassCache = Cache()
         logLevel = spyglassCache.getFromCache("logging_level")
@@ -143,8 +132,6 @@ class Application(QApplication):
         rootLogger.setLevel(level=logLevel)
 
         logFilename = spyglassLogDirectory + "/output.log"
-        splash.showMessage("  Using logfile {0}".format(logFilename), color=Qt.QColor(198, 198, 0))
-        splash.repaint()
 
         fileHandler = RotatingFileHandler(maxBytes=(1048576 * 5), backupCount=7, filename=logFilename, mode='a')
         fileHandler.setFormatter(formatter)
@@ -157,12 +144,9 @@ class Application(QApplication):
         logging.critical("")
         logging.critical("------------------- Spyglass %s starting up -------------------", version.VERSION)
         logging.critical("")
-        splash.showMessage(" Looking for chat logs at: {0}".format(chatLogDirectory), color=Qt.QColor(198, 198, 0))
-        splash.repaint()
-        splash.showMessage(" Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE), color=Qt.QColor(198, 198, 0))
-        splash.repaint()
-        splash.showMessage("  Writing logs to: {0}".format(spyglassLogDirectory), color=Qt.QColor(198, 198, 0))
-        splash.repaint()
+        logging.critical(" Looking for chat logs at: {0}".format(chatLogDirectory))
+        logging.critical(" Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE))
+        logging.critical("  Writing logs to: {0}".format(spyglassLogDirectory))
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()
         self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, backGroundColor)

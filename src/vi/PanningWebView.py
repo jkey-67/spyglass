@@ -54,8 +54,9 @@ class PanningWebView(QWebEngineView):
         self.scrollMousePress = None
         self.handIsClosed = False
         profile = QWebEngineProfile(self)
-        self.wepPage = WebEnginePage(profile, self)
+        self.wepPage = WebEnginePage(profile, None)
         self.setPage(self.wepPage)
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.page().setBackgroundColor(Qt.transparent)
         self.setAutoFillBackground(False)
         qApp.installEventFilter(self)
