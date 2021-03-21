@@ -188,7 +188,6 @@ class ChatParser(object):
 
         # Finding the pure message
         text = line[userEnds + 1:].strip()  # text will the text to work an
-        print ( text )
         if username in ("EVE-System", "EVE System" ):
             if ":" in text:
                 system = text.split(":")[1].strip().replace("*", "").upper()
