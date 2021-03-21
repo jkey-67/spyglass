@@ -41,6 +41,8 @@ class WebEnginePage(QWebEnginePage):
             return False
 
     def javaScriptConsoleMessage(self, QWebEnginePage_JavaScriptConsoleMessageLevel, p_str, p_int, p_str_1):
+        #print(p_str)
+        #print( "{0} {1} {2}".format(p_str,p_int,p_str_1))
         return
 
 class PanningWebView(QWebEngineView):
@@ -57,6 +59,25 @@ class PanningWebView(QWebEngineView):
         self.page().setBackgroundColor(Qt.transparent)
         self.setAutoFillBackground(False)
         qApp.installEventFilter(self)
+        self.script = QWebEngineScript()
+        self.PrepareScripts()
+
+    def PrepareScripts(self,pos=None):
+        #
+        self.script.setName("preset_positions")
+        if ( pos == None):
+            pos = self.scrollPosition()
+        cnt_fac = self.page().zoomFactor()
+        fnc = """
+            (function() {{
+                window.scrollTo({0},{1});
+                console.log('preset_positions');
+            }})""".format(pos.x()/cnt_fac, pos.y()/cnt_fac)
+        self.script.setSourceCode(fnc)
+        self.script.setInjectionPoint(QWebEngineScript.DocumentReady)
+        self.script.setRunsOnSubFrames(False)
+        self.script.setWorldId(QWebEngineScript.ApplicationWorld)
+        self.page().scripts().insert(self.script)
 
     def scrollPosition(self) -> QPointF:
         return self.page().scrollPosition()
@@ -66,6 +87,7 @@ class PanningWebView(QWebEngineView):
             cnt_size = self.page().contentsSize()
             cnt_fac = self.page().zoomFactor()
             self.page().runJavaScript("window.scrollTo({0}, {1})".format(pos.x()/cnt_fac, pos.y()/cnt_fac))
+            self.PrepareScripts(pos)
 
     #event filter to split mouse messages
     def eventFilter(self, source, event) -> bool:

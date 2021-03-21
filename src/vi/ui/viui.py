@@ -23,33 +23,27 @@ import sys
 import time
 import requests
 import webbrowser
-import threading
 
 import vi.version
-
 import logging
-from bs4 import BeautifulSoup
 from PyQt5.QtGui import *
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 
-from PyQt5.QtCore import QPoint,QPointF, QByteArray, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QPoint,QPointF, QByteArray, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog
-from PyQt5.QtWebEngineWidgets import QWebEngineView,QWebEnginePage
-
 from vi import amazon_s3, evegate
 from vi import dotlan, filewatcher
 from vi import states
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 from vi.soundmanager import SoundManager
-from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread, VoiceOverThread
+from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread, VoiceOverThread, SVGRenderThread
 from vi.ui.systemtray import TrayContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser import ChatParser
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QActionGroup
-from PyQt5.QtWidgets import QMessageBox
 
 # Timer intervals
 MESSAGE_EXPIRY_SECS = 20 * 60
@@ -95,7 +89,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialMapPosition = None
         self.mapPositionsDict = {}
         self.ignoreCount = 1
-
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
 
         # Load user's toon names
@@ -247,6 +240,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.voiceThread = VoiceOverThread()
         self.voiceThread.start()
+
+        #self.svgRenderThread = SVGRenderThread()
+        #self.svgRenderThread.start()
 
     def setupMap(self, initialize=False):
         self.mapTimer.stop()
@@ -467,6 +463,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowOpacity(action.opacity)
 
     def changeTheme(self, newTheme=None):
+        logging.critical("change theme")
         if newTheme is not None:
             for action in self.themeGroup.actions():
                 if action.theme == newTheme:
@@ -478,10 +475,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStyleSheet(theme)
         logging.critical("Setting new theme: {}".format(action.theme))
         self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
-        self.setupMap()
-        self.clearIntelChat()
         if self.autoRescanIntelEnabled:
-            self.rescanIntel()
+            self.rescanIntel() # calls setupMap
+        else:
+            self.clearIntelChat()  # calls setupMap
 
     def changeSound(self, newValue=None, disable=False):
         if disable:
@@ -607,7 +604,7 @@ class MainWindow(QtWidgets.QMainWindow):
             system.removeLocatedCharacter(char)
         if not systemname == "?" and systemname in self.systems.keys():
             self.systems[systemname].addLocatedCharacter(char)
-            self.setMapContent(self.dotlan.svg)
+            self.updateMapView()
 
     def onLoadStarted(self):
         self.mapView.setUpdatesEnabled(False)
@@ -841,6 +838,7 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
     def updateMapView(self):
+        #self.svgRenderThread.SVGRender( self.dotlan.svg )
         self.setMapContent(self.dotlan.svg)
 
     def zoomMapIn(self):
@@ -883,7 +881,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 chars = nSystem.getLocatedCharacters()
                                 if len(chars) > 0 and message.user not in chars:
                                     self.trayIcon.showNotification(message, system.name, ", ".join(chars), distance)
-                self.setMapContent(self.dotlan.svg)
+                self.updateMapView()
 
 
 class ChatroomsChooser(QtWidgets.QDialog):
@@ -891,7 +889,7 @@ class ChatroomsChooser(QtWidgets.QDialog):
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatroomsChooser.ui"), self))
+        uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatroomsChooser.ui")), self)
         self.defaultButton.clicked.connect(self.setDefaults)
         self.cancelButton.clicked.connect(self.accept)
         self.saveButton.clicked.connect(self.saveClicked)

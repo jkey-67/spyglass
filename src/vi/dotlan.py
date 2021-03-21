@@ -72,8 +72,8 @@ class Map(object):
 
         cache = Cache()
         self.outdatedCacheError = None
-        if self.region == "Providencecatch" or  self.region ==  "providence-catch-compact":
-            region_to_load = "Providence-catch"
+        if self.region == "Providencecatch" or  self.region == "Providence-catch-compact":
+            region_to_load = "providence-catch"
         else:
             region_to_load = self.region
         # Get map from dotlan if not in the cache
@@ -106,7 +106,10 @@ class Map(object):
         self.systemsById = {}
         for system in self.systems.values():
             self.systemsById[system.systemId] = system
-        scale = 1.0
+        if "compact" in self.region:
+            scale = 0.9
+        else:
+            scale = 1.0
 
         self._prepareSvg(self.soup, self.systems, scale)
         self._connectNeighbours()
