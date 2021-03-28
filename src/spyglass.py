@@ -26,9 +26,8 @@ import traceback
 from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
 
-from PyQt5 import QtGui, QtWidgets, Qt
-from PyQt5.QtCore import QCoreApplication
-
+from PyQt5 import QtGui, QtWidgets
+from PyQt5.QtWebEngine import QtWebEngine
 from vi import version, PanningWebView
 from vi.ui import viui, systemtray
 from vi.cache import cache
@@ -36,7 +35,7 @@ from vi.ui.styles import Styles
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
 from PyQt5.QtWidgets import QApplication, QMessageBox
-import sip
+
 
 
 def exceptHook(exceptionType, exceptionValue, tracebackObject):
@@ -60,6 +59,7 @@ backGroundColor = "#c6d9ec"
 class Application(QApplication):
     def __init__(self, args):
         super(Application, self).__init__(args)
+        QtWebEngine.initialize()
         splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png")))
         splash.show()
         if version.SNAPSHOT:

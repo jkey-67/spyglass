@@ -25,7 +25,6 @@ import math
 import time
 import requests
 import logging
-import sys
 
 from bs4 import BeautifulSoup
 from vi import states
@@ -69,7 +68,8 @@ class Map(object):
 
     def __init__(self, region, svgFile=None):
         self.region = region
-
+        self.width = None
+        self.height = None
         cache = Cache()
         self.outdatedCacheError = None
         if self.region == "Providencecatch" or  self.region == "Providence-catch-compact":
@@ -100,6 +100,9 @@ class Map(object):
         self.soup = BeautifulSoup(svg, 'html.parser')
         for scr in self.soup.findAll('script'):
             scr.extract()
+        for scr in self.soup.select('#controls'):
+            scr.extract()
+
         for tag in self.soup.findAll(attrs={"onload": True}):
             del (tag["onload"])
         self.systems = self._extractSystemsFromSoup(self.soup)
@@ -111,11 +114,23 @@ class Map(object):
         else:
             scale = 1.0
 
+        self._extractSizeFromSoup( self.soup )
         self._prepareSvg(self.soup, self.systems, scale)
         self._connectNeighbours()
         self._jumpMapsVisible = False
         self._statisticsVisible = False
         self.marker = self.soup.select("#select_marker")[0]
+
+    def _extractSizeFromSoup(self, soup):
+        svg = soup.select("svg")[0]
+        box = svg["viewbox"]
+        if box:
+            box = box.split(" ")
+            self.width = int(box[2])
+            self.height = int(box[3])
+
+        #width = svg["width"]
+        #height = svg["height"]
 
     def _extractSystemsFromSoup(self, soup):
         systems = {}
@@ -154,7 +169,7 @@ class Map(object):
             for line in soup.select("line"):
                 line["class"] = "j"
         # Shrink the svg slightly. This is a fix for the compact map only to prevent clipping, but should not adversely affect other maps.
-        soup.select("g")[0]['transform'] = "scale({})".format(scale)
+        #soup.select("g")[0]['transform'] = "scale({})".format(scale)
         # Current system marker ellipse
         group = soup.new_tag("g", id="select_marker", opacity="0", activated="0", transform="translate(0, 0)")
         ellipse = soup.new_tag("ellipse", cx="0", cy="0", rx="56", ry="28", style="fill:#462CFF")
@@ -180,6 +195,10 @@ class Map(object):
                                      refy="5", orient="auto", style="stroke:#{0};fill:#{0}".format(jbColor))
             endmarker.append(endpath)
             svg.insert(0, endmarker)
+        jumps = soup.find("#jumps")
+        if jumps == None:
+            jumps = soup.new_tag("g", id="jumps")
+            svg.insert(-1, jumps)
         jumps = soup.select("#jumps")[0]
 
         # Set up the tags for system statistics

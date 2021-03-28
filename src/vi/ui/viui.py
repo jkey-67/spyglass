@@ -38,7 +38,7 @@ from vi import states
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 from vi.soundmanager import SoundManager
-from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread, VoiceOverThread, SVGRenderThread
+from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread, VoiceOverThread
 from vi.ui.systemtray import TrayContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser import ChatParser
@@ -60,8 +60,8 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
         self.cache = Cache()
 
-        if backGroundColor:
-            self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
+        #if backGroundColor:
+        #    self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "MainWindow.ui")), self)
         self.setWindowTitle(
             "Spyglass " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
@@ -69,13 +69,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.taskbarIconWorking = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
         self.setWindowIcon(self.taskbarIconQuiescent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-
         self.pathToLogs = pathToLogs
         self.currContent = None
         self.mapTimer = QtCore.QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
-        self.mapView.page().loadFinished.connect(self.onLoadFinished)
-        self.mapView.page().loadStarted.connect(self.onLoadStarted)
         self.clipboardTimer = QtCore.QTimer(self)
         self.oldClipboardContent = ""
         self.trayIcon = trayIcon
@@ -86,13 +83,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lastStatisticsUpdate = 0
         self.chatEntries = []
         self.frameButton.setVisible(False)
-        self.scanIntelForKosRequestsEnabled = True
+        self.scanIntelForKosRequestsEnabled = False
         self.initialMapPosition = None
         self.mapPositionsDict = {}
         self.ignoreCount = 1
 
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
-
+        #self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        #self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
+        #self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
         # Load user's toon names
         self.knownPlayerNames = self.cache.getFromCache("known_player_names")
         if self.knownPlayerNames:
@@ -147,7 +146,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # then resize other platforms as needed
         #
         if sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
-            # todo:why changingsize 8, should be managed by css
+            # todo:why changing font size 8, should be managed also by css
             #font = self.statisticsButton.font()
             #font.setPointSize(8)
             #self.statisticsButton.setFont(font)
@@ -216,8 +215,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.rescanNowAction.triggered.connect(self.rescanIntel)
         self.clearIntelAction.triggered.connect(self.clearIntelChat)
         self.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
-        self.mapView.page().scrollPositionChanged.connect(self.mapPositionChanged)
-        self.mapView.wepPage.linkClicked.connect(self.mapLinkClicked)
+        self.mapView.webViewResized.connect(self.fixupScrollBars)
+        self.mapView.customContextMenuRequested.connect(self.showContextMenu)
+        def updateX(x):
+            pos = self.mapView.scrollPosition()
+            pos.setX(x)
+            self.mapView.setScrollPosition(pos)
+        self.mapHorzScrollBar.valueChanged.connect(updateX)
+        def updateY(y):
+            pos = self.mapView.scrollPosition()
+            pos.setY(y)
+            self.mapView.setScrollPosition(pos)
+        self.mapVertScrollBar.valueChanged.connect(updateY)
 
     def setupThreads(self):
         # Set up threads and their connections
@@ -245,8 +254,52 @@ class MainWindow(QtWidgets.QMainWindow):
         self.voiceThread = VoiceOverThread()
         self.voiceThread.start()
 
-        #self.svgRenderThread = SVGRenderThread()
-        #self.svgRenderThread.start()
+    def terminateThreads(self):
+        # Stop the threads
+        try:
+            SoundManager().quit()
+            self.avatarFindThread.quit()
+            self.avatarFindThread.wait()
+            self.filewatcherThread.quit()
+            self.filewatcherThread.wait()
+            self.kosRequestThread.quit()
+            self.kosRequestThread.wait()
+            #self.versionCheckThread.quit()
+            #self.versionCheckThread.wait()
+            self.statisticsThread.quit()
+            self.statisticsThread.wait()
+            self.voiceThread.join()
+            self.mapTimer.stop()
+        except Exception as ex:
+            logging.critical(ex)
+            pass
+
+    def prepareContextMenu(self):
+        # Menus - only once
+        regionName = self.cache.getFromCache("region_name")
+        logging.critical("Initializing contextual menus")
+
+        # Add a contextual menu to the mapView
+        def mapContextMenuEvent(event):
+            # if QApplication.activeWindow() or QApplication.focusWidget():
+            self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
+
+        self.mapView.contextMenuEvent = mapContextMenuEvent
+        self.mapView.contextMenu = self.trayIcon.contextMenu()
+
+        # Also set up our app menus
+        if not regionName:
+            self.providenceCatchRegionAction.setChecked(True)
+        elif regionName.startswith("Providencecatch"):
+            self.providenceCatchRegionAction.setChecked(True)
+        elif regionName.startswith("Catch"):
+            self.catchRegionAction.setChecked(True)
+        elif regionName.startswith("Providence"):
+            self.providenceRegionAction.setChecked(True)
+        elif regionName.startswith("Querious"):
+            self.queriousRegionAction.setChecked(True)
+        else:
+            self.chooseRegionAction.setChecked(True)
 
     def setupMap(self, initialize=False):
         self.mapTimer.stop()
@@ -285,31 +338,6 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.critical("Creating chat parser")
         self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems)
 
-        # Menus - only once
-        if initialize:
-            logging.critical("Initializing contextual menus")
-
-            # Add a contextual menu to the mapView
-            def mapContextMenuEvent(event):
-                # if QApplication.activeWindow() or QApplication.focusWidget():
-                self.mapView.contextMenu.exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
-
-            self.mapView.contextMenuEvent = mapContextMenuEvent
-            self.mapView.contextMenu = self.trayIcon.contextMenu()
-
-            # Also set up our app menus
-            if not regionName:
-                self.providenceCatchRegionAction.setChecked(True)
-            elif regionName.startswith("Providencecatch"):
-                self.providenceCatchRegionAction.setChecked(True)
-            elif regionName.startswith("Catch"):
-                self.catchRegionAction.setChecked(True)
-            elif regionName.startswith("Providence"):
-                self.providenceRegionAction.setChecked(True)
-            elif regionName.startswith("Querious"):
-                self.queriousRegionAction.setChecked(True)
-            else:
-                self.chooseRegionAction.setChecked(True)
         self.jumpbridgesButton.setChecked(False)
         self.statisticsButton.setChecked(False)
 
@@ -322,15 +350,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # Allow the file watcher to run now that all else is set up
         self.filewatcherThread.paused = False
         logging.critical("Map setup complete")
-
-    # def eventFilter(self, obj, event):
-    #     if event.type() == QtCore.QEvent.WindowDeactivate:
-    #         self.enableContextMenu(False)
-    #         return True
-    #     elif event.type() == QtCore.QEvent.WindowActivate:
-    #         self.enableContextMenu(True)
-    #         return True
-    #     return False
 
     def rescanIntel(self):
         logging.info("Intel ReScan begun")
@@ -393,25 +412,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "changeAutoScanIntel", self.scanIntelForKosRequestsEnabled),
                     (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled))
         self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
-
-        # Stop the threads
-        try:
-            SoundManager().quit()
-            self.avatarFindThread.quit()
-            self.avatarFindThread.wait()
-            self.filewatcherThread.quit()
-            self.filewatcherThread.wait()
-            self.kosRequestThread.quit()
-            self.kosRequestThread.wait()
-            self.versionCheckThread.quit()
-            self.versionCheckThread.wait()
-            self.statisticsThread.quit()
-            self.statisticsThread.wait()
-            self.voiceThread.join()
-        except Exception:
-            pass
+        self.terminateThreads()
         self.trayIcon.hide()
         event.accept()
+        #todo:double check termination
+        sys.exit(0)
+        #QtCore.QCoreApplication.quit()
 
     def notifyNewerVersion(self, newestVersion):
         self.trayIcon.showMessage("Newer Version", ("An update is available for Spyglass.\n www.crypta.tech"), 1)
@@ -476,6 +482,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStyleSheet(theme)
         logging.critical("Setting new theme: {}".format(action.theme))
         self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
+        self.prepareContextMenu()
         if self.autoRescanIntelEnabled:
             self.rescanIntel() # calls setupMap
         else:
@@ -564,7 +571,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsButton.setChecked(newValue)
         if newValue:
             self.statisticsThread.requestStatistics()
-            self.updateMapView()
+        self.updateMapView()
 
     def clipboardChanged(self, mode=0):
         if not (mode == 0 and self.kosClipboardActiveAction.isChecked() and self.clipboard.mimeData().hasText()):
@@ -607,18 +614,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.systems[systemname].addLocatedCharacter(char)
             self.updateMapView()
 
-    def onLoadStarted(self):
-        self.mapView.setUpdatesEnabled(False)
-
-    def onLoadFinished(self, fin):
-        #self.mapView.setScrollPosition(self.initialMapPosition)
-        self.initialMapPosition = None
-
-    def setMapContent(self, content):
-        if self.currContent != content:
+    def setMapContent(self):
+        if self.currContent != self.dotlan.svg:
             self.ignoreCount = 1
-            self.mapView.setContent(QByteArray(content.encode('utf-16')), "text/html")
-            self.currContent = content
+            self.mapView.setImgSize( QtCore.QSize(self.dotlan.width,self.dotlan.height) )
+            self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-16')), "text/html")
+            self.currContent = self.dotlan.svg
+            self.fixupScrollBars()
 
     def loadInitialMapPositions(self, newDictionary):
         self.mapPositionsDict = newDictionary
@@ -633,19 +635,18 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception:
             pass
 
-    def mapPositionChanged(self, scrollPosition):
-        regionName = self.cache.getFromCache("region_name")
-        if regionName and ( self.ignoreCount == 0 ):
-            self.mapPositionsDict[regionName] = (scrollPosition.x(), scrollPosition.y())
-            xy = self.mapPositionsDict[regionName]
-            #logging.critical("mapPositionChanged CPoint({0},{1})".format(xy[0], xy[1]))
-        elif ( self.ignoreCount == 1 ):
-            self.ignoreCount = 2
-            self.setInitialMapPositionForRegion(None)
-            self.mapView.setScrollPosition(self.initialMapPosition)
-        else:
-            self.mapView.setUpdatesEnabled(True)
-            self.ignoreCount = 0
+    def fixupScrollBars(self,scrollPosition=None):
+        wSize = self.mapView.size()
+        cSize = self.mapView.imgSize*self.mapView.zoom
+        #print( "fixupScrollBars ",scrollPosition," widget ", wSize, " content ",cSize )
+        self.mapHorzScrollBar.setVisible(cSize.width() > wSize.width())
+        self.mapVertScrollBar.setVisible( cSize.height() > wSize.height())
+        self.mapHorzScrollBar.setPageStep( cSize.width())
+        self.mapVertScrollBar.setPageStep(cSize.height())
+        self.mapHorzScrollBar.setRange(0, cSize.width() - wSize.width())
+        self.mapVertScrollBar.setRange(0, cSize.height() - wSize.height())
+        self.mapHorzScrollBar.setValue(self.mapView.scrollPosition().x())
+        self.mapVertScrollBar.setValue(self.mapView.scrollPosition().y())
 
     def showChatroomChooser(self):
         chooser = ChatroomsChooser(self)
@@ -839,8 +840,9 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
     def updateMapView(self):
-        #self.svgRenderThread.SVGRender( self.dotlan.svg )
-        self.setMapContent(self.dotlan.svg)
+        #self.mapTimer.stop()
+        self.setMapContent()
+        #self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
 
     def zoomMapIn(self):
         self.mapView.setZoomFactor(self.mapView.zoomFactor() + 0.1)
@@ -883,7 +885,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                 if len(chars) > 0 and message.user not in chars:
                                     self.trayIcon.showNotification(message, system.name, ", ".join(chars), distance)
         self.updateMapView()
-
+    def showContextMenu(self,event):
+        self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
 
 class ChatroomsChooser(QtWidgets.QDialog):
     rooms_changed = pyqtSignal(list)

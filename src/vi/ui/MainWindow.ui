@@ -13,9 +13,12 @@
   <property name="windowTitle">
    <string>Spyglass</string>
   </property>
+  <property name="windowOpacity">
+   <double>0.600000000000000</double>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="0" column="0">
+    <item row="0" column="1">
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
@@ -37,38 +40,10 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <item row="1" column="0">
-         <widget class="PanningWebView" name="mapView">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="baseSize">
-           <size>
-            <width>1050</width>
-            <height>790</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <pointsize>13</pointsize>
-           </font>
-          </property>
-          <property name="contextMenuPolicy">
-           <enum>Qt::DefaultContextMenu</enum>
-          </property>
-          <property name="acceptDrops">
-           <bool>false</bool>
-          </property>
-          <property name="layoutDirection">
-           <enum>Qt::LeftToRight</enum>
-          </property>
-          <property name="url">
-           <url>
-            <string>about:blank</string>
-           </url>
+        <item row="3" column="0">
+         <widget class="QScrollBar" name="mapHorzScrollBar">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
@@ -256,6 +231,32 @@
           </layout>
          </widget>
         </item>
+        <item row="1" column="0">
+         <widget class="PanningWebView" name="mapView" native="true">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTipDuration">
+           <number>1</number>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" rowspan="2">
+         <widget class="QScrollBar" name="mapVertScrollBar">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="chatbox" native="true">
@@ -341,6 +342,9 @@
         </item>
         <item>
          <widget class="QListWidget" name="chatListWidget">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="frameShadow">
            <enum>QFrame::Plain</enum>
           </property>
@@ -732,14 +736,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QWebEngineView</class>
-   <extends>QWidget</extends>
-   <header location="global">QtWebEngineWidgets/QWebEngineView</header>
-  </customwidget>
-  <customwidget>
    <class>PanningWebView</class>
-   <extends>QWebEngineView</extends>
+   <extends>QWidget</extends>
    <header>vi/PanningWebView</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

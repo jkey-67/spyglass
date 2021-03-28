@@ -18,15 +18,12 @@
 ###########################################################################
 
 import time
-import os
 import logging
 import pyttsx3
 import threading
-from bs4 import BeautifulSoup
 from queue import Queue
 import queue
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
-from PyQt5.QtGui import  QImage
 from cairosvg import *
 from vi import evegate
 from vi import koschecker
@@ -226,43 +223,4 @@ class VoiceOverThread(threading.Thread):
                 self.queue.task_done()
                 self.engine = None
             except Queue.Empty:
-                continue
-
-
-class SVGRenderThread(QThread):
-    svgRenderUpdate = pyqtSignal(object)
-    def __init__(self):
-        QThread.__init__(self)
-        self.queue = queue.Queue()
-        self.image = QImage()
-        self.active = True
-        self.soup = BeautifulSoup()
-        self.width = 1024*2
-
-    def SVGTerminate(self):
-        self.active = False
-        self.queue.put("")
-
-    def SVGRender(self, svgTxt):
-        self.soup = BeautifulSoup(svgTxt)
-        self.queue.put(self.soup.select("svg")[0].encode('utf-8'))
-
-    def SvgToPng(self, svgstr):
-        if (svgstr is not None):
-            self.svg = svgstr
-        if (self.svg is not None):
-            byte_img = svg2png(bytestring=self.svg, output_width=self.width )
-            self.image.loadFromData(byte_img)
-
-    def run(self):
-        while self.active:
-            try:
-                svgSrc = self.queue.get()
-                if not self.active:
-                    return
-                self.SvgToPng( svgSrc )
-                self.svgRenderUpdate.emit(self.image)
-                self.queue.task_done()
-            except Exception as e:
-                logging.critical( e )
                 continue
