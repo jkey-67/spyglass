@@ -89,8 +89,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ignoreCount = 1
 
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
-        #self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        #self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
         #self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
         # Load user's toon names
         self.knownPlayerNames = self.cache.getFromCache("known_player_names")
@@ -120,9 +120,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.opacityGroup = QActionGroup(self.menu)
         for i in (100, 80, 60, 40, 20):
             action = QAction("Opacity {0}%".format(i), None, checkable=True)
-            if i == 100:
-                action.setChecked(True)
-            action.opacity = i / 100.0
+            action.setChecked(i == 100)
+            action.opacity = float(i) / 100.0
             action.triggered.connect(self.changeOpacity)
             self.opacityGroup.addAction(action)
             self.menuTransparency.addAction(action)
@@ -227,6 +226,23 @@ class MainWindow(QtWidgets.QMainWindow):
             pos.setY(y)
             self.mapView.setScrollPosition(pos)
         self.mapVertScrollBar.valueChanged.connect(updateY)
+
+        def hoveCheck( pos:QPoint) -> bool:
+            for system in self.dotlan.systems.items():
+                val = system[1].mapCoordinates
+                rc = QtCore.QRectF(val["x"],val["y"],val["width"],val["height"])
+                if rc.contains(pos):
+                    return True
+            return False
+        self.mapView.hoveCheck = hoveCheck
+
+        def doubleClicked( pos:QPoint) -> bool:
+            for system in self.dotlan.systems.items():
+                val = system[1].mapCoordinates
+                rc = QtCore.QRectF(val["x"],val["y"],val["width"],val["height"])
+                if rc.contains(pos):
+                    self.mapLinkClicked(QtCore.QUrl( "map_link/{0}".format(system[0])))
+        self.mapView.doubleClicked = doubleClicked
 
     def setupThreads(self):
         # Set up threads and their connections
@@ -460,12 +476,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.useSpokenNotificationsAction.setEnabled(False)
 
     def changeOpacity(self, newValue=None):
-        if newValue is not None:
-            for action in self.opacityGroup.actions():
-                if action.opacity == newValue:
-                    action.setChecked(True)
-                else:
-                    action.setChecked(False)
         action = self.opacityGroup.checkedAction()
         self.setWindowOpacity(action.opacity)
 

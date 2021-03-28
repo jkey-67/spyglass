@@ -77,6 +77,7 @@ class PanningWebView(QWidget):
         self.webview.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
         self.webview.show()
         self.destroyed.connect(self.destroyView)
+        self.setMouseTracking(True)
 
     def destroyView(self):
         print("PanningWebView destroyed")
@@ -202,11 +203,23 @@ class PanningWebView(QWidget):
             qApp.restoreOverrideCursor()
             return
 
+    def hoveCheck(self,pos:QPoint)->bool:
+        return False
+
+    def doubleClicked(self,pos:QPoint)->bool:
+        return False
+
+    def mouseDoubleClickEvent(self,mouseEvent:QMouseEvent):
+        self.doubleClicked(self.mapPosFromEvent(mouseEvent))
+
+    def mapPosFromEvent(self,mouseEvent:QMouseEvent)->QPointF:
+        return (mouseEvent.pos() + self.scrollPos) / self.zoom
+
     def mouseMoveEvent(self, mouseEvent:QMouseEvent):
         if self.scrolling:
             if not self.handIsClosed:
                 QApplication.restoreOverrideCursor()
-                QApplication.setOverrideCursor(QtCore.Qt.ClosedHandCursor)
+                QApplication.setOverrideCursor(QtCore.Qt.OpenHandCursor)
                 self.handIsClosed = True
             if (self.scrollMousePress != None):
                 delta = mouseEvent.pos() - self.positionMousePress
@@ -216,5 +229,9 @@ class PanningWebView(QWidget):
             self.pressed = False
             self.scrolling = True
             return
+        if self.hoveCheck(self.mapPosFromEvent(mouseEvent)):
+            qApp.setOverrideCursor(QtCore.Qt.PointingHandCursor)
+        else:
+            qApp.setOverrideCursor(QtCore.Qt.ArrowCursor)
         return
 
