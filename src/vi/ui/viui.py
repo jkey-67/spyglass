@@ -630,7 +630,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.mapView.setImgSize( QtCore.QSize(self.dotlan.width,self.dotlan.height) )
             self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-16')), "text/html")
             self.currContent = self.dotlan.svg
-            self.fixupScrollBars()
 
     def loadInitialMapPositions(self, newDictionary):
         self.mapPositionsDict = newDictionary
