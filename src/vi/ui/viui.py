@@ -854,10 +854,10 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
 
     def zoomMapIn(self):
-        self.mapView.setZoomFactor(self.mapView.zoomFactor() + 0.1)
+        self.mapView.zoomIn()
 
     def zoomMapOut(self):
-        self.mapView.setZoomFactor(self.mapView.zoomFactor() - 0.1)
+        self.mapView.zoomOut()
 
     def logFileChanged(self, path, rescan=False):
         messages = self.chatparser.fileModified(path, rescan)

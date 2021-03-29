@@ -158,12 +158,30 @@ class PanningWebView(QWidget):
         self.webViewResized.emit()
         self.update()
 
+    def zoomIn(self,pos=None):
+        if pos==None:
+            self.setZoomFactor(self.zoomFactor() * 1.2)
+        else:
+            elemOri=self.mapPosFromPos(pos)
+            self.setZoomFactor(self.zoom * 1.2)
+            elemDelta =elemOri-self.mapPosFromPos(pos)
+            self.scrollPos=self.scrollPos+elemDelta*self.zoom
+
+    def zoomOut(self,pos=None):
+        if pos==None:
+            self.setZoomFactor(self.zoom*0.8)
+        else:
+            elemOri=self.mapPosFromPos(pos)
+            self.setZoomFactor(self.zoom*0.8)
+            elemDelta=elemOri-self.mapPosFromPos(pos)
+            self.scrollPos=self.scrollPos+elemDelta*self.zoom
+
     def wheelEvent(self, event: QWheelEvent):
         if Qt.ControlModifier & event.modifiers():
             if event.angleDelta().y() > 0:
-                self.setZoomFactor(self.zoomFactor() * 1.05)
+                self.zoomIn(event.position())
             elif event.angleDelta().y() < 0:
-                self.setZoomFactor(self.zoomFactor() * 0.95)
+                self.zoomOut(event.position())
 
     def mousePressEvent(self, mouseEvent:QMouseEvent):
         if not self.pressed and not self.scrolling and mouseEvent.modifiers() == QtCore.Qt.NoModifier:
@@ -199,6 +217,9 @@ class PanningWebView(QWidget):
 
     def mouseDoubleClickEvent(self,mouseEvent:QMouseEvent):
         self.doubleClicked(self.mapPosFromEvent(mouseEvent))
+
+    def mapPosFromPos(self,pos:QPointF)->QPointF:
+        return (pos + self.scrollPos) / self.zoom
 
     def mapPosFromEvent(self,mouseEvent:QMouseEvent)->QPointF:
         return (mouseEvent.pos() + self.scrollPos) / self.zoom
