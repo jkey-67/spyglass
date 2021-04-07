@@ -29,8 +29,6 @@ from PyQt5.QtWidgets import  QSystemTrayIcon
 from vi.resources import resourcePath
 from vi import states
 from vi.soundmanager import SoundManager
-# from PyQt5.QtCore import SIGNAL
-
 
 class TrayContextMenu(QtWidgets.QMenu):
     instances = set()
@@ -40,13 +38,37 @@ class TrayContextMenu(QtWidgets.QMenu):
         """
         QtWidgets.QMenu.__init__(self)
         TrayContextMenu.instances.add(self)
+        self.currentUser = None
+        self.currentSystem = None
         self.trayIcon = trayIcon
         self._buildMenu()
+
+    def updateMenu(self, sysName:str):
+        if sysName:
+            self.ingameMenu.setTitle("EVE-Online {}".format(sysName[0]))
+            self.ingameMenu.setEnabled(True)
+            self.currentSystem = sysName
+        else:
+            self.ingameMenu.setTitle("EVE-Online")
+            self.ingameMenu.setEnabled(False)
+            self.currentSystem = None
 
     def _buildMenu(self):
         self.framelessCheck = QtWidgets.QAction("Frameless Window", self, checkable=True)
         self.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
         self.addAction(self.framelessCheck)
+        self.addSeparator()
+        self.ingameMenu = self.addMenu("EVE-Online")
+        self.setDestination = QAction("Set Destination", None, checkable=False)
+        self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
+        self.avoidSystem = QAction("Avoid System", None, checkable=False)
+        self.clearAll = QAction("Clear all Waypoints", None, checkable=False)
+        self.ingameMenu.addAction(self.setDestination)
+        self.ingameMenu.addAction(self.addWaypoint)
+        self.ingameMenu.addAction(self.avoidSystem)
+        self.ingameMenu.addSeparator()
+        self.ingameMenu.addAction(self.clearAll)
+        self.addMenu(self.ingameMenu)
         self.addSeparator()
         self.requestCheck = QtWidgets.QAction("Show status request notifications", self, checkable=True)
         self.requestCheck.setChecked(True)

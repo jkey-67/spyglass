@@ -59,11 +59,14 @@ class Map(object):
         # Update the marker, the marker should be visible for 20s
         if float(self.marker["opacity"]) > 0.0:
             delta = time.time() - float(self.marker["activated"])
-            newOpacity = (1.0-delta/20.0)
+            newOpacity = (1.0-delta/10.0)
             if newOpacity < 0:
                 newOpacity=0.0
             self.marker["opacity"] = newOpacity
-        content = str(self.soup)
+        if True:
+            content = str(self.soup)
+        else:
+            content = str(self.soup.select("svg")[0])
         return content
 
     def __init__(self, region, svgFile=None):
@@ -248,10 +251,16 @@ class Map(object):
             Adding the jumpbridges to the map soup; format of data:
             tuples with 3 values (sys1, connection, sys2)
         """
+        if jumpbridgesData== None:
+            return
         soup = self.soup
         for bridge in soup.select("#jumpbridge"):
             bridge.decompose()
-        jumps = soup.select("#jumps")[0]
+        jumps = soup.select("#jumps")
+        if jumps!=None:
+            jumps = soup.select("#jumps")[0]
+        else:
+            return
         colorCount = 0
         for bridge in jumpbridgesData:
             sys1 = bridge[0]

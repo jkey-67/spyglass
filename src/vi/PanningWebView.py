@@ -26,15 +26,18 @@ from PyQt5.QtCore import QPoint, QPointF
 from PyQt5.QtCore import QEvent, Qt
 import webbrowser
 import time
+import logging
 import os
 
 class PanningWebView(QWidget):
     webViewResized = QtCore.pyqtSignal()
-    DUMP_CURRENT_VIEW= False
+    DUMP_CURRENT_VIEW=False
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()
         self.zoom = 1.0
+        self.stretched = False
         self.pressed = False
+        self.repainttime = 1000
         self.scrolling = False
         self.positionMousePress = None
         self.scrollMousePress = None
@@ -44,6 +47,7 @@ class PanningWebView(QWidget):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.page().settings().setAttribute(QWebEngineSettings.ShowScrollBars, False)
         self.scrollPos = QPointF(0.0,0.0)
+        self.renderTick = time.time()
         self.lastImage = None
         self.setImgSize( QtCore.QSize(1024,768) )
         self.webview.setWindowFlag(QtCore.Qt.FramelessWindowHint)
@@ -51,9 +55,9 @@ class PanningWebView(QWidget):
         self.webview.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.webview.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        #self.webview.setStyleSheet("background:transparent");
         self.webview.page().setBackgroundColor(QtCore.Qt.transparent)
-
+        self.webview.loadStarted.connect(self.renderToImageStart)
+        self.webview.loadFinished.connect(self.renderToImageDelayed)
         self.webview.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
         self.webview.show()
         self.destroyed.connect(self.destroyView)
@@ -65,22 +69,22 @@ class PanningWebView(QWidget):
 
     def setContent(self, cnt, type):
         if self.DUMP_CURRENT_VIEW:
-            path = os.path.join(os.path.expanduser("~"),"projects","spyglass","src","vi","ui","res","mapdata","curr_map_1.svg")
+            path = os.path.join(os.path.expanduser("~"),"projects","spyglass","src","vi","ui","res","mapdata","curr_map.svg")
             with open(path,"wb") as file:
                 file.write(cnt)
                 file.close()
-        self.webview.stop()
+        #self.webview.stop()
         self.webview.setContent(cnt, type)
         #self.webview.resize(self.imgSize * 2)
-        self.webview.setZoomFactor(self.zoom)
+        #self.webview.setZoomFactor(self.zoom)
         #todo:usig signal loadFinished leads to fragmented svgs needs a propper way to start rendering
-        QtCore.QTimer(self).singleShot(1000, self.renderToImage)
+        #QtCore.QTimer(self).singleShot(1000, self.renderToImage)
 
     def setImgSize(self, newsize:QtCore.QSize):
         self.imgSize = newsize
         rcNew=self.imgSize*self.zoom
-        rcNew.setWidth(self.imgSize.width() * self.zoom+64)
-        rcNew.setHeight(self.imgSize.height() * self.zoom + 64)
+        rcNew.setWidth(self.imgSize.width() * self.zoom)
+        rcNew.setHeight(self.imgSize.height() * self.zoom)
         self.webview.resize(rcNew)
 
     def setUrl(self, url):
@@ -99,14 +103,26 @@ class PanningWebView(QWidget):
     def paintEvent(self, event):
         if self.lastImage:
             painter = QPainter(self)
-            painter.drawImage(-self.scrollPosition(), self.lastImage)
+            painter.drawImage(-self.scrollPos, self.lastImage )
 
     def stretchToImage(self):
         newSize = self.webview.contentsRect()
-        if newSize.isValid() and self.lastImage :
-            #img = QImage(size.width(), size.height(), QImage.Format_ARGB32)
+        if newSize.isValid() and self.lastImage:
             self.lastImage = self.lastImage.scaled(newSize.size(),Qt.KeepAspectRatio,Qt.SmoothTransformation)
+            self.stretched = True
+
+    def renderToImageStart(self):
+        self.renderTick = time.time()
+
+    def renderToImageDelayed(self):
+        renderTick = time.time()
+        # todo:using signal loadFinished leads to fragmented map svg needs a proper way to start rendering
+        QtCore.QTimer(self).singleShot(200, self.renderToImage)
+        self.repainttime = int((time.time() - self.renderTick) * 1000)
+        logging.debug("loading succeded within {0} ms.".format(self.repainttime))
+
     def renderToImage(self):
+        tick = time.time()
         size = self.webview.contentsRect()
         if size.isValid():
             img = QImage(size.width(), size.height(), QImage.Format_ARGB32)
@@ -120,19 +136,22 @@ class PanningWebView(QWidget):
                 path = os.path.join(os.path.expanduser("~"),"projects","spyglass","src","vi","ui","res","mapdata","curr_map.png")
                 self.lastImage.save(path)
             self.update()
+            self.stretched = False
+            logging.debug("Render completed within {0}ms.".format((time.time()-tick)*1000))
+        else:
+            logging.warning("Render without valid size of view.")
 
     def setZoomFactor(self, zoom):
-        if zoom > 3:
-            zoom = 3;
+        if zoom > 4:
+            zoom = 4
         if zoom < 0.5:
-            zoom = 0.5;
+            zoom = 0.5
         if self.zoom != zoom:
             self.zoom = zoom
             self.webview.setZoomFactor(zoom)
-            if ( self.imgSize.isValid()):
+            if self.imgSize.isValid():
                 self.setImgSize(self.imgSize)
                 self.stretchToImage()
-                #self.renderToImage()
                 self.update()
             self.webViewResized.emit()
 
@@ -160,19 +179,19 @@ class PanningWebView(QWidget):
 
     def zoomIn(self,pos=None):
         if pos==None:
-            self.setZoomFactor(self.zoomFactor() * 1.2)
+            self.setZoomFactor(self.zoomFactor() * 1.1)
         else:
             elemOri=self.mapPosFromPos(pos)
-            self.setZoomFactor(self.zoom * 1.2)
+            self.setZoomFactor(self.zoom * 1.1)
             elemDelta =elemOri-self.mapPosFromPos(pos)
             self.scrollPos=self.scrollPos+elemDelta*self.zoom
 
     def zoomOut(self,pos=None):
         if pos==None:
-            self.setZoomFactor(self.zoom*0.8)
+            self.setZoomFactor(self.zoom*0.9)
         else:
             elemOri=self.mapPosFromPos(pos)
-            self.setZoomFactor(self.zoom*0.8)
+            self.setZoomFactor(self.zoom*0.9)
             elemDelta=elemOri-self.mapPosFromPos(pos)
             self.scrollPos=self.scrollPos+elemDelta*self.zoom
 
@@ -220,6 +239,9 @@ class PanningWebView(QWidget):
 
     def mapPosFromPos(self,pos:QPointF)->QPointF:
         return (pos + self.scrollPos) / self.zoom
+
+    def mapPosFromPoint(self,mouseEvent:QPoint)->QPoint:
+        return (mouseEvent + self.scrollPos) / self.zoom
 
     def mapPosFromEvent(self,mouseEvent:QMouseEvent)->QPointF:
         return (mouseEvent.pos() + self.scrollPos) / self.zoom

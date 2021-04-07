@@ -86,8 +86,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.scanIntelForKosRequestsEnabled = False
         self.initialMapPosition = None
         self.mapPositionsDict = {}
-        self.ignoreCount = 1
-
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
@@ -216,6 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
         self.mapView.webViewResized.connect(self.fixupScrollBars)
         self.mapView.customContextMenuRequested.connect(self.showContextMenu)
+        self.connectToEveOnline.clicked.connect( lambda:evegate.openWithEveonline())
         def updateX(x):
             pos = self.mapView.scrollPosition()
             pos.setX(x)
@@ -228,6 +227,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapVertScrollBar.valueChanged.connect(updateY)
 
         def hoveCheck( pos:QPoint) -> bool:
+            """returns true if the mouse is above a system, else false
+            """
             for system in self.dotlan.systems.items():
                 val = system[1].mapCoordinates
                 rc = QtCore.QRectF(val["x"],val["y"],val["width"],val["height"])
@@ -298,6 +299,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Add a contextual menu to the mapView
         def mapContextMenuEvent(event):
             # if QApplication.activeWindow() or QApplication.focusWidget():
+            self.trayIcon.contextMenu().updateMenu(None)
             self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
 
         self.mapView.contextMenuEvent = mapContextMenuEvent
@@ -317,8 +319,27 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.chooseRegionAction.setChecked(True)
 
+        def setDets(checked):
+            sys = self.trayIcon.contextMenu().currentSystem
+            evegate.setDestination( "nele McCool", self.trayIcon.contextMenu().currentSystem[1].systemId)
+        self.trayIcon.contextMenu().setDestination.triggered.connect(setDets)
+
+        def addWaypoint(checked):
+            sys = self.trayIcon.contextMenu().currentSystem
+            evegate.setDestination( "nele McCool", sys[1].systemId, False, False)
+        self.trayIcon.contextMenu().addWaypoint.triggered.connect(addWaypoint)
+
+        def avoidSystem(checked):
+            return
+        self.trayIcon.contextMenu().avoidSystem.triggered.connect( avoidSystem)
+
+        def clearAll(checked):
+            self.dotlan
+            return
+        self.trayIcon.contextMenu().clearAll.triggered.connect(clearAll)
+
+
     def setupMap(self, initialize=False):
-        self.mapTimer.stop()
         self.filewatcherThread.paused = True
 
         logging.info("Finding map file")
@@ -375,7 +396,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for file in os.listdir(self.pathToLogs):
             if file.endswith(".txt"):
                 filePath = self.pathToLogs + str(os.sep) + file
-                roomname = file[:-20]
+                roomname = file[:-31]
 
                 mtime = datetime.datetime.fromtimestamp(os.path.getmtime(filePath))
                 delta = (now - mtime)
@@ -624,12 +645,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.systems[systemname].addLocatedCharacter(char)
             self.updateMapView()
 
-    def setMapContent(self):
-        if self.currContent != self.dotlan.svg:
-            self.ignoreCount = 1
-            self.mapView.setImgSize( QtCore.QSize(self.dotlan.width,self.dotlan.height) )
-            self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-16')), "text/html")
+    def updateMapView(self):
+        if self.mapView.stretched or (self.currContent != self.dotlan.svg):
+            self.mapTimer.stop()
+            self.mapView.setImgSize(QtCore.QSize(self.dotlan.width, self.dotlan.height))
+            self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html")
             self.currContent = self.dotlan.svg
+            self.mapTimer.start(self.mapView.repainttime*2)
 
     def loadInitialMapPositions(self, newDictionary):
         self.mapPositionsDict = newDictionary
@@ -638,7 +660,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if not regionName:
                 regionName = self.cache.getFromCache("region_name")
-            if regionName :
+            if regionName:
                 xy = self.mapPositionsDict[regionName]
                 self.initialMapPosition = QPointF(xy[0], xy[1])
         except Exception:
@@ -848,10 +870,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.trayIcon.showMessage("Loading statstics failed", text, 3)
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
-    def updateMapView(self):
-        #self.mapTimer.stop()
-        self.setMapContent()
-        #self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
 
     def zoomMapIn(self):
         self.mapView.zoomIn()
@@ -894,7 +912,23 @@ class MainWindow(QtWidgets.QMainWindow):
                                 if len(chars) > 0 and message.user not in chars:
                                     self.trayIcon.showNotification(message, system.name, ", ".join(chars), distance)
         self.updateMapView()
+
+    def systemUnderMouse(self,pos: QPoint) -> str:
+        """returns the name of the system under the mouse pointer
+        """
+        for system in self.dotlan.systems.items():
+            val = system[1].mapCoordinates
+            rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
+            if rc.contains(pos):
+                return system
+        return None
     def showContextMenu(self,event):
+        #todo:get systemname from pos and post to function
+        sys=self.systemUnderMouse(self.mapView.mapPosFromPoint(event))
+        if sys:
+            self.trayIcon.contextMenu().updateMenu(sys)
+        else:
+            self.trayIcon.contextMenu().updateMenu("")
         self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
 
 class ChatroomsChooser(QtWidgets.QDialog):
@@ -1046,6 +1080,7 @@ class SystemChat(QtWidgets.QDialog):
 
 class ChatEntryWidget(QtWidgets.QWidget):
     TEXT_SIZE = 11
+    DIM_IMG = 64
     SHOW_AVATAR = True
     questionMarkPixmap = None
 
@@ -1054,7 +1089,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
     def __init__(self, message):
         QtWidgets.QWidget.__init__(self)
         if not self.questionMarkPixmap:
-            self.questionMarkPixmap = QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "qmark.png"))).scaledToHeight(32)
+            self.questionMarkPixmap = QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "qmark.png"))).scaledToHeight(self.DIM_IMG)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatEntry.ui")), self)
         self.avatarLabel.setPixmap(self.questionMarkPixmap)
         self.message = message
@@ -1089,14 +1124,15 @@ class ChatEntryWidget(QtWidgets.QWidget):
         pixmap = QPixmap.fromImage(image)
         if pixmap.isNull():
             return False
-        scaledAvatar = pixmap.scaled(32, 32)
+        scaledAvatar = pixmap.scaled(self.DIM_IMG, self.DIM_IMG)
         try:
-            self.avatarLabel.setPixmap(scaledAvatar)
-            return True
+            if self.avatarLabel:
+                self.avatarLabel.setPixmap(scaledAvatar)
         except Exception as ex:
-            # logging.warn("Updating a deleted chat item")
+            logging.warning("Updating a deleted chat item")
             self.avatarLabel = None
             self = None
+        return True
 
     def changeFontSize(self, newSize):
         font = self.textLabel.font()

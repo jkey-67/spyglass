@@ -22,9 +22,22 @@ import json
 import time
 import requests
 import logging
+import urllib
+import aiohttp
+import asyncio
+import http.server
+import webbrowser
+from aiohttp import web
+import base64
+import hashlib
+import secrets
 
 from bs4 import BeautifulSoup
 from vi.cache.cache import Cache
+
+from sso.shared_flow import print_auth_url
+from sso.shared_flow import send_token_request
+from sso.shared_flow import handle_sso_token_response
 
 ERROR = -1
 NOT_EXISTS = 0
@@ -35,8 +48,8 @@ def charnameToId(name):
     """ Uses the EVE API to convert a charname to his ID
     """
     try:
-        url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search={}&strict=true"
-        content = requests.get(url.format(name)).json()
+        url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search={iname}&strict=true"
+        content = requests.get(url.format(iname=name)).json()
         if "character" in content.keys():
             for idFound in content["character"]:
                 url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=idFound)
@@ -150,7 +163,7 @@ def getAvatarForPlayer(charname):
         charId = charnameToId(charname)
         if charId:
             imageUrl = "https://images.evetech.net/characters/{id}/portrait?tenant=tranquility&size={size}"
-            avatar = requests.get(imageUrl.format(id=charId, size=32)).content
+            avatar = requests.get(imageUrl.format(id=charId, size=64)).content
     except Exception as e:
         logging.error("Exception during getAvatarForPlayer: %s", e)
         avatar = None
@@ -228,7 +241,6 @@ def getCurrentCorpForCharId(charId):
     soup = getCharinfoForCharId(charId)
     return soup.corporation.string
 
-
 def getSystemStatistics():
     """ Reads the informations for all solarsystems from the EVE API
         Reads a dict like:
@@ -287,7 +299,6 @@ def getSystemStatistics():
         data[i]["podkills"] = v["pod"] if "pod" in v else 0
     return data
 
-
 def secondsTillDowntime():
     """ Return the seconds till the next downtime"""
     now = currentEveTime()
@@ -298,6 +309,189 @@ def secondsTillDowntime():
     delta = target - now
     return delta.seconds
 
+class MyApiServer(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write("<html><head><title>Spyglass API Registration</title></head>".encode("utf-8"))
+        self.wfile.write("<body onload=\"closePage()\"><p>This is a test.</p>".encode("utf-8"))
+        self.wfile.write("<script>function closePage(){self.close();}</script>".encode("utf-8"))
+        self.wfile.write("</body></html>".encode("utf-8"))
+        self.wfile.close()
+        try:
+            code = self.requestline.split(" ")[1]
+            pos_code = code.find("code=")
+            pos_state = code.find("&state=")
+            self.server.api_code=code[pos_code + 5:pos_state]
+            self.server.api_state=code[pos_state+6:]
+            self.server.server_close()
+        except Exception as e:
+            logging.error("Exception during MyApiServer: %s", e)
+            self.server.api_code = None
+
+def getApiKey(client_param)->str:
+    """ Queries the eve-online api key valid for one eve online account,
+        using http://localhost:8080/oauth-callback as application defined
+        callback from inside the webb browser
+        params client_id, scope and state see esi-docs
+    """
+    hash=hashlib.sha256()
+    hash.update(client_param["random"])
+    digs=hash.digest()
+    code_challenge = base64.urlsafe_b64encode(digs).decode().replace("=", "")
+    params={
+        "response_type":"code",
+        "redirect_uri":"http://localhost:8080/oauth-callback",
+        "client_id":client_param["client_id"],
+        "scope":client_param["scope"],
+        "state":client_param["state"],
+        "code_challenge":code_challenge,
+        "code_challenge_method": "S256"
+    }
+    string_params = urllib.parse.urlencode(params)
+    webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
+    webwerver = http.server.HTTPServer(("localhost", 8080), MyApiServer)
+    webwerver.handle_request()
+    api = webwerver.api_code
+    del webwerver
+    return api
+
+def getAccessToken(client_param,auth_code:str,add_headers={})->str:
+    """ gets the access token from the application logging
+        fills the cache wit valid login data
+    """
+    form_values={
+        "grant_type": "authorization_code",
+        "client_id": client_param["client_id"],
+        "code": auth_code,
+        "code_verifier":  client_param["random"]
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Host": "login.eveonline.com",
+    }
+    if add_headers:
+        headers.update(add_headers)
+    res = requests.post(
+        "https://login.eveonline.com/v2/oauth/token",
+        data=form_values,
+        headers=headers,
+    )
+    if res.status_code == 200:
+        aut_call = res.json()
+        header={
+            "Authorization": "{} {}".format(aut_call["token_type"],aut_call["access_token"]),
+        }
+        res = requests.get( "https://login.eveonline.com/oauth/verify",headers=header)
+        res.raise_for_status()
+        char_id = res.json()
+        cache = Cache()
+        char_id.update(aut_call)
+        cacheKey = "_".join(("api_key", "character_name", char_id["CharacterName"]))
+        cache.putIntoCache(cacheKey, str(char_id))
+        valres=cache.getFromCache(cacheKey)
+        return char_id["CharacterName"];
+    else:
+        res.raise_for_status()
+    return None
+
+def openWithEveonline()->str:
+    """perform a api key request and updates the cache on case of an positive response
+        returns the selected user name from the login
+    """
+    client_param = {
+        "client_id": "9eaf6cb03a9649998b2bad63b9e9fa8e",
+        "scope": "esi-ui.write_waypoint.v1",
+        "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
+        "state": base64.urlsafe_b64encode(secrets.token_bytes(8))
+    }
+    auth_code = getApiKey(client_param)
+    res = getAccessToken(client_param, auth_code)
+
+
+def getTokenOfChar(charName:str):
+    cache = Cache()
+    cacheKey = "_".join(("api_key", "character_name", charName))
+    char_data = cache.getFromCache(cacheKey)
+    if char_data:
+        return eval(char_data)
+    else:
+        return None
+
+def refreshToken(params):
+    """ refreshes the token using the previously acquired data structure from the cache
+        if succeeded with result 200 the cache will be updated too
+    """
+    data = {
+        "grant_type":"refresh_token",
+        "refresh_token": params["refresh_token"],
+        "client_id": "9eaf6cb03a9649998b2bad63b9e9fa8e",
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Host": "login.eveonline.com",
+    }
+    req_post = requests.post("https://login.eveonline.com/v2/oauth/token", data=data, headers=headers)
+    req_post.raise_for_status()
+    ref_token = req_post.json()
+    params.update(ref_token)
+    params.update({"valid_until": time.time()+params["expires_in"]})
+    cache = Cache()
+    cache_key = "_".join(("api_key", "character_name", params["CharacterName"]))
+    cache.putIntoCache(cache_key, str(params))
+    return params
+
+def checkTokenTimeLine(param):
+    """ double check the api timestamp, if expired the parm set will be updated
+    """
+    if "valid_until" in param.keys() and param["valid_until"] > time.time():
+        return param
+    else:
+        return refreshToken(param)
+
+def sendTokenRequest(form_values, add_headers={}):
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Host": "login.eveonline.com",
+    }
+
+    if add_headers:
+        headers.update(add_headers)
+
+    res = requests.post(
+        "https://login.eveonline.com/v2/oauth/token",
+        data=form_values,
+        headers=headers,
+    )
+
+    print("Request sent to URL {} with headers {} and form values: "
+          "{}\n".format(res.url, headers, form_values))
+    res.raise_for_status()
+    return res
+
+
+def setDestination(nameChar:str,idSystem:int,beginning=True,clear_all=True):
+    token = checkTokenTimeLine(getTokenOfChar(nameChar))
+    if token:
+        route = {
+            "add_to_beginning":beginning,
+            "clear_other_waypoints":clear_all,
+            "datasource":"tranquility",
+            "destination_id":idSystem,
+            "token":token["access_token"],
+        }
+        req="https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
+        res = requests.post(req)
+        res.raise_for_status()
+        return
+
+def addWaypoint(idChar:int,idSystem:int):
+    return
+
+def avoidSystem(idChar:int,idSystem:int):
+    return
 
 SHIPNAMES = (u'ABADDON', u'ABSOLUTION', u'AEON', u'AMARR SHUTTLE', u'ANATHEMA', u'ANSHAR', u'APOCALYPSE',
              u'APOCALYPSE IMPERIAL ISSUE', u'APOCALYPSE NAVY ISSUE', u'APOTHEOSIS', u'ARAZU', u'ARBITRATOR', u'ARCHON',
@@ -383,6 +577,30 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
 
 # The main application for testing
 if __name__ == "__main__":
+    #see https://developers.eveonline.com/applications/details/69202
+    #see https://github.com/esi/esi-docs/blob/master/examples/python/sso/esi_oauth_native.py
+    #see https://docs.esi.evetech.net/docs/sso/native_sso_flow.html
+    #auth = esipysi.EsiAuth(client_id="9eaf6cb03a9649998b2bad63b9e9fa8e")
+    #key_secret = '{}:{}'.format("9eaf6cb03a9649998b2bad63b9e9fa8e", "QrTL5CyPcXKpKMTtL65iR1dLX5nFPtz75lChjSpl").encode('ascii')
+    #b64_encoded_key = base64.b64encode(key_secret)
+    #openWithEveonline()
+    setDestination("nele McCool", 0, True, True)
+
+    setDestination("nele McCool",30003770)
+
+    res = getTokenOfChar( "MrX")
+    param = apiKeyOfChar( "nele McCool")
+    refreshToken(param)
+    exit(1)
+    client_param = {
+        "client_id": "9eaf6cb03a9649998b2bad63b9e9fa8e",
+        "scope": "esi-ui.write_waypoint.v1",
+        "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
+        "state": base64.urlsafe_b64encode(secrets.token_bytes(8))
+    }
+    auth_code = getApiKey(client_param)
+    res = getAccessToken(client_param, auth_code)
+    exit(1)
     res = getCharinfoForCharId( charnameToId( "Nele McCool" ))
     res = getAvatarForPlayer("Dae\'M");
     res = checkPlayername( "Nele McCool" )

@@ -56,7 +56,7 @@ class AvatarFindThread(QThread):
     def run(self):
         cache = Cache()
         lastCall = 0
-        wait = 300  # time between 2 requests in ms
+        wait = 500  # time between 2 requests in ms
         while True:
             try:
                 # Block waiting for addChatEntry() to enqueue something
@@ -69,21 +69,23 @@ class AvatarFindThread(QThread):
                 if charname == "SPYGLASS":
                     with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
-                if not avatar:
+                if  avatar==None:
                     avatar = cache.getAvatar(charname)
                     if avatar:
                         logging.debug("AvatarFindThread found cached avatar for %s" % charname)
-                if not avatar:
+                if avatar==None:
                     diffLastCall = time.time() - lastCall
                     if diffLastCall < wait:
                         time.sleep((wait - diffLastCall) / 1000.0)
                     avatar = evegate.getAvatarForPlayer(charname)
                     lastCall = time.time()
-                    if avatar:
+                    if avatar!=None:
                         cache.putAvatar(charname, avatar)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % charname)
                     self.avatar_update.emit(chatEntry, avatar)
+                else:
+                    logging.warning("AvatarFindThread unable to find avatar for %s" % charname)
             except Exception as e:
                 logging.error("Error in AvatarFindThread : %s", e)
 
