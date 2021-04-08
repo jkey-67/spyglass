@@ -291,6 +291,11 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.critical(ex)
             pass
 
+    def currentApiChar(self)->str:
+        """returns the current char which is assingend by api
+        """
+        return self.cache.getFromCache("api_char_name")
+
     def prepareContextMenu(self):
         # Menus - only once
         regionName = self.cache.getFromCache("region_name")
@@ -319,22 +324,27 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.chooseRegionAction.setChecked(True)
 
+
         def setDets(checked):
             sys = self.trayIcon.contextMenu().currentSystem
-            evegate.setDestination( "nele McCool", self.trayIcon.contextMenu().currentSystem[1].systemId)
+            evegate.setDestination( self.currentApiChar(), self.trayIcon.contextMenu().currentSystem[1].systemId)
         self.trayIcon.contextMenu().setDestination.triggered.connect(setDets)
 
         def addWaypoint(checked):
             sys = self.trayIcon.contextMenu().currentSystem
-            evegate.setDestination( "nele McCool", sys[1].systemId, False, False)
+            evegate.setDestination( self.currentApiChar(), sys[1].systemId, False, False)
         self.trayIcon.contextMenu().addWaypoint.triggered.connect(addWaypoint)
 
         def avoidSystem(checked):
             return
-        self.trayIcon.contextMenu().avoidSystem.triggered.connect( avoidSystem)
+        self.trayIcon.contextMenu().avoidSystem.triggered.connect(avoidSystem)
 
         def clearAll(checked):
-            self.dotlan
+            charName = self.currentApiChar()
+            for system in self.systems.values():
+                if charName in system.getLocatedCharacters():
+                    evegate.setDestination(charName, system.systemId)
+                    return
             return
         self.trayIcon.contextMenu().clearAll.triggered.connect(clearAll)
 

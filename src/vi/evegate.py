@@ -390,7 +390,7 @@ def getAccessToken(client_param,auth_code:str,add_headers={})->str:
         char_id.update(aut_call)
         cacheKey = "_".join(("api_key", "character_name", char_id["CharacterName"]))
         cache.putIntoCache(cacheKey, str(char_id))
-        valres=cache.getFromCache(cacheKey)
+        cache.putIntoCache("api_char_name", char_id["CharacterName"])
         return char_id["CharacterName"];
     else:
         res.raise_for_status()
