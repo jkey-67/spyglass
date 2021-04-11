@@ -48,11 +48,17 @@ class TrayContextMenu(QtWidgets.QMenu):
             self.ingameMenu.setTitle("EVE-Online {}".format(sysName[0]))
             self.setDestination.setEnabled(True)
             self.addWaypoint.setEnabled(True)
+            self.openDotlan.setEnabled(True)
+            self.openZKillboard.setEnabled(True)
+            self.avoidSystem.setEnabled(True)
             self.currentSystem = sysName
         else:
             self.ingameMenu.setTitle("EVE-Online")
             self.setDestination.setEnabled(False)
             self.addWaypoint.setEnabled(False)
+            self.openDotlan.setEnabled(False)
+            self.openZKillboard.setEnabled(False)
+            self.avoidSystem.setEnabled(False)
             self.currentSystem = None
 
     def _buildMenu(self):
@@ -64,10 +70,12 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.setDestination = QAction("Set Destination", None, checkable=False)
         self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
         self.avoidSystem = QAction("Avoid System", None, checkable=False)
+        self.clearAvoidList = QAction("Clear Avoid Systems", None, checkable=False)
         self.clearAll = QAction("Clear all Waypoints", None, checkable=False)
         self.ingameMenu.addAction(self.setDestination)
         self.ingameMenu.addAction(self.addWaypoint)
         self.ingameMenu.addAction(self.avoidSystem)
+        self.ingameMenu.addAction(self.clearAvoidList)
         self.ingameMenu.addSeparator()
         self.ingameMenu.addAction(self.clearAll)
         self.addMenu(self.ingameMenu)
