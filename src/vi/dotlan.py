@@ -33,10 +33,8 @@ from vi.ui.styles import Styles, TextInverter
 
 from . import evegate
 
-JB_COLORS = ("800000", "808000", "BC8F8F", "ff00ff", "c83737", "FF6347", "917c6f", "ffcc00",
-             "88aa00" "FFE4E1", "008080", "00BFFF", "4682B4", "00FF7F", "7FFF00", "ff6600",
-             "CD5C5C", "FFD700", "66CDAA", "AFEEEE", "5F9EA0", "FFDEAD", "696969", "2F4F4F")
-
+JB_COLORS =("66CD00", "7CFC00", "32CD32", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
+            "90EE90", "8FBC8F", "20B2AA", "2E8B57", "808000", "6B8E23")
 
 class DotlanException(Exception):
     def __init__(self, *args, **kwargs):
@@ -120,6 +118,7 @@ class Map(object):
         self._extractSizeFromSoup( self.soup )
         self._prepareSvg(self.soup, self.systems, scale)
         self._connectNeighbours()
+        self.jumpBridges = []
         self._jumpMapsVisible = False
         self._statisticsVisible = False
         self.marker = self.soup.select("#select_marker")[0]
@@ -184,20 +183,6 @@ class Map(object):
             group.append(line)
         svg.insert(0, group)
 
-        # Create jumpbridge markers in a variety of colors
-        for jbColor in JB_COLORS:
-            startPath = soup.new_tag("path", d="M 10 0 L 10 10 L 0 5 z")
-            startMarker = soup.new_tag("marker", viewBox="0 0 20 20", id="arrowstart_{0}".format(jbColor),
-                                       markerUnits="strokeWidth", markerWidth="20", markerHeight="15", refx="-15",
-                                       refy="5", orient="auto", style="stroke:#{0};fill:#{0}".format(jbColor))
-            startMarker.append(startPath)
-            svg.insert(0, startMarker)
-            endpath = soup.new_tag("path", d="M 0 0 L 10 5 L 0 10 z")
-            endmarker = soup.new_tag("marker", viewBox="0 0 20 20", id="arrowend_{0}".format(jbColor),
-                                     markerUnits="strokeWidth", markerWidth="20", markerHeight="15", refx="25",
-                                     refy="5", orient="auto", style="stroke:#{0};fill:#{0}".format(jbColor))
-            endmarker.append(endpath)
-            svg.insert(0, endmarker)
         jumps = soup.find("#jumps")
         if jumps == None:
             jumps = soup.new_tag("g", id="jumps")
@@ -252,6 +237,7 @@ class Map(object):
             tuples with 3 values (sys1, connection, sys2)
         """
         if jumpbridgesData== None:
+            self.jumpBridges = []
             return
         soup = self.soup
         for bridge in soup.select("#jumpbridge"):
@@ -275,6 +261,7 @@ class Map(object):
             colorCount += 1
             systemOne = self.systems[sys1]
             systemTwo = self.systems[sys2]
+            self.jumpBridges.append([systemOne.systemId,systemTwo.systemId])
             systemOneCoords = systemOne.mapCoordinates
             systemTwoCoords = systemTwo.mapCoordinates
             systemOneOffsetPoint = systemOne.getTransformOffsetPoint()
@@ -283,11 +270,30 @@ class Map(object):
             # systemOne.setJumpbridgeColor(jbColor)
             # systemTwo.setJumpbridgeColor(jbColor)
             # Construct the line, color it and add it to the jumps
-            line = soup.new_tag("line", x1=systemOneCoords["center_x"] + systemOneOffsetPoint[0],
-                                y1=systemOneCoords["center_y"] + systemOneOffsetPoint[1],
-                                x2=systemTwoCoords["center_x"] + systemTwoOffsetPoint[0],
-                                y2=systemTwoCoords["center_y"] + systemTwoOffsetPoint[1], visibility="hidden",
-                                style="stroke:#{0}".format(jbColor))
+            if True:
+                x1 = systemOneCoords["center_x"] + systemOneOffsetPoint[0]
+                y1 = systemOneCoords["center_y"] + systemOneOffsetPoint[1]
+                x2 = systemTwoCoords["center_x"] + systemTwoOffsetPoint[0]
+                y2 = systemTwoCoords["center_y"] + systemTwoOffsetPoint[1]
+                dx = (x2 - x1) / 2.0
+                dy = (y2 - y1) / 2.0
+                offset = 0.4 * math.sqrt( dx*dx+dy*dy)
+                angle = math.atan2(dy, dx) - math.pi / 2.0
+                mx = x1 + dx + offset * math.cos(angle)
+                my = y1 + dy + offset * math.sin(angle)
+
+                line = soup.new_tag( "path",d="M{} {} Q {} {} {} {}".format(x1,y1,mx,my,x2,y2),
+                                        visibility = "hidden",
+                                        fill="transparent",
+                                        style="stroke:#{0}".format(jbColor))
+
+            else:
+                line = soup.new_tag("line", x1=systemOneCoords["center_x"] + systemOneOffsetPoint[0],
+                                        y1=systemOneCoords["center_y"] + systemOneOffsetPoint[1],
+                                        x2=systemTwoCoords["center_x"] + systemTwoOffsetPoint[0],
+                                        y2=systemTwoCoords["center_y"] + systemTwoOffsetPoint[1],
+                                        visibility="hidden",
+                                        style="stroke:#{0}".format(jbColor))
             line["stroke-width"] = 2
             line["class"] = ["jumpbridge", ]
             if "<" in connection:
