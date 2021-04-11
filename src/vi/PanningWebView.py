@@ -68,6 +68,9 @@ class PanningWebView(QWidget):
         del self.webview
 
     def setContent(self, cnt, type):
+        if self.scrolling:
+            logging.debug("setContent canceled during mouse scroll.")
+            return
         if self.DUMP_CURRENT_VIEW:
             path = os.path.join(os.path.expanduser("~"),"projects","spyglass","src","vi","ui","res","mapdata","curr_map.svg")
             with open(path,"wb") as file:
@@ -75,8 +78,7 @@ class PanningWebView(QWidget):
                 file.close()
         #self.webview.stop()
         self.webview.setContent(cnt, type)
-        #self.webview.resize(self.imgSize * 2)
-        #self.webview.setZoomFactor(self.zoom)
+        self.webview.setContent(cnt, type)
         #todo:usig signal loadFinished leads to fragmented svgs needs a propper way to start rendering
         #QtCore.QTimer(self).singleShot(1000, self.renderToImage)
 
@@ -122,6 +124,9 @@ class PanningWebView(QWidget):
         logging.debug("loading succeded within {0} ms.".format(self.repainttime))
 
     def renderToImage(self):
+        if self.scrolling:
+            logging.debug("Render canceled during scroll.")
+            return
         tick = time.time()
         size = self.webview.contentsRect()
         if size.isValid():
