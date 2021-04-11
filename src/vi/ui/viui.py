@@ -324,6 +324,15 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.chooseRegionAction.setChecked(True)
 
+        def openDotlan(checked):
+            sys = self.trayIcon.contextMenu().currentSystem
+            webbrowser.open("https://evemaps.dotlan.net/system/{}".format(self.trayIcon.contextMenu().currentSystem[0]))
+        self.trayIcon.contextMenu().openDotlan.triggered.connect(openDotlan)
+
+        def openZKillboard(checked):
+            sys = self.trayIcon.contextMenu().currentSystem
+            webbrowser.open("https://zkillboard.com/system/{}".format(self.trayIcon.contextMenu().currentSystem[1].systemId))
+        self.trayIcon.contextMenu().openZKillboard.triggered.connect(openZKillboard)
 
         def setDets(checked):
             sys = self.trayIcon.contextMenu().currentSystem
@@ -521,6 +530,7 @@ class MainWindow(QtWidgets.QMainWindow):
         styles.setStyle(action.theme)
         theme = styles.getStyle()
         self.setStyleSheet(theme)
+        self.trayIcon.contextMenu().setStyleSheet(theme)
         logging.critical("Setting new theme: {}".format(action.theme))
         self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
         self.prepareContextMenu()

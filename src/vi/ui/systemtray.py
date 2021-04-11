@@ -46,11 +46,13 @@ class TrayContextMenu(QtWidgets.QMenu):
     def updateMenu(self, sysName:str):
         if sysName:
             self.ingameMenu.setTitle("EVE-Online {}".format(sysName[0]))
-            self.ingameMenu.setEnabled(True)
+            self.setDestination.setEnabled(True)
+            self.addWaypoint.setEnabled(True)
             self.currentSystem = sysName
         else:
             self.ingameMenu.setTitle("EVE-Online")
-            self.ingameMenu.setEnabled(False)
+            self.setDestination.setEnabled(False)
+            self.addWaypoint.setEnabled(False)
             self.currentSystem = None
 
     def _buildMenu(self):
@@ -69,6 +71,11 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.ingameMenu.addSeparator()
         self.ingameMenu.addAction(self.clearAll)
         self.addMenu(self.ingameMenu)
+        self.addSeparator()
+        self.openDotlan = QAction("Dotlan", None, checkable=False)
+        self.addAction(self.openDotlan)
+        self.openZKillboard  = QAction("zKillbard", None, checkable=False)
+        self.addAction(self.openZKillboard)
         self.addSeparator()
         self.requestCheck = QtWidgets.QAction("Show status request notifications", self, checkable=True)
         self.requestCheck.setChecked(True)
