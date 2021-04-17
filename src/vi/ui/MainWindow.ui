@@ -244,7 +244,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>161</width>
+                 <width>166</width>
                  <height>22</height>
                 </size>
                </property>
@@ -452,8 +452,8 @@
      <string>Chat</string>
     </property>
     <addaction name="showChatAction"/>
-    <addaction name="chooseChatRoomsAction"/>
     <addaction name="showChatAvatarsAction"/>
+    <addaction name="chooseChatRoomsAction"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuSound">

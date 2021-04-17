@@ -982,18 +982,21 @@ class RegionChooser(QtWidgets.QDialog):
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "RegionChooser.ui")), self)
+        self.strList = QtWidgets.QCompleter(["{}".format(name) for key,name in evegate.idsToNames(evegate.getAllRegions()).items()])
+        self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.regionNameField.setCompleter(self.strList)
         self.cancelButton.clicked.connect(self.accept)
         self.saveButton.clicked.connect(self.saveClicked)
         cache = Cache()
         regionName = cache.getFromCache("region_name")
         if not regionName:
             regionName = u"Providence"
-        self.regionNameField.setPlainText(regionName)
+        self.regionNameField.setText(regionName)
 
     def saveClicked(self):
-        text = str(self.regionNameField.toPlainText())
+        text = str(self.regionNameField.text())
         text = dotlan.convertRegionName(text)
-        self.regionNameField.setPlainText(text)
+        self.regionNameField.setText(text)
         correct = False
         try:
             url = dotlan.Map.DOTLAN_BASIC_URL.format(text)

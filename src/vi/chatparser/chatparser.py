@@ -125,7 +125,7 @@ class ChatParser(object):
 
         # KOS request
         if upperText.startswith("XXX "):
-            return Message(roomname, text, timestamp, username, systems, upperText, status=states.KOS_STATUS_REQUEST)
+            return Message("roomname", text, timestamp, username, systems, upperText, status=states.KOS_STATUS_REQUEST)
         elif roomname.startswith("="):
             return Message(roomname, "xxx " + text, timestamp, username, systems, "XXX " + upperText,
                            status=states.KOS_STATUS_REQUEST)
