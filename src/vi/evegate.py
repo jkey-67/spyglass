@@ -535,22 +535,30 @@ def getAllStructures():
     res.raise_for_status()
     return eval(res.text)
 
-def getStructures(nameChar:str,id_structure:int):
-    token = checkTokenTimeLine(getTokenOfChar(nameChar))
-    req = "https://esi.evetech.net/v1/universe/structures/{}/?datasource=tranquility&token={}".format(id_structure,token.access_token)
-    res = requests.get(req)
-    # res.raise_for_status()
-    print(res.text)
-    return eval(res.text)
+def getStructures(nameChar:str,id_structure:int,use_cache=True):
+    cacheKey = "_".join(("structure", "id", str(id_structure)))
+    cache = Cache()
+    cached_id = cache.getFromCache(cacheKey)
+    if use_cache and cached_id:
+        return eval(cached_id)
+    else:
+        token = checkTokenTimeLine(getTokenOfChar(nameChar))
+        req = "https://esi.evetech.net/latest/universe/structures/{}/?datasource=tranquility&token={}".format(id_structure,token.access_token)
+        res = requests.get(req)
+        # res.raise_for_status()
+        print(res.text)
+        cache.putIntoCache(cacheKey, res.text, 3600)
+        return eval(res.text)
 
 class JumpBridge(object):
-    def __init__(self, name:str, structureId:int, systemId:int):
+    def __init__(self, name:str, structureId:int, systemId:int, ownerId:int):
         tok = name.split(" ")
         self.src_system_name = tok[0]
         self.dst_system_name = tok[2]
         self.name = name
         self.structureId = structureId
         self.systemId = systemId
+        self.ownerId = ownerId
         self.paired=False
         self.links = 0
 
@@ -575,7 +583,7 @@ def countCheckGates( gates ):
             if (gate.src_system_name == elem.src_system_name) or (gate.src_system_name == elem.dst_system_name):
                 gate.links = gate.links+1
 
-def getAllJumpGates(nameChar:str,systemName=""):
+def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
     token = checkTokenTimeLine(getTokenOfChar(nameChar))
@@ -585,18 +593,18 @@ def getAllJumpGates(nameChar:str,systemName=""):
     structs = eval(res.text)
     gates = list()
     if token:
+        process = 0
+        if callback and not callback(len(structs["structure"]), process):
+            return gates
         for id_structure in structs["structure"]:
-            req = "https://esi.evetech.net/v1/universe/structures/{}/?datasource=tranquility&token={}".format(id_structure, token.access_token)
-            res = requests.get(req)
-            #res.raise_for_status()
-            if res.text.find("35841") != -1:
-                item = eval(res.text)
-                if item["type_id"] == 35841:
-                    gates.append(JumpBridge(name=item["name"], systemId=item["solar_system_id"], structureId=id_structure))
-            else:
-                print(" not valid")
+            item = getStructures(nameChar=nameChar, id_structure=id_structure,use_cache=use_cache)
+            process = process + 1
+            if callback and not callback(len(structs["structure"]), process):
+                break
+            if item["type_id"] == 35841 or item["type_id"] == 35837:
+                gates.append(JumpBridge(name=item["name"], systemId=item["solar_system_id"], structureId=id_structure,ownerId=item["owner_id"]))
     #gates=sanityCheckGates(gates)
-    #countCheckGates(gates)
+    countCheckGates(gates)
     return gates
 
 def writeGatestToFile(gates, filename="jb.txt"):
@@ -605,8 +613,8 @@ def writeGatestToFile(gates, filename="jb.txt"):
         for gate in gates:
             s_t_d = "{} <-> {}".format(gate.src_system_name, gate.dst_system_name)
             d_t_s = "{} <-> {}".format(gate.dst_system_name, gate.src_system_name)
-            if (  not s_t_d in gates_list) and (not d_t_s in gates_list):
-                gf.write(s_t_d + "\n")
+            if (not s_t_d in gates_list) and (not d_t_s in gates_list):
+                gf.write("{} {} {} {} ({} {})\n".format(s_t_d, gate.systemId, gate.structureId, gate.ownerId, gate.links,gate.paired))
                 gates_list.append(s_t_d)
         gf.close()
 

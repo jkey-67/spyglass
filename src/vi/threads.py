@@ -197,6 +197,47 @@ class MapStatisticsThread(QThread):
         self.queue.put(None)
         QThread.quit(self)
 
+class GenerateJumpBridgesThread(QThread):
+    jump_bridge_process = pyqtSignal(int, int)
+    jump_bridge_data_update = pyqtSignal(dict)
+
+    def __init__(self):
+        QThread.__init__(self)
+        self.queue = queue.Queue(maxsize=1)
+        self.lastStatisticsUpdate = time.time()
+        self.active = True
+
+    def requestJumpBridgeUpdate(self):
+        self.queue.put(1)
+
+    def run(self):
+        self.refreshTimer = QTimer()
+        # self.connect(self.refreshTimer, SIGNAL("timeout()"), self.requestStatistics)
+        self.refreshTimer.timeout.connect(self.requestStatistics)
+        while True:
+            # Block waiting for requestStatistics() to enqueue a token
+            self.queue.get()
+            if not self.active:
+                return
+            self.refreshTimer.stop()
+            logging.debug("MapStatisticsThread requesting statistics")
+            try:
+                statistics = evegate.getSystemStatistics()
+                # time.sleep(2)  # sleeping to prevent a "need 2 arguments"-error
+                requestData = {"result": "ok", "statistics": statistics}
+            except Exception as e:
+                logging.error("Error in MapStatisticsThread: %s", e)
+                requestData = {"result": "error", "text": str(e)}
+            self.lastStatisticsUpdate = time.time()
+            self.refreshTimer.start(self.pollRate)
+            self.statistic_data_update.emit(requestData)
+            logging.debug("MapStatisticsThread emitted statistic_data_update")
+
+    def quit(self):
+        self.active = False
+        self.queue.put(None)
+        QThread.quit(self)
+
 
 class VoiceOverThread(threading.Thread):
     def __init__(self):

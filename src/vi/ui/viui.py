@@ -733,7 +733,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
                     for line in content:
                         parts = line.strip().split()
-                        if len(parts) == 3:
+                        #src <-> dst system_id jump_bridge_id
+                        if len(parts) > 2:
                             data.append(parts)
             else:
                 #data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
@@ -1169,12 +1170,35 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "JumpbridgeChooser.ui")), self)
         self.saveButton.clicked.connect(self.savePath)
-        self.cancelButton.clicked.connect(self.accept)
+        self.cancelButton.clicked.connect(self.cancle)
         self.fileChooser.clicked.connect(self.choosePath)
+        self.generateJumpBridgeButton.clicked.connect(self.generateJumpBridge)
         self.urlField.setText(url)
         # loading format explanation from textfile
         with open(resourcePath(os.path.join("docs", "jumpbridgeformat.txt"))) as f:
             self.formatInfoField.setPlainText(f.read())
+        self.generateJumpBridgeProgress.hide()
+        self.run_jb_generation = True
+
+    def processUpdate(self,total,pos)->bool:
+        self.generateJumpBridgeProgress.setMaximum(total)
+        self.generateJumpBridgeProgress.setValue(pos)
+        QtWidgets.QApplication.processEvents()
+        return self.run_jb_generation
+
+    def generateJumpBridge(self):
+        self.run_jb_generation = True
+        self.generateJumpBridgeProgress.show()
+        gates = evegate.getAllJumpGates(Cache().getFromCache("api_char_name"),callback=self.processUpdate)
+        evegate.writeGatestToFile(gates, str(self.urlField.text()))
+        self.generateJumpBridgeProgress.hide()
+        self.run_jb_generation = False
+
+    def cancle(self):
+        if self.run_jb_generation:
+            self.run_jb_generation = False
+        else:
+            self.accept()
 
     def savePath(self):
         try:
