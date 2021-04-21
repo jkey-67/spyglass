@@ -21,6 +21,7 @@ def instFiles():
         '--icon=../icon.ico',
         "--add-data=../vi/ui/*.ui:./vi/ui",
         "--add-data=../vi/ui/res/*:./vi/ui/res",
+        "--add-data=../docs/*.*;./docs/"
         "--add-data=../vi/ui/res/styles/*:./vi/ui/res/styles",
         "--add-binary=../lib/*.dll:./lib",
         '--hidden-import=pyttsx3.drivers',
