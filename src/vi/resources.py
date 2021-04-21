@@ -19,6 +19,7 @@
 
 import os
 import sys
+import logging
 
 
 def resourcePath(relativePath):
@@ -29,5 +30,7 @@ def resourcePath(relativePath):
         basePath = sys._MEIPASS
     else:
         basePath = os.path.abspath(".")
-    returnpath = os.path.join(basePath, relativePath)
-    return returnpath
+    basePath = os.path.join(basePath, relativePath)
+    if not os.path.exists( basePath ):
+        logging.error("Unable to load file {}.".format(basePath))
+    return basePath
