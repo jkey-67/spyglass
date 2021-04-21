@@ -330,18 +330,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon.contextMenu().openDotlan.triggered.connect(openDotlan)
 
         def openZKillboard(checked):
-            sys = self.trayIcon.contextMenu().currentSystem
             webbrowser.open("https://zkillboard.com/system/{}".format(self.trayIcon.contextMenu().currentSystem[1].systemId))
         self.trayIcon.contextMenu().openZKillboard.triggered.connect(openZKillboard)
 
         def setDets(checked):
-            sys = self.trayIcon.contextMenu().currentSystem
             evegate.setDestination( self.currentApiChar(), self.trayIcon.contextMenu().currentSystem[1].systemId)
         self.trayIcon.contextMenu().setDestination.triggered.connect(setDets)
 
         def addWaypoint(checked):
-            sys = self.trayIcon.contextMenu().currentSystem
-            evegate.setDestination( self.currentApiChar(), sys[1].systemId, False, False)
+            selected_system = self.trayIcon.contextMenu().currentSystem
+            evegate.setDestination(self.currentApiChar(), selected_system[1].systemId, False, False)
         self.trayIcon.contextMenu().addWaypoint.triggered.connect(addWaypoint)
 
         def avoidSystem(checked):
@@ -357,10 +355,21 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.trayIcon.contextMenu().clearAll.triggered.connect(clearAll)
 
+        def changeRegion(checked):
+            selected_system = self.trayIcon.contextMenu().currentSystem
+            if selected_system is None:
+                return
+            selected_system = evegate.getSolarSystemInformation(selected_system[1].systemId)
+            selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+            selected_region = selected_constellation["region_id"]
+            selected_region_name = evegate.idsToNames([selected_region])[selected_region]
+            selected_region_name = dotlan.convertRegionName(selected_region_name)
+            Cache().putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
+            self.setupMap()
+        self.trayIcon.contextMenu().changeRegion.triggered.connect(changeRegion)
 
     def setupMap(self, initialize=False):
         self.filewatcherThread.paused = True
-
         logging.info("Finding map file")
         regionName = self.cache.getFromCache("region_name")
         if not regionName:
@@ -373,7 +382,10 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
 
         try:
-            self.dotlan = dotlan.Map(regionName, svg)
+            self.dotlan = dotlan.Map(regionName, svg,
+                setJumpMapsVisible=self.jumpbridgesButton.isChecked())
+            #todo:fix static updates
+                #setSatisticsVisible=self.statisticsButton.isChecked()
         except dotlan.DotlanException as e:
             logging.error(e)
             QMessageBox.critical(None, "Error getting map", str(e), QMessageBox.Close)
@@ -393,9 +405,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.systems = self.dotlan.systems
         logging.critical("Creating chat parser")
         self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems)
-
-        self.jumpbridgesButton.setChecked(False)
-        self.statisticsButton.setChecked(False)
 
         # Update the new map view, then clear old statistics from the map and request new
         logging.critical("Updating the map")
@@ -943,13 +952,24 @@ class MainWindow(QtWidgets.QMainWindow):
             if rc.contains(pos):
                 return system
         return None
+    def regionNameFromSystemID(self,selected_sys):
+        selected_system = evegate.getSolarSystemInformation(selected_sys[1].systemId)
+        selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+        selected_region = selected_constellation["region_id"]
+        selected_region_name = evegate.idsToNames([selected_region])[selected_region]
+        return selected_region_name
+
     def showContextMenu(self,event):
         #todo:get systemname from pos and post to function
-        sys=self.systemUnderMouse(self.mapView.mapPosFromPoint(event))
-        if sys:
-            self.trayIcon.contextMenu().updateMenu(sys)
+        selected_sys = self.systemUnderMouse(self.mapView.mapPosFromPoint(event))
+        if selected_sys:
+            concurrent_region_name = self.cache.getFromCache("region_name")
+            selected_region_name = self.regionNameFromSystemID( selected_sys )
+            if ( dotlan.convertRegionName(selected_region_name) == concurrent_region_name ):
+                selected_region_name = None
+            self.trayIcon.contextMenu().updateMenu(selected_sys, selected_region_name)
         else:
-            self.trayIcon.contextMenu().updateMenu("")
+            self.trayIcon.contextMenu().updateMenu()
         self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
 
 class ChatroomsChooser(QtWidgets.QDialog):
@@ -1180,7 +1200,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.generateJumpBridgeProgress.hide()
         self.run_jb_generation = True
 
-    def processUpdate(self,total,pos)->bool:
+    def processUpdate(self, total, pos) -> bool:
         self.generateJumpBridgeProgress.setMaximum(total)
         self.generateJumpBridgeProgress.setValue(pos)
         QtWidgets.QApplication.processEvents()
@@ -1206,7 +1226,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
             self.set_jumpbridge_url.emit(url)
             self.accept()
         except Exception as e:
-            QMessageBox.critical(None, "Finding Jumpbridgedata failed", "Error: {0}".format(str(e)))
+            QMessageBox.critical(None, "Finding jump bridge data failed", "Error: {0}".format(str(e)))
 
     def choosePath(self):
         path = QFileDialog.getOpenFileName(self, caption="Open JB Text File")[0]

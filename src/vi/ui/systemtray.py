@@ -20,11 +20,11 @@
 import time
 import os
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import  QAction, QActionGroup
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QAction, QActionGroup
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import  QSystemTrayIcon
+from PyQt5.QtWidgets import QSystemTrayIcon
 
 from vi.resources import resourcePath
 from vi import states
@@ -43,47 +43,55 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.trayIcon = trayIcon
         self._buildMenu()
 
-    def updateMenu(self, sysName:str):
-        if sysName:
-            self.ingameMenu.setTitle("EVE-Online {}".format(sysName[0]))
+    def updateMenu(self, sys_name=None,rgn_name=None):
+        if sys_name:
+            self.gameMenu.setTitle("EVE-Online {}".format(sys_name[0]))
             self.setDestination.setEnabled(True)
             self.addWaypoint.setEnabled(True)
             self.openDotlan.setEnabled(True)
             self.openZKillboard.setEnabled(True)
             self.avoidSystem.setEnabled(True)
-            self.currentSystem = sysName
+            self.currentSystem = sys_name
         else:
-            self.ingameMenu.setTitle("EVE-Online")
+            self.gameMenu.setTitle("EVE-Online")
             self.setDestination.setEnabled(False)
             self.addWaypoint.setEnabled(False)
             self.openDotlan.setEnabled(False)
             self.openZKillboard.setEnabled(False)
             self.avoidSystem.setEnabled(False)
             self.currentSystem = None
+        if rgn_name:
+            self.changeRegion.setText("Change Region {}".format(rgn_name))
+            self.changeRegion.setEnabled(True)
+        else:
+            self.changeRegion.setText("Change Region")
+            self.changeRegion.setEnabled(False)
 
     def _buildMenu(self):
         self.framelessCheck = QtWidgets.QAction("Frameless Window", self, checkable=True)
         self.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
         self.addAction(self.framelessCheck)
         self.addSeparator()
-        self.ingameMenu = self.addMenu("EVE-Online")
+        self.gameMenu = self.addMenu("EVE-Online")
         self.setDestination = QAction("Set Destination", None, checkable=False)
         self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
         self.avoidSystem = QAction("Avoid System", None, checkable=False)
         self.clearAvoidList = QAction("Clear Avoid Systems", None, checkable=False)
         self.clearAll = QAction("Clear all Waypoints", None, checkable=False)
-        self.ingameMenu.addAction(self.setDestination)
-        self.ingameMenu.addAction(self.addWaypoint)
-        self.ingameMenu.addAction(self.avoidSystem)
-        self.ingameMenu.addAction(self.clearAvoidList)
-        self.ingameMenu.addSeparator()
-        self.ingameMenu.addAction(self.clearAll)
-        self.addMenu(self.ingameMenu)
+        self.gameMenu.addAction(self.setDestination)
+        self.gameMenu.addAction(self.addWaypoint)
+        self.gameMenu.addAction(self.avoidSystem)
+        self.gameMenu.addAction(self.clearAvoidList)
+        self.gameMenu.addSeparator()
+        self.gameMenu.addAction(self.clearAll)
+        self.addMenu(self.gameMenu)
         self.addSeparator()
         self.openDotlan = QAction("Dotlan", None, checkable=False)
         self.addAction(self.openDotlan)
-        self.openZKillboard  = QAction("zKillbard", None, checkable=False)
+        self.openZKillboard = QAction("zKillbard", None, checkable=False)
         self.addAction(self.openZKillboard)
+        self.changeRegion = QAction("Change Region", None, checkable=False)
+        self.addAction(self.changeRegion)
         self.addSeparator()
         self.requestCheck = QtWidgets.QAction("Show status request notifications", self, checkable=True)
         self.requestCheck.setChecked(True)

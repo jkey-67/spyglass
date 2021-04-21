@@ -201,7 +201,7 @@ class PanningWebView(QWidget):
             self.scrollPos=self.scrollPos+elemDelta*self.zoom
 
     def wheelEvent(self, event: QWheelEvent):
-        if Qt.ControlModifier & event.modifiers():
+        if True or Qt.ControlModifier & event.modifiers():
             if event.angleDelta().y() > 0:
                 self.zoomIn(event.position())
             elif event.angleDelta().y() < 0:

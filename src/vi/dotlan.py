@@ -67,7 +67,7 @@ class Map(object):
             content = str(self.soup.select("svg")[0])
         return content
 
-    def __init__(self, region, svgFile=None):
+    def __init__(self, region, svgFile=None, setJumpMapsVisible=False,setSatisticsVisible=False):
         self.region = region
         self.width = None
         self.height = None
@@ -119,9 +119,11 @@ class Map(object):
         self._prepareSvg(self.soup, self.systems, scale)
         self._connectNeighbours()
         self.jumpBridges = []
-        self._jumpMapsVisible = False
-        self._statisticsVisible = False
+        self._jumpMapsVisible = setJumpMapsVisible
+        self._statisticsVisible = setSatisticsVisible
         self.marker = self.soup.select("#select_marker")[0]
+        self.updateJumpbridgesVisibility()
+        self.updateStatisticsVisibility()
 
     def _extractSizeFromSoup(self, soup):
         svg = soup.select("svg")[0]
@@ -188,7 +190,6 @@ class Map(object):
             jumps = soup.new_tag("g", id="jumps")
             svg.insert(-1, jumps)
         jumps = soup.select("#jumps")[0]
-
         # Set up the tags for system statistics
         for systemId, system in self.systemsById.items():
             coords = system.mapCoordinates
@@ -234,8 +235,10 @@ class Map(object):
     def setJumpbridges(self, jumpbridgesData):
         """
             Adding the jumpbridges to the map soup; format of data:
-            tuples with 3 values (sys1, connection, sys2)
+            tuples with at least 3 values (sys1, connection, sys2) connection is <->
         """
+        # todo:disable jbs during init
+        self.jumpBridges = []
         if jumpbridgesData== None:
             self.jumpBridges = []
             return
@@ -301,25 +304,28 @@ class Map(object):
             if ">" in connection:
                 line["marker-end"] = "url(#arrowend_{0})".format(jbColor)
             jumps.insert(0, line)
+        self.updateJumpbridgesVisibility()
 
-    def changeStatisticsVisibility(self):
-        newStatus = False if self._statisticsVisible else True
-        value = "visible" if newStatus else "hidden"
+    def updateStatisticsVisibility(self):
+        value = "visible" if self._statisticsVisible else "hidden"
         for line in self.soup.select(".statistics"):
             line["visibility"] = value
             line["fill"] = "red"
-        self._statisticsVisible = newStatus
 
-        return newStatus
+    def changeStatisticsVisibility(self):
+        self._statisticsVisible = False if self._statisticsVisible else True
+        self.updateStatisticsVisibility()
+        return self._statisticsVisible
 
-    def changeJumpbridgesVisibility(self):
-        newStatus = False if self._jumpMapsVisible else True
-        value = "visible" if newStatus else "hidden"
+    def updateJumpbridgesVisibility(self):
+        value = "visible" if self._jumpMapsVisible else "hidden"
         for line in self.soup.select(".jumpbridge"):
             line["visibility"] = value
-        self._jumpMapsVisible = newStatus
-        # self.debugWriteSoup()
-        return newStatus
+
+    def changeJumpbridgesVisibility(self):
+        self._jumpMapsVisible = False if self._jumpMapsVisible else True
+        self.updateJumpbridgesVisibility()
+        return self._jumpMapsVisible
 
     def debugWriteSoup(self):
         svgData = self.soup.prettify("utf-8")

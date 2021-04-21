@@ -23,28 +23,23 @@ import time
 import requests
 import logging
 import urllib
-import aiohttp
-import asyncio
 import http.server
 import webbrowser
-from aiohttp import web
 import base64
 import hashlib
 import secrets
-
-from bs4 import BeautifulSoup
 from vi.cache.cache import Cache
 
-#ERROR = -1
-#NOT_EXISTS = 0
-#EXISTS = 1
+ERROR = -1
+NOT_EXISTS = 0
+EXISTS = 1
 
 def charnameToId(name,use_cache=True):
     """ Uses the EVE API to convert a character name to his ID
     """
-    cacheKey = "_".join(("name", "id", name))
+    cache_key = "_".join(("name", "id", name))
     cache = Cache()
-    cached_id = cache.getFromCache(cacheKey)
+    cached_id = cache.getFromCache(cache_key)
     if use_cache and cached_id:
         return cached_id
     else:
@@ -57,7 +52,7 @@ def charnameToId(name,use_cache=True):
                 if "name" in details.keys():
                     name_found = details["name"]
                     if name_found.lower() == name.lower():
-                        cache.putIntoCache(cacheKey, idFound, 60 * 60 * 24 * 365)
+                        cache.putIntoCache(cache_key, idFound, 60 * 60 * 24 * 365)
                         return idFound
         return None
 
@@ -69,26 +64,25 @@ def namesToIds(names):
     if len(names) == 0:
         return {}
     data = {}
-    apiCheckNames = set()
+    api_check_names = set()
     cache = Cache()
     # do we have allready something in the cache?
     for name in names:
-        cacheKey = "_".join(("id", "name", name))
-        id = cache.getFromCache(cacheKey)
+        cache_key = "_".join(("id", "name", name))
+        id = cache.getFromCache(cache_key)
         if id:
             data[name] = id
         else:
-            apiCheckNames.add(name)
+            api_check_names.add(name)
 
     try:
         # not in cache? asking the EVE API
-        if len(apiCheckNames) > 0:
+        if len(api_check_names) > 0:
             list_of_name = ""
             for name in names:
                 if list_of_name != "":
                     list_of_name = list_of_name + ","
                 list_of_name = list_of_name + "\"{}\"".format(name)
-            # todo:change to esi
             url = "https://esi.evetech.net/latest/universe/ids/?datasource=tranquility"
             content = requests.post(url, data="[{}]".format(list_of_name)).json()
             if "characters" in content.keys():
@@ -96,8 +90,8 @@ def namesToIds(names):
                     data[char["name"]] = char["id"]
             # writing the cache
             for name in data:
-                cacheKey = "_".join(("id", "name", name))
-                cache.putIntoCache(cacheKey, data[name], 60 * 60 * 24 * 365)
+                cache_key = "_".join(("id", "name", name))
+                cache.putIntoCache(cache_key, data[name], 60 * 60 * 24 * 365)
     except Exception as e:
         logging.error("Exception during namesToIds: %s", e)
     return data
@@ -121,35 +115,36 @@ def idsToNames(ids):
     data = {}
     if len(ids) == 0:
         return data
-    apiCheckIds = set()
+    api_check_ids = set()
     cache = Cache()
 
     # something allready in the cache?
-    for id in ids:
-        cacheKey = u"_".join(("name", "id", str(id)))
-        name = cache.getFromCache(cacheKey)
+    for checked_id in ids:
+        cache_key = u"_".join(("name", "id", str(checked_id)))
+        name = cache.getFromCache(cache_key)
         if name:
-            data[id] = name
+            data[checked_id] = name
         else:
-            apiCheckIds.add(id)
-    if len(apiCheckIds)==0:
+            api_check_ids.add(checked_id)
+    if len(api_check_ids) == 0:
         return data
 
     try:
         list_of_ids = ""
-        for id in apiCheckIds:
+        for checked_id in api_check_ids:
             if list_of_ids != "":
                 list_of_ids = list_of_ids + ","
-            list_of_ids = list_of_ids + str(id)
+            list_of_ids = list_of_ids + str(checked_id)
         url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
         content = requests.post(url, data="[{}]".format(list_of_ids)).json()
+        content.raise_for_status()
         if len(content) > 0:
             for elem in content:
-                data[elem["id"]]=elem["name"]
+                data[elem["id"]] = elem["name"]
             # and writing into cache
-            for id in apiCheckIds:
-                cacheKey = u"_".join(("name", "id", str(id)))
-                cache.putIntoCache(cacheKey, data[id], 60 * 60 * 24 * 365)
+            for checked_id in api_check_ids:
+                cache_key = u"_".join(("name", "id", str(checked_id)))
+                cache.putIntoCache(cache_key, data[checked_id], 60 * 60 * 24 * 365)
     except Exception as e:
         logging.error("Exception during idsToNames: %s", e)
     return data
@@ -177,18 +172,18 @@ def checkPlayername(charname):
         returns 1 if exists, 0 if not and -1 if an error occured
     """
     try:
-        baseUrl = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en&search={charname}&strict=true"
-        content = requests.get(baseUrl.format(charname=charname)).json()
+        url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en&search={charname}&strict=true"
+        content = requests.get(url.format(charname=charname)).json()
         if "character" in content.keys():
             if len(content["character"]):
-                return 1
+                return EXISTS
             else:
-                return 0
+                return NOT_EXISTS
         else:
-            return -1
+            return ERROR
     except Exception as e:
         logging.error("Exception on checkPlayername: %s", e)
-    return -1
+    return ERROR
 
 
 def currentEveTime():
@@ -196,16 +191,10 @@ def currentEveTime():
     """
     return datetime.datetime.utcnow()
 
-
-def eveEpoch():
-    """ Returns the seconds since epoch in eve timezone
-    """
-    return time.mktime(datetime.datetime.utcnow().timetuple())
-
 def getCharinfoForCharId(charId,use_cache=True):
-    cacheKey = u"_".join(("playerinfo_id_", str(charId)))
+    cache_key = u"_".join(("playerinfo_id_", str(charId)))
     cache = Cache()
-    char_info = cache.getFromCache(cacheKey)
+    char_info = cache.getFromCache(cache_key)
     if use_cache and char_info is not None:
         char_info = eval(char_info)
     else:
@@ -215,7 +204,7 @@ def getCharinfoForCharId(charId,use_cache=True):
             content = requests.get(url).text
             char_info = eval(content)
             # should be valid for up to three days
-            cache.putIntoCache(cacheKey, content, 60*60*24*3)
+            cache.putIntoCache(cache_key, content, 60*60*24*3)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if (e.response.status_code != 400):
@@ -226,9 +215,9 @@ def getCorpidsForCharId(charId,use_cache=True):
     """ Returns a list with the ids if the corporation history of a charId
         returns a list of only the corp ids
     """
-    cacheKey = u"_".join(("corp_history_id_", str(charId)))
+    cache_key = u"_".join(("corp_history_id_", str(charId)))
     cache = Cache()
-    corp_ids = cache.getFromCache(cacheKey)
+    corp_ids = cache.getFromCache(cache_key)
     if use_cache and corp_ids is not None:
         corp_ids = eval(corp_ids)
     else:
@@ -237,7 +226,7 @@ def getCorpidsForCharId(charId,use_cache=True):
             url = "https://esi.evetech.net/latest/characters/{id}/corporationhistory/?datasource=tranquility".format(id=charId)
             content = requests.get(url).text
             corp_ids = eval(content)
-            cache.putIntoCache(cacheKey, content)
+            cache.putIntoCache(cache_key, content)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if (e.response.status_code != 400):
@@ -263,27 +252,27 @@ def getSystemStatistics():
             systemid: "jumps", "shipkills", "factionkills", "podkills"
     """
     data = {}
-    systemData = {}
+    system_data = {}
     cache = Cache()
     # first the data for the jumps
-    cacheKey = "jumpstatistic"
-    jumpData = cache.getFromCache(cacheKey)
+    cache_key = "jumpstatistic"
+    jump_data = cache.getFromCache(cache_key)
 
     try:
-        if jumpData is None:
-            jumpData = {}
+        if jump_data is None:
+            jump_data = {}
             url = "https://esi.evetech.net/latest/universe/system_jumps/?datasource=tranquility"
             resp = requests.get(url).json()
             for row in resp:
-                jumpData[int(row["system_id"])] = int(row["ship_jumps"])
+                jump_data[int(row["system_id"])] = int(row["ship_jumps"])
 
-            cache.putIntoCache(cacheKey, json.dumps(jumpData), 60)
+            cache.putIntoCache(cache_key, json.dumps(jump_data), 60)
         else:
-            jumpData = json.loads(jumpData)
+            jump_data = json.loads(jump_data)
 
         # now the further data
-        cacheKey = "systemstatistic"
-        systemData = cache.getFromCache(cacheKey)
+        cache_key = "systemstatistic"
+        systemData = cache.getFromCache(cache_key)
 
         if systemData is None:
             systemData = {}
@@ -294,14 +283,14 @@ def getSystemStatistics():
                                                         "faction": int(row["npc_kills"]),
                                                         "pod": int(row["pod_kills"])}
 
-            cache.putIntoCache(cacheKey, json.dumps(systemData), 60 )
+            cache.putIntoCache(cache_key, json.dumps(systemData), 60 )
         else:
             systemData = json.loads(systemData)
     except Exception as e:
         logging.error("Exception during getSystemStatistics: : %s", e)
 
     # We collected all data (or loaded them from cache) - now zip it together
-    for i, v in jumpData.items():
+    for i, v in jump_data.items():
         i = int(i)
         if i not in data:
             data[i] = {"shipkills": 0, "factionkills": 0, "podkills": 0}
@@ -333,7 +322,7 @@ class MyApiServer(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write("<html><head><title>Spyglass API Registration</title></head>".encode("utf-8"))
-        self.wfile.write("<body onload=\"closePage()\"><p>This is a test.</p>".encode("utf-8"))
+        self.wfile.write("<body onload=\"closePage()\"><p>Close this page to complete registration.</p>".encode("utf-8"))
         self.wfile.write("<script>function closePage(){self.close();}</script>".encode("utf-8"))
         self.wfile.write("</body></html>".encode("utf-8"))
         self.wfile.close()
@@ -354,9 +343,9 @@ def getApiKey(client_param)->str:
         callback from inside the webb browser
         params client_id, scope and state see esi-docs
     """
-    hash=hashlib.sha256()
-    hash.update(client_param["random"])
-    digs=hash.digest()
+    used_hash = hashlib.sha256()
+    used_hash.update(client_param["random"])
+    digs = used_hash.digest()
     code_challenge = base64.urlsafe_b64encode(digs).decode().replace("=", "")
     params = {
         "response_type": "code",
@@ -368,6 +357,11 @@ def getApiKey(client_param)->str:
         "code_challenge_method": "S256"
     }
     string_params = urllib.parse.urlencode(params)
+    #todo:use qwebview here
+    #elem = QWebEngineView()
+    #elem.setUrl( QUrl( "https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params) ) )
+    #elem.show()
+    #return None
     webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
     webserver = http.server.HTTPServer(("localhost", 8182), MyApiServer)
     webserver.handle_request()
@@ -406,8 +400,8 @@ def getAccessToken(client_param,auth_code:str,add_headers={})->str:
         char_id = res.json()
         cache = Cache()
         char_id.update(aut_call)
-        cacheKey = "_".join(("api_key", "character_name", char_id["CharacterName"]))
-        cache.putIntoCache(cacheKey, str(char_id))
+        cache_key = "_".join(("api_key", "character_name", char_id["CharacterName"]))
+        cache.putIntoCache(cache_key, str(char_id))
         cache.putIntoCache("api_char_name", char_id["CharacterName"])
         return char_id["CharacterName"];
     else:
@@ -418,14 +412,14 @@ def openWithEveonline()->str:
     """perform a api key request and updates the cache on case of an positive response
         returns the selected user name from the login
     """
-    client_param = {
+    client_param_set = {
         "client_id": "9eaf6cb03a9649998b2bad63b9e9fa8e",
         "scope": "esi-ui.write_waypoint.v1 esi-universe.read_structures.v1 esi-search.search_structures.v1",
         "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
         "state": base64.urlsafe_b64encode(secrets.token_bytes(8))
     }
-    auth_code = getApiKey(client_param)
-    res = getAccessToken(client_param, auth_code)
+    auth_code = getApiKey(client_param_set)
+    getAccessToken(client_param_set, auth_code)
 
 class ApiKey(object):
     def __init__(self, dictionary):
@@ -514,7 +508,7 @@ def setDestination(nameChar:str,idSystem:int,beginning=True, clear_all=True):
         req = "https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
         requests.post(req).raise_for_status()
 
-def getRouteFromEveOnline( jumpGates,src,dst):
+def getRouteFromEveOnline(jumpGates, src, dst):
     """build rout respecting jump bridges
         returns the list of systems to travel to
     """
@@ -525,20 +519,31 @@ def getRouteFromEveOnline( jumpGates,src,dst):
         route_elems = route_elems + "{}|{}".format(elem[0], elem[1])
 
     req = "https://esi.evetech.net/v1/route/{}/{}/?connections={}".format(src, dst, route_elems)
-    res = requests.get(req)
-    res.raise_for_status()
-    return eval(res.text)
+    result = requests.get(req)
+    result.raise_for_status()
+    return eval(result.text)
 
-def getAllStructures():
-    req="https://esi.evetech.net/latest/universe/structures/?datasource=tranquility"
-    res = requests.get(req)
-    res.raise_for_status()
-    return eval(res.text)
+def getAllStructures(typeid=None):
+    req = "https://esi.evetech.net/latest/universe/structures/?datasource=tranquility"
+    result = requests.get(req)
+    result.raise_for_status()
+    structs_found = eval(result.text)
+    if typeid == None:
+        return structs_found
+    types = list()
+    for structure in structs_found:
+        if "structure_type_id" in structure.keys():
+            if structure["structure_type_id"]==typeid:
+                types.append(structure)
+    return types
 
-def getStructures(nameChar:str,id_structure:int,use_cache=True):
-    cacheKey = "_".join(("structure", "id", str(id_structure)))
+def getStructures(nameChar:str, id_structure:int, use_cache=True):
+    if nameChar == None:
+        logging.error("getStructures needs the eve-online api account.")
+        return None
+    cache_key = "_".join(("structure", "id", str(id_structure)))
     cache = Cache()
-    cached_id = cache.getFromCache(cacheKey)
+    cached_id = cache.getFromCache(cache_key)
     if use_cache and cached_id:
         return eval(cached_id)
     else:
@@ -546,8 +551,7 @@ def getStructures(nameChar:str,id_structure:int,use_cache=True):
         req = "https://esi.evetech.net/latest/universe/structures/{}/?datasource=tranquility&token={}".format(id_structure,token.access_token)
         res = requests.get(req)
         # res.raise_for_status()
-        print(res.text)
-        cache.putIntoCache(cacheKey, res.text, 3600)
+        cache.putIntoCache(cache_key, res.text, 3600)
         return eval(res.text)
 
 class JumpBridge(object):
@@ -562,7 +566,7 @@ class JumpBridge(object):
         self.paired=False
         self.links = 0
 
-def sanityCheckGates( gates ):
+def sanityCheckGates(gates):
     """ grant that all item of gates builds valid pairs of jump bridges src<->dst and also dst<->src
         all other items will be removed
     """
@@ -586,6 +590,9 @@ def countCheckGates( gates ):
 def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
+    if nameChar == None:
+        logging.error("getAllJumpGates needs the eve-online api account.")
+        return None
     token = checkTokenTimeLine(getTokenOfChar(nameChar))
     req = "https://esi.evetech.net/v3/characters/{id}/search/?datasource=tranquility&categories=structure&search={sys}%20%C2%BB%20&token={tok}".format(id=token.CharacterID, tok=token.access_token,sys=systemName)
     res = requests.get(req)
@@ -618,11 +625,45 @@ def writeGatestToFile(gates, filename="jb.txt"):
                 gates_list.append(s_t_d)
         gf.close()
 
+def getSolarSystemInformationA(system_id):
+    req = "https://esi.evetech.net/latest/universe/systems/{}/?datasource=tranquility&language=en".format(system_id)
+    res_system = requests.get(req)
+    res_system.raise_for_status()
+    return res_system.json()
+
+def getSolarSystemInformation(system_id,use_cache=True):
+    cache_key = "_".join(("universe", "systems", str(system_id)))
+    cache = Cache()
+    cached_id = cache.getFromCache(cache_key)
+    if use_cache and cached_id:
+        return eval(cached_id)
+    else:
+        req = "https://esi.evetech.net/latest/universe/systems/{}/?datasource=tranquility&language=en".format(system_id)
+        res_system = requests.get(req)
+        res_system.raise_for_status()
+        cache.putIntoCache(cache_key, res_system.text)
+        return res_system.json()
+
+def getConstellationInformation(constellation_id,use_cache=True):
+    cache_key = "_".join(("universe", "constellations", str(constellation_id)))
+    cache = Cache()
+    cached_id = cache.getFromCache(cache_key)
+    if use_cache and cached_id:
+        return eval(cached_id)
+    else:
+        req = "https://esi.evetech.net/latest/universe/constellations/{}/?datasource=tranquility&language=en".format(constellation_id)
+        res_constellation = requests.get(req)
+        res_constellation.raise_for_status()
+        cache.putIntoCache(cache_key, res_constellation.text)
+        return res_constellation.json()
 
 def hasAnsiblex( sys )->bool:
     return False
 
 def applyRouteToEveOnline(nameChar, jumpList):
+    if nameChar == None:
+        logging.error("applyRouteToEveOnline needs the eve-online api account.")
+        return None
     for idSystem in jumpList:
         if hasAnsiblex(idSystem):
             pass
@@ -724,6 +765,7 @@ if __name__ == "__main__":
     #[14:39:29] nele McCool > <url=showinfo:35841//1035408540831>UR-E46 » Y-CWQY - gate --</url>
     #1034954775591 x nele McCool
     #setDestination("nele McCool", 1035408540831)  # ansiblex UR - E46
+    structs = getAllStructures()
     sysnames = idsToNames(getAllRegions())
     some = ["{}".format(itm) for key,itm in sysnames.items()]
     id = charnameToId("nele McCool",False)
