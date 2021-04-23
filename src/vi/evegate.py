@@ -28,6 +28,7 @@ import webbrowser
 import base64
 import hashlib
 import secrets
+import eve_api_key
 from vi.cache.cache import Cache
 
 ERROR = -1
@@ -54,7 +55,7 @@ def charnameToId(name,use_cache=True):
                     if name_found.lower() == name.lower():
                         cache.putIntoCache(cache_key, idFound, 60 * 60 * 24 * 365)
                         return idFound
-        return None
+    return None
 
 def namesToIds(names):
     """ Uses the EVE API to convert a list of names to ids_to_names
@@ -88,6 +89,9 @@ def namesToIds(names):
             if "characters" in content.keys():
                 for char in content["characters"]:
                     data[char["name"]] = char["id"]
+            if "systems" in content.keys():
+                for system in content["systems"]:
+                    data[system["name"]] = system["id"]
             # writing the cache
             for name in data:
                 cache_key = "_".join(("id", "name", name))
@@ -96,15 +100,17 @@ def namesToIds(names):
         logging.error("Exception during namesToIds: %s", e)
     return data
 
-def getAllRegions():
+def getAllRegions(use_cache=True):
+    """ Uses the EVE API to get the list of all system ids
+    """
     cache = Cache()
     all_systems = cache.getFromCache("list_of_all_systems")
-    if all_systems != None:
+    if use_cache and all_systems != None:
         return eval(all_systems)
     else:
         url = "https://esi.evetech.net/latest/universe/regions/?datasource=tranquility"
         content = requests.get(url).json()
-        cache.putIntoCache("list_of_all_systems", str(content))
+        cache.putIntoCache("list_of_all_systems", str(content), 60 * 60 * 24 * 365)
         return content
 
 def idsToNames(ids):
@@ -169,8 +175,10 @@ def getAvatarForPlayer(charname):
 
 def checkPlayername(charname):
     """ Checking on esi for an exiting exact player name
-        returns 1 if exists, 0 if not and -1 if an error occured
+        returns 1 if exists, 0 if not and -1 if an error occurred
     """
+    if not charname:
+        return ERROR
     try:
         url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en&search={charname}&strict=true"
         content = requests.get(url.format(charname=charname)).json()
@@ -413,7 +421,7 @@ def openWithEveonline()->str:
         returns the selected user name from the login
     """
     client_param_set = {
-        "client_id": "9eaf6cb03a9649998b2bad63b9e9fa8e",
+        "client_id": eve_api_key.CLIENTS_API_KEY,
         "scope": "esi-ui.write_waypoint.v1 esi-universe.read_structures.v1 esi-search.search_structures.v1",
         "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
         "state": base64.urlsafe_b64encode(secrets.token_bytes(8))
@@ -436,6 +444,8 @@ class ApiKey(object):
 def getTokenOfChar(char_name:str):
     """gets  the api key for chae_name from the cache
     """
+    if char_name == None:
+        return None
     cache = Cache()
     cache_key = "_".join(("api_key", "character_name", char_name))
     char_data = cache.getFromCache(cache_key)
@@ -451,7 +461,7 @@ def refreshToken(params:ApiKey):
     data = {
         "grant_type":"refresh_token",
         "refresh_token": params.refresh_token,
-        "client_id": "9eaf6cb03a9649998b2bad63b9e9fa8e",
+        "client_id": eve_api_key.CLIENTS_API_KEY,
     }
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -625,13 +635,9 @@ def writeGatestToFile(gates, filename="jb.txt"):
                 gates_list.append(s_t_d)
         gf.close()
 
-def getSolarSystemInformationA(system_id):
-    req = "https://esi.evetech.net/latest/universe/systems/{}/?datasource=tranquility&language=en".format(system_id)
-    res_system = requests.get(req)
-    res_system.raise_for_status()
-    return res_system.json()
-
 def getSolarSystemInformation(system_id,use_cache=True):
+    """gets the solar system info from system id
+    """
     cache_key = "_".join(("universe", "systems", str(system_id)))
     cache = Cache()
     cached_id = cache.getFromCache(cache_key)
@@ -644,7 +650,7 @@ def getSolarSystemInformation(system_id,use_cache=True):
         cache.putIntoCache(cache_key, res_system.text)
         return res_system.json()
 
-def getConstellationInformation(constellation_id,use_cache=True):
+def getConstellationInformation(constellation_id:int,use_cache=True):
     cache_key = "_".join(("universe", "constellations", str(constellation_id)))
     cache = Cache()
     cached_id = cache.getFromCache(cache_key)
@@ -754,17 +760,6 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
 
 # The main application for testing
 if __name__ == "__main__":
-    #see https://developers.eveonline.com/applications/details/69202
-    #see https://github.com/esi/esi-docs/blob/master/examples/python/sso/esi_oauth_native.py
-    #see https://docs.esi.evetech.net/docs/sso/native_sso_flow.html
-    #auth = esipysi.EsiAuth(client_id="9eaf6cb03a9649998b2bad63b9e9fa8e")
-    #key_secret = '{}:{}'.format("9eaf6cb03a9649998b2bad63b9e9fa8e", "QrTL5CyPcXKpKMTtL65iR1dLX5nFPtz75lChjSpl").encode('ascii')
-    #b64_encoded_key = base64.b64encode(key_secret)
-    #openWithEveonline()
-    #gate = getStructures("nele McCool", 1035408540831)
-    #[14:39:29] nele McCool > <url=showinfo:35841//1035408540831>UR-E46 » Y-CWQY - gate --</url>
-    #1034954775591 x nele McCool
-    #setDestination("nele McCool", 1035408540831)  # ansiblex UR - E46
     structs = getAllStructures()
     sysnames = idsToNames(getAllRegions())
     some = ["{}".format(itm) for key,itm in sysnames.items()]
@@ -789,7 +784,7 @@ if __name__ == "__main__":
     res = getTokenOfChar( "MrX")
     exit(1)
     client_param = {
-        "client_id": "9eaf6cb03a9649998b2bad63b9e9fa8e",
+        "client_id": eve_api_key.CLIENTS_API_KEY,
         "scope": "esi-ui.write_waypoint.v1",
         "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
         "state": base64.urlsafe_b64encode(secrets.token_bytes(8))

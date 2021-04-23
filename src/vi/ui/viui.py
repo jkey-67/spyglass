@@ -85,6 +85,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frameButton.setVisible(False)
         self.scanIntelForKosRequestsEnabled = False
         self.initialMapPosition = None
+        self.autoChangeRegion = False
         self.mapPositionsDict = {}
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
@@ -124,6 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.opacityGroup.addAction(action)
             self.menuTransparency.addAction(action)
 
+        self.actionAuto_switch.triggered.connect(self.changeAutoRegion)
         # Set up Theme menu - fill in list of themes and add connections
         self.themeGroup = QActionGroup(self.menu)
         styles = Styles()
@@ -176,6 +178,9 @@ class MainWindow(QtWidgets.QMainWindow):
             # todo: add a button to delete the cache / DB
             self.trayIcon.showMessage("Settings error",
                                       "Something went wrong loading saved state:\n {0}".format(str(e)), 1)
+
+    def changeAutoRegion(self, autoChange:bool):
+        self.autoChangeRegion = autoChange
 
     def wireUpUIConnections(self):
         # Wire up general UI connections
@@ -475,7 +480,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "changeUseSpokenNotifications", self.useSpokenNotificationsAction.isChecked()),
                     (None, "changeKosCheckClipboard", self.kosClipboardActiveAction.isChecked()),
                     (None, "changeAutoScanIntel", self.scanIntelForKosRequestsEnabled),
-                    (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled))
+                    (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled),
+                    (None, "changeAutoChangeRegion", self.autoChangeRegion))
         self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
         self.terminateThreads()
         self.trayIcon.hide()
@@ -507,6 +513,12 @@ class MainWindow(QtWidgets.QMainWindow):
             newValue = self.autoScanIntelAction.isChecked()
         self.autoScanIntelAction.setChecked(newValue)
         self.autoRescanIntelEnabled = newValue
+
+    def changeAutoChangeRegion(self, newValue=None):
+        if newValue is None:
+            newValue = self.actionAuto_switch.isChecked()
+        self.actionAuto_switch.setChecked(newValue)
+        self.autoChangeRegion = newValue
 
     def changeAutoRescanIntel(self, newValue=None):
         if newValue is None:
@@ -670,9 +682,24 @@ class MainWindow(QtWidgets.QMainWindow):
     def setLocation(self, char, systemname):
         for system in self.systems.values():
             system.removeLocatedCharacter(char)
+        # todo:follow reagion change here
+        if self.autoChangeRegion and evegate.getTokenOfChar(char):
+            system = evegate.getSolarSystemInformation(evegate.namesToIds([systemname])[systemname])
+            selected_system = evegate.getSolarSystemInformation(system["system_id"])
+            selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+            selected_region = selected_constellation["region_id"]
+            selected_region_name = dotlan.convertRegionName( evegate.idsToNames([selected_region])[selected_region] )
+            concurrent_region_name = self.cache.getFromCache("region_name")
+            if (selected_region_name != concurrent_region_name):
+                Cache().putIntoCache("region_name", selected_region_name)
+                self.setupMap()
+
+
         if not systemname == "?" and systemname in self.systems.keys():
             self.systems[systemname].addLocatedCharacter(char)
             self.updateMapView()
+
+
 
     def updateMapView(self):
         if self.mapView.stretched or (self.currContent != self.dotlan.svg):
@@ -952,6 +979,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if rc.contains(pos):
                 return system
         return None
+
     def regionNameFromSystemID(self,selected_sys):
         selected_system = evegate.getSolarSystemInformation(selected_sys[1].systemId)
         selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
@@ -964,7 +992,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_sys = self.systemUnderMouse(self.mapView.mapPosFromPoint(event))
         if selected_sys:
             concurrent_region_name = self.cache.getFromCache("region_name")
-            selected_region_name = self.regionNameFromSystemID( selected_sys )
+            selected_region_name = self.regionNameFromSystemID(selected_sys)
             if ( dotlan.convertRegionName(selected_region_name) == concurrent_region_name ):
                 selected_region_name = None
             self.trayIcon.contextMenu().updateMenu(selected_sys, selected_region_name)

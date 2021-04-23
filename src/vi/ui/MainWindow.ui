@@ -475,9 +475,13 @@
     <addaction name="separator"/>
     <addaction name="providenceCatchRegionAction"/>
     <addaction name="providenceCatchCompactRegionAction"/>
+    <addaction name="separator"/>
     <addaction name="chooseRegionAction"/>
+    <addaction name="actionAuto_switch"/>
     <addaction name="separator"/>
     <addaction name="jumpbridgeDataAction"/>
+    <addaction name="separator"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -797,6 +801,14 @@
    </property>
    <property name="text">
     <string/>
+   </property>
+  </action>
+  <action name="actionAuto_switch">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Auto  switch Region</string>
    </property>
   </action>
  </widget>
