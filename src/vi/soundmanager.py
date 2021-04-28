@@ -25,6 +25,7 @@ from PyQt5.QtMultimedia import QSoundEffect
 from PyQt5.QtTextToSpeech import QTextToSpeech, QVoice
 from PyQt5.QtWidgets import qApp
 from PyQt5.QtCore import *
+from vi.cache.cache import Cache
 global gPygletAvailable
 
 try:
@@ -54,12 +55,17 @@ class SoundManager(metaclass=Singleton):
         #for loc in self.speach_engine.availableLocales():
         #    if loc.language() == Qt.QLocale.ation.english:
         #        self.speach_engine.setLocale( loc )
+        cache = Cache()
+        self.setSoundFile("alarm_1", cache.getFromCache("soundsetting.alarm_1"))
+        self.setSoundFile("alarm_2", cache.getFromCache("soundsetting.alarm_2"))
+        self.setSoundFile("alarm_3", cache.getFromCache("soundsetting.alarm_3"))
+        self.setSoundFile("alarm_4", cache.getFromCache("soundsetting.alarm_4"))
         for itm in self.SOUNDS:
             self.sounds[itm] = QSoundEffect()
             url = QUrl.fromLocalFile(resourcePath(os.path.join("vi", "ui", "res", "{0}".format(self.SOUNDS[itm]))))
             self.sounds[itm].setSource(url)
 
-    def soundFile(self,mask):
+    def soundFile(self, mask):
         if mask in self.SOUNDS.keys():
             return self.SOUNDS[mask]
         else:
@@ -71,6 +77,7 @@ class SoundManager(metaclass=Singleton):
             self.sounds[mask] = QSoundEffect()
             url = QUrl.fromLocalFile(self.SOUNDS[mask])
             self.sounds[mask].setSource(url)
+            Cache().putIntoCache("soundsetting.{}".format(mask),filename)
 
 
     def platformSupportsAudio(self):
@@ -80,12 +87,6 @@ class SoundManager(metaclass=Singleton):
         avail_engines = self.speach_engine.availableEngines()
         self.speach_engine.setLocale(QLocale(QLocale.English))
         return len(avail_engines)
-        #avail_locales = self.speach_engine.availableLocales()
-        self.speach_engine.setLocale(QLocale(QLocale.English))
-        avail_voices = self.speach_engine.availableVoices()
-        #self.speach_engine.setVoice(avail_voices[24])#5
-        #self.id_voice = 26
-        return len(avail_voices)
 
     def setUseSpokenNotifications(self, newValue):
         if newValue is not None:
@@ -97,21 +98,18 @@ class SoundManager(metaclass=Singleton):
             self.sounds[itm].setVolume(self.soundVolume/100)
 
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
-        audioFile = None
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage!="":
-                #todo:use QTextToSpeach here
-                audioFile = None
-                #avail_voices = self.speach_engine.availableVoices()
-                #self.speach_engine.setVoice(avail_voices[self.id_voice])  # 5
-                #self.id_voice = self.id_voice + 1
+                self.speach_engine.setVolume(self.soundVolume)
                 self.speach_engine.say(abbreviatedMessage)
             elif name in self.sounds.keys():
+                self.sounds[name].setMuted(False)
                 self.sounds[name].play()
+                self.sounds[name].status()
             else:
                 self.sounds["alarm"].setMuted(False)
                 self.sounds["alarm"].play()
-                res = self.sounds["alarm"].status()
+                self.sounds["alarm"].status()
         qApp.processEvents()
 
     def quit(self):

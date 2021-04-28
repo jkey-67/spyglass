@@ -283,8 +283,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.filewatcherThread.wait()
             self.kosRequestThread.quit()
             self.kosRequestThread.wait()
-            #self.versionCheckThread.quit()
-            #self.versionCheckThread.wait()
             self.statisticsThread.quit()
             self.statisticsThread.wait()
             self.mapTimer.stop()

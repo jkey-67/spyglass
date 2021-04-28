@@ -6,3 +6,4 @@ src/build/*
 src/dist/*
 src/.idea/*
 venv/
+eve_api_key.py
