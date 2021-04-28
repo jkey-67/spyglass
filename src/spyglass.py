@@ -80,17 +80,15 @@ class Application(QApplication):
             elif sys.platform.startswith("linux"):
                 chatLogDirectory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
             elif sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
-                #import ctypes.wintypes
-                #buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-                #ctypes.windll.shell32.SHGetFolderPathW(0, 5, 0, 0, buf)
-                #documentsPath = buf.value
+                import ctypes.wintypes
+                buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+                ctypes.windll.shell32.SHGetFolderPathW(0, 0x05, 0, 0, buf)
+                documents_path = buf.value
                 from os.path import expanduser
-                home = expanduser("~")
-                chatLogDirectory = os.path.join(home, "Documents", "EVE", "logs", "Chatlogs")
-
+                chatLogDirectory = os.path.join(documents_path, "EVE", "logs", "Chatlogs")
                 # Now I need to just make sure... Some old pcs could still be on XP
                 if not os.path.exists(chatLogDirectory):
-                    chatLogDirectory = os.path.join(home, "My Documents", "EVE", "logs", "Chatlogs")
+                    chatLogDirectory = os.path.join(os.path.expanduser("~"), "My Documents", "EVE", "logs", "Chatlogs")
 
         # todo show select folder dialog if path is not valid
         if not os.path.exists(chatLogDirectory):
