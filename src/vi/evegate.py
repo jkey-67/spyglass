@@ -20,6 +20,12 @@
 import datetime
 import json
 import time
+
+from PyQt5.QtWebEngineWidgets import *
+from PyQt5.QtCore import QUrl
+import queue
+from PyQt5.QtCore import QThread, pyqtSignal
+
 import requests
 import logging
 import urllib
@@ -29,6 +35,7 @@ import base64
 import hashlib
 import secrets
 import eve_api_key
+import asyncio
 from vi.cache.cache import Cache
 
 ERROR = -1
@@ -338,14 +345,44 @@ class MyApiServer(http.server.BaseHTTPRequestHandler):
             code = self.requestline.split(" ")[1]
             pos_code = code.find("code=")
             pos_state = code.find("&state=")
-            self.server.api_code=code[pos_code + 5:pos_state]
-            self.server.api_state=code[pos_state+6:]
+            self.server.api_code = code[pos_code + 5:pos_state]
+            self.server.api_state = code[pos_state+6:]
             self.server.server_close()
         except Exception as e:
             logging.error("Exception during MyApiServer: %s", e)
             self.server.api_code = None
+    def handle_timeout(self):
+        logging.error("Http request not read, api registration canceled.")
 
-def getApiKey(client_param)->str:
+class api_server_thread(QThread):
+    new_serve_aki_key = pyqtSignal(str)
+    def __init__(self):
+        QThread.__init__(self)
+        self.queue = queue.Queue()
+        self.active = True
+
+    def run(self):
+        while self.active:
+            try:
+                webserver = http.server.HTTPServer(("localhost", 8182), MyApiServer)
+                webserver.timeout = 30
+                webserver.api_code = None
+                webserver.handle_request()
+                auth_code = webserver.api_code
+                del webserver
+                if auth_code != None:
+                    getAccessToken(self.client_param, auth_code)
+            except Exception as e:
+                logging.error("Error in api_server_thread.run: %s", e)
+                #continue
+            self.elem = None
+
+    def quit(self):
+        self.active = False
+        self.queue.put((None, None, None))
+        QThread.quit(self)
+
+def getApiKey(client_param,parent=None)->str:
     """ Queries the eve-online api key valid for one eve online account,
         using http://localhost:8182/oauth-callback as application defined
         callback from inside the webb browser
@@ -366,16 +403,18 @@ def getApiKey(client_param)->str:
     }
     string_params = urllib.parse.urlencode(params)
     #todo:use qwebview here
-    #elem = QWebEngineView()
-    #elem.setUrl( QUrl( "https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params) ) )
-    #elem.show()
-    #return None
-    webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
-    webserver = http.server.HTTPServer(("localhost", 8182), MyApiServer)
-    webserver.handle_request()
-    api = webserver.api_code
-    del webserver
-    return api
+    if parent:
+        parent.api_thread = api_server_thread()
+        parent.api_thread.client_param = client_param
+        parent.api_thread.elem = QWebEngineView()
+        parent.api_thread.elem.destroyed.connect(parent.api_thread.quit)
+        parent.api_thread.start()
+        if parent.api_thread.elem:
+            parent.api_thread.elem.load(QUrl("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params)))
+            parent.api_thread.elem.resize(600, 800)
+            parent.api_thread.elem.show()
+    else:
+        webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
 
 def getAccessToken(client_param,auth_code:str,add_headers={})->str:
     """ gets the access token from the application logging
@@ -416,7 +455,8 @@ def getAccessToken(client_param,auth_code:str,add_headers={})->str:
         res.raise_for_status()
     return None
 
-def openWithEveonline()->str:
+
+def openWithEveonline(parent=None):
     """perform a api key request and updates the cache on case of an positive response
         returns the selected user name from the login
     """
@@ -426,8 +466,7 @@ def openWithEveonline()->str:
         "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
         "state": base64.urlsafe_b64encode(secrets.token_bytes(8))
     }
-    auth_code = getApiKey(client_param_set)
-    getAccessToken(client_param_set, auth_code)
+    getApiKey(client_param_set,parent)
 
 class ApiKey(object):
     def __init__(self, dictionary):

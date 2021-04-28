@@ -33,8 +33,8 @@ from vi.ui.styles import Styles, TextInverter
 
 from . import evegate
 
-JB_COLORS =("66CD00", "7CFC00", "32CD32", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
-            "90EE90", "8FBC8F", "20B2AA", "2E8B57", "808000", "6B8E23")
+JB_COLORS = ("66CD00", "7CFC00", "32CD32", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
+             "90EE90", "8FBC8F", "20B2AA", "2E8B57", "808000", "6B8E23")
 
 class DotlanException(Exception):
     def __init__(self, *args, **kwargs):
@@ -45,7 +45,8 @@ class Map(object):
     """
         The map including all information from dotlan
     """
-    DOTLAN_BASIC_URL = u"https://evemaps.dotlan.net/svg/{0}.svg"
+    #todo:dark.svgs should follow stylesheet
+    DOTLAN_BASIC_URL = u"https://evemaps.dotlan.net/svg/{0}.dark.svg"
     styles = Styles()
 
     @property
@@ -89,7 +90,7 @@ class Map(object):
             except Exception as e:
                 self.outdatedCacheError = e
                 svg = cache.getFromCache("map_" + self.region, True)
-                if not svg or svg.startswith( "region not found"):
+                if not svg or svg.startswith("region not found"):
                     t = "No Map in cache, nothing from dotlan. Must give up " \
                         "because this happened:\n{0} {1}\n\nThis could be a " \
                         "temporary problem (like dotlan is not reachable), or " \
@@ -115,7 +116,7 @@ class Map(object):
         else:
             scale = 1.0
 
-        self._extractSizeFromSoup( self.soup )
+        self._extractSizeFromSoup(self.soup)
         self._prepareSvg(self.soup, self.systems, scale)
         self._connectNeighbours()
         self.jumpBridges = []

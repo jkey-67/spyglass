@@ -25,7 +25,6 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QAction, QActionGroup
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QSystemTrayIcon
-
 from vi.resources import resourcePath
 from vi import states
 from vi.soundmanager import SoundManager
@@ -177,13 +176,14 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         text = None
         icon = None
         text = ""
+
         if (message.status == states.ALARM and self.showAlarm and self.lastNotifications.get(states.ALARM,
                                                                                              0) < time.time() - self.MIN_WAIT_NOTIFICATION):
             title = "ALARM!"
             icon = 2
             speechText = (u"{0} alarmed in {1}, {2} jumps from {3}".format(system, room, distance, char))
             text = speechText + (u"\nText: %s" % text)
-            SoundManager().playSound("alarm", text, speechText)
+            SoundManager().playSound("alarm_{}".format(distance), text, speechText)
             self.lastNotifications[states.ALARM] = time.time()
         elif (message.status == states.REQUEST and self.showRequest and self.lastNotifications.get(states.REQUEST,
                                                                                                    0) < time.time() - self.MIN_WAIT_NOTIFICATION):

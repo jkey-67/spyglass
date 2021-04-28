@@ -38,7 +38,7 @@ from vi import states
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 from vi.soundmanager import SoundManager
-from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread, VoiceOverThread
+from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser import ChatParser
@@ -219,7 +219,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
         self.mapView.webViewResized.connect(self.fixupScrollBars)
         self.mapView.customContextMenuRequested.connect(self.showContextMenu)
-        self.connectToEveOnline.clicked.connect( lambda:evegate.openWithEveonline())
+        self.connectToEveOnline.clicked.connect(lambda: evegate.openWithEveonline(parent=self))
         def updateX(x):
             pos = self.mapView.scrollPosition()
             pos.setX(x)
@@ -273,9 +273,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.start()
         # statisticsThread is blocked until first call of requestStatistics
 
-        self.voiceThread = VoiceOverThread()
-        self.voiceThread.start()
-
     def terminateThreads(self):
         # Stop the threads
         try:
@@ -290,7 +287,6 @@ class MainWindow(QtWidgets.QMainWindow):
             #self.versionCheckThread.wait()
             self.statisticsThread.quit()
             self.statisticsThread.wait()
-            self.voiceThread.join()
             self.mapTimer.stop()
         except Exception as ex:
             logging.critical(ex)
@@ -722,16 +718,16 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception:
             pass
 
-    def fixupScrollBars(self,scrollPosition=None):
-        wSize = self.mapView.size()
-        cSize = self.mapView.imgSize*self.mapView.zoom
-        #print( "fixupScrollBars ",scrollPosition," widget ", wSize, " content ",cSize )
-        self.mapHorzScrollBar.setVisible(cSize.width() > wSize.width())
-        self.mapVertScrollBar.setVisible( cSize.height() > wSize.height())
-        self.mapHorzScrollBar.setPageStep( cSize.width())
-        self.mapVertScrollBar.setPageStep(cSize.height())
-        self.mapHorzScrollBar.setRange(0, cSize.width() - wSize.width())
-        self.mapVertScrollBar.setRange(0, cSize.height() - wSize.height())
+    def fixupScrollBars(self, scrollPosition=None):
+        widget_size = self.mapView.size()
+        content_size = self.mapView.imgSize*self.mapView.zoom
+        logging.debug("fixupScrollBars {} widget:{} contet:{} ".format(scrollPosition, widget_size, content_size))
+        self.mapHorzScrollBar.setVisible(content_size.width() > widget_size.width())
+        self.mapVertScrollBar.setVisible(content_size.height() > widget_size.height())
+        self.mapHorzScrollBar.setPageStep(content_size.width())
+        self.mapVertScrollBar.setPageStep(content_size.height())
+        self.mapHorzScrollBar.setRange(0, content_size.width() - widget_size.width())
+        self.mapVertScrollBar.setRange(0, content_size.height() - widget_size.height())
         self.mapHorzScrollBar.setValue(self.mapView.scrollPosition().x())
         self.mapVertScrollBar.setValue(self.mapView.scrollPosition().y())
 
@@ -891,12 +887,38 @@ class MainWindow(QtWidgets.QMainWindow):
         infoDialog.closeButton.clicked.connect(infoDialog.accept)
         infoDialog.show()
 
+    def selectSoundFile(self,mask,dialog):
+        filename = QFileDialog.getOpenFileName(self, caption="Select sound file")
+        if len(filename):
+            SoundManager().setSoundFile(mask, filename[0])
+        else:
+            SoundManager().setSoundFile(mask, "")
+        if dialog:
+            dialog.soundAlarm_1.setText(SoundManager().soundFile("alarm_1"))
+            dialog.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
+            dialog.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
+            dialog.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
+
     def showSoundSetup(self):
         dialog = QtWidgets.QDialog(self)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "SoundSetup.ui")), dialog)
         dialog.volumeSlider.setValue(SoundManager().soundVolume)
         dialog.volumeSlider.valueChanged[int].connect(SoundManager().setSoundVolume)
-        dialog.testSoundButton.clicked.connect(SoundManager().playSound)
+        dialog.testSoundButton.clicked.connect(lambda: SoundManager().playSound(name="alarm",abbreviatedMessage="Testing the playback sound system!"))
+        dialog.palyAlarm_1.clicked.connect(lambda: SoundManager().playSound(name="alarm_1", abbreviatedMessage="Alarm distance 1"))
+        dialog.palyAlarm_2.clicked.connect(lambda: SoundManager().playSound(name="alarm_2", abbreviatedMessage="Alarm distance 2"))
+        dialog.palyAlarm_3.clicked.connect(lambda: SoundManager().playSound(name="alarm_3", abbreviatedMessage="Alarm distance 3"))
+        dialog.palyAlarm_4.clicked.connect(lambda: SoundManager().playSound(name="alarm_4", abbreviatedMessage="Alarm distance 4"))
+        dialog.selectAlarm_1.clicked.connect(lambda: self.selectSoundFile("alarm_1", dialog))
+        dialog.selectAlarm_2.clicked.connect(lambda: self.selectSoundFile("alarm_2", dialog))
+        dialog.selectAlarm_3.clicked.connect(lambda: self.selectSoundFile("alarm_3", dialog))
+        dialog.selectAlarm_4.clicked.connect(lambda: self.selectSoundFile("alarm_4", dialog))
+        dialog.soundAlarm_1.setText(SoundManager().soundFile("alarm_1"))
+        dialog.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
+        dialog.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
+        dialog.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
+        #selectAlarm_1
+        #soundAlarm_1
         dialog.closeButton.clicked.connect(dialog.accept)
         dialog.show()
 
@@ -1031,7 +1053,7 @@ class RegionChooser(QtWidgets.QDialog):
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "RegionChooser.ui")), self)
-        self.strList = QtWidgets.QCompleter(["{}".format(name) for key,name in evegate.idsToNames(evegate.getAllRegions()).items()])
+        self.strList = QtWidgets.QCompleter(["{}".format(name) for key,name in evegate.idsToNames(evegate.getAllRegions()).items()],parent=self)
         self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.regionNameField.setCompleter(self.strList)
         self.cancelButton.clicked.connect(self.accept)

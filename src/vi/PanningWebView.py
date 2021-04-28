@@ -191,14 +191,14 @@ class PanningWebView(QWidget):
             elemDelta =elemOri-self.mapPosFromPos(pos)
             self.scrollPos=self.scrollPos+elemDelta*self.zoom
 
-    def zoomOut(self,pos=None):
-        if pos==None:
+    def zoomOut(self, pos=None):
+        if pos == None:
             self.setZoomFactor(self.zoom*0.9)
         else:
-            elemOri=self.mapPosFromPos(pos)
+            elem_ori = self.mapPosFromPos(pos)
             self.setZoomFactor(self.zoom*0.9)
-            elemDelta=elemOri-self.mapPosFromPos(pos)
-            self.scrollPos=self.scrollPos+elemDelta*self.zoom
+            elem_delta = elem_ori - self.mapPosFromPos(pos)
+            self.scrollPos = self.scrollPos+elem_delta*self.zoom
 
     def wheelEvent(self, event: QWheelEvent):
         if True or Qt.ControlModifier & event.modifiers():
@@ -239,7 +239,7 @@ class PanningWebView(QWidget):
     def doubleClicked(self,pos:QPoint)->bool:
         return False
 
-    def mouseDoubleClickEvent(self,mouseEvent:QMouseEvent):
+    def mouseDoubleClickEvent(self, mouseEvent:QMouseEvent):
         self.doubleClicked(self.mapPosFromEvent(mouseEvent))
 
     def mapPosFromPos(self,pos:QPointF)->QPointF:
@@ -257,7 +257,7 @@ class PanningWebView(QWidget):
                 QApplication.restoreOverrideCursor()
                 QApplication.setOverrideCursor(QtCore.Qt.OpenHandCursor)
                 self.handIsClosed = True
-            if (self.scrollMousePress != None):
+            if self.scrollMousePress != None:
                 delta = mouseEvent.pos() - self.positionMousePress
                 self.setScrollPosition(self.scrollMousePress - delta)
             return
