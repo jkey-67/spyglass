@@ -18,21 +18,13 @@
 ###########################################################################
 
 import os
-import subprocess
-import sys
-import re
-import requests
-import time
-
-from collections import namedtuple
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, QLocale
 from .resources import resourcePath
-import queue
-import logging
 from vi.singleton import Singleton
-from PyQt5.QtMultimedia import QSoundEffect, QMediaPlayer
+from PyQt5.QtMultimedia import QSoundEffect
+from PyQt5.QtTextToSpeech import QTextToSpeech, QVoice
 from PyQt5.QtWidgets import qApp
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import *
 global gPygletAvailable
 
 try:
@@ -45,6 +37,10 @@ except ImportError:
 
 class SoundManager(metaclass=Singleton):
     SOUNDS = {"alarm": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
+              "alarm_1": "",
+              "alarm_2": "",
+              "alarm_3": "",
+              "alarm_4": "",
               "kos": "178031__zimbot__transporterstartbeep0-sttos-recreated.wav",
               "request": "178028__zimbot__bosun-whistle-sttos-recreated.wav"}
 
@@ -54,16 +50,42 @@ class SoundManager(metaclass=Singleton):
     def __init__(self):
         self.sounds = {}
         self.worker = QThread()
+        self.speach_engine = QTextToSpeech()
+        #for loc in self.speach_engine.availableLocales():
+        #    if loc.language() == Qt.QLocale.ation.english:
+        #        self.speach_engine.setLocale( loc )
         for itm in self.SOUNDS:
             self.sounds[itm] = QSoundEffect()
             url = QUrl.fromLocalFile(resourcePath(os.path.join("vi", "ui", "res", "{0}".format(self.SOUNDS[itm]))))
             self.sounds[itm].setSource(url)
 
+    def soundFile(self,mask):
+        if mask in self.SOUNDS.keys():
+            return self.SOUNDS[mask]
+        else:
+            return ""
+
+    def setSoundFile(self,mask,filename):
+        if mask in self.SOUNDS.keys():
+            self.SOUNDS[mask] = filename
+            self.sounds[mask] = QSoundEffect()
+            url = QUrl.fromLocalFile(self.SOUNDS[mask])
+            self.sounds[mask].setSource(url)
+
+
     def platformSupportsAudio(self):
         return True
 
     def platformSupportsSpeech(self):
-        return False
+        avail_engines = self.speach_engine.availableEngines()
+        self.speach_engine.setLocale(QLocale(QLocale.English))
+        return len(avail_engines)
+        #avail_locales = self.speach_engine.availableLocales()
+        self.speach_engine.setLocale(QLocale(QLocale.English))
+        avail_voices = self.speach_engine.availableVoices()
+        #self.speach_engine.setVoice(avail_voices[24])#5
+        #self.id_voice = 26
+        return len(avail_voices)
 
     def setUseSpokenNotifications(self, newValue):
         if newValue is not None:
@@ -75,9 +97,15 @@ class SoundManager(metaclass=Singleton):
             self.sounds[itm].setVolume(self.soundVolume/100)
 
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
+        audioFile = None
         if self.soundAvailable and self.soundActive:
-            if self.useSpokenNotifications:
+            if self.useSpokenNotifications and abbreviatedMessage!="":
+                #todo:use QTextToSpeach here
                 audioFile = None
+                #avail_voices = self.speach_engine.availableVoices()
+                #self.speach_engine.setVoice(avail_voices[self.id_voice])  # 5
+                #self.id_voice = self.id_voice + 1
+                self.speach_engine.say(abbreviatedMessage)
             elif name in self.sounds.keys():
                 self.sounds[name].play()
             else:

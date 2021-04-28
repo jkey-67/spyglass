@@ -19,9 +19,6 @@
 
 import time
 import logging
-import pyttsx3
-import threading
-from queue import Queue
 import queue
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
 from cairosvg import *
@@ -237,33 +234,3 @@ class GenerateJumpBridgesThread(QThread):
         self.active = False
         self.queue.put(None)
         QThread.quit(self)
-
-
-class VoiceOverThread(threading.Thread):
-    def __init__(self):
-        super(VoiceOverThread, self).__init__()
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 185)
-        self.engine.setProperty('voice', 'english-us')
-        self.queue = Queue()
-        self.daemon = True
-        self.stoprequest = threading.Event()
-
-    def add_message(self, msg):
-        self.queue.put(msg)
-
-    def run(self):
-        while not self.stoprequest.is_set:
-            try:
-                # Will block until it gets a something or times out
-                words = self.queue.get(True, 1)
-                # Init every time, only takes ~20us on slow machines and avoids colliding words
-                self.engine = pyttsx3.init()
-                self.engine.setProperty('rate', 160)
-                self.engine.setProperty('voice', 'english-us')
-                self.engine.say(words)
-                # should block until the end of the words
-                self.queue.task_done()
-                self.engine = None
-            except Queue.Empty:
-                continue
