@@ -37,7 +37,10 @@ def check(parts):
     names = [name.strip() for name in parts]
 
     try:
-        kosData = requests.get(CVA_KOS_URL, params={'c': 'json', 'type': 'multi', 'q': ','.join(names)}).json()
+        parameter ={'c': 'json', 'type': 'multi', 'q': ",{}".format(','.join(names))}
+        kos_data_req = requests.get(CVA_KOS_URL, params=parameter)
+        kos_data_req.raise_for_status()
+        kosData = kos_data_req.json()
     except RequestException as e:
         kosData = None
         logging.error("Error on pilot KOS check request %s", str(e))
@@ -87,7 +90,7 @@ def check(parts):
             for corpname in nameData["corpnames"]:
                 if corpname not in evegate.NPC_CORPS:
                     nameData["need_check"] = True
-                    nameData["corpid_to_check"] = corpIdName.keys()[corpIdName.values().index(corpname)]
+                    nameData["corpid_to_check"] = list(corpIdName.keys())[list(corpIdName.values()).index(corpname)]
                     nameData["corp_to_check"] = corpname
                     break
 

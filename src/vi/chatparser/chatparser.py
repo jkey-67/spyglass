@@ -211,10 +211,10 @@ class ChatParser(object):
         if path not in self.fileData:
             # seems eve created a new file. New Files have 12 lines header
             self.fileData[path] = {"lines": 13}
-        if not rescan:
-            oldLength = self.fileData[path]["lines"]
-        else:
+        if rescan:
             oldLength = 13
+        else:
+            oldLength = self.fileData[path]["lines"]
         lines = self.addFile(path)
         if path in self.ignoredPaths:
             return []

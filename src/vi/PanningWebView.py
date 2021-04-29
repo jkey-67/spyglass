@@ -55,6 +55,7 @@ class PanningWebView(QWidget):
         self.webview.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.webview.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.webview.setAttribute(QtCore.Qt.WA_NoSystemBackground)
         self.webview.page().setBackgroundColor(QtCore.Qt.transparent)
         self.webview.loadStarted.connect(self.renderToImageStart)
         self.webview.loadFinished.connect(self.renderToImageDelayed)

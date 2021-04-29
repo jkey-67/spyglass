@@ -41,7 +41,7 @@ from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu
 from vi.ui.styles import Styles
-from vi.chatparser import ChatParser
+from vi.chatparser.chatparser import ChatParser, Message
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QActionGroup
 
@@ -50,6 +50,7 @@ MESSAGE_EXPIRY_SECS = 20 * 60
 MAP_UPDATE_INTERVAL_MSECS = 4 * 1000
 CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 
+DEFAULT_ROOM_MANES = (u"Int.Impass", u"Int.Imenseasz", u"Int.Tenerifs", u"Intel Legacy", u"Int.Catch", u"Int.PBasis")
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -88,9 +89,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoChangeRegion = False
         self.mapPositionsDict = {}
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
-        #self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
         # Load user's toon names
         self.knownPlayerNames = self.cache.getFromCache("known_player_names")
         if self.knownPlayerNames:
@@ -105,7 +103,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if roomnames:
             roomnames = roomnames.split(",")
         else:
-            roomnames = (u"TheCitadel", u"North Provi Intel", u"4THINTEL")
+            roomnames = DEFAULT_ROOM_MANES
             self.cache.putIntoCache("room_names", u",".join(roomnames), 60 * 60 * 24 * 365 * 5)
         self.roomnames = roomnames
 
@@ -851,8 +849,8 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error(e)
 
     def showKosResult(self, state, text, requestType, hasKos):
-        if not self.scanIntelForKosRequestsEnabled:
-            return
+        #if not self.scanIntelForKosRequestsEnabled:
+        #    return
         try:
             if hasKos:
                 SoundManager().playSound("kos", text)
@@ -864,7 +862,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         text = "None KOS"
                     self.trayIcon.showMessage("Your KOS-Check", text, 1)
                 text = text.replace("\n\n", "<br>")
-                message = chatparser.chatparser.Message("Spyglass KOS-Check", text, evegate.currentEveTime(), "Spyglass",
+                message = Message("Spyglass KOS-Check", text, evegate.currentEveTime(), "Spyglass",
                                                         [], states.NOT_CHANGE, text.upper(), text)
                 self.addMessageToIntelChat(message)
             elif state == "error":
@@ -896,6 +894,7 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
             dialog.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
             dialog.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
+            dialog.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
 
     def showSoundSetup(self):
         dialog = QtWidgets.QDialog(self)
@@ -907,16 +906,17 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.palyAlarm_2.clicked.connect(lambda: SoundManager().playSound(name="alarm_2", abbreviatedMessage="Alarm distance 2"))
         dialog.palyAlarm_3.clicked.connect(lambda: SoundManager().playSound(name="alarm_3", abbreviatedMessage="Alarm distance 3"))
         dialog.palyAlarm_4.clicked.connect(lambda: SoundManager().playSound(name="alarm_4", abbreviatedMessage="Alarm distance 4"))
+        dialog.palyAlarm_5.clicked.connect(lambda: SoundManager().playSound(name="alarm_5", abbreviatedMessage="Alarm distance 5"))
         dialog.selectAlarm_1.clicked.connect(lambda: self.selectSoundFile("alarm_1", dialog))
         dialog.selectAlarm_2.clicked.connect(lambda: self.selectSoundFile("alarm_2", dialog))
         dialog.selectAlarm_3.clicked.connect(lambda: self.selectSoundFile("alarm_3", dialog))
         dialog.selectAlarm_4.clicked.connect(lambda: self.selectSoundFile("alarm_4", dialog))
+        dialog.selectAlarm_5.clicked.connect(lambda: self.selectSoundFile("alarm_5", dialog))
         dialog.soundAlarm_1.setText(SoundManager().soundFile("alarm_1"))
         dialog.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
         dialog.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
         dialog.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
-        #selectAlarm_1
-        #soundAlarm_1
+        dialog.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
         dialog.closeButton.clicked.connect(dialog.accept)
         dialog.show()
 
@@ -1032,7 +1032,7 @@ class ChatroomsChooser(QtWidgets.QDialog):
         cache = Cache()
         roomnames = cache.getFromCache("room_names")
         if not roomnames:
-            roomnames = u"TheCitadel,North Provi Intel,4THINTEL"
+            roomnames = u','.join(DEFAULT_ROOM_MANES)
         self.roomnamesField.setPlainText(roomnames)
 
     def saveClicked(self):
@@ -1042,7 +1042,7 @@ class ChatroomsChooser(QtWidgets.QDialog):
         self.rooms_changed.emit(rooms)
 
     def setDefaults(self):
-        self.roomnamesField.setPlainText(u"TheCitadel,North Provi Intel,4THINTEL")
+        self.roomnamesField.setPlainText(u','.join(DEFAULT_ROOM_MANES))
 
 
 class RegionChooser(QtWidgets.QDialog):

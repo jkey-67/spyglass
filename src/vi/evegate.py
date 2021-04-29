@@ -149,8 +149,9 @@ def idsToNames(ids):
                 list_of_ids = list_of_ids + ","
             list_of_ids = list_of_ids + str(checked_id)
         url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
-        content = requests.post(url, data="[{}]".format(list_of_ids)).json()
+        content = requests.post(url, data="[{}]".format(list_of_ids))
         content.raise_for_status()
+        content = content.json()
         if len(content) > 0:
             for elem in content:
                 data[elem["id"]] = elem["name"]
@@ -239,9 +240,10 @@ def getCorpidsForCharId(charId,use_cache=True):
         try:
             charId = int(charId)
             url = "https://esi.evetech.net/latest/characters/{id}/corporationhistory/?datasource=tranquility".format(id=charId)
-            content = requests.get(url).text
-            corp_ids = eval(content)
-            cache.putIntoCache(cache_key, content)
+            content = requests.get(url)
+            corp_ids = content.json()
+            content.raise_for_status()
+            cache.putIntoCache(cache_key, content.text)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if (e.response.status_code != 400):
