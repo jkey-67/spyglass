@@ -42,6 +42,7 @@ class SoundManager(metaclass=Singleton):
               "alarm_2": "",
               "alarm_3": "",
               "alarm_4": "",
+              "alarm_5": "",
               "kos": "178031__zimbot__transporterstartbeep0-sttos-recreated.wav",
               "request": "178028__zimbot__bosun-whistle-sttos-recreated.wav"}
 
@@ -52,17 +53,18 @@ class SoundManager(metaclass=Singleton):
         self.sounds = {}
         self.worker = QThread()
         self.speach_engine = QTextToSpeech()
-        #for loc in self.speach_engine.availableLocales():
-        #    if loc.language() == Qt.QLocale.ation.english:
-        #        self.speach_engine.setLocale( loc )
         cache = Cache()
         self.setSoundFile("alarm_1", cache.getFromCache("soundsetting.alarm_1"))
         self.setSoundFile("alarm_2", cache.getFromCache("soundsetting.alarm_2"))
         self.setSoundFile("alarm_3", cache.getFromCache("soundsetting.alarm_3"))
         self.setSoundFile("alarm_4", cache.getFromCache("soundsetting.alarm_4"))
+        self.setSoundFile("alarm_5", cache.getFromCache("soundsetting.alarm_5"))
         for itm in self.SOUNDS:
             self.sounds[itm] = QSoundEffect()
-            url = QUrl.fromLocalFile(resourcePath(os.path.join("vi", "ui", "res", "{0}".format(self.SOUNDS[itm]))))
+            if self.SOUNDS[itm]!=None and os.path.exists(self.SOUNDS[itm]):
+                url = QUrl.fromLocalFile(self.SOUNDS[itm])
+            else:
+                url = QUrl.fromLocalFile(resourcePath(os.path.join("vi", "ui", "res", "{0}".format(self.SOUNDS[itm]))))
             self.sounds[itm].setSource(url)
 
     def soundFile(self, mask):
@@ -100,7 +102,7 @@ class SoundManager(metaclass=Singleton):
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage!="":
-                self.speach_engine.setVolume(self.soundVolume)
+                self.speach_engine.setVolume(self.soundVolume/100.0)
                 self.speach_engine.say(abbreviatedMessage)
             elif name in self.sounds.keys():
                 self.sounds[name].setMuted(False)

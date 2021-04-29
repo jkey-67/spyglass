@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>581</width>
-    <height>298</height>
+    <width>588</width>
+    <height>311</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -61,6 +61,13 @@
         </item>
         <item>
          <layout class="QGridLayout" name="gridLayout_2">
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Dist 3</string>
+            </property>
+           </widget>
+          </item>
           <item row="2" column="3">
            <widget class="QToolButton" name="palyAlarm_3">
             <property name="text">
@@ -68,31 +75,17 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
-           <widget class="QToolButton" name="selectAlarm_3">
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_7">
             <property name="text">
-             <string>...</string>
+             <string>Dist 5</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="3">
-           <widget class="QToolButton" name="palyAlarm_1">
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_4">
             <property name="text">
-             <string>Play</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Dist 4+</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="2">
-           <widget class="QToolButton" name="selectAlarm_4">
-            <property name="text">
-             <string>...</string>
+             <string>Dist. 2 </string>
             </property>
            </widget>
           </item>
@@ -103,52 +96,17 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Dist 3</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="soundAlarm_2">
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="3">
-           <widget class="QToolButton" name="palyAlarm_4">
-            <property name="text">
-             <string>Play</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="soundAlarm_1">
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLineEdit" name="soundAlarm_3">
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>Dist. 1</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="2">
            <widget class="QToolButton" name="selectAlarm_1">
             <property name="text">
              <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="soundAlarm_5">
+            <property name="readOnly">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -159,6 +117,62 @@
             </property>
            </widget>
           </item>
+          <item row="3" column="3">
+           <widget class="QToolButton" name="palyAlarm_4">
+            <property name="text">
+             <string>Play</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="soundAlarm_3">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Dist 4</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QToolButton" name="selectAlarm_3">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="3">
+           <widget class="QToolButton" name="palyAlarm_5">
+            <property name="text">
+             <string>Play</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>Dist. 1</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QToolButton" name="palyAlarm_1">
+            <property name="text">
+             <string>Play</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="soundAlarm_2">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="3">
            <widget class="QToolButton" name="palyAlarm_2">
             <property name="text">
@@ -166,10 +180,24 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_4">
+          <item row="4" column="2">
+           <widget class="QToolButton" name="selectAlarm_5">
             <property name="text">
-             <string>Dist. 2 </string>
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="soundAlarm_1">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QToolButton" name="selectAlarm_4">
+            <property name="text">
+             <string>...</string>
             </property>
            </widget>
           </item>
