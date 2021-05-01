@@ -34,8 +34,9 @@ import webbrowser
 import base64
 import hashlib
 import secrets
+""" eve_api_key.py defines the secret api key CLIENTS_API_KEY = "1234...4321" 
+"""
 import eve_api_key
-import asyncio
 from vi.cache.cache import Cache
 
 ERROR = -1
@@ -52,11 +53,15 @@ def charnameToId(name,use_cache=True):
         return cached_id
     else:
         url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search={iname}&strict=true"
-        content = requests.get(url.format(iname=name)).json()
+        response = requests.get(url.format(iname=name))
+        response.raise_for_status()
+        content = response.json()
         if "character" in content.keys():
             for idFound in content["character"]:
                 url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=idFound)
-                details = requests.get(url.format(name)).json()
+                response = requests.get(url.format(name))
+                response.raise_for_status()
+                details = response.json()
                 if "name" in details.keys():
                     name_found = details["name"]
                     if name_found.lower() == name.lower():
@@ -64,7 +69,7 @@ def charnameToId(name,use_cache=True):
                         return idFound
     return None
 
-def namesToIds(names):
+def namesToIds(names,useCache=True):
     """ Uses the EVE API to convert a list of names to ids_to_names
         names: list of names
         returns a dict: key=name, value=id
@@ -78,7 +83,7 @@ def namesToIds(names):
     for name in names:
         cache_key = "_".join(("id", "name", name))
         id = cache.getFromCache(cache_key)
-        if id:
+        if id and useCache:
             data[name] = id
         else:
             api_check_names.add(name)
@@ -92,7 +97,9 @@ def namesToIds(names):
                     list_of_name = list_of_name + ","
                 list_of_name = list_of_name + "\"{}\"".format(name)
             url = "https://esi.evetech.net/latest/universe/ids/?datasource=tranquility"
-            content = requests.post(url, data="[{}]".format(list_of_name)).json()
+            response = requests.post(url, data="[{}]".format(list_of_name))
+            response.raise_for_status()
+            content = response.json()
             if "characters" in content.keys():
                 for char in content["characters"]:
                     data[char["name"]] = char["id"]
@@ -116,11 +123,13 @@ def getAllRegions(use_cache=True):
         return eval(all_systems)
     else:
         url = "https://esi.evetech.net/latest/universe/regions/?datasource=tranquility"
-        content = requests.get(url).json()
+        response = requests.get(url)
+        response.raise_for_status()
+        content = response.json()
         cache.putIntoCache("list_of_all_systems", str(content), 60 * 60 * 24 * 365)
         return content
 
-def idsToNames(ids):
+def idsToNames(ids,useCache=True):
     """ Returns the names for ids
         ids = iterable list of ids
         returns a dict key = id, value = name
@@ -135,7 +144,7 @@ def idsToNames(ids):
     for checked_id in ids:
         cache_key = u"_".join(("name", "id", str(checked_id)))
         name = cache.getFromCache(cache_key)
-        if name:
+        if name and useCache:
             data[checked_id] = name
         else:
             api_check_ids.add(checked_id)
@@ -149,16 +158,17 @@ def idsToNames(ids):
                 list_of_ids = list_of_ids + ","
             list_of_ids = list_of_ids + str(checked_id)
         url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
-        content = requests.post(url, data="[{}]".format(list_of_ids))
-        content.raise_for_status()
-        content = content.json()
+        response = requests.post(url, data="[{}]".format(list_of_ids))
+        response.raise_for_status()
+        content = response.json()
         if len(content) > 0:
             for elem in content:
                 data[elem["id"]] = elem["name"]
             # and writing into cache
             for checked_id in api_check_ids:
                 cache_key = u"_".join(("name", "id", str(checked_id)))
-                cache.putIntoCache(cache_key, data[checked_id], 60 * 60 * 24 * 365)
+                if checked_id in data.keys():
+                    cache.putIntoCache(cache_key, data[str(checked_id)], 60 * 60 * 24 * 365)
     except Exception as e:
         logging.error("Exception during idsToNames: %s", e)
     return data
@@ -174,7 +184,10 @@ def getAvatarForPlayer(charname):
         charId = charnameToId(charname)
         if charId:
             imageUrl = "https://images.evetech.net/characters/{id}/portrait?tenant=tranquility&size={size}"
-            avatar = requests.get(imageUrl.format(id=charId, size=64)).content
+            response = requests.get(imageUrl.format(id=charId, size=64))
+            response.raise_for_status()
+            avatar = response.content
+
     except Exception as e:
         logging.error("Exception during getAvatarForPlayer: %s", e)
         avatar = None
@@ -189,7 +202,9 @@ def checkPlayername(charname):
         return ERROR
     try:
         url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en&search={charname}&strict=true"
-        content = requests.get(url.format(charname=charname)).json()
+        response = requests.get(url.format(charname=charname))
+        response.raise_for_status()
+        content = response.json()
         if "character" in content.keys():
             if len(content["character"]):
                 return EXISTS
@@ -217,10 +232,11 @@ def getCharinfoForCharId(charId,use_cache=True):
         try:
             charId = int(charId)
             url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=charId)
-            content = requests.get(url).text
-            char_info = eval(content)
+            response = requests.get(url)
+            response.raise_for_status()
+            char_info = eval(response.text)
             # should be valid for up to three days
-            cache.putIntoCache(cache_key, content, 60*60*24*3)
+            cache.putIntoCache(cache_key, response.text, 60*60*24*3)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if (e.response.status_code != 400):
@@ -240,10 +256,10 @@ def getCorpidsForCharId(charId,use_cache=True):
         try:
             charId = int(charId)
             url = "https://esi.evetech.net/latest/characters/{id}/corporationhistory/?datasource=tranquility".format(id=charId)
-            content = requests.get(url)
-            corp_ids = content.json()
-            content.raise_for_status()
-            cache.putIntoCache(cache_key, content.text)
+            response = requests.get(url)
+            response.raise_for_status()
+            corp_ids = response.json()
+            cache.putIntoCache(cache_key, response.text)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if (e.response.status_code != 400):
@@ -279,7 +295,9 @@ def getSystemStatistics():
         if jump_data is None:
             jump_data = {}
             url = "https://esi.evetech.net/latest/universe/system_jumps/?datasource=tranquility"
-            resp = requests.get(url).json()
+            response = requests.get(url)
+            response.raise_for_status()
+            resp = response.json()
             for row in resp:
                 jump_data[int(row["system_id"])] = int(row["ship_jumps"])
 
@@ -294,7 +312,9 @@ def getSystemStatistics():
         if systemData is None:
             systemData = {}
             url = "https://esi.evetech.net/latest/universe/system_kills/?datasource=tranquility"
-            resp = requests.get(url).json()
+            response = requests.get(url)
+            response.raise_for_status()
+            resp = response.json()
             for row in resp:
                 systemData[int(row["system_id"])] = {"ship": int(row["ship_kills"]),
                                                         "faction": int(row["npc_kills"]),
@@ -439,6 +459,7 @@ def getAccessToken(client_param,auth_code:str,add_headers={})->str:
         data=form_values,
         headers=headers,
     )
+    res.raise_for_status()
     if res.status_code == 200:
         aut_call = res.json()
         header={
@@ -521,6 +542,9 @@ def refreshToken(params:ApiKey):
 def checkTokenTimeLine(param:ApiKey):
     """ double check the api timestamp, if expired the parm set will be updated
     """
+    if param == None:
+        logging.error(" checkTokenTimeLine needs the eve-online api account.")
+        return None
     if param.valid_until != None and param.valid_until > time.time():
         return param
     else:
@@ -645,6 +669,10 @@ def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
         logging.error("getAllJumpGates needs the eve-online api account.")
         return None
     token = checkTokenTimeLine(getTokenOfChar(nameChar))
+    if token == None:
+        logging.error("getAllJumpGates needs the eve-online api account.")
+        return None
+
     req = "https://esi.evetech.net/v3/characters/{id}/search/?datasource=tranquility&categories=structure&search={sys}%20%C2%BB%20&token={tok}".format(id=token.CharacterID, tok=token.access_token,sys=systemName)
     res = requests.get(req)
     res.raise_for_status()
@@ -801,12 +829,14 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
 
 # The main application for testing
 if __name__ == "__main__":
+    nase = namesToIds(list({"nele McCool", "G-M4GK", "Rovengard Ogaster"}), False)
+    itms = ["{}".format(itm) for key, itm in nase.items()]
+    esan = idsToNames(itms, False)
     structs = getAllStructures()
     sysnames = idsToNames(getAllRegions())
     some = ["{}".format(itm) for key,itm in sysnames.items()]
     id = charnameToId("nele McCool",False)
     corp=getCurrentCorpForCharId(1350114619,False)
-    nase=namesToIds({"nele McCool", "G-M4GK"})
     res = getCorpidsForCharId(charnameToId("nele McCool"))
     res = getCharinfoForCharId(charnameToId("nele McCool"))
     gates = getAllJumpGates("nele McCool", "G-M4GK")

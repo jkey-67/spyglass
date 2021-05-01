@@ -849,8 +849,8 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error(e)
 
     def showKosResult(self, state, text, requestType, hasKos):
-        #if not self.scanIntelForKosRequestsEnabled:
-        #    return
+        if not self.scanIntelForKosRequestsEnabled:
+            return
         try:
             if hasKos:
                 SoundManager().playSound("kos", text)
