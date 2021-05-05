@@ -829,6 +829,7 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
 
 # The main application for testing
 if __name__ == "__main__":
+    self = currentEveTime()
     nase = namesToIds(list({"nele McCool", "G-M4GK", "Rovengard Ogaster"}), False)
     itms = ["{}".format(itm) for key, itm in nase.items()]
     esan = idsToNames(itms, False)

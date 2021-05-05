@@ -397,21 +397,21 @@ class MainWindow(QtWidgets.QMainWindow):
             QMessageBox.warning(None, "Using map from cache", diagText, QMessageBox.Ok)
 
         # Load the jumpbridges
-        logging.critical("Load jump bridges")
+        logging.debug("Load jump bridges")
         self.setJumpbridges(self.cache.getFromCache("jumpbridge_url"))
         self.systems = self.dotlan.systems
-        logging.critical("Creating chat parser")
+        logging.debug("Creating chat parser")
         self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems)
 
         # Update the new map view, then clear old statistics from the map and request new
-        logging.critical("Updating the map")
+        logging.debug("Updating the map")
         self.updateMapView()
         self.setInitialMapPositionForRegion(regionName)
         #todo:why using timer for painting
         self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
         # Allow the file watcher to run now that all else is set up
         self.filewatcherThread.paused = False
-        logging.critical("Map setup complete")
+        logging.debug("Map setup complete")
 
     def rescanIntel(self):
         logging.info("Intel ReScan begun")

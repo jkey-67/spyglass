@@ -102,7 +102,7 @@ class ChatParser(object):
         self.fileData[path]["lines"] = len(lines)
         return lines
 
-    def _lineToMessage(self, line, roomname):
+    def _lineToMessage(self, line, roomname, deadline=20):
         # finding the timestamp
         timeStart = line.find("[") + 1
         timeEnds = line.find("]")
@@ -111,6 +111,11 @@ class ChatParser(object):
             timestamp = datetime.datetime.strptime(timeStr, "%Y.%m.%d %H:%M:%S")
         except ValueError:
             return None
+
+        if timestamp < datetime.datetime.utcnow()-datetime.timedelta(minutes=deadline):
+            logging.debug("Skip {} Room:{}".format(line, roomname))
+            return None
+
         # finding the username of the poster
         userEnds = line.find(">")
         username = line[timeEnds + 1:userEnds].strip()
@@ -202,7 +207,7 @@ class ChatParser(object):
                 message = Message("", "", timestamp, charname, [system, ], "", "", status)
         return message
 
-    def fileModified(self, path, rescan=False):
+    def fileModified(self, path, rescan=False, deadline=20):
         messages = []
         if path in self.ignoredPaths:
             return []
@@ -225,7 +230,7 @@ class ChatParser(object):
                 if roomname in LOCAL_NAMES:
                     message = self._parseLocal(path, line)
                 else:
-                    message = self._lineToMessage(line, roomname)
+                    message = self._lineToMessage(line, roomname, deadline)
                 if message:
                     messages.append(message)
         return messages

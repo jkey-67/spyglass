@@ -1,26 +1,21 @@
-
 <p align="center">
-  <img align="middle" src="http://www.crypta.tech/wp-content/uploads/2017/06/spyglass1.png">
+  <img align="middle" src="https://raw.githubusercontent.com/jkey-67/spyglass/master/src/vi/ui/res/logo_splash.png">
 </p>
 
 
-# Welcome To Spyglass
+# Welcome To Spyglass 1.6
 
 Spyglass is an intel visualisation and alarm system for [EVE Online](http://www.eveonline.com). This too gathers information from in game chat channels and presents the data on a [dotlan](http://evemaps.dotlan.net/map/Catch#npc24) generated map. The map is highlighted in real time as players report intel in monitored chat channels.
 
-Spyglass is written with Python 2.7, using PyQt4 for the graphical interface, BeautifulSoup4 for SVG parsing, and Pyglet for audio playback.
-
-### News
--The current release version of Spyglass [can be found here](http://www.crypta.tech/spyglass) at the bottom of the page or on the [GitHub releases page](https://github.com/Crypta-Eve//releases).
-
+Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface and audio playback, BeautifulSoup4 for SVG parsing.
 
 ## Screenshot
 
-![](http://www.crypta.tech/wp-content/uploads/2017/05/provii_normalTheme.png)
+![](https://raw.githubusercontent.com/jkey-67/spyglass/qt5/src/docs/Screenshot%201.6-abyss.png)
 
 ## Features
 
- - Platforms supported: Windows and Linux. (Mac in the future...)
+ - Platforms supported: Executable for Windows, Linux and Mac directly from source.
  - A pilot may be KOS-checked right from in-game chat channels.
  - Quick batch KOS-checking of the Local system when foregrounding Spyglass.
  - Monitored intel chat channels are merged to one chat stream. You can add or remove channels via a menu option.
@@ -28,12 +23,32 @@ Spyglass is written with Python 2.7, using PyQt4 for the graphical interface, Be
  - An interactive map of Providence / Catch is provided. Systems on the map display real-time intel data as reported through intel channels.
  - Systems on the map display different color backgrounds as their alarms age, with text indicating how long ago the specific system was reported. Background color becomes red when a system is reported and lightens (red->orange->yellow->white) in the following intervals: 4min, 10min, 15min, and 25min.
  - Systems reported clear display on the map with a green background for 10 minutes.
+ - For all Systems a right button context menu allows you to open [dotlan](https://www.dotlan.net/) or [zkillboard](https://zkillboard.com/) for the selected system directly.
+ - Automatic region change for the pilot with api registration is possible.
  - Clicking on a specific system will display all messages bound on that system in the past 20 minutes. From there one can can set a system alarm, set the systems clear or set it as the current system for one or more of your characters.
  - Clicking on a system in the intel channel (right hand column) causes it to be highlighted on the map with a blue background for 10 seconds.
  - The system where your character is currently located is highlighted on the map with an violet background automatically whenever a character changes systems.
  - Alarms can be set so that task-bar notifications are displayed when an intel report calls out a system within a specified number of jumps from your character(s). This can be configured from the task-bar icon.
- - The main window can be set up to remain "always on top" and be displayed with a specified level of transparency.
+ - For each alarm distance you can select a different sound file
+ - The main window can be set up to remain "always on top", can be displayed with a specified level of transparency and also frameless.
  - Ship names in the intel chat are highlighted.
+
+
+## Features with API registration
+
+Spyglass  use the following access rights 
+ - esi-ui.write_waypoint.v1 
+ - esi-universe.read_structures.v1 
+ - esi-search.search_structures.v1
+
+
+### API access enables 
+
+ - the right button context menu to set waypoints and destinations in game directly form inside spyglass.
+ - filling the jump bridge data from online structures  
+
+### API access ,onitoring and removal
+Please remember to manage your access to all [third-party-applications](https://community.eveonline.com/support/third-party-applications)  
 
 ## Usage
 
@@ -47,7 +62,7 @@ To use this feature: click on a pilot in the local pilot list and then type the 
 ## Intel Rescan
 
  - Spyglass can look over all of your previous logs to check for intel. This is useful in two main cases. Firstly when you startup Spyglass but have already had eve running and want to see the intel you have already collected. Secondly, when changing theme the intel in Spyglass is all reset. You can rescan to get it back.
- - By default automatically rescanning is disabled, this is so people dont complain of speed issues.
+ - By default automatically rescanning is disabled, this is so people don't complain of speed issues.
  - THIS IS VERY SLOW! looking over existing logs can be incredibly time consuming so if you use it, please be patient. This is espicaially the case for more characters/chat channels you have.
  - If you want to use thi feature, but find it to be too slow, clear out your chatlogs regularly.
 
@@ -66,25 +81,18 @@ To use this feature: click on a pilot in the local pilot list and then type the 
 To run or build from the source you need the following packages installed on your machine. Most, if not all, can be installed from the command line using package management software such as "pip". Mac and Linux both come with pip installed, Windows users may need to install [cygwin](https://www.cygwin.com) to get pip. Of course all the requirements also have download links.
 
 The packages required are:
-- Python 2.7.x
-https://www.python.org/downloads/
-Spyglass is not compatible with Python 3! (yet)
-- PyQt4x
-http://www.riverbankcomputing.com/software/pyqt/download
-Please use the PyQt Binary Package for Py2.7
-Spyglass is not compatible with PyQt5! (yet)
+- Python 3.9
+https://www.python.org/downloads/release/python-390/
+- PyQt5
+https://pypi.org/project/PyQt5/
 - BeautifulSoup 4
-https://pypi.python.org/pypi/beautifulsoup4
-- Pyglet 1.2.4 (for python 2.7)
-https://bitbucket.org/pyglet/pyglet/wiki/Download
-pyglet is used to play the sound – If it is not available the sound option will be disabled.
-- Requests 2
-https://pypi.python.org/pypi/requests
-- Six for python 3 compatibility https://pypi.python.org/pypi/six
-- Pyaml for parsing theme files
-- pyttsx for text to speech
-
-For ubuntu based distributions there is a script that will install these dependencies included. However it's mileage may vary.
+https://pypi.org/project/beautifulsoup4/
+- PyQtWebEngine
+https://pypi.org/project/PyQtWebEngine/
+- Requests
+https://pypi.org/project/requests/
+Please look to the file requirements.txt for the list off dependencies.
+For ubuntu based distributions there is a script that will install these dependencies included. However, it's mileage may vary.
 
 ## The background of Spyglass
 
@@ -100,7 +108,7 @@ Spyglass is licensed under the [GPLv3](http://www.gnu.org/licenses/gpl-3.0.html)
 
 The most likely cause of this is that pyglet is not installed.
 
-**A litte bit to big for such a little tool.**
+**A little bit to big for such a little tool.**
 
 The .exe ships with the complete environment and needed libs. You could save some space using the the source code instead.
 
@@ -161,7 +169,7 @@ Spyglass writes its own set of logs to the \Documents\EVE\spyglass\logs director
 
 **I love Spyglass - how can I help?**
 
-If you are technically inclined and have a solid grasp of Python, [contact the project maintainer via email](mailto:crypta@crypta.tech) to see how you can best help out. Alternatively you can find something you want to change and create a pull request to have your changes reviewed and potentially added to the codebase. There have been several great contributions made this way!
+If you are technically inclined and have a solid grasp of Python, [contact the project maintainer via email](mailto:no@mail.com) to see how you can best help out. Alternatively you can find something you want to change and create a pull request to have your changes reviewed and potentially added to the codebase. There have been several great contributions made this way!
 
 **I'm not a coder, how can I help?**
 
