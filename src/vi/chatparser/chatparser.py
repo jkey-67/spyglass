@@ -129,15 +129,16 @@ class ChatParser(object):
         upperText = text.upper()
 
         # KOS request
-        if upperText.startswith("XXX "):
-            return Message("roomname", text, timestamp, username, systems, upperText, status=states.KOS_STATUS_REQUEST)
-        elif roomname.startswith("="):
-            return Message(roomname, "xxx " + text, timestamp, username, systems, "XXX " + upperText,
+        if False:
+            if upperText.startswith("XXX "):
+                return Message("roomname", text, timestamp, username, systems, upperText, status=states.KOS_STATUS_REQUEST)
+            elif roomname.startswith("="):
+                return Message(roomname, "xxx " + text, timestamp, username, systems, "XXX " + upperText,
                            status=states.KOS_STATUS_REQUEST)
-        elif upperText.startswith("VINTELSOUND_TEST"):
-            return Message(roomname, text, timestamp, username, systems, upperText, status=states.SOUND_TEST)
-        if roomname not in self.rooms:
-            return None
+            elif upperText.startswith("VINTELSOUND_TEST"):
+                return Message(roomname, text, timestamp, username, systems, upperText, status=states.SOUND_TEST)
+            if roomname not in self.rooms:
+                return None
 
         message = Message(roomname, "", timestamp, username, systems, text, originalText)
         # May happen if someone plays > 1 account

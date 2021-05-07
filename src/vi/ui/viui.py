@@ -47,7 +47,7 @@ from PyQt5.QtWidgets import QActionGroup
 
 # Timer intervals
 MESSAGE_EXPIRY_SECS = 20 * 60
-MAP_UPDATE_INTERVAL_MSECS =  500
+MAP_UPDATE_INTERVAL_MSECS =  100
 CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 
 DEFAULT_ROOM_MANES = (u"Int.Impass", u"Int.Imenseasz", u"Int.Tenerifs", u"Intel Legacy", u"Int.Catch", u"Int.PBasis")
@@ -183,8 +183,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def wireUpUIConnections(self):
         # Wire up general UI connections
         self.clipboard.dataChanged.connect(self.clipboardChanged)
-        self.autoScanIntelAction.triggered.connect(self.changeAutoScanIntel)
-        self.kosClipboardActiveAction.triggered.connect(self.changeKosCheckClipboard)
+        #self.autoScanIntelAction.triggered.connect(self.changeAutoScanIntel)
+        #self.kosClipboardActiveAction.triggered.connect(self.changeKosCheckClipboard)
         self.zoomInButton.clicked.connect(self.zoomMapIn)
         self.zoomOutButton.clicked.connect(self.zoomMapOut)
         self.statisticsButton.clicked.connect(self.changeStatisticsVisibility)
@@ -254,9 +254,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.avatarFindThread.avatar_update.connect(self.updateAvatarOnChatEntry)
         self.avatarFindThread.start()
 
-        self.kosRequestThread = KOSCheckerThread()
-        self.kosRequestThread.kos_result.connect(self.showKosResult)
-        self.kosRequestThread.start()
+        #self.kosRequestThread = KOSCheckerThread()
+        #self.kosRequestThread.kos_result.connect(self.showKosResult)
+        #self.kosRequestThread.start()
 
         self.filewatcherThread = filewatcher.FileWatcher(self.pathToLogs)
         self.filewatcherThread.file_change.connect(self.logFileChanged)
@@ -279,8 +279,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.avatarFindThread.wait()
             self.filewatcherThread.quit()
             self.filewatcherThread.wait()
-            self.kosRequestThread.quit()
-            self.kosRequestThread.wait()
+            #self.kosRequestThread.quit()
+            #self.kosRequestThread.wait()
             self.statisticsThread.quit()
             self.statisticsThread.wait()
             self.mapTimer.stop()

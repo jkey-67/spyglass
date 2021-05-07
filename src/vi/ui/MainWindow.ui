@@ -438,10 +438,8 @@
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>Kos</string>
+     <string>Spyglass</string>
     </property>
-    <addaction name="autoScanIntelAction"/>
-    <addaction name="kosClipboardActiveAction"/>
     <addaction name="separator"/>
     <addaction name="infoAction"/>
     <addaction name="separator"/>
