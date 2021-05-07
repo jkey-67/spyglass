@@ -25,7 +25,7 @@ import math
 import time
 import requests
 import logging
-
+import tinycss
 from bs4 import BeautifulSoup
 from vi import states
 from vi.cache.cache import Cache
@@ -167,14 +167,13 @@ class Map(object):
 
     def _prepareSvg(self, soup, systems, scale=1):
         svg = soup.select("svg")[0]
+        svg.attrs = {key: value for key, value in svg.attrs.items() if key not in ["style","onmousedown","viewbox"]}
         # Disable dotlan mouse functionality
-        svg["onmousedown"] = "return false;"
-        svg["style"] = "background: {}".format(self.styles.getCommons()["bg_colour"])
+        #css = soup.select("style")[0]
+        #svg["style"] = "background: {}".format(self.styles.getCommons()["bg_colour"])
         if self.styles.getCommons()["change_lines"]:
             for line in soup.select("line"):
                 line["class"] = "j"
-        # Shrink the svg slightly. This is a fix for the compact map only to prevent clipping, but should not adversely affect other maps.
-        #soup.select("g")[0]['transform'] = "scale({})".format(scale)
         # Current system marker ellipse
         group = soup.new_tag("g", id="select_marker", opacity="0", activated="0", transform="translate(0, 0)")
         ellipse = soup.new_tag("ellipse", cx="0", cy="0", rx="56", ry="28", style="fill:#462CFF")
@@ -186,16 +185,26 @@ class Map(object):
             group.append(line)
         svg.insert(0, group)
 
-        jumps = soup.find("#jumps")
-        if jumps == None:
-            jumps = soup.new_tag("g", id="jumps")
-            svg.insert(-1, jumps)
+        map  = svg.select("#map")
+
+        for defs in svg.select("defs"):
+            for tag in defs.select("a"):
+                tag.attrs = {key: value for key, value in tag.attrs.items() if key not in ["target","xlink:href"]}
+                tag.name="a"
+
+        for defs in svg.select("defs"):
+            for symbol in defs.select("symbol"):
+                if symbol:
+                    symbol.name="g"
+                    map.insert(0,symbol)
+        for defs in svg.select("text.ss"):
+            defs.attrs["style"]=""# = "font-family: Arial, Helvetica, sans-serif; font-size: 5px; fill: #ffffff;"
         jumps = soup.select("#jumps")[0]
         # Set up the tags for system statistics
         for systemId, system in self.systemsById.items():
             coords = system.mapCoordinates
             text = "stats n/a"
-            style = "text-anchor:middle;font-size:8;font-weight:normal;font-family:Arial;"
+            style = "text-anchor:middle;font-size:7;font-weight:normal;font-family:Arial;"
             svgtext = soup.new_tag("text", x=coords["center_x"], y=coords["y"] + coords["height"] + 6, fill="blue",
                                    style=style, visibility="hidden", transform=system.transform)
             svgtext["id"] = "stats_" + str(systemId)
@@ -345,7 +354,8 @@ class System(object):
 
     styles = Styles()
     textInv = TextInverter()
-
+    SYSTEM_STYLE = "font-family: Arial, Helvetica, sans-serif; font-size: 8px; fill: {};"
+    ALARM_STYLE  = "font-family: Arial, Helvetica, sans-serif; font-size: 7px; fill: {};"
     ALARM_COLORS = [(60 * 4, "#FF0000", "#FFFFFF"), (60 * 10, "#FF9B0F", "#FFFFFF"), (60 * 15, "#FFFA0F", "#000000"),
                     (60 * 25, "#FFFDA2", "#000000"), (60 * 60 * 24, "#FFFFFF", "#000000")]
     CLEAR_COLORS = [(60 * 4, "#00FF00", "#000000"), (60 * 10, "#80FF80", "#000000"), (60 * 15, "#80FF80", "#000000"),
@@ -496,9 +506,9 @@ class System(object):
             if "stopwatch" not in self.secondLine["class"]:
                 self.secondLine["class"].append("stopwatch")
             self.setBackgroundColor(self.ALARM_COLOR)
-            self.firstLine["style"] = "fill: {};".format(self.textInv.getTextColourFromBackground(self.backgroundColor))
+            self.firstLine["style"] = self.SYSTEM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
             self.secondLine["alarmtime"] = self.lastAlarmTime
-            self.secondLine["style"] = "fill: {};".format(
+            self.secondLine["style"] = self.ALARM_STYLE.format(
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
         elif newStatus == states.CLEAR:
             self.lastAlarmTime = time.time()
@@ -507,14 +517,13 @@ class System(object):
             if "stopwatch" not in self.secondLine["class"]:
                 self.secondLine["class"].append("stopwatch")
             self.secondLine["alarmtime"] = self.lastAlarmTime
-            self.firstLine["style"] = "fill: {};".format(self.textInv.getTextColourFromBackground(self.backgroundColor))
-            self.secondLine["style"] = "fill: {};".format(
+            self.firstLine["style"] = self.SYSTEM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
+            self.secondLine["style"] = self.ALARM_STYLE.format(
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
             self.secondLine.string = "clear"
         elif newStatus == states.WAS_ALARMED:
             self.setBackgroundColor(self.UNKNOWN_COLOR)
-            self.firstLine["style"] = "fill: {};".format(self.textInv.getTextColourFromBackground(self.backgroundColor))
-            self.secondLine["style"] = "fill: #000000;"
+            self.firstLine["style"] = self.ALARM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
         elif newStatus == states.UNKNOWN:
             self.setBackgroundColor(self.UNKNOWN_COLOR)
             # second line in the rects is reserved for the clock
@@ -550,10 +559,10 @@ class System(object):
                         self.backgroundColor = alarmColour
                         for rect in self.svgElement("rect"):
                             if "location" not in rect.get("class", []) and "marked" not in rect.get("class", []):
-                                rect["style"] = "fill: {0};".format(self.backgroundColor)
+                                rect["style"] = self.SYSTEM_STYLE.format(self.backgroundColor)
                         lineColour = self.textInv.getTextColourFromBackground(alarmColour)
-                        self.firstLine["style"] = "fill: {}".format(lineColour)
-                        self.secondLine["style"] = "fill: {};".format(lineColour)
+                        self.firstLine["style"] = self.SYSTEM_STYLE.format(lineColour)
+                        self.secondLine["style"] = self.ALARM_STYLE.format(lineColour)
                     break
         if self.status in (states.ALARM, states.WAS_ALARMED, states.CLEAR):  # timer
             diff = math.floor(time.time() - self.lastAlarmTime)
@@ -567,7 +576,7 @@ class System(object):
                             self.backgroundColor = clearColour
                             for rect in self.svgElement("rect"):
                                 if "location" not in rect.get("class", []) and "marked" not in rect.get("class", []):
-                                    rect["style"] = "fill: {0};".format(self.backgroundColor)
+                                    rect["style"] = self.SYSTEM_STYLE.format(self.backgroundColor)
                             self.updateLineColour()
                 string = "clr: {m:02d}:{s:02d}".format(m=minutes, s=seconds)
             self.secondLine.string = string
@@ -575,8 +584,8 @@ class System(object):
 
     def updateLineColour(self):
         lineColour = self.textInv.getTextColourFromBackground(self.backgroundColor)
-        self.firstLine["style"] = "fill: {}".format(lineColour)
-        self.secondLine["style"] = "fill: {0};".format(lineColour)
+        self.firstLine["style"] = self.SYSTEM_STYLE.format(lineColour)
+        self.secondLine["style"] = self.ALARM_STYLE.format(lineColour)
 
     def updateStyle(self):
         for i in range(5):
@@ -588,8 +597,8 @@ class System(object):
         self.setBackgroundColor(self.UNKNOWN_COLOR)
         self.status = states.UNKNOWN
         lineColour = self.textInv.getTextColourFromBackground(self.backgroundColor)
-        self.firstLine["style"] = "fill: {}".format(lineColour)
-        self.secondLine["style"] = "fill: {0};".format(lineColour)
+        self.firstLine["style"] = self.SYSTEM_STYLE.format(lineColour)
+        self.secondLine["style"] = self.ALARM_STYLE.format(lineColour)
 
 
 def convertRegionName(name):

@@ -47,7 +47,7 @@ from PyQt5.QtWidgets import QActionGroup
 
 # Timer intervals
 MESSAGE_EXPIRY_SECS = 20 * 60
-MAP_UPDATE_INTERVAL_MSECS = 4 * 1000
+MAP_UPDATE_INTERVAL_MSECS =  500
 CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 
 DEFAULT_ROOM_MANES = (u"Int.Impass", u"Int.Imenseasz", u"Int.Tenerifs", u"Intel Legacy", u"Int.Catch", u"Int.PBasis")
@@ -694,12 +694,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def updateMapView(self):
-        if self.mapView.stretched or (self.currContent != self.dotlan.svg):
+        if self.currContent != self.dotlan.svg:
             self.mapTimer.stop()
-            self.mapView.setImgSize(QtCore.QSize(self.dotlan.width, self.dotlan.height))
+            #self.mapView.setImgSize(QtCore.QSize(self.dotlan.width, self.dotlan.height))
             self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html")
             self.currContent = self.dotlan.svg
-            self.mapTimer.start(self.mapView.repainttime*2)
+            self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
 
     def loadInitialMapPositions(self, newDictionary):
         self.mapPositionsDict = newDictionary

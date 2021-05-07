@@ -17,15 +17,12 @@
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 
-from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import QApplication, qApp, QWidget
 from PyQt5.QtGui import *
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtSvg
 
 from PyQt5.QtCore import QPoint, QPointF
-from PyQt5.QtCore import QEvent, Qt
-import webbrowser
-import time
+from PyQt5.QtCore import Qt
 import logging
 import os
 
@@ -35,131 +32,64 @@ class PanningWebView(QWidget):
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()
         self.zoom = 1.0
-        self.stretched = False
+        self.setImgSize(QtCore.QSize(100,80))
+        self.qsvg = None
         self.pressed = False
-        self.repainttime = 1000
         self.scrolling = False
         self.positionMousePress = None
         self.scrollMousePress = None
         self.handIsClosed = False
-        self.webview=QWebEngineView(None)
-        self.setPage(QWebEnginePage(self.webview))
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.page().settings().setAttribute(QWebEngineSettings.ShowScrollBars, False)
-        self.scrollPos = QPointF(0.0,0.0)
-        self.renderTick = time.time()
-        self.lastImage = None
-        self.setImgSize( QtCore.QSize(1024,768) )
-        self.webview.setWindowFlag(QtCore.Qt.FramelessWindowHint)
-        self.webview.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
-        self.webview.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        self.scrollPos = QPointF(0.0, 0.0)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        self.webview.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        self.webview.setAttribute(QtCore.Qt.WA_NoSystemBackground)
-        self.webview.page().setBackgroundColor(QtCore.Qt.transparent)
-        self.webview.loadStarted.connect(self.renderToImageStart)
-        self.webview.loadFinished.connect(self.renderToImageDelayed)
-        self.webview.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
-        self.webview.show()
-        self.destroyed.connect(self.destroyView)
         self.setMouseTracking(True)
+        self.qsvg = QtSvg.QSvgRenderer()
+        self.qsvg.setAspectRatioMode(Qt.KeepAspectRatioByExpanding)
+        self.qsvg.repaintNeeded.connect(self.update)
 
-    def destroyView(self):
-        print("PanningWebView destroyed")
-        del self.webview
 
     def setContent(self, cnt, type):
-        if self.scrolling:
-            logging.debug("setContent canceled during mouse scroll.")
-            return
         if self.DUMP_CURRENT_VIEW:
-            path = os.path.join(os.path.expanduser("~"),"projects","spyglass","src","vi","ui","res","mapdata","curr_map.svg")
-            with open(path,"wb") as file:
+            path = os.path.join(os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata",
+                                "curr_map.svg")
+            with open(path, "wb") as file:
                 file.write(cnt)
                 file.close()
-        #self.webview.stop()
-        self.webview.setContent(cnt, type)
-        self.webview.setContent(cnt, type)
-        #todo:usig signal loadFinished leads to fragmented svgs needs a propper way to start rendering
-        #QtCore.QTimer(self).singleShot(1000, self.renderToImage)
 
-    def setImgSize(self, newsize:QtCore.QSize):
+        if not self.qsvg.load(cnt):
+            logging.error("error during parse of svg data")
+        self.setImgSize(self.qsvg.defaultSize())
+        self.qsvg.setFramesPerSecond(0)
+        self.qsvg.setAspectRatioMode(Qt.KeepAspectRatio)
+
+    def setImgSize(self, newsize: QtCore.QSize):
         self.imgSize = newsize
-        rcNew=self.imgSize*self.zoom
+        rcNew = self.imgSize*self.zoom
         rcNew.setWidth(self.imgSize.width() * self.zoom)
         rcNew.setHeight(self.imgSize.height() * self.zoom)
-        self.webview.resize(rcNew)
 
-    def setUrl(self, url):
-        self.webview.setUrl(url)
-
-    def page(self):
-        return self.webview.page()
-
-    def setPage(self, aPage):
-        self.webview.setPage(aPage)
-
-    def resizeEvent(self, event:QResizeEvent):
+    def resizeEvent(self, event: QResizeEvent):
         self.webViewResized.emit()
         super().resizeEvent(event)
 
     def paintEvent(self, event):
-        if self.lastImage:
+        if self.qsvg:
             painter = QPainter(self)
-            painter.drawImage(-self.scrollPos, self.lastImage )
-
-    def stretchToImage(self):
-        newSize = self.webview.contentsRect()
-        if newSize.isValid() and self.lastImage:
-            self.lastImage = self.lastImage.scaled(newSize.size(),Qt.KeepAspectRatio,Qt.SmoothTransformation)
-            self.stretched = True
-
-    def renderToImageStart(self):
-        self.renderTick = time.time()
-
-    def renderToImageDelayed(self):
-        renderTick = time.time()
-        # todo:using signal loadFinished leads to fragmented map svg needs a proper way to start rendering
-        QtCore.QTimer(self).singleShot(200, self.renderToImage)
-        self.repainttime = int((time.time() - self.renderTick) * 1000)
-        logging.debug("loading succeded within {0} ms.".format(self.repainttime))
-
-    def renderToImage(self):
-        if self.scrolling:
-            logging.debug("Render canceled during scroll.")
-            return
-        tick = time.time()
-        size = self.webview.contentsRect()
-        if size.isValid():
-            img = QImage(size.width(), size.height(), QImage.Format_ARGB32)
-            img.fill(Qt.transparent)
-            painter = QPainter()
-            painter.begin(img)
-            self.webview.render(painter)
-            painter.end()
-            self.lastImage = img
-            if self.DUMP_CURRENT_VIEW:
-                path = os.path.join(os.path.expanduser("~"),"projects","spyglass","src","vi","ui","res","mapdata","curr_map.png")
-                self.lastImage.save(path)
-            self.update()
-            self.stretched = False
-            logging.debug("Render completed within {0}ms.".format((time.time()-tick)*1000))
-        else:
-            logging.warning("Render without valid size of view.")
+            rect = QtCore.QRectF(-self.scrollPos.x(), -self.scrollPos.y(), self.qsvg.defaultSize().width()*self.zoom,self.qsvg.defaultSize().height()*self.zoom)
+            self.qsvg.render(painter, rect)
 
     def setZoomFactor(self, zoom):
-        if zoom > 4:
-            zoom = 4
-        if zoom < 0.5:
+        if zoom > 8:
+            zoom = 8
+        elif zoom < 0.5:
             zoom = 0.5
         if self.zoom != zoom:
             self.zoom = zoom
-            self.webview.setZoomFactor(zoom)
+            self.webViewResized.emit()
             if self.imgSize.isValid():
                 self.setImgSize(self.imgSize)
-                self.stretchToImage()
-                self.update()
-            self.webViewResized.emit()
+            self.update()
+
 
     def zoomFactor(self):
         return self.zoom
@@ -168,36 +98,37 @@ class PanningWebView(QWidget):
         return self.scrollPos
 
     def setScrollPosition(self, pos: QPoint):
-        self.scrollPos = pos
+        if self.scrollPos != pos:
+            self.scrollPos = pos
 
-        if self.scrollPos.x() > self.imgSize.width()*self.zoom-self.size().width():
-            self.scrollPos.setX(self.imgSize.width()*self.zoom-self.size().width())
-        if self.scrollPos.x() < 0:
-            self.scrollPos.setX(0)
+            #if self.scrollPos.x() > self.imgSize.width()*self.zoom-self.size().width():
+            #    self.scrollPos.setX(self.imgSize.width()*self.zoom-self.size().width())
+            #if self.scrollPos.x() < 0:
+            #    self.scrollPos.setX(0)
 
-        if self.scrollPos.y() > self.imgSize.height()*self.zoom-self.size().height():
-            self.scrollPos.setY(self.imgSize.height()*self.zoom-self.size().height())
-        if self.scrollPos.y() < 0:
-            self.scrollPos.setY(0)
+            #if self.scrollPos.y() > self.imgSize.height()*self.zoom-self.size().height():
+            #    self.scrollPos.setY(self.imgSize.height()*self.zoom-self.size().height())
+            #if self.scrollPos.y() < 0:
+            #    self.scrollPos.setY(0)
 
-        self.webViewResized.emit()
-        self.update()
+            self.webViewResized.emit()
+            self.update()
 
     def zoomIn(self,pos=None):
         if pos==None:
-            self.setZoomFactor(self.zoomFactor() * 1.1)
+            self.setZoomFactor(self.zoomFactor() * 1.4)
         else:
             elemOri=self.mapPosFromPos(pos)
-            self.setZoomFactor(self.zoom * 1.1)
+            self.setZoomFactor(self.zoom * 1.4)
             elemDelta =elemOri-self.mapPosFromPos(pos)
             self.scrollPos=self.scrollPos+elemDelta*self.zoom
 
     def zoomOut(self, pos=None):
         if pos == None:
-            self.setZoomFactor(self.zoom*0.9)
+            self.setZoomFactor(self.zoom*0.6)
         else:
             elem_ori = self.mapPosFromPos(pos)
-            self.setZoomFactor(self.zoom*0.9)
+            self.setZoomFactor(self.zoom*0.6)
             elem_delta = elem_ori - self.mapPosFromPos(pos)
             self.scrollPos = self.scrollPos+elem_delta*self.zoom
 
@@ -243,7 +174,7 @@ class PanningWebView(QWidget):
     def mouseDoubleClickEvent(self, mouseEvent:QMouseEvent):
         self.doubleClicked(self.mapPosFromEvent(mouseEvent))
 
-    def mapPosFromPos(self,pos:QPointF)->QPointF:
+    def mapPosFromPos(self, pos:QPointF)->QPointF:
         return (pos + self.scrollPos) / self.zoom
 
     def mapPosFromPoint(self,mouseEvent:QPoint)->QPoint:
@@ -267,8 +198,8 @@ class PanningWebView(QWidget):
             self.scrolling = True
             return
         if self.hoveCheck(self.mapPosFromEvent(mouseEvent)):
-            qApp.setOverrideCursor(QtCore.Qt.PointingHandCursor)
+            QApplication.setOverrideCursor(QtCore.Qt.PointingHandCursor)
         else:
-            qApp.setOverrideCursor(QtCore.Qt.ArrowCursor)
+            QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
         return
 
