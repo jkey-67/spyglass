@@ -76,10 +76,10 @@ Please look to the file requirements.txt for the list off dependencies.
 
 You need an installed and configured python with pip and git installed.  
 To start spyglass, open a console checkout sources and dependencies and start it.    
-`win> git clone https://github.com/jkey-67/spyglass.git
-win> cd spyglass\src
-win> pip install -r requirements.txt
-win> python spyglass.py`
+`win> git clone https://github.com/jkey-67/spyglass.git`
+`win> cd spyglass\src`
+`win> pip install -r requirements.txt`
+`win> python spyglass.py`
 
 Currently, users with Windows should choose Qt 5.15.2  
 
