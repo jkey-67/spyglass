@@ -197,8 +197,7 @@ class Map(object):
                 if symbol:
                     symbol.name="g"
                     map.insert(0,symbol)
-        for defs in svg.select("text.ss"):
-            defs.attrs["style"]=""# = "font-family: Arial, Helvetica, sans-serif; font-size: 5px; fill: #ffffff;"
+
         jumps = soup.select("#jumps")[0]
         # Set up the tags for system statistics
         for systemId, system in self.systemsById.items():
