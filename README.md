@@ -15,7 +15,7 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
 
 ## Features
 
- - Platforms supported: Executable for Windows, Linux and Mac directly from source.
+ - Platforms supported: Executable for Windows, Linux and Mac runs directly from source.
  - Monitored intel chat channels are merged to one chat stream. You can add or remove channels via a menu option.
  - These chat channels can be rescanned on startup to allow for existing intel to be displayed
  - An interactive map of Providence / Catch is provided. Systems on the map display real-time intel data as reported through intel channels.
@@ -73,7 +73,15 @@ https://pypi.org/project/PyQtWebEngine/
 - Requests
 https://pypi.org/project/requests/
 Please look to the file requirements.txt for the list off dependencies.
-For ubuntu based distributions there is a script that will install these dependencies included. However, it's mileage may vary.
+
+You need an installed and configured python with pip and git installed.  
+To start spyglass, open a console checkout sources and dependencies and start it.    
+`win> git clone https://github.com/jkey-67/spyglass.git
+win> cd spyglass\src
+win> pip install -r requirements.txt
+win> python spyglass.py`
+
+Currently, users with Windows should choose Qt 5.15.2  
 
 ## The background of Spyglass
 
@@ -97,7 +105,7 @@ Spyglass runs on Windows, Linux and Mac. A Windows standalone packages are provi
 
 - It reads your EVE chatlogs
 - It creates and writes to **path-to-your-chatlogs**/../../spyglass/.
-- It needs to connect the internet [dotlan](dotlan.evemaps.net), and [EVE Swagger Interface](https://esi.evetech.net/).
+- It needs to connect the internet [dotlan](https://dotlan.evemaps.net), and [EVE Swagger Interface](https://esi.evetech.net/).
 
 **Spyglass calls home?**
 
@@ -136,4 +144,4 @@ Your feedback is needed! Use the program for a while, then come back [here and c
 
 
 
-All EVE related materials are property of [CCP Games](https://www.ccpgames.com/)
+**All EVE related materials are property of [CCP Games](https://www.ccpgames.com/)**
