@@ -28,7 +28,6 @@ import os
 
 class PanningWebView(QWidget):
     webViewResized = QtCore.pyqtSignal()
-    DUMP_CURRENT_VIEW=False
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()
         self.zoom = 1.0
@@ -49,13 +48,6 @@ class PanningWebView(QWidget):
 
 
     def setContent(self, cnt, type):
-        if self.DUMP_CURRENT_VIEW:
-            path = os.path.join(os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata",
-                                "curr_map.svg")
-            with open(path, "wb") as file:
-                file.write(cnt)
-                file.close()
-
         if not self.qsvg.load(cnt):
             logging.error("error during parse of svg data")
         self.setImgSize(self.qsvg.defaultSize())
@@ -101,15 +93,15 @@ class PanningWebView(QWidget):
         if self.scrollPos != pos:
             self.scrollPos = pos
 
-            #if self.scrollPos.x() > self.imgSize.width()*self.zoom-self.size().width():
-            #    self.scrollPos.setX(self.imgSize.width()*self.zoom-self.size().width())
-            #if self.scrollPos.x() < 0:
-            #    self.scrollPos.setX(0)
+            if self.scrollPos.x() > self.imgSize.width()*self.zoom-self.size().width():
+                self.scrollPos.setX(self.imgSize.width()*self.zoom-self.size().width())
+            if self.scrollPos.x() < -self.imgSize.width()*self.zoom/2:
+                self.scrollPos.setX(-self.imgSize.width()*self.zoom/2)
 
-            #if self.scrollPos.y() > self.imgSize.height()*self.zoom-self.size().height():
-            #    self.scrollPos.setY(self.imgSize.height()*self.zoom-self.size().height())
-            #if self.scrollPos.y() < 0:
-            #    self.scrollPos.setY(0)
+            if self.scrollPos.y() > self.imgSize.height()*self.zoom-self.size().height():
+                self.scrollPos.setY(self.imgSize.height()*self.zoom-self.size().height())
+            if self.scrollPos.y() < -self.imgSize.height()*self.zoom/2:
+                self.scrollPos.setY(-self.imgSize.height()*self.zoom/2)
 
             self.webViewResized.emit()
             self.update()
@@ -133,11 +125,10 @@ class PanningWebView(QWidget):
             self.scrollPos = self.scrollPos+elem_delta*self.zoom
 
     def wheelEvent(self, event: QWheelEvent):
-        if True or Qt.ControlModifier & event.modifiers():
-            if event.angleDelta().y() < 0:
-                self.zoomIn(event.position())
-            elif event.angleDelta().y() > 0:
-                self.zoomOut(event.position())
+        if event.angleDelta().y() < 0:
+            self.zoomIn(event.position())
+        elif event.angleDelta().y() > 0:
+            self.zoomOut(event.position())
 
     def mousePressEvent(self, mouseEvent:QMouseEvent):
         if not self.pressed and not self.scrolling and mouseEvent.modifiers() == QtCore.Qt.NoModifier:

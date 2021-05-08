@@ -16,8 +16,6 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
 ## Features
 
  - Platforms supported: Executable for Windows, Linux and Mac directly from source.
- - A pilot may be KOS-checked right from in-game chat channels.
- - Quick batch KOS-checking of the Local system when foregrounding Spyglass.
  - Monitored intel chat channels are merged to one chat stream. You can add or remove channels via a menu option.
  - These chat channels can be rescanned on startup to allow for existing intel to be displayed
  - An interactive map of Providence / Catch is provided. Systems on the map display real-time intel data as reported through intel channels.
@@ -26,7 +24,7 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
  - For all Systems a right button context menu allows you to open [dotlan](https://www.dotlan.net/) or [zkillboard](https://zkillboard.com/) for the selected system directly.
  - Automatic region change for the pilot with api registration is possible.
  - Clicking on a specific system will display all messages bound on that system in the past 20 minutes. From there one can can set a system alarm, set the systems clear or set it as the current system for one or more of your characters.
- - Clicking on a system in the intel channel (right hand column) causes it to be highlighted on the map with a blue background for 10 seconds.
+ - Clicking on a system in the intel channel (the right side column) causes it to be highlighted on the map with a blue background for 10 seconds.
  - The system where your character is currently located is highlighted on the map with an violet background automatically whenever a character changes systems.
  - Alarms can be set so that task-bar notifications are displayed when an intel report calls out a system within a specified number of jumps from your character(s). This can be configured from the task-bar icon.
  - For each alarm distance you can select a different sound file
@@ -47,33 +45,16 @@ Spyglass  use the following access rights
  - the right button context menu to set waypoints and destinations in game directly form inside spyglass.
  - filling the jump bridge data from online structures  
 
-### API access ,onitoring and removal
+### API access monitoring and removal
 Please remember to manage your access to all [third-party-applications](https://community.eveonline.com/support/third-party-applications)  
-
-## Usage
-
- - Manually checking pilot(s) using an EVE client chat channel:
- Type xxx in any chat channel and drag and drop the pilots names after this. (e.g., xxx [Xanthos](http://image.eveonline.com/Character/183452271_256.jpg)). Spyglass recognizes this as a request and checks the pilots listed.
- - Checking all pilots in the local system:
-This option must first be activated by checking the Spyglass app menu: Menu > Auto KOS-Check Clipboard.
-To use this feature: click on a pilot in the local pilot list and then type the shortcuts for select-all and copy-selection. This places the pilots in local on your clipboard. Next switch to the Spyglass app momentarily and back to Eve. KOS checking of these pilots will continue in the background.
 
 
 ## Intel Rescan
 
- - Spyglass can look over all of your previous logs to check for intel. This is useful in two main cases. Firstly when you startup Spyglass but have already had eve running and want to see the intel you have already collected. Secondly, when changing theme the intel in Spyglass is all reset. You can rescan to get it back.
- - By default automatically rescanning is disabled, this is so people don't complain of speed issues.
- - THIS IS VERY SLOW! looking over existing logs can be incredibly time consuming so if you use it, please be patient. This is espicaially the case for more characters/chat channels you have.
+ - Spyglass can look over all of your previous logs to check for intel. This is useful in two main cases. Firstly when you start up Spyglass but have already had eve running and want to see the intel you have already collected. Secondly, when changing theme the intel in Spyglass is all reset. You can rescan to get it back.
+ - By default, automatically rescanning is disabled, this is so people don't complain of speed issues.
+ - THIS IS VERY SLOW! looking over existing logs can be incredibly time-consuming so if you use it, please be patient. This is especially the case for more characters/chat channels you have.
  - If you want to use thi feature, but find it to be too slow, clear out your chatlogs regularly.
-
-## KOS Results
-
-"KOS" status values reported by Spyglass
-
- - **KOS**: the pilot is known as KOS to the alliance and has been marked as such in the KOS-checker system.
- - **RED by last**: the last player (non-NPC) corp in the pilot's employment history is KOS.
- - **Not KOS**: the pilot is known as NOT KOS to the alliance and has been marked as such in the KOS-checker system.
- - **? (Unknown)**: the pilot is not known by the KOS-checker system and there are no hostile corporations in their employment history.
 
 
 ## Running Spyglass from Source
@@ -104,30 +85,24 @@ Spyglass is a project aimed at the continuation to the work done on the Vintel t
 
 Spyglass is licensed under the [GPLv3](http://www.gnu.org/licenses/gpl-3.0.html).
 
-**Spyglass does not play sounds - is there a remedy for this?**
-
-The most likely cause of this is that pyglet is not installed.
-
 **A little bit to big for such a little tool.**
 
-The .exe ships with the complete environment and needed libs. You could save some space using the the source code instead.
+The .exe ships with the complete python environment and needed libs. You could save some space using the source code instead.
 
 **What platforms are supported?**
 
-Spyglass runs on Windows and Linux. Windows standalone packages are provided with each release. Linux users are advised to use the compiled binary however the source is also an available option.
+Spyglass runs on Windows, Linux and Mac. A Windows standalone packages are provided with each release. Linux and Mac users are advised to use run spyglass from source.
 
 **What file system permissions does Spyglass need?**
 
 - It reads your EVE chatlogs
 - It creates and writes to **path-to-your-chatlogs**/../../spyglass/.
-- It needs to connect the internet (dotlan.evemaps.net, eveonline.com, cva-eve.org, and eve gate).
+- It needs to connect the internet [dotlan](dotlan.evemaps.net), and [EVE Swagger Interface](https://esi.evetech.net/).
 
 **Spyglass calls home?**
 
 Yes it does. If you don't want to this, use a firewall to forbid it.
-Spyglass looks for a new version at startup and loads dynamic infomation (i.e., jump bridge routes) from home. It will run without this connection but some functionality will be unavailable.
-
-Both of these actions route to amazon s3 servers requesting data.
+Spyglass use the esi interface to update player images, routes and structure data from eve online.
 
 NO DATA IS SENT FROM YOU TO ME!
 
@@ -147,30 +122,18 @@ Examples:
 
 Please try to delete Spyglass's Cache. It is located in the EVE-directory where the chatlogs are in. If your chatlogs are in \Documents\EVE\logs\chatlogs Spyglass writes the cache to \Documents\EVE\spyglass
 
-**Spyglass takes many seconds to start up; what are some of the causes and what can I do about it?**
+**Spyglass takes many seconds to start up; what are some causes and what can I do about it?**
 
-Spyglass asks the operating system to notifiy when a change has been made to the ChatLogs directory - this will happen when a new log is created or an existing one is updated. In response to this notification, Spyglass examines all of the files in the directory to analysze the changes. If you have a lot of chat logs this can make Spyglass slow to scan for file changes. Try perodically moving all the chatlogs out of the ChatLogs directory (zip them up and save them somewhere else if you think you may need them some day).
+Spyglass asks the operating system to notify when a change has been made to the ChatLogs directory - this will happen when a new log is created or an existing one is updated. In response to this notification, Spyglass examines all files in the directory to analyze the changes. If you have a lot of chat logs this can make Spyglass slow to scan for file changes. Try periodically moving all the chatlogs out of the ChatLogs directory (zip them up and save them somewhere else if you think you may need them some day).
 
-**Spyglass complains about missing dll files on Windows at app launch, is there a workaround for this?**
+**Spyglass is misbehaving, and I don't know why - how can I easily help diagnose problems with Spyglass**
 
-Yes there is! There is a bit of a mix up going on with the latest pyinstaller and the Microsoft developer dlls. Here is a link to help illuminate the issue https://github.com/pyinstaller/pyinstaller/issues/1974
-
-You can visit Microsoft's web site to download the developer dlls https://www.microsoft.com/en-in/download/details.aspx?id=5555.
-
-You can also read a more technical treatment of the issue here http://www.tomshardware.com/answers/id-2417960/msvcr100-dll-32bit-64bit.html
-
-**How can I resolve the "empty certificate data" error?**
-
-Do not use the standalone EXE, install the environment and use the sourcecode directly. There are missing certificates that must be provided by the environment. This error was discovered when running the standalone EXE on Linux using wine.
-
-**Spyglass is misbehaving and I dont know why - how can I easily help diagnose problems with Spyglass**
-
-Spyglass writes its own set of logs to the \Documents\EVE\spyglass\logs directory. A new log is created as the old one fills up to its maximum size setting. Each entry inside the log file is time-stamped. These logs are emitted in real-time so you can watch the changes to the file as you use the app.
-
-**I love Spyglass - how can I help?**
-
-If you are technically inclined and have a solid grasp of Python, [contact the project maintainer via email](mailto:no@mail.com) to see how you can best help out. Alternatively you can find something you want to change and create a pull request to have your changes reviewed and potentially added to the codebase. There have been several great contributions made this way!
+Spyglass writes its own set of logs to the \Documents\EVE\spyglass\logs directory. A new log is created as the old one fills up to its maximum size setting. Each entry inside the log file is time-stamped. These logs are emitted in real-time, so you can watch the changes to the file as you use the app.
 
 **I'm not a coder, how can I help?**
 
-Your feedback is needed! Use the program for a while, then come back [here and create issues](https://github.com/Crypta-Eve//issues). Record anything you think about Spyglass - bugs, frustrations, and ideas to make it better.
+Your feedback is needed! Use the program for a while, then come back [here and create issues](https://github.com/jkey-67/spyglass/tree/qt5). Record anything you think about Spyglass - bugs, frustrations, and ideas to make it better.
+
+
+
+All EVE related materials are property of [CCP Games](https://www.ccpgames.com/)

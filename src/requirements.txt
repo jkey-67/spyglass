@@ -13,3 +13,4 @@ six
 urllib3
 pyinstaller
 jose
+tinycss

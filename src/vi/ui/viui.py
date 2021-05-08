@@ -954,8 +954,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def zoomMapOut(self):
         self.mapView.zoomOut()
 
-    def logFileChanged(self, path, rescan=False):
-        messages = self.chatparser.fileModified(path, rescan)
+    def logFileChanged(self, path, rescan=False,deadline=20):
+        messages = self.chatparser.fileModified(path, rescan,deadline)
         for message in messages:
             # If players location has changed
             if message.status == states.LOCATION:
