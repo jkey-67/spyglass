@@ -47,7 +47,7 @@ from PyQt5.QtWidgets import QActionGroup
 
 # Timer intervals
 MESSAGE_EXPIRY_SECS = 20 * 60
-MAP_UPDATE_INTERVAL_MSECS =  100
+MAP_UPDATE_INTERVAL_MSECS =  1000
 CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 
 DEFAULT_ROOM_MANES = (u"Int.Impass", u"Int.Imenseasz", u"Int.Tenerifs", u"Intel Legacy", u"Int.Catch", u"Int.PBasis")
@@ -122,6 +122,16 @@ class MainWindow(QtWidgets.QMainWindow):
             action.triggered.connect(self.changeOpacity)
             self.opacityGroup.addAction(action)
             self.menuTransparency.addAction(action)
+        self.intelTimeGroup = QActionGroup(self.menu)
+        self.intelTimeGroup.intelTime = 20
+        for i in (10, 20, 40, 60):
+            action = QAction("Past {0}min".format(i), None, checkable=True)
+            action.setChecked(i == 20)
+            action.intelTime = i
+            self.intelTimeGroup.intelTime = i
+            action.triggered.connect(self.changeIntelTime)
+            self.intelTimeGroup.addAction(action)
+            self.menuTime.addAction(action)
 
         self.actionAuto_switch.triggered.connect(self.changeAutoRegion)
         # Set up Theme menu - fill in list of themes and add connections
@@ -151,7 +161,7 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
         elif sys.platform.startswith("linux"):
             pass
-
+        self.chatparser = ChatParser(self.pathToLogs, self.roomnames, None, self.intelTimeGroup.intelTime)
         self.wireUpUIConnections()
         self.recallCachedSettings()
         self.setupThreads()
@@ -254,17 +264,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.avatarFindThread.avatar_update.connect(self.updateAvatarOnChatEntry)
         self.avatarFindThread.start()
 
-        #self.kosRequestThread = KOSCheckerThread()
-        #self.kosRequestThread.kos_result.connect(self.showKosResult)
-        #self.kosRequestThread.start()
-
         self.filewatcherThread = filewatcher.FileWatcher(self.pathToLogs)
         self.filewatcherThread.file_change.connect(self.logFileChanged)
         self.filewatcherThread.start()
-
-        #self.versionCheckThread = amazon_s3.NotifyNewVersionThread()
-        #self.versionCheckThread.newer_version.connect(self.notifyNewerVersion)
-        #self.versionCheckThread.start()
 
         self.statisticsThread = MapStatisticsThread()
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
@@ -292,6 +294,39 @@ class MainWindow(QtWidgets.QMainWindow):
         """returns the current char which is assingend by api
         """
         return self.cache.getFromCache("api_char_name")
+
+    def changeRegionFromCtxMenu(self, checked):
+        selected_system = self.trayIcon.contextMenu().currentSystem
+        if selected_system is None:
+            return
+        self.changeRegionBySystemID(selected_system[1].systemId)
+
+    def focusMapOnSystem(self, system_id):
+        """sets the system defind by the id to the focus of the map
+         """
+        if system_id is None:
+            return
+        system_name = evegate.idsToNames([str(system_id)])[system_id]
+        view_center = self.mapView.size() / 2
+        pt_system = QPoint(self.systems[system_name].mapCoordinates["center_x"]* self.mapView.zoom-view_center.width(),
+                           self.systems[system_name].mapCoordinates["center_y"]* self.mapView.zoom-view_center.height())
+        self.mapView.setScrollPosition(pt_system)
+
+    def changeRegionBySystemID(self, system_id):
+        """ change to the region of the system with the given id, the intel will be rescanned
+            and the cache region_name will be updated
+        """
+        if system_id is None:
+            return
+        selected_system = evegate.getSolarSystemInformation(system_id)
+        selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+        selected_region = selected_constellation["region_id"]
+        selected_region_name = evegate.idsToNames([selected_region])[selected_region]
+        selected_region_name = dotlan.convertRegionName(selected_region_name)
+        Cache().putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
+        self.rescanIntel()
+        self.updateMapView()
+        self.focusMapOnSystem(system_id)
 
     def prepareContextMenu(self):
         # Menus - only once
@@ -323,11 +358,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def openDotlan(checked):
             sys = self.trayIcon.contextMenu().currentSystem
-            webbrowser.open("https://evemaps.dotlan.net/system/{}".format(self.trayIcon.contextMenu().currentSystem[0]))
+            webbrowser.open("https://evemaps.dotlan.net/system/{}".format(self.trayIcon.contextMenu().currentSystem[0]),2)
         self.trayIcon.contextMenu().openDotlan.triggered.connect(openDotlan)
 
         def openZKillboard(checked):
-            webbrowser.open("https://zkillboard.com/system/{}".format(self.trayIcon.contextMenu().currentSystem[1].systemId))
+            webbrowser.open("https://zkillboard.com/system/{}".format(self.trayIcon.contextMenu().currentSystem[1].systemId),2)
         self.trayIcon.contextMenu().openZKillboard.triggered.connect(openZKillboard)
 
         def setDets(checked):
@@ -352,25 +387,14 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.trayIcon.contextMenu().clearAll.triggered.connect(clearAll)
 
-        def changeRegion(checked):
-            selected_system = self.trayIcon.contextMenu().currentSystem
-            if selected_system is None:
-                return
-            selected_system = evegate.getSolarSystemInformation(selected_system[1].systemId)
-            selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
-            selected_region = selected_constellation["region_id"]
-            selected_region_name = evegate.idsToNames([selected_region])[selected_region]
-            selected_region_name = dotlan.convertRegionName(selected_region_name)
-            Cache().putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
-            self.setupMap()
-        self.trayIcon.contextMenu().changeRegion.triggered.connect(changeRegion)
+        self.trayIcon.contextMenu().changeRegion.triggered.connect(self.changeRegionFromCtxMenu)
 
     def setupMap(self, initialize=False):
         self.filewatcherThread.paused = True
-        logging.info("Finding map file")
         regionName = self.cache.getFromCache("region_name")
         if not regionName:
             regionName = "Providence"
+        logging.info("Finding map file {}".format(regionName))
         svg = None
         try:
             with open(resourcePath(os.path("vi", "ui", "res", "mapdata","{0}.svg".format(regionName)))) as svgFile:
@@ -401,7 +425,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setJumpbridges(self.cache.getFromCache("jumpbridge_url"))
         self.systems = self.dotlan.systems
         logging.debug("Creating chat parser")
-        self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems)
+        self.chatparser.systems = self.systems
+        self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems,self.intelTimeGroup.intelTime)
 
         # Update the new map view, then clear old statistics from the map and request new
         logging.debug("Updating the map")
@@ -425,11 +450,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 mtime = datetime.datetime.fromtimestamp(os.path.getmtime(filePath))
                 delta = (now - mtime)
-
-                if delta.total_seconds() < (60 * 20) and delta.total_seconds() > 0:
+                if delta.total_seconds() < (60 * self.chatparser.intelTime) and delta.total_seconds() > 0:
                     if roomname in self.roomnames:
                         logging.info("Reading log {}".format(roomname))
-                        self.logFileChanged(filePath, True)
+                        self.logFileChanged(filePath, rescan=True)
+                        self.logFileChanged(filePath, rescan=True)
 
     def startClipboardTimer(self):
         """
@@ -527,6 +552,13 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.useSpokenNotificationsAction.setChecked(False)
             self.useSpokenNotificationsAction.setEnabled(False)
+
+    def changeIntelTime(self):
+        action = self.intelTimeGroup.checkedAction()
+        self.intelTimeGroup.intelTime = action.intelTime
+        self.chatparser.intelTime = action.intelTime
+        self.timeInfo.setText("All Intel( past{} minutes)".format(self.chatparser.intelTime))
+        self.rescanIntel()
 
     def changeOpacity(self, newValue=None):
         action = self.opacityGroup.checkedAction()
@@ -670,6 +702,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if str(systemname) in self.systems.keys():
             self.systems[str(systemname)].mark(time.time())
             self.updateMapView()
+            self.focusMapOnSystem(self.systems[str(systemname)].systemId)
 
     def setLocation(self, char, systemname):
         for system in self.systems.values():
@@ -684,7 +717,7 @@ class MainWindow(QtWidgets.QMainWindow):
             concurrent_region_name = self.cache.getFromCache("region_name")
             if (selected_region_name != concurrent_region_name):
                 Cache().putIntoCache("region_name", selected_region_name)
-                self.setupMap()
+                self.rescanIntel()
 
 
         if not systemname == "?" and systemname in self.systems.keys():
@@ -714,10 +747,11 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception:
             pass
 
-    def fixupScrollBars(self, scrollPosition=None):
+    def fixupScrollBars(self):
         widget_size = self.mapView.size()
         content_size = self.mapView.imgSize*self.mapView.zoom
-        logging.debug("fixupScrollBars {} widget:{} contet:{} ".format(scrollPosition, widget_size, content_size))
+        scrollPosition = self.mapView.scrollPosition()
+        #logging.debug("fixupScrollBars {} widget:{} content:{} ".format(scrollPosition, widget_size, content_size))
         self.mapHorzScrollBar.setVisible(content_size.width() > widget_size.width())
         self.mapVertScrollBar.setVisible(content_size.height() > widget_size.height())
         self.mapHorzScrollBar.setPageStep(content_size.width())
@@ -954,13 +988,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def zoomMapOut(self):
         self.mapView.zoomOut()
 
-    def logFileChanged(self, path, rescan=False,deadline=20):
-        messages = self.chatparser.fileModified(path, rescan,deadline)
+    def logFileChanged(self, path, rescan=False):
+        locale_to_set = dict()
+        messages = self.chatparser.fileModified(path, rescan)
         for message in messages:
             # If players location has changed
             if message.status == states.LOCATION:
-                self.knownPlayerNames.add(message.user)
-                self.setLocation(message.user, message.systems[0])
+                locale_to_set[message.user] = message.systems[0]
             elif message.status == states.KOS_STATUS_REQUEST:
                 # Do not accept KOS requests from any but monitored intel channels
                 # as we don't want to encourage the use of xxx in those channels.
@@ -979,7 +1013,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 if message.systems:
                     for system in message.systems:
                         systemname = system.name
-                        systemList[systemname].setStatus(message.status)
+                        if systemname in systemList.keys():
+                            systemList[systemname].setStatus(message.status)
+                        else:
+                            return
                         if message.status in (
                         states.REQUEST, states.ALARM) and message.user not in self.knownPlayerNames:
                             alarmDistance = self.alarmDistance if message.status == states.ALARM else 0
@@ -988,6 +1025,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                 chars = nSystem.getLocatedCharacters()
                                 if len(chars) > 0 and message.user not in chars:
                                     self.trayIcon.showNotification(message, system.name, ", ".join(chars), distance)
+
+
+        for name,sys in locale_to_set.items():
+            self.knownPlayerNames.add(name)
+            self.setLocation(name, sys)
         self.updateMapView()
 
     def systemUnderMouse(self,pos: QPoint) -> str:
@@ -1143,7 +1185,7 @@ class SystemChat(QtWidgets.QDialog):
     def openDotlan(self):
         try:
             url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
-            webbrowser.open(url)
+            webbrowser.open(url, 2)
         except webbrowser.Error as e:
             logging.critical( "Unable to open browser {0}".format(e))
             return
@@ -1201,7 +1243,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
         if function == "mark_system":
             self.mark_system.emit(parameter)
         elif function == "link":
-            webbrowser.open(parameter)
+            webbrowser.open(parameter, 2)
 
     def updateText(self):
         time = datetime.datetime.strftime(self.message.timestamp, "%H:%M:%S")

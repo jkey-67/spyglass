@@ -59,7 +59,7 @@ Please remember to manage your access to all [third-party-applications](https://
 
 ## Running Spyglass from Source
 
-To run or build from the source you need the following packages installed on your machine. Most, if not all, can be installed from the command line using package management software such as "pip". Mac and Linux both come with pip installed, Windows users may need to install [cygwin](https://www.cygwin.com) to get pip. Of course all the requirements also have download links.
+To run or build from the source you need the following packages installed on your machine. Most, if not all, can be installed from the command line using package management software such as "pip". Mac and Linux both come with pip installed, Windows users may need to install [cygwin](https://www.cygwin.com) or use the powershell to use pip. Of course all the requirements also have download links.
 
 The packages required are:
 - Python 3.9
@@ -83,7 +83,6 @@ To start spyglass, open a console checkout sources and dependencies and start it
 `win> pip install -r requirements.txt`
 
 `win> python spyglass.py`
-
 
 Currently, users with Windows should choose Qt 5.15.2  
 

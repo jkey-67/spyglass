@@ -27,12 +27,13 @@ import logging
 import os
 
 class PanningWebView(QWidget):
+    ZOOM_WHEEL = 0.4
     webViewResized = QtCore.pyqtSignal()
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()
         self.zoom = 1.0
+        self.wheel_dir = 1.0
         self.setImgSize(QtCore.QSize(100,80))
-        self.qsvg = None
         self.pressed = False
         self.scrolling = False
         self.positionMousePress = None
@@ -67,7 +68,9 @@ class PanningWebView(QWidget):
     def paintEvent(self, event):
         if self.qsvg:
             painter = QPainter(self)
-            rect = QtCore.QRectF(-self.scrollPos.x(), -self.scrollPos.y(), self.qsvg.defaultSize().width()*self.zoom,self.qsvg.defaultSize().height()*self.zoom)
+            rect = QtCore.QRectF(-self.scrollPos.x(), -self.scrollPos.y(),
+                                 self.qsvg.defaultSize().width()*self.zoom,
+                                 self.qsvg.defaultSize().height()*self.zoom)
             self.qsvg.render(painter, rect)
 
     def setZoomFactor(self, zoom):
@@ -92,42 +95,31 @@ class PanningWebView(QWidget):
     def setScrollPosition(self, pos: QPoint):
         if self.scrollPos != pos:
             self.scrollPos = pos
-
-            if self.scrollPos.x() > self.imgSize.width()*self.zoom-self.size().width():
-                self.scrollPos.setX(self.imgSize.width()*self.zoom-self.size().width())
-            if self.scrollPos.x() < -self.imgSize.width()*self.zoom/2:
-                self.scrollPos.setX(-self.imgSize.width()*self.zoom/2)
-
-            if self.scrollPos.y() > self.imgSize.height()*self.zoom-self.size().height():
-                self.scrollPos.setY(self.imgSize.height()*self.zoom-self.size().height())
-            if self.scrollPos.y() < -self.imgSize.height()*self.zoom/2:
-                self.scrollPos.setY(-self.imgSize.height()*self.zoom/2)
-
             self.webViewResized.emit()
-            self.update()
+        self.update()
 
     def zoomIn(self,pos=None):
         if pos==None:
-            self.setZoomFactor(self.zoomFactor() * 1.4)
+            self.setZoomFactor(self.zoomFactor() * (1.0+self.ZOOM_WHEEL))
         else:
             elemOri=self.mapPosFromPos(pos)
-            self.setZoomFactor(self.zoom * 1.4)
+            self.setZoomFactor(self.zoom * (1.0+self.ZOOM_WHEEL))
             elemDelta =elemOri-self.mapPosFromPos(pos)
             self.scrollPos=self.scrollPos+elemDelta*self.zoom
 
     def zoomOut(self, pos=None):
         if pos == None:
-            self.setZoomFactor(self.zoom*0.6)
+            self.setZoomFactor(self.zoom*(1.0-self.ZOOM_WHEEL))
         else:
             elem_ori = self.mapPosFromPos(pos)
-            self.setZoomFactor(self.zoom*0.6)
+            self.setZoomFactor(self.zoom*(1.0-self.ZOOM_WHEEL))
             elem_delta = elem_ori - self.mapPosFromPos(pos)
             self.scrollPos = self.scrollPos+elem_delta*self.zoom
 
     def wheelEvent(self, event: QWheelEvent):
-        if event.angleDelta().y() < 0:
+        if (self.wheel_dir * event.angleDelta().y()) < 0:
             self.zoomIn(event.position())
-        elif event.angleDelta().y() > 0:
+        elif (self.wheel_dir * event.angleDelta().y()) > 0:
             self.zoomOut(event.position())
 
     def mousePressEvent(self, mouseEvent:QMouseEvent):

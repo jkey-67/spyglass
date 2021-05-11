@@ -186,6 +186,10 @@ class Map(object):
         svg.insert(0, group)
 
         map  = svg.select("#map")
+        for defs in svg.select("defs"):
+            for radialgradient in defs.select("radialGradient"):
+                radialgradient.name = "radialGradient"
+                map.insert(0, radialgradient)
 
         for defs in svg.select("defs"):
             for tag in defs.select("a"):
@@ -452,7 +456,7 @@ class System(object):
                 try:
                     elem = self.mapSoup.find(id=idName)
                     if(elem is not None):
-                        logging.info("Decompose {0}".format(str(elem)))
+                        logging.debug("removeLocatedCharacter {0} Decompose {1}".format(charname,str(elem)))
                         elem.decompose()
                 except Exception as e:
                     logging.critical( "Error in removeLocatedCharacter  {0}".format(str(e)))

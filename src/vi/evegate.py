@@ -436,7 +436,7 @@ def getApiKey(client_param,parent=None)->str:
             parent.api_thread.elem.resize(600, 800)
             parent.api_thread.elem.show()
     else:
-        webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
+        webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params),2)
 
 def getAccessToken(client_param,auth_code:str,add_headers={})->str:
     """ gets the access token from the application logging

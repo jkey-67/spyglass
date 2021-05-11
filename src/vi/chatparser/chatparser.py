@@ -37,12 +37,13 @@ class ChatParser(object):
     """ ChatParser will analyze every new line that was found inside the Chatlogs.
     """
 
-    def __init__(self, path, rooms, systems):
+    def __init__(self, path, rooms, systems, inteltime):
         """ path = the path with the logs
             rooms = the rooms to parse"""
         self.path = path  # the path with the chatlog
         self.rooms = rooms  # the rooms to watch (excl. local)
         self.systems = systems  # the known systems as dict name: system
+        self.intelTime = inteltime #20 min intel time
         self.fileData = {}  # informations about the files in the directory
         self.knownMessages = []  # message we allready analyzed
         self.locations = {}  # informations about the location of a char
@@ -95,14 +96,19 @@ class ChatParser(object):
                     elif "Session started:" in line:
                         sessionStr = line[line.find(":") + 1:].strip()
                         sessionStart = datetime.datetime.strptime(sessionStr, "%Y.%m.%d %H:%M:%S")
-                    if charname and sessionStart:
+
+                    if charname and sessionStart :
                         self.fileData[path]["charname"] = charname
                         self.fileData[path]["sessionstart"] = sessionStart
                         break
         self.fileData[path]["lines"] = len(lines)
         return lines
 
-    def _lineToMessage(self, line, roomname, deadline=20):
+    def _lineToMessage(self, line, roomname):
+
+        if roomname not in self.rooms:
+            return None
+
         # finding the timestamp
         timeStart = line.find("[") + 1
         timeEnds = line.find("]")
@@ -112,7 +118,7 @@ class ChatParser(object):
         except ValueError:
             return None
 
-        if timestamp < datetime.datetime.utcnow()-datetime.timedelta(minutes=deadline):
+        if timestamp < datetime.datetime.utcnow()-datetime.timedelta(minutes=self.intelTime):
             logging.debug("Skip {} Room:{}".format(line, roomname))
             return None
 
@@ -127,18 +133,6 @@ class ChatParser(object):
         rtext = soup.select("rtext")[0]
         systems = set()
         upperText = text.upper()
-
-        # KOS request
-        if False:
-            if upperText.startswith("XXX "):
-                return Message("roomname", text, timestamp, username, systems, upperText, status=states.KOS_STATUS_REQUEST)
-            elif roomname.startswith("="):
-                return Message(roomname, "xxx " + text, timestamp, username, systems, "XXX " + upperText,
-                           status=states.KOS_STATUS_REQUEST)
-            elif upperText.startswith("VINTELSOUND_TEST"):
-                return Message(roomname, text, timestamp, username, systems, upperText, status=states.SOUND_TEST)
-            if roomname not in self.rooms:
-                return None
 
         message = Message(roomname, "", timestamp, username, systems, text, originalText)
         # May happen if someone plays > 1 account
@@ -208,7 +202,7 @@ class ChatParser(object):
                 message = Message("", "", timestamp, charname, [system, ], "", "", status)
         return message
 
-    def fileModified(self, path, rescan=False, deadline=20):
+    def fileModified(self, path, rescan=False ):
         messages = []
         if path in self.ignoredPaths:
             return []
@@ -231,7 +225,7 @@ class ChatParser(object):
                 if roomname in LOCAL_NAMES:
                     message = self._parseLocal(path, line)
                 else:
-                    message = self._lineToMessage(line, roomname, deadline)
+                    message = self._lineToMessage(line, roomname )
                 if message:
                     messages.append(message)
         return messages

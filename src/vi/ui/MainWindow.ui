@@ -274,20 +274,6 @@
           </layout>
          </widget>
         </item>
-        <item row="1" column="1" rowspan="2">
-         <widget class="QScrollBar" name="mapVertScrollBar">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QScrollBar" name="mapHorzScrollBar">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="0">
          <widget class="PanningWebView" name="mapView" native="true">
           <property name="enabled">
@@ -304,6 +290,20 @@
           </property>
           <property name="autoFillBackground">
            <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QScrollBar" name="mapHorzScrollBar">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" rowspan="3">
+         <widget class="QScrollBar" name="mapVertScrollBar">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
@@ -324,7 +324,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="timeInfo">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -505,6 +505,12 @@
     <property name="title">
      <string>Intel</string>
     </property>
+    <widget class="QMenu" name="menuTime">
+     <property name="title">
+      <string>Time</string>
+     </property>
+    </widget>
+    <addaction name="menuTime"/>
     <addaction name="autoRescanAction"/>
     <addaction name="rescanNowAction"/>
     <addaction name="clearIntelAction"/>
@@ -807,6 +813,30 @@
    </property>
    <property name="text">
     <string>Auto  switch Region</string>
+   </property>
+  </action>
+  <action name="action20_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>20min</string>
+   </property>
+  </action>
+  <action name="action40_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>40 min</string>
+   </property>
+  </action>
+  <action name="action60_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>60 min</string>
    </property>
   </action>
  </widget>
