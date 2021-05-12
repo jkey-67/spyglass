@@ -115,7 +115,6 @@ class Application(QApplication):
             logLevel = logging.WARN
         if version.SNAPSHOT:
             logLevel = logging.DEBUG  # For Testing
-        logLevel = logging.INFO  # For Testing
         backGroundColor = spyglassCache.getFromCache("background_color")
 
         if backGroundColor:
