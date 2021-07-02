@@ -65,7 +65,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #    self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "MainWindow.ui")), self)
         self.setWindowTitle(
-            "Spyglass " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
+            "DENCI Spyglass " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
         self.taskbarIconQuiescent = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
         self.taskbarIconWorking = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
         self.setWindowIcon(self.taskbarIconQuiescent)
@@ -293,7 +293,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def currentApiChar(self)->str:
         """returns the current char which is assingend by api
         """
-        return self.cache.getFromCache("api_char_name",True)
+        return self.cache.getFromCache("api_char_name", True)
 
     def changeRegionFromCtxMenu(self, checked):
         selected_system = self.trayIcon.contextMenu().currentSystem
@@ -1298,7 +1298,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
     def generateJumpBridge(self):
         self.run_jb_generation = True
         self.generateJumpBridgeProgress.show()
-        gates = evegate.getAllJumpGates(Cache().getFromCache("api_char_name"),callback=self.processUpdate)
+        gates = evegate.getAllJumpGates(Cache().getFromCache("api_char_name", True), callback=self.processUpdate)
         evegate.writeGatestToFile(gates, str(self.urlField.text()))
         self.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
