@@ -387,7 +387,7 @@ class api_server_thread(QThread):
         while self.active:
             try:
                 webserver = http.server.HTTPServer(("localhost", 8182), MyApiServer)
-                webserver.timeout = 30
+                webserver.timeout = 120
                 webserver.api_code = None
                 webserver.handle_request()
                 auth_code = webserver.api_code
@@ -638,7 +638,7 @@ class JumpBridge(object):
         self.structureId = structureId
         self.systemId = systemId
         self.ownerId = ownerId
-        self.paired=False
+        self.paired = False
         self.links = 0
 
 def sanityCheckGates(gates):
