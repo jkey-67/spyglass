@@ -510,7 +510,7 @@ def getTokenOfChar(char_name:str):
         return None
     cache = Cache()
     cache_key = "_".join(("api_key", "character_name", char_name))
-    char_data = cache.getFromCache(cache_key)
+    char_data = cache.getFromCache(cache_key,True)
     if char_data:
         return ApiKey(eval(char_data))
     else:
@@ -687,8 +687,12 @@ def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
             process = process + 1
             if callback and not callback(len(structs["structure"]), process):
                 break
-            if item["type_id"] == 35841 or item["type_id"] == 35837:
-                gates.append(JumpBridge(name=item["name"], systemId=item["solar_system_id"], structureId=id_structure,ownerId=item["owner_id"]))
+            try:
+                if "type_id" in item.keys():
+                    if item["type_id"] == 35841 or item["type_id"] == 35837:
+                        gates.append(JumpBridge(name=item["name"], systemId=item["solar_system_id"], structureId=id_structure,ownerId=item["owner_id"]))
+            except Exception as e:
+                pass
     #gates=sanityCheckGates(gates)
     countCheckGates(gates)
     return gates

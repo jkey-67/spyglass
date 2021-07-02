@@ -293,7 +293,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def currentApiChar(self)->str:
         """returns the current char which is assingend by api
         """
-        return self.cache.getFromCache("api_char_name")
+        return self.cache.getFromCache("api_char_name",True)
 
     def changeRegionFromCtxMenu(self, checked):
         selected_system = self.trayIcon.contextMenu().currentSystem
@@ -913,7 +913,7 @@ class MainWindow(QtWidgets.QMainWindow):
         infoDialog = QtWidgets.QDialog(self)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "Info.ui")), infoDialog)
         infoDialog.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        infoDialog.logoLabel.setPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "logo.png"))))
+        infoDialog.logoLabel.setPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "denci.png"))))
         infoDialog.closeButton.clicked.connect(infoDialog.accept)
         infoDialog.show()
 
@@ -1017,8 +1017,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             systemList[systemname].setStatus(message.status)
                         else:
                             return
-                        if message.status in (
-                        states.REQUEST, states.ALARM) and message.user not in self.knownPlayerNames:
+                        if message.status in ( states.ALARM ) and message.user not in self.knownPlayerNames:
                             alarmDistance = self.alarmDistance if message.status == states.ALARM else 0
                             for nSystem, data in system.getNeighbours(alarmDistance).items():
                                 distance = data["distance"]
