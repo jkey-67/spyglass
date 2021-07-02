@@ -35,6 +35,7 @@ try:
 except ImportError:
     gPygletAvailable = False
 
+#todo:warn sound not match to alarm system distance
 
 class SoundManager(metaclass=Singleton):
     SOUNDS = {"alarm": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
@@ -63,9 +64,12 @@ class SoundManager(metaclass=Singleton):
             self.sounds[itm] = QSoundEffect()
             if self.SOUNDS[itm]!=None and os.path.exists(self.SOUNDS[itm]):
                 url = QUrl.fromLocalFile(self.SOUNDS[itm])
-            else:
+            elif self.SOUNDS[itm]!=None:
                 url = QUrl.fromLocalFile(resourcePath(os.path.join("vi", "ui", "res", "{0}".format(self.SOUNDS[itm]))))
-            self.sounds[itm].setSource(url)
+            else:
+                url = None
+            if url!=None:
+                self.sounds[itm].setSource(url)
 
     def soundFile(self, mask):
         if mask in self.SOUNDS.keys():
