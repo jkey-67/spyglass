@@ -43,7 +43,8 @@ ERROR = -1
 NOT_EXISTS = 0
 EXISTS = 1
 
-def charnameToId(name,use_cache=True):
+
+def charNameToId(name, use_cache=True):
     """ Uses the EVE API to convert a character name to his ID
     """
     cache_key = "_".join(("name", "id", name))
@@ -69,7 +70,8 @@ def charnameToId(name,use_cache=True):
                         return idFound
     return None
 
-def namesToIds(names,useCache=True):
+
+def namesToIds(names, use_cache=True):
     """ Uses the EVE API to convert a list of names to ids_to_names
         names: list of names
         returns a dict: key=name, value=id
@@ -79,12 +81,12 @@ def namesToIds(names,useCache=True):
     data = {}
     api_check_names = set()
     cache = Cache()
-    # do we have allready something in the cache?
+    # do we have already something in the cache?
     for name in names:
         cache_key = "_".join(("id", "name", name))
-        id = cache.getFromCache(cache_key)
-        if id and useCache:
-            data[name] = id
+        id_from_cache = cache.getFromCache(cache_key)
+        if id_from_cache and use_cache:
+            data[name] = id_from_cache
         else:
             api_check_names.add(name)
 
@@ -114,12 +116,13 @@ def namesToIds(names,useCache=True):
         logging.error("Exception during namesToIds: %s", e)
     return data
 
+
 def getAllRegions(use_cache=True):
     """ Uses the EVE API to get the list of all system ids
     """
     cache = Cache()
     all_systems = cache.getFromCache("list_of_all_systems")
-    if use_cache and all_systems != None:
+    if use_cache and all_systems is not None:
         return eval(all_systems)
     else:
         url = "https://esi.evetech.net/latest/universe/regions/?datasource=tranquility"
@@ -129,7 +132,8 @@ def getAllRegions(use_cache=True):
         cache.putIntoCache("list_of_all_systems", str(content), 60 * 60 * 24 * 365)
         return content
 
-def idsToNames(ids,useCache=True):
+
+def idsToNames(ids, use_cache=True):
     """ Returns the names for ids
         ids = iterable list of ids
         returns a dict key = id, value = name
@@ -140,11 +144,11 @@ def idsToNames(ids,useCache=True):
     api_check_ids = set()
     cache = Cache()
 
-    # something allready in the cache?
+    # something already in the cache?
     for checked_id in ids:
         cache_key = u"_".join(("name", "id", str(checked_id)))
         name = cache.getFromCache(cache_key)
-        if name and useCache:
+        if name and use_cache:
             data[checked_id] = name
         else:
             api_check_ids.add(checked_id)
@@ -174,17 +178,17 @@ def idsToNames(ids,useCache=True):
     return data
 
 
-def getAvatarForPlayer(charname):
-    """ Downlaoding the avatar for a player/character
-        charname = name of the character
+def getAvatarForPlayer(char_name):
+    """ Downloading the avatar for a player/character
+        char_name = name of the character
         returns None if something gone wrong
     """
     avatar = None
     try:
-        charId = charnameToId(charname)
-        if charId:
-            imageUrl = "https://images.evetech.net/characters/{id}/portrait?tenant=tranquility&size={size}"
-            response = requests.get(imageUrl.format(id=charId, size=64))
+        char_id = charNameToId(char_name)
+        if char_id:
+            image_url = "https://images.evetech.net/characters/{id}/portrait?tenant=tranquility&size={size}"
+            response = requests.get(image_url.format(id=char_id, size=64))
             response.raise_for_status()
             avatar = response.content
 
@@ -194,15 +198,15 @@ def getAvatarForPlayer(charname):
     return avatar
 
 
-def checkPlayername(charname):
+def checkPlayerName(char_name):
     """ Checking on esi for an exiting exact player name
         returns 1 if exists, 0 if not and -1 if an error occurred
     """
-    if not charname:
+    if not char_name:
         return ERROR
     try:
         url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en&search={charname}&strict=true"
-        response = requests.get(url.format(charname=charname))
+        response = requests.get(url.format(charname=char_name))
         response.raise_for_status()
         content = response.json()
         if "character" in content.keys():
@@ -213,7 +217,7 @@ def checkPlayername(charname):
         else:
             return ERROR
     except Exception as e:
-        logging.error("Exception on checkPlayername: %s", e)
+        logging.error("Exception on checkPlayerName: %s", e)
     return ERROR
 
 
@@ -222,16 +226,17 @@ def currentEveTime():
     """
     return datetime.datetime.utcnow()
 
-def getCharinfoForCharId(charId,use_cache=True):
-    cache_key = u"_".join(("playerinfo_id_", str(charId)))
+
+def getCharInfoForCharId(char_id, use_cache=True):
+    cache_key = u"_".join(("playerinfo_id_", str(char_id)))
     cache = Cache()
     char_info = cache.getFromCache(cache_key)
     if use_cache and char_info is not None:
         char_info = eval(char_info)
     else:
         try:
-            charId = int(charId)
-            url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=charId)
+            char_id = int(char_id)
+            url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=char_id)
             response = requests.get(url)
             response.raise_for_status()
             char_info = eval(response.text)
@@ -239,45 +244,48 @@ def getCharinfoForCharId(charId,use_cache=True):
             cache.putIntoCache(cache_key, response.text, 60*60*24*3)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
-            if (e.response.status_code != 400):
-                logging.error("Exception during getCharinfoForCharId: %s", str(e))
+            if e.response.status_code != 400:
+                logging.error("Exception during getCharInfoForCharId: %s", str(e))
     return char_info
 
-def getCorpidsForCharId(charId,use_cache=True):
+
+def getCorpIdsForCharId(char_id,use_cache=True):
     """ Returns a list with the ids if the corporation history of a charId
         returns a list of only the corp ids
     """
-    cache_key = u"_".join(("corp_history_id_", str(charId)))
+    cache_key = u"_".join(("corp_history_id_", str(char_id)))
     cache = Cache()
     corp_ids = cache.getFromCache(cache_key)
     if use_cache and corp_ids is not None:
         corp_ids = eval(corp_ids)
     else:
         try:
-            charId = int(charId)
-            url = "https://esi.evetech.net/latest/characters/{id}/corporationhistory/?datasource=tranquility".format(id=charId)
+            char_id = int(char_id)
+            url = "https://esi.evetech.net/latest/characters/{id}/corporationhistory/?datasource=tranquility".format(id=char_id)
             response = requests.get(url)
             response.raise_for_status()
             corp_ids = response.json()
             cache.putIntoCache(cache_key, response.text)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
-            if (e.response.status_code != 400):
-                logging.error("Exception during getCharinfoForCharId: %s", str(e))
+            if e.response.status_code != 400:
+                logging.error("Exception during getCharInfoForCharId: %s", str(e))
     id_list = list()
     for elem in corp_ids:
         id_list.append(elem["corporation_id"])
     return id_list
 
-def getCurrentCorpForCharId(charId,use_cache=True):
+
+def getCurrentCorpForCharId(char_id, use_cache=True):
     """ Returns the ID of the players current corporation.
     """
-    info = getCharinfoForCharId(charId,use_cache)
+    info = getCharInfoForCharId(char_id, use_cache)
     if info and "corporation_id" in info.keys():
         return info["corporation_id"]
     else:
-        logging.error("Unable to get corporation_id of char id:{}".format(charId))
+        logging.error("Unable to get corporation_id of char id:{}".format(char_id))
         return None
+
 
 def getSystemStatistics():
     """ Reads the informations for all solarsystems from the EVE API
@@ -307,22 +315,22 @@ def getSystemStatistics():
 
         # now the further data
         cache_key = "systemstatistic"
-        systemData = cache.getFromCache(cache_key)
+        system_data = cache.getFromCache(cache_key)
 
-        if systemData is None:
-            systemData = {}
+        if system_data is None:
+            system_data = {}
             url = "https://esi.evetech.net/latest/universe/system_kills/?datasource=tranquility"
             response = requests.get(url)
             response.raise_for_status()
             resp = response.json()
             for row in resp:
-                systemData[int(row["system_id"])] = {"ship": int(row["ship_kills"]),
-                                                        "faction": int(row["npc_kills"]),
-                                                        "pod": int(row["pod_kills"])}
+                system_data[int(row["system_id"])] = {"ship": int(row["ship_kills"]),
+                                                      "faction": int(row["npc_kills"]),
+                                                      "pod": int(row["pod_kills"])}
 
-            cache.putIntoCache(cache_key, json.dumps(systemData), 60 )
+            cache.putIntoCache(cache_key, json.dumps(system_data), 60 )
         else:
-            systemData = json.loads(systemData)
+            system_data = json.loads(system_data)
     except Exception as e:
         logging.error("Exception during getSystemStatistics: : %s", e)
 
@@ -332,7 +340,7 @@ def getSystemStatistics():
         if i not in data:
             data[i] = {"shipkills": 0, "factionkills": 0, "podkills": 0}
         data[i]["jumps"] = v
-    for i, v in systemData.items():
+    for i, v in system_data.items():
         i = int(i)
         if i not in data:
             data[i] = {"jumps": 0}
@@ -340,6 +348,7 @@ def getSystemStatistics():
         data[i]["factionkills"] = v["faction"] if "faction" in v else 0
         data[i]["podkills"] = v["pod"] if "pod" in v else 0
     return data
+
 
 def secondsTillDowntime():
     """ Return the seconds till the next downtime"""
@@ -350,6 +359,7 @@ def secondsTillDowntime():
     target = datetime.datetime(target.year, target.month, target.day, 11, 0, 0, 0)
     delta = target - now
     return delta.seconds
+
 
 class MyApiServer(http.server.BaseHTTPRequestHandler):
     """http server to get the redirected login message
@@ -373,11 +383,14 @@ class MyApiServer(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             logging.error("Exception during MyApiServer: %s", e)
             self.server.api_code = None
+
     def handle_timeout(self):
         logging.error("Http request not read, api registration canceled.")
 
+
 class api_server_thread(QThread):
     new_serve_aki_key = pyqtSignal(str)
+
     def __init__(self):
         QThread.__init__(self)
         self.queue = queue.Queue()
@@ -404,7 +417,8 @@ class api_server_thread(QThread):
         self.queue.put((None, None, None))
         QThread.quit(self)
 
-def getApiKey(client_param,parent=None)->str:
+
+def getApiKey(client_param, parent=None) -> str:
     """ Queries the eve-online api key valid for one eve online account,
         using http://localhost:8182/oauth-callback as application defined
         callback from inside the webb browser
@@ -438,7 +452,8 @@ def getApiKey(client_param,parent=None)->str:
     else:
         webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params),2)
 
-def getAccessToken(client_param,auth_code:str,add_headers={})->str:
+
+def getAccessToken(client_param, auth_code:str, add_headers={}) -> str:
     """ gets the access token from the application logging
         fills the cache wit valid login data
     """
@@ -491,9 +506,10 @@ def openWithEveonline(parent=None):
     }
     getApiKey(client_param_set,parent)
 
+
 class ApiKey(object):
     def __init__(self, dictionary):
-        self.__dict__=dictionary
+        self.__dict__ = dictionary
         #self.CharacterID = None
         #self.CharacterName = None
         self.valid_until = None
@@ -503,10 +519,11 @@ class ApiKey(object):
         for k, v in dictionary.items():
             setattr(self, k, v)
 
+
 def getTokenOfChar(char_name:str):
     """gets  the api key for chae_name from the cache
     """
-    if char_name == None:
+    if char_name is None:
         return None
     cache = Cache()
     cache_key = "_".join(("api_key", "character_name", char_name))
@@ -515,6 +532,7 @@ def getTokenOfChar(char_name:str):
         return ApiKey(eval(char_data))
     else:
         return None
+
 
 def refreshToken(params:ApiKey):
     """ refreshes the token using the previously acquired data structure from the cache
@@ -539,6 +557,7 @@ def refreshToken(params:ApiKey):
     cache.putIntoCache(cache_key, params.__dict__.__str__())
     return params
 
+
 def checkTokenTimeLine(param:ApiKey):
     """ double check the api timestamp, if expired the parm set will be updated
     """
@@ -549,6 +568,7 @@ def checkTokenTimeLine(param:ApiKey):
         return param
     else:
         return refreshToken(param)
+
 
 def sendTokenRequest(form_values, add_headers={}):
     headers = {
@@ -583,6 +603,7 @@ def setDestination(nameChar:str,idSystem:int,beginning=True, clear_all=True):
         req = "https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
         requests.post(req).raise_for_status()
 
+
 def getRouteFromEveOnline(jumpGates, src, dst):
     """build rout respecting jump bridges
         returns the list of systems to travel to
@@ -598,6 +619,7 @@ def getRouteFromEveOnline(jumpGates, src, dst):
     result.raise_for_status()
     return eval(result.text)
 
+
 def getAllStructures(typeid=None):
     req = "https://esi.evetech.net/latest/universe/structures/?datasource=tranquility"
     result = requests.get(req)
@@ -611,6 +633,7 @@ def getAllStructures(typeid=None):
             if structure["structure_type_id"]==typeid:
                 types.append(structure)
     return types
+
 
 def getStructures(nameChar:str, id_structure:int, use_cache=True):
     if nameChar == None:
@@ -629,6 +652,7 @@ def getStructures(nameChar:str, id_structure:int, use_cache=True):
         cache.putIntoCache(cache_key, res.text, 3600)
         return eval(res.text)
 
+
 class JumpBridge(object):
     def __init__(self, name:str, structureId:int, systemId:int, ownerId:int):
         tok = name.split(" ")
@@ -640,6 +664,7 @@ class JumpBridge(object):
         self.ownerId = ownerId
         self.paired = False
         self.links = 0
+
 
 def sanityCheckGates(gates):
     """ grant that all item of gates builds valid pairs of jump bridges src<->dst and also dst<->src
@@ -656,11 +681,13 @@ def sanityCheckGates(gates):
             gates.remove(gate)
     return gates
 
+
 def countCheckGates( gates ):
     for gate in gates:
         for elem in gates:
             if (gate.src_system_name == elem.src_system_name) or (gate.src_system_name == elem.dst_system_name):
                 gate.links = gate.links+1
+
 
 def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
@@ -678,7 +705,7 @@ def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
     res.raise_for_status()
     structs = eval(res.text)
     gates = list()
-    if token:
+    if token and len(structs):
         process = 0
         if callback and not callback(len(structs["structure"]), process):
             return gates
@@ -697,6 +724,7 @@ def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
     countCheckGates(gates)
     return gates
 
+
 def writeGatestToFile(gates, filename="jb.txt"):
     gates_list = list()
     with open(filename, "w")as gf:
@@ -707,6 +735,7 @@ def writeGatestToFile(gates, filename="jb.txt"):
                 gf.write("{} {} {} {} ({} {})\n".format(s_t_d, gate.systemId, gate.structureId, gate.ownerId, gate.links,gate.paired))
                 gates_list.append(s_t_d)
         gf.close()
+
 
 def getSolarSystemInformation(system_id,use_cache=True):
     """gets the solar system info from system id
@@ -723,6 +752,7 @@ def getSolarSystemInformation(system_id,use_cache=True):
         cache.putIntoCache(cache_key, res_system.text)
         return res_system.json()
 
+
 def getConstellationInformation(constellation_id:int,use_cache=True):
     cache_key = "_".join(("universe", "constellations", str(constellation_id)))
     cache = Cache()
@@ -736,18 +766,21 @@ def getConstellationInformation(constellation_id:int,use_cache=True):
         cache.putIntoCache(cache_key, res_constellation.text)
         return res_constellation.json()
 
-def hasAnsiblex( sys )->bool:
+
+def hasAnsiblex( sys ) -> bool:
     return False
 
-def applyRouteToEveOnline(nameChar, jumpList):
-    if nameChar == None:
+
+def applyRouteToEveOnline(name_char, jump_list):
+    if name_char is None:
         logging.error("applyRouteToEveOnline needs the eve-online api account.")
         return None
-    for idSystem in jumpList:
-        if hasAnsiblex(idSystem):
+    for id_system in jump_list:
+        if hasAnsiblex(id_system):
             pass
         else:
-            setDestination(nameChar, idSystem, beginning=False, clear_all=False)
+            setDestination(name_char, id_system, beginning=False, clear_all=False)
+
 
 SHIPIDS = [24692,22448,2836,23919,32872,642,11936,17726,37604,29266,11969,628,23757,11202,28850,643,11938,32305,17922,22466,33468,608,625,29337,11567,648,582,33820,11985,630,1944,17920,37480,632,34328,598,12013,16229,33151,599,12731,11192,42246,45647,17619,672,32788,621,17634,16240,633,11993,33675,20185,11182,42243,23915,33397,48648,11196,22468,16236,583,34317,32876,16238,34496,17476,12729,11176,2161,37453,17926,11184,20125,16231,17720,42242,47269,22474,17928,37457,12023,12017,645,32307,32874,24698,33153,17932,52254,49711,12011,3532,617,37135,44995,12044,22442,655,671,22460,32790,589,634,29344,11957,17841,20189,16227,35781,22464,32207,11129,33816,17715,3756,11940,28710,21097,584,37455,11987,11011,21628,24696,33155,11381,11379,35683,22852,11172,33079,22452,605,651,12034,11961,22544,24702,33157,48636,11387,24690,601,52252,607,615,35779,596,12753,17703,594,590,30842,12042,12005,657,34828,11400,11174,602,49710,37458,11194,45649,28661,654,11971,29986,33513,47271,3764,37606,45645,29990,17738,22548,24694,29248,37483,11186,3516,624,652,12032,44996,12747,609,37456,641,13202,17728,603,656,32811,4363,4388,32209,11132,37605,623,42241,45534,33395,19724,12015,24700,4306,19722,592,11377,650,52250,33472,24483,22470,17736,37607,2998,28846,23913,20187,12745,2006,17709,11989,11995,635,4302,28606,33818,620,29340,44993,28659,22440,17718,12021,19726,11965,33677,37481,42244,47466,2863,586,17480,16233,12733,33697,29988,20183,12735,597,12038,42245,23773,11963,11178,17918,638,17636,26840,588,22428,17812,11393,17478,19720,3514,28844,587,49712,24688,11959,28352,629,22456,12019,37460,11978,640,4005,32309,631,29336,11190,19744,11942,22430,22546,54731,585,22444,622,17713,11198,37482,54732,33470,17924,42685,34562,33081,4308,32878,11200,649,639,17732,26842,29984,52267,37459,23911,627,16242,54733,48635,591,4310,593,644,32311,2834,11999,3518,42132,42126,28665,47270,42124,606,42125,42133,11365,32880,626,17843,12743,45531,34590,3766,37454,17722,17740,33083,45530,22446,33673,22436,11371,17930,653,23917,49713,12003,2078,52907]
 
@@ -796,6 +829,7 @@ SHIPNAMES = (u'ABADDON',u'ABSOLUTION',u'ADRESTIA',u'AEON',u'ALGOS',u'APOCALYPSE'
              u'VEXOR',u'VEXOR NAVY ISSUE',u'VIATOR',u'VICTOR',u'VICTORIEUX LUXURY YACHT',u'VIGIL',u'VIGIL FLEET ISSUE',
              u'VIGILANT',u'VINDICATOR',u'VIOLATOR',u'VIRTUOSO',u'VULTURE',u'WHIPTAIL',u'WIDOW',u'WOLF',u'WORM',u'WREATHE',
              u'WYVERN',u'ZARMAZD',u'ZEALOT',u'ZEPHYR',u'ZIRNITRA',)
+
 SHIPNAMES = sorted(SHIPNAMES, key=lambda x: len(x), reverse=True)
 
 PC_CORPS_IDS = [ 1000032, 1000164, 1000033, 1000165, 1000297, 1000034, 1000166, 1000298, 1000035, 1000167, 1000299, 1000036, 1000168, 1000300, 1000037, 1000169, 1000301, 1000038,  1000170, 1000039, 1000171, 1000040, 1000172, 1000041, 1000173, 1000042, 1000174, 1000043, 1000175, 1000044, 1000176, 1000045, 1000177, 1000046, 1000178, 1000047, 1000179, 1000048, 1000180, 1000049, 1000181, 1000050, 1000182, 1000051, 1000052, 1000053,  1000054, 1000055, 1000056, 1000057, 1000058, 1000059, 1000060, 1000061,  1000193, 1000062, 1000063, 1000064, 1000065, 1000197, 1000066, 1000198, 1000067, 1000068,  1000069, 1000070, 1000071, 1000072, 1000073, 1000205, 1000074, 1000206,  1000075, 1000207, 1000076, 1000208, 1000077, 1000078, 1000079, 1000080, 1000081, 1000213, 1000082, 1000214, 1000083, 1000215, 1000084, 1000216, 1000085, 1000217,  1000086, 1000218, 1000087, 1000219, 1000088, 1000220, 1000089, 1000090, 1000222, 1000091, 1000223, 1000092, 1000224, 1000093, 1000225, 1000094, 1000226, 1000095,  1000227, 1000096, 1000228, 1000097, 1000229, 1000098, 1000230, 1000099, 1000231, 1000100, 1000232, 1000101, 1000233, 1000102, 1000234, 1000103, 1000235, 1000104,  1000236, 1000105, 1000237, 1000106, 1000238, 1000107, 1000239, 1000108, 1000240, 1000109, 1000110, 1000111, 1000243, 1000112, 1000244, 1000113, 1000245, 1000114,  1000246, 1000115, 1000247, 1000116, 1000248, 1000117, 1000249, 1000118, 1000250, 1000119, 1000251, 1000120, 1000252, 1000121, 1000253, 1000122, 1000254, 1000123,  1000255, 1000124, 1000256, 1000125, 1000257, 1000126, 1000258, 1000127, 1000259, 1000128, 1000129, 1000261, 1000130, 1000262, 1000131, 1000263, 1000132, 1000001,  1000133, 1000002, 1000134, 1000003, 1000135, 1000004, 1000136, 1000005, 1000137, 1000006, 1000138, 1000270, 1000007, 1000139, 1000271, 1000008, 1000140, 1000009,  1000141, 1000010, 1000142, 1000274, 1000011, 1000143, 1000012, 1000144, 1000276, 1000013, 1000145, 1000277, 1000409, 1000014, 1000146, 1000015, 1000147, 1000279,  1000016, 1000148, 1000280, 1000017, 1000149, 1000281, 1000018, 1000150, 1000282, 1000019, 1000151, 1000283, 1000020, 1000152, 1000284, 1000021, 1000153, 1000285,  1000022, 1000154, 1000286, 1000023, 1000155, 1000287, 1000024, 1000156, 1000288, 1000025, 1000157, 1000289, 1000026, 1000158, 1000290, 1000027, 1000159, 1000291,  1000028, 1000160, 1000292, 1000029, 1000161, 1000293, 1000030, 1000162, 1000294, 1000031, 1000163]
@@ -861,10 +895,10 @@ if __name__ == "__main__":
     structs = getAllStructures()
     sysnames = idsToNames(getAllRegions())
     some = ["{}".format(itm) for key,itm in sysnames.items()]
-    id = charnameToId("nele McCool",False)
-    corp=getCurrentCorpForCharId(1350114619,False)
-    res = getCorpidsForCharId(charnameToId("nele McCool"))
-    res = getCharinfoForCharId(charnameToId("nele McCool"))
+    id = charNameToId("nele McCool", False)
+    corp=getCurrentCorpForCharId(1350114619, False)
+    res = getCorpIdsForCharId(charNameToId("nele McCool"))
+    res = getCharInfoForCharId(charNameToId("nele McCool"))
     gates = getAllJumpGates("nele McCool", "G-M4GK")
     setDestination("nele McCool", 1035408540831)  # ansiblex
     setDestination("nele McCool", 1034969570497)  # ansiblex
@@ -876,9 +910,10 @@ if __name__ == "__main__":
     applyRouteToEveOnline( "nele McCool",route)
     setDestination("nele McCool", 0, True, True)
 
-    setDestination("nele McCool",1035408540831)#ansiblex
+    #ansiblex
+    setDestination("nele McCool",1035408540831)
     setDestination("nele McCool",30003770)
-    res = getTokenOfChar( "MrX")
+    res = getTokenOfChar("MrX")
     exit(1)
     client_param = {
         "client_id": eve_api_key.CLIENTS_API_KEY,
@@ -889,12 +924,12 @@ if __name__ == "__main__":
     auth_code = getApiKey(client_param)
     res = getAccessToken(client_param, auth_code)
     exit(1)
-    res = getCharinfoForCharId( charnameToId( "Nele McCool" ))
+    res = getCharInfoForCharId( charNameToId( "Nele McCool" ))
 
     res = getAvatarForPlayer("Dae\'M");
-    res = checkPlayername( "Nele McCool" )
+    res = checkPlayerName( "Nele McCool" )
     res = getAvatarForPlayer( "Nele McCool")
-    res = checkPlayername("Rovengard Ogaster")
-    res = checkPlayername("121%2011%2011%2011")
+    res = checkPlayerName("Rovengard Ogaster")
+    res = checkPlayerName("121%2011%2011%2011")
     res = getAvatarForPlayer("121%2011%2011%2011")
 
