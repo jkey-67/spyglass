@@ -83,9 +83,11 @@ class Map(object):
             svg = cache.getFromCache("map_" + self.region)
         else:
             svg = svgFile
-        if not svg or svg.startswith( "region not found"):
+        if not svg or svg.startswith("region not found"):
             try:
                 svg = self._getSvgFromDotlan(region_to_load)
+                if not svg or svg.startswith("region not found"):
+                    svg = self._getSvgFromDotlan("providence")
                 cache.putIntoCache("map_" + self.region, svg, evegate.secondsTillDowntime() + 60 * 60)
             except Exception as e:
                 self.outdatedCacheError = e
@@ -155,7 +157,11 @@ class Map(object):
                 name = element.select("text")[0].text.strip().upper()
                 mapCoordinates = {}
                 for keyname in ("x", "y", "width", "height"):
-                    mapCoordinates[keyname] = float(uses[symbolId][keyname])
+                    try:
+                        mapCoordinates[keyname] = float(uses[symbolId][keyname])
+                    except KeyError:
+                        mapCoordinates[keyname] = 0
+
                 mapCoordinates["center_x"] = (mapCoordinates["x"] + (mapCoordinates["width"] / 2))
                 mapCoordinates["center_y"] = (mapCoordinates["y"] + (mapCoordinates["height"] / 2))
                 try:
@@ -201,7 +207,6 @@ class Map(object):
                 if symbol:
                     symbol.name="g"
                     map.insert(0,symbol)
-
         jumps = soup.select("#jumps")[0]
         # Set up the tags for system statistics
         for systemId, system in self.systemsById.items():

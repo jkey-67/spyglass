@@ -21,7 +21,6 @@ import time
 import logging
 import queue
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
-from cairosvg import *
 from vi import evegate
 from vi import koschecker
 from vi.cache.cache import Cache

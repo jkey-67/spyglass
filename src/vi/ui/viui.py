@@ -50,7 +50,7 @@ MESSAGE_EXPIRY_SECS = 20 * 60
 MAP_UPDATE_INTERVAL_MSECS =  1000
 CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 
-DEFAULT_ROOM_MANES = (u"Int.Impass", u"Int.Imenseasz", u"Int.Tenerifs", u"Intel Legacy", u"Int.Catch", u"Int.PBasis")
+DEFAULT_ROOM_MANES = (u"Scald Intel")
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -210,6 +210,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.queriousRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.queriousRegionAction))
         self.providenceCatchRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.providenceCatchRegionAction))
         self.providenceCatchCompactRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.providenceCatchCompactRegionAction))
+        self.wickedcreekScaldingpassRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.wickedcreekScaldingpassRegionAction))
         self.chooseRegionAction.triggered.connect(self.showRegionChooser)
         self.showChatAction.triggered.connect(self.changeChatVisibility)
         self.soundSetupAction.triggered.connect(self.showSoundSetup)
@@ -351,6 +352,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.catchRegionAction.setChecked(True)
         elif regionName.startswith("Providence"):
             self.providenceRegionAction.setChecked(True)
+        elif regionName.startswith("Wicked"):
+            self.wickedcreekScaldingpassRegionAction.setChecked(True)
         elif regionName.startswith("Querious"):
             self.queriousRegionAction.setChecked(True)
         else:
@@ -397,7 +400,8 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("Finding map file {}".format(regionName))
         svg = None
         try:
-            with open(resourcePath(os.path("vi", "ui", "res", "mapdata","{0}.svg".format(regionName)))) as svgFile:
+            res_file_name=os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(regionName) )
+            with open(resourcePath(resourcePath(res_file_name)))as svgFile:
                 svg = svgFile.read()
         except Exception as e:
             pass
@@ -709,16 +713,19 @@ class MainWindow(QtWidgets.QMainWindow):
             system.removeLocatedCharacter(char)
         # todo:follow reagion change here
         if self.autoChangeRegion and evegate.getTokenOfChar(char):
-            system = evegate.getSolarSystemInformation(evegate.namesToIds([systemname])[systemname])
-            selected_system = evegate.getSolarSystemInformation(system["system_id"])
-            selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
-            selected_region = selected_constellation["region_id"]
-            selected_region_name = dotlan.convertRegionName( evegate.idsToNames([selected_region])[selected_region] )
-            concurrent_region_name = self.cache.getFromCache("region_name")
-            if (selected_region_name != concurrent_region_name):
-                Cache().putIntoCache("region_name", selected_region_name)
-                self.rescanIntel()
-
+            try:
+                system_id = evegate.namesToIds([systemname])[systemname]
+                system = evegate.getSolarSystemInformation(system_id)
+                selected_system = evegate.getSolarSystemInformation(system["system_id"])
+                selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+                selected_region = selected_constellation["region_id"]
+                selected_region_name = dotlan.convertRegionName( evegate.idsToNames([selected_region])[selected_region] )
+                concurrent_region_name = self.cache.getFromCache("region_name")
+                if (selected_region_name != concurrent_region_name):
+                    Cache().putIntoCache("region_name", selected_region_name)
+                    self.rescanIntel()
+            except Exception:
+                pass
 
         if not systemname == "?" and systemname in self.systems.keys():
             self.systems[systemname].addLocatedCharacter(char)
@@ -811,6 +818,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.catchRegionAction.setChecked(False)
         self.providenceRegionAction.setChecked(False)
         self.queriousRegionAction.setChecked(False)
+        self.wickedcreekScaldingpassRegionAction.setChecked(False)
         self.providenceCatchRegionAction.setChecked(False)
         self.providenceCatchCompactRegionAction.setChecked(False)
         self.chooseRegionAction.setChecked(False)
@@ -833,6 +841,7 @@ class MainWindow(QtWidgets.QMainWindow):
         chooser.show()
 
     def addMessageToIntelChat(self, message, timeA=time.time()):
+        #todo: use timestamp from message
         scrollToBottom = False
         if (self.chatListWidget.verticalScrollBar().value() == self.chatListWidget.verticalScrollBar().maximum()):
             scrollToBottom = True
