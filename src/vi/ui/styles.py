@@ -66,12 +66,21 @@ class Styles:
             return ""
 
     def getCommons(self):
-        if (Styles.currentStyle == "light"):
+        if (Styles.currentStyle == "light" and Styles.defaultCommons != ""):
             return Styles.defaultCommons
-        elif Styles.currentStyle == "abyss":
+        elif (Styles.currentStyle == "abyss" and Styles.darkCommons != ""):
             return Styles.darkCommons
         else:
-            return ""
+            def_commons = {
+                "bg_colour": '#FFFFFF',
+                "change_lines": False,
+                "line_colour": '#000000',
+                "alarm_colours": ["#FF0000", "#FF9B0F", "#FFFA0F", "#FFFDA2", "#FFFFFF"],
+                "unknown_colour": "#FFFFF",
+                "clear_colour": "#59FF6C",
+                "text_colour": "#000000",
+                "text_inverter": True}
+            return def_commons
 
     def setStyle(self, style):
         if style in Styles.styleList:

@@ -49,7 +49,7 @@ def charNameToId(name, use_cache=True):
     """
     cache_key = "_".join(("name", "id", name))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key)
+    cached_id = cache.getFromCache(cache_key, use_cache)
     if use_cache and cached_id:
         return cached_id
     else:
@@ -84,7 +84,7 @@ def namesToIds(names, use_cache=True):
     # do we have already something in the cache?
     for name in names:
         cache_key = "_".join(("id", "name", name))
-        id_from_cache = cache.getFromCache(cache_key)
+        id_from_cache = cache.getFromCache(cache_key, use_cache)
         if id_from_cache and use_cache:
             data[name] = id_from_cache
         else:
@@ -108,6 +108,10 @@ def namesToIds(names, use_cache=True):
             if "systems" in content.keys():
                 for system in content["systems"]:
                     data[system["name"]] = system["id"]
+            if "regions" in content.keys():
+                for region in content["regions"]:
+                    data[region["name"]] = region["id"]
+
             # writing the cache
             for name in data:
                 cache_key = "_".join(("id", "name", name))
@@ -121,7 +125,7 @@ def getAllRegions(use_cache=True):
     """ Uses the EVE API to get the list of all system ids
     """
     cache = Cache()
-    all_systems = cache.getFromCache("list_of_all_systems")
+    all_systems = cache.getFromCache("list_of_all_systems", use_cache)
     if use_cache and all_systems is not None:
         return eval(all_systems)
     else:
@@ -147,7 +151,7 @@ def idsToNames(ids, use_cache=True):
     # something already in the cache?
     for checked_id in ids:
         cache_key = u"_".join(("name", "id", str(checked_id)))
-        name = cache.getFromCache(cache_key)
+        name = cache.getFromCache(cache_key, use_cache)
         if name and use_cache:
             data[checked_id] = name
         else:
@@ -230,7 +234,7 @@ def currentEveTime():
 def getCharInfoForCharId(char_id, use_cache=True):
     cache_key = u"_".join(("playerinfo_id_", str(char_id)))
     cache = Cache()
-    char_info = cache.getFromCache(cache_key)
+    char_info = cache.getFromCache(cache_key, use_cache)
     if use_cache and char_info is not None:
         char_info = eval(char_info)
     else:
@@ -255,7 +259,7 @@ def getCorpIdsForCharId(char_id,use_cache=True):
     """
     cache_key = u"_".join(("corp_history_id_", str(char_id)))
     cache = Cache()
-    corp_ids = cache.getFromCache(cache_key)
+    corp_ids = cache.getFromCache(cache_key, use_cache)
     if use_cache and corp_ids is not None:
         corp_ids = eval(corp_ids)
     else:
@@ -527,7 +531,7 @@ def getTokenOfChar(char_name:str):
         return None
     cache = Cache()
     cache_key = "_".join(("api_key", "character_name", char_name))
-    char_data = cache.getFromCache(cache_key,True)
+    char_data = cache.getFromCache(cache_key, True)
     if char_data:
         return ApiKey(eval(char_data))
     else:
@@ -641,7 +645,7 @@ def getStructures(nameChar:str, id_structure:int, use_cache=True):
         return None
     cache_key = "_".join(("structure", "id", str(id_structure)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key)
+    cached_id = cache.getFromCache(cache_key, use_cache)
     if use_cache and cached_id:
         return eval(cached_id)
     else:
@@ -736,13 +740,27 @@ def writeGatestToFile(gates, filename="jb.txt"):
                 gates_list.append(s_t_d)
         gf.close()
 
+def getStargateInformation(starget_id,use_cache=True):
+    """gets the solar system info from system id
+    """
+    cache_key = "_".join(("universe", "systems", str(starget_id)))
+    cache = Cache()
+    cached_id = cache.getFromCache(cache_key, use_cache)
+    if use_cache and cached_id:
+        return eval(cached_id)
+    else:
+        req = "https://esi.evetech.net/latest/universe/stargates/{}/?datasource=tranquility&language=en".format(starget_id)
+        res_system = requests.get(req)
+        res_system.raise_for_status()
+        cache.putIntoCache(cache_key, res_system.text)
+        return res_system.json()
 
 def getSolarSystemInformation(system_id,use_cache=True):
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "systems", str(system_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key)
+    cached_id = cache.getFromCache(cache_key, use_cache)
     if use_cache and cached_id:
         return eval(cached_id)
     else:
@@ -752,11 +770,24 @@ def getSolarSystemInformation(system_id,use_cache=True):
         cache.putIntoCache(cache_key, res_system.text)
         return res_system.json()
 
+def getRegionInformation(region_id:int,use_cache=True):
+    cache_key = "_".join(("universe", "regions", str(region_id)))
+    cache = Cache()
+    cached_id = cache.getFromCache(cache_key, use_cache)
+    if use_cache and cached_id:
+        return eval(cached_id)
+    else:
+        req = "https://esi.evetech.net/latest/universe/regions/{}/?datasource=tranquility&language=en".format(region_id)
+        res_constellation = requests.get(req)
+        res_constellation.raise_for_status()
+        cache.putIntoCache(cache_key, res_constellation.text)
+        return res_constellation.json()
+
 
 def getConstellationInformation(constellation_id:int,use_cache=True):
     cache_key = "_".join(("universe", "constellations", str(constellation_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key)
+    cached_id = cache.getFromCache(cache_key, use_cache)
     if use_cache and cached_id:
         return eval(cached_id)
     else:

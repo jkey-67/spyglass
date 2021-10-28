@@ -39,6 +39,7 @@ except ImportError:
 
 class SoundManager(metaclass=Singleton):
     SOUNDS = {"alarm": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
+              "alarm_0": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
               "alarm_1": "",
               "alarm_2": "",
               "alarm_3": "",

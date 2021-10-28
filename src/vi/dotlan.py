@@ -25,13 +25,12 @@ import math
 import time
 import requests
 import logging
-import tinycss
 from bs4 import BeautifulSoup
 from vi import states
 from vi.cache.cache import Cache
 from vi.ui.styles import Styles, TextInverter
 
-from . import evegate
+#from . import evegate
 
 JB_COLORS = ("66CD00", "7CFC00", "32CD32", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
              "90EE90", "8FBC8F", "20B2AA", "2E8B57", "808000", "6B8E23")
@@ -74,7 +73,7 @@ class Map(object):
         self.height = None
         cache = Cache()
         self.outdatedCacheError = None
-        if self.region == "Providencecatch" or  self.region == "Providence-catch-compact":
+        if self.region == "Providencecatch" or self.region == "Providence-catch-compact":
             region_to_load = "providence-catch"
         else:
             region_to_load = self.region
@@ -88,7 +87,7 @@ class Map(object):
                 svg = self._getSvgFromDotlan(region_to_load)
                 if not svg or svg.startswith("region not found"):
                     svg = self._getSvgFromDotlan("providence")
-                cache.putIntoCache("map_" + self.region, svg, evegate.secondsTillDowntime() + 60 * 60)
+                cache.putIntoCache("map_" + self.region, svg, 24*60*60 )###evegate.secondsTillDowntime() + ### 60 * 60)
             except Exception as e:
                 self.outdatedCacheError = e
                 svg = cache.getFromCache("map_" + self.region, True)
@@ -109,17 +108,20 @@ class Map(object):
 
         for tag in self.soup.findAll(attrs={"onload": True}):
             del (tag["onload"])
-        self.systems = self._extractSystemsFromSoup(self.soup)
+
+        if "compact" in self.region:
+            scale = 0.9
+        elif "tactical" in self.region:
+            scale = 1.5
+        else:
+            scale = 1.0
+        self.systems = self._extractSystemsFromSoup(self.soup, scale)
         self.systemsById = {}
         for system in self.systems.values():
             self.systemsById[system.systemId] = system
-        if "compact" in self.region:
-            scale = 0.9
-        else:
-            scale = 1.0
 
         self._extractSizeFromSoup(self.soup)
-        self._prepareSvg(self.soup, self.systems, scale)
+        self._prepareSvg(self.soup, self.systems)
         self._connectNeighbours()
         self.jumpBridges = []
         self._jumpMapsVisible = setJumpMapsVisible
@@ -133,18 +135,30 @@ class Map(object):
         box = svg["viewbox"]
         if box:
             box = box.split(" ")
-            self.width = int(box[2])
-            self.height = int(box[3])
+            self.width = float(box[2])
+            self.height = float(box[3])
 
         #width = svg["width"]
         #height = svg["height"]
 
-    def _extractSystemsFromSoup(self, soup):
+    def _extractSystemsFromSoup(self, soup, scale):
         systems = {}
         uses = {}
         for use in soup.select("use"):
             useId = use["xlink:href"][1:]
+            use.attrs["x"] = str(float(use.attrs["x"]) * scale)
+            use.attrs["y"] = str(float(use.attrs["y"]) * scale)
             uses[useId] = use
+
+        #default size of the systems to calculate the center point
+        svg_width  = 62.5
+        svg_height = 30
+        for use in soup.select("line"):
+            use.attrs["x1"] = str((float(use.attrs["x1"])-svg_width/2.0) * scale+svg_width/2.0)
+            use.attrs["y1"] = str((float(use.attrs["y1"])-svg_height/2.0) * scale+svg_height/2.0)
+            use.attrs["x2"] = str((float(use.attrs["x2"])-svg_width/2.0) * scale+svg_width/2.0)
+            use.attrs["y2"] = str((float(use.attrs["y2"])-svg_height/2.0) * scale+svg_height/2.0)
+
         symbols = soup.select("symbol")
         for symbol in symbols:
             symbolId = symbol["id"]
@@ -171,9 +185,9 @@ class Map(object):
                 systems[name] = System(name, element, self.soup, mapCoordinates, transform, systemId)
         return systems
 
-    def _prepareSvg(self, soup, systems, scale=1):
+    def _prepareSvg(self, soup, systems):
         svg = soup.select("svg")[0]
-        svg.attrs = {key: value for key, value in svg.attrs.items() if key not in ["style","onmousedown","viewbox"]}
+        svg.attrs = {key: value for key, value in svg.attrs.items() if key not in ["style", "onmousedown", "viewbox"]}
         # Disable dotlan mouse functionality
         #css = soup.select("style")[0]
         #svg["style"] = "background: {}".format(self.styles.getCommons()["bg_colour"])
@@ -191,7 +205,7 @@ class Map(object):
             group.append(line)
         svg.insert(0, group)
 
-        map  = svg.select("#map")
+        map = svg.select("#map")
         for defs in svg.select("defs"):
             for radialgradient in defs.select("radialGradient"):
                 radialgradient.name = "radialGradient"
@@ -207,7 +221,12 @@ class Map(object):
                 if symbol:
                     symbol.name="g"
                     map.insert(0,symbol)
-        jumps = soup.select("#jumps")[0]
+        try:
+            jumps = soup.select("#jumps")[0]
+        except Exception as e:
+            jumps = list()
+
+
         # Set up the tags for system statistics
         for systemId, system in self.systemsById.items():
             coords = system.mapCoordinates
@@ -486,6 +505,7 @@ class System(object):
             example:
             {sys3: {"distance"}: 0, sys2: {"distance"}: 1}
         """
+        #todo:change distance calculaten to esi to enable detection of
         systems = {self: {"distance": 0}}
         currentDistance = 0
         while currentDistance < distance:
@@ -635,7 +655,7 @@ def convertRegionName(name):
 
 # this is for testing:
 if __name__ == "__main__":
-    map = Map("Providence", "Providence.svg")
+    map = Map("providence")
     s = map.systems["I7S-1S"]
     s.setStatus(states.ALARM)
     logging.error(map.svg)

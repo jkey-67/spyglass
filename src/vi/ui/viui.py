@@ -32,13 +32,13 @@ from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtCore import QPoint,QPointF, QByteArray, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog
-from vi import amazon_s3, evegate
+from vi import evegate
 from vi import dotlan, filewatcher
 from vi import states
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 from vi.soundmanager import SoundManager
-from vi.threads import AvatarFindThread, KOSCheckerThread, MapStatisticsThread
+from vi.threads import AvatarFindThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser, Message
@@ -251,7 +251,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return False
         self.mapView.hoveCheck = hoveCheck
 
-        def doubleClicked( pos:QPoint) -> bool:
+        def doubleClicked( pos:QPoint):
             for system in self.dotlan.systems.items():
                 val = system[1].mapCoordinates
                 rc = QtCore.QRectF(val["x"],val["y"],val["width"],val["height"])
@@ -437,7 +437,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.updateMapView()
         self.setInitialMapPositionForRegion(regionName)
         #todo:why using timer for painting
-        self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
+        #self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
         # Allow the file watcher to run now that all else is set up
         self.filewatcherThread.paused = False
         logging.debug("Map setup complete")
@@ -944,7 +944,7 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "SoundSetup.ui")), dialog)
         dialog.volumeSlider.setValue(SoundManager().soundVolume)
         dialog.volumeSlider.valueChanged[int].connect(SoundManager().setSoundVolume)
-        dialog.testSoundButton.clicked.connect(lambda: SoundManager().playSound(name="alarm",abbreviatedMessage="Testing the playback sound system!"))
+        dialog.testSoundButton.clicked.connect(lambda: SoundManager().playSound(name="alarm", abbreviatedMessage="Testing the playback sound system!"))
         dialog.palyAlarm_1.clicked.connect(lambda: SoundManager().playSound(name="alarm_1", abbreviatedMessage="Alarm distance 1"))
         dialog.palyAlarm_2.clicked.connect(lambda: SoundManager().playSound(name="alarm_2", abbreviatedMessage="Alarm distance 2"))
         dialog.palyAlarm_3.clicked.connect(lambda: SoundManager().playSound(name="alarm_3", abbreviatedMessage="Alarm distance 3"))
@@ -1040,7 +1040,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setLocation(name, sys)
         self.updateMapView()
 
-    def systemUnderMouse(self,pos: QPoint) -> str:
+    def systemUnderMouse(self, pos: QPoint):
         """returns the name of the system under the mouse pointer
         """
         for system in self.dotlan.systems.items():
