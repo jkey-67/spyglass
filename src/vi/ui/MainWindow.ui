@@ -845,10 +845,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Wicked Creek/Scalding Pass</string>
+    <string>Tactical Map</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>Wickedcreek_Scaldingpass</string>
+    <string>Denci_Tactical</string>
    </property>
   </action>
  </widget>
