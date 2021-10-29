@@ -282,7 +282,7 @@ def main():
             svgFile.close()
 
     if True:#only rout jump lines
-        newSvg = updateSvgFile(os.path.join(base_path, "New_Combined-step_8.svg"))
+        newSvg = updateSvgFile(os.path.join(base_path, "New_Combined-step_9.svg"))
         result = newSvg.body.next.prettify().encode("utf-8")
         with open(os.path.join(base_path, "Denci_Tactical.svg"), "wb") as svgFile:
             svgFile.write(result)
