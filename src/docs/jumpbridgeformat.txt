@@ -25,8 +25,8 @@ System1 » System1
 The first line will draw a jumpbridge between System1 and System2 with an
 arrow on both sides, the second line is an example which may be copied directly from inside the eve client.
 
-Write the systemnames as they are written in the maps.
-Don't forget the space in between the Systemnames and the jumpbridge!
+Write the system names exactly as they are written in the maps.
+Don't forget the space in between the system names and the jumpbridge!
 
 Generating the jumpbridges may take a while, received data will be cached internally and can be interrupted and continued.
 For some reasons, the received jumpbridges data may be not accurate.

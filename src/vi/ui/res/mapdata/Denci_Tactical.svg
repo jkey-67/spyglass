@@ -57,10 +57,11 @@
 
 /* legend */
 .lb	{ stroke-width: 1; stroke: #777777; fill: #222222; }
-.lbt	{ stroke-width: 1; stroke: #777777; fill: #222222; }
-.lt	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 12px; }
-.lc	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
 .l	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 10px; }
+.lbt	{ stroke-width: 1; stroke: #777777; fill: #222222; }
+.lt	{ fill: #808080; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 12px; }
+.lc	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
+.lx	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 14px; }
 
 /* highlight */
 .h	{ fill: none; stroke-width: 3; stroke: #FFFFFF; }
@@ -84,27 +85,20 @@
   <g id="legend" style="stroke-width:0.665384" transform="matrix(1.503125,0,0,1.5026596,2062.1981,596.63459)">
    <rect class="lb" height="236.7413" id="rect4" width="160.0499" x="860.20911" y="527.00433">
    </rect>
-   <text class="lt" id="text8-9" style="font-weight:bold;font-size:12px;font-family:Arial, Helvetica, sans-serif;fill:#ffffff;stroke-width:0.442735" text-anchor="middle" x="941.00043" y="582.35455">
-    <tspan id="tspan3719-1" x="941.00043" y="582.35455">
-     Great Wildlands
-    </tspan>
-   </text>
-   <text class="lt" id="text8-3" style="font-weight:bold;font-size:12px;font-family:Arial, Helvetica, sans-serif;fill:#ffffff;stroke-width:0.442735" text-anchor="middle" x="941.07367" y="541.61359">
-    <tspan id="tspan3721" x="941.07367" y="556.61359">
-     Scalding Pass
-    </tspan>
-   </text>
-   <text class="lt" id="text8" style="stroke-width:0.442735" text-anchor="middle" x="940.84515" y="544.37604">
-    <tspan id="tspan3719" x="940.84515" y="544.37604">
-     DENCI Tactical Map
-    </tspan>
-   </text>
+   <text class="lx" id="text8" style="stroke-width:1.442735" text-anchor="middle"
+         x="940.84515" y="540.0">DENCI Tactical Map</text>
+   <text class="lt" id="text8-9" style="stroke-width:0.442735"  text-anchor="middle"
+         x="941.00043" y="555.0">Great Wildlands</text>
+   <text class="lt" id="text8-3" style="stroke-width:0.442735"  text-anchor="middle"
+         x="941.07367" y="570.0">Scalding Pass</text>
+   <text class="lt" id="text8-7" style="stroke-width:0.442735" text-anchor="middle"
+         x="940.98871" y="585.0">Wicked Creek</text>
+
    <rect class="lb" height="148" id="rect10" width="160" x="860.5" y="595.5">
    </rect>
    <rect class="lb" height="20" id="rect12" width="160" x="860.5" y="743.5">
    </rect>
-   <text class="lc" id="text14" style="stroke-width:0.442735" text-anchor="middle" x="942.5" y="757.5">
-    © by Wollari &amp; CCP
+   <text class="lc" id="text14" style="stroke-width:0.442735" text-anchor="middle" x="942.5" y="757.5">© by Wollari &amp; CCP
    </text>
    <rect class="s" height="22" id="rect16" rx="7.3180871" ry="7.320354" style="fill:#111111" width="50" x="875" y="600">
    </rect>
@@ -247,11 +241,6 @@
    </text>
    <text id="text23281" style="font-style:normal;font-weight:normal;font-size:26.6153px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.442736" transform="scale(0.99984518,1.0001548)" x="790.38873" xml:space="preserve" y="568.36389">
     <tspan id="tspan23279" style="stroke-width:0.442736" x="790.38873" y="568.36389">
-    </tspan>
-   </text>
-   <text class="lt" id="text8-7" style="font-weight:bold;font-size:12px;font-family:Arial, Helvetica, sans-serif;fill:#ffffff;stroke-width:0.442735" text-anchor="middle" x="940.98871" y="555.09058">
-    <tspan id="tspan3721-3" x="940.98871" y="570.09058">
-     Wicked Creek
     </tspan>
    </text>
   </g>

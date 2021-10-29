@@ -9,7 +9,7 @@ def instFiles():
     devdir = workdir
     distdir = os.path.join(devdir, 'dist')
     builddir = os.path.join(devdir, 'build')
-    pathex = os.path.join(workdir, 'src' )
+    pathex = os.path.join(workdir, 'src')
     PyInstaller.__main__.run([
         '--clean',
         '-p', pathex,
@@ -17,13 +17,15 @@ def instFiles():
         '--workpath', builddir,
         '--onefile',
         '--windowed',
+        '--name', 'spyglass-1.6.0-RC-07',
         '../spyglass.py',
         '--icon=../icon.ico',
-        "--add-data=../vi/ui/*.ui:./vi/ui",
-        "--add-data=../vi/ui/res/*:./vi/ui/res",
-        "--add-data=../docs/*.*;./docs/"
-        "--add-data=../vi/ui/res/styles/*:./vi/ui/res/styles",
-        "--add-binary=../lib/*.dll:./lib",
+        "--add-data=../vi/ui/*.ui;./vi/ui",
+        "--add-data=../vi/ui/res/*;./vi/ui/res",
+        "--add-data=../vi/ui/res/mapdata*;./vi/ui/res/mapdata",
+        "--add-data=../docs/*.*;./docs/",
+        "--add-data=../vi/ui/res/styles/*;./vi/ui/res/styles",
+        "--add-binary=../lib/*.dll;./lib",
         '--hidden-import=pyttsx3.drivers',
         '--hidden-import=pyttsx3.drivers.dummy',
         '--hidden-import=import=pyttsx3.drivers.espeak',
