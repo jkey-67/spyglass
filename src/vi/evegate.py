@@ -230,7 +230,6 @@ def currentEveTime():
     """
     return datetime.datetime.utcnow()
 
-
 def getCharInfoForCharId(char_id, use_cache=True):
     cache_key = u"_".join(("playerinfo_id_", str(char_id)))
     cache = Cache()

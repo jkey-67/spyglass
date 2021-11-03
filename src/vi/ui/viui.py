@@ -702,16 +702,16 @@ class MainWindow(QtWidgets.QMainWindow):
             sc.repaint_needed.connect(self.updateMapView)
             sc.show()
 
-    def markSystemOnMap(self, systemname):
-        if str(systemname) in self.systems.keys():
-            self.systems[str(systemname)].mark(time.time())
-            self.updateMapView()
-            self.focusMapOnSystem(self.systems[str(systemname)].systemId)
+    def markSystemOnMap(self, system_name):
+        self.dotlan.systems[str(system_name)].mark()
+        self.updateMapView()
+        self.focusMapOnSystem(self.systems[str(system_name)].systemId)
+
 
     def setLocation(self, char, systemname):
         for system in self.systems.values():
             system.removeLocatedCharacter(char)
-        # todo:follow reagion change here
+        # todo:follow region change here
         if self.autoChangeRegion and evegate.getTokenOfChar(char):
             try:
                 system_id = evegate.namesToIds([systemname])[systemname]
@@ -840,7 +840,7 @@ class MainWindow(QtWidgets.QMainWindow):
         chooser.finished.connect(handleRegionChosen)
         chooser.show()
 
-    def addMessageToIntelChat(self, message, timeA=time.time()):
+    def addMessageToIntelChat(self, message):
         #todo: use timestamp from message
         scrollToBottom = False
         if (self.chatListWidget.verticalScrollBar().value() == self.chatListWidget.verticalScrollBar().maximum()):
@@ -853,7 +853,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.avatarFindThread.addChatEntry(chatEntryWidget)
         self.chatEntries.append(chatEntryWidget)
         chatEntryWidget.mark_system.connect(self.markSystemOnMap)
-        self.chat_message_added.emit(chatEntryWidget, timeA)
+        self.chat_message_added.emit(chatEntryWidget, message.timestamp)
         self.pruneMessages()
         if scrollToBottom:
             self.chatListWidget.scrollToBottom()
@@ -875,7 +875,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def pruneMessages(self):
         try:
-            now = time.mktime(evegate.currentEveTime().timetuple())
+            now = time.mktime(evegate.currentEveTime().timetuple())#todo:fix utc time here
+            now_to = time.time()
+            delta_time = now_to - now
             for row in range(self.chatListWidget.count()):
                 chatListWidgetItem = self.chatListWidget.item(0)
                 chatEntryWidget = self.chatListWidget.itemWidget(chatListWidgetItem)
@@ -890,29 +892,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     break
         except Exception as e:
             logging.error(e)
-
-    def showKosResult(self, state, text, requestType, hasKos):
-        if not self.scanIntelForKosRequestsEnabled:
-            return
-        try:
-            if hasKos:
-                SoundManager().playSound("kos", text)
-            if state == "ok":
-                if requestType == "xxx":  # An xxx request out of the chat
-                    self.trayIcon.showMessage("Player KOS-Check", text, 1)
-                elif requestType == "clipboard":  # request from clipboard-change
-                    if len(text) <= 0:
-                        text = "None KOS"
-                    self.trayIcon.showMessage("Your KOS-Check", text, 1)
-                text = text.replace("\n\n", "<br>")
-                message = Message("Spyglass KOS-Check", text, evegate.currentEveTime(), "Spyglass",
-                                                        [], states.NOT_CHANGE, text.upper(), text)
-                self.addMessageToIntelChat(message)
-            elif state == "error":
-                self.trayIcon.showMessage("KOS Failure", text, 3)
-        except Exception:
-            pass
-        self.trayIcon.setIcon(self.taskbarIconQuiescent)
 
     def changedRoomnames(self, newRoomnames):
         self.cache.putIntoCache("room_names", u",".join(newRoomnames), 60 * 60 * 24 * 365 * 5)
@@ -1015,7 +994,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.kosRequestThread.addRequest(parts, "xxx", False)
             # Otherwise consider it a 'normal' chat message
             elif message.user not in ("EVE-System", "EVE System") and message.status != states.IGNORE:
-                self.addMessageToIntelChat(message, message.timestamp)
+                self.addMessageToIntelChat(message)
                 # For each system that was mentioned in the message, check for alarm distance to the current system
                 # and alarm if within alarm distance.
                 systemList = self.dotlan.systems
@@ -1023,7 +1002,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     for system in message.systems:
                         systemname = system.name
                         if systemname in systemList.keys():
-                            systemList[systemname].setStatus(message.status)
+                            systemList[systemname].setStatus(message.status, message.timestamp)#todo:unc time here
                         else:
                             return
                         if message.status in ( states.ALARM ) and message.user not in self.knownPlayerNames:
@@ -1195,7 +1174,7 @@ class SystemChat(QtWidgets.QDialog):
             url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
             webbrowser.open(url, 2)
         except webbrowser.Error as e:
-            logging.critical( "Unable to open browser {0}".format(e))
+            logging.critical("Unable to open browser {0}".format(e))
             return
 
 

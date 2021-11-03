@@ -22,7 +22,7 @@
 ###########################################################################
 
 import math
-import time
+import datetime
 import requests
 import logging
 from bs4 import BeautifulSoup
@@ -56,8 +56,8 @@ class Map(object):
 
         # Update the marker, the marker should be visible for 20s
         if float(self.marker["opacity"]) > 0.0:
-            delta = time.time() - float(self.marker["activated"])
-            newOpacity = (1.0-delta/10.0)
+            delta = datetime.datetime.utcnow().timestamp() - float(self.marker["activated"])
+            newOpacity = (1.0-delta/20.0)
             if newOpacity < 0:
                 newOpacity=0.0
             self.marker["opacity"] = newOpacity
@@ -400,7 +400,7 @@ class System(object):
         self.rect = svgElement.select("rect")[0]
         self.firstLine = svgElement.select("text")[0]
         self.secondLine = svgElement.select("text")[1]
-        self.lastAlarmTime = 0
+        self.lastAlarmTimestamp = 0
         self.messages = []
         self.setStatus(states.UNKNOWN)
         self.__locatedCharacters = []
@@ -438,14 +438,14 @@ class System(object):
         jumps = self.mapSoup.select("#jumps")[0]
         jumps.insert(0, tag)
 
-    def mark(self, timeA):
+    def mark(self):
         marker = self.mapSoup.select("#select_marker")[0]
         offsetPoint = self.getTransformOffsetPoint()
         x = self.mapCoordinates["center_x"] + offsetPoint[0]
         y = self.mapCoordinates["center_y"] + offsetPoint[1]
         marker["transform"] = "translate({x},{y})".format(x=x, y=y)
         marker["opacity"] = 1.0
-        marker["activated"] = time.time()
+        marker["activated"] = datetime.datetime.utcnow().timestamp()
 
     def addLocatedCharacter(self, charname):
         idName = self.name + u"_loc"
@@ -528,23 +528,23 @@ class System(object):
         if self in system._neighbours:
             system._neigbours.remove(self)
 
-    def setStatus(self, newStatus):
+    def setStatus(self, newStatus, alarm_time=datetime.datetime.utcnow()):
         if newStatus == states.ALARM:
-            self.lastAlarmTime = time.time()
+            self.lastAlarmTimestamp = alarm_time.timestamp()
             if "stopwatch" not in self.secondLine["class"]:
                 self.secondLine["class"].append("stopwatch")
             self.setBackgroundColor(self.ALARM_COLOR)
             self.firstLine["style"] = self.SYSTEM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
-            self.secondLine["alarmtime"] = self.lastAlarmTime
+            self.secondLine["alarmtime"] = self.lastAlarmTimestamp
             self.secondLine["style"] = self.ALARM_STYLE.format(
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
         elif newStatus == states.CLEAR:
-            self.lastAlarmTime = time.time()
+            self.lastAlarmTimestamp = alarm_time.timestamp()
             self.setBackgroundColor(self.CLEAR_COLOR)
             self.secondLine["alarmtime"] = 0
             if "stopwatch" not in self.secondLine["class"]:
                 self.secondLine["class"].append("stopwatch")
-            self.secondLine["alarmtime"] = self.lastAlarmTime
+            self.secondLine["alarmtime"] = self.lastAlarmTimestamp
             self.firstLine["style"] = self.SYSTEM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
             self.secondLine["style"] = self.ALARM_STYLE.format(
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
@@ -580,7 +580,7 @@ class System(object):
             self.updateStyle()
 
         if (self.status == states.ALARM):
-            alarmTime = time.time() - self.lastAlarmTime
+            alarmTime = datetime.datetime.utcnow().timestamp() - self.lastAlarmTimestamp
             for maxDiff, alarmColour, lineColour in self.ALARM_COLORS:
                 if alarmTime < maxDiff:
                     if self.backgroundColor != alarmColour:
@@ -593,7 +593,7 @@ class System(object):
                         self.secondLine["style"] = self.ALARM_STYLE.format(lineColour)
                     break
         if self.status in (states.ALARM, states.WAS_ALARMED, states.CLEAR):  # timer
-            diff = math.floor(time.time() - self.lastAlarmTime)
+            diff = math.floor(datetime.datetime.utcnow().timestamp() - self.lastAlarmTimestamp)
             minutes = int(math.floor(diff / 60))
             seconds = int(diff - minutes * 60)
             string = "{m:02d}:{s:02d}".format(m=minutes, s=seconds)
