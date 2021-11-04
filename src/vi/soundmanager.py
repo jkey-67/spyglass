@@ -40,13 +40,23 @@ except ImportError:
 class SoundManager(metaclass=Singleton):
     SOUNDS = {"alarm": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
               "alarm_0": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
-              "alarm_1": "",
-              "alarm_2": "",
-              "alarm_3": "",
-              "alarm_4": "",
-              "alarm_5": "",
+              "alarm_1": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
+              "alarm_2": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
+              "alarm_3": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
+              "alarm_4": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
+              "alarm_5": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
               "kos": "178031__zimbot__transporterstartbeep0-sttos-recreated.wav",
               "request": "178028__zimbot__bosun-whistle-sttos-recreated.wav"}
+
+    SNDVOL = {"alarm": 1.00,
+              "alarm_0": 0.50,
+              "alarm_1": 0.25,
+              "alarm_2": 0.125,
+              "alarm_3": 0.07,
+              "alarm_4": 0.03,
+              "alarm_5": 0.015,
+              "kos": 0.30,
+              "request": 0.30}
 
     soundVolume = 25  # Must be an integer between 0 and 100
     soundAvailable = True
@@ -61,6 +71,29 @@ class SoundManager(metaclass=Singleton):
         self.setSoundFile("alarm_3", cache.getFromCache("soundsetting.alarm_3"))
         self.setSoundFile("alarm_4", cache.getFromCache("soundsetting.alarm_4"))
         self.setSoundFile("alarm_5", cache.getFromCache("soundsetting.alarm_5"))
+        vol = cache.getFromCache("soundsetting.volume")
+        if vol:
+            self.setSoundVolume(float(vol))
+        self.loadSoundFiles()
+
+    def soundFile(self, mask):
+        if mask in self.SOUNDS.keys():
+            return self.SOUNDS[mask]
+        else:
+            return ""
+
+    def setSoundFile(self,mask,filename):
+        if mask in self.SOUNDS.keys():
+            if filename is "":
+                filename="178032__zimbot__redalert-klaxon-sttos-recreated.wav"
+            self.SOUNDS[mask] = filename
+            self.sounds[mask] = QSoundEffect()
+            url = QUrl.fromLocalFile(self.SOUNDS[mask])
+            self.sounds[mask].setSource(url)
+            Cache().putIntoCache("soundsetting.{}".format(mask),filename)
+            self.loadSoundFiles()
+
+    def loadSoundFiles(self):
         for itm in self.SOUNDS:
             self.sounds[itm] = QSoundEffect()
             if self.SOUNDS[itm]!=None and os.path.exists(self.SOUNDS[itm]):
@@ -71,20 +104,6 @@ class SoundManager(metaclass=Singleton):
                 url = None
             if url!=None:
                 self.sounds[itm].setSource(url)
-
-    def soundFile(self, mask):
-        if mask in self.SOUNDS.keys():
-            return self.SOUNDS[mask]
-        else:
-            return ""
-
-    def setSoundFile(self,mask,filename):
-        if mask in self.SOUNDS.keys():
-            self.SOUNDS[mask] = filename
-            self.sounds[mask] = QSoundEffect()
-            url = QUrl.fromLocalFile(self.SOUNDS[mask])
-            self.sounds[mask].setSource(url)
-            Cache().putIntoCache("soundsetting.{}".format(mask),filename)
 
 
     def platformSupportsAudio(self):
@@ -101,19 +120,22 @@ class SoundManager(metaclass=Singleton):
 
     def setSoundVolume(self, newValue):
         self.soundVolume = max(0.0, min(100.0, newValue))
+        Cache().putIntoCache("soundsetting.volume", self.soundVolume)
         for itm in self.sounds.keys():
             self.sounds[itm].setVolume(self.soundVolume/100)
 
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
         if self.soundAvailable and self.soundActive:
-            if self.useSpokenNotifications and abbreviatedMessage!="":
+            if self.useSpokenNotifications and abbreviatedMessage != "":
                 self.speach_engine.setVolume(self.soundVolume/100.0)
                 self.speach_engine.say(abbreviatedMessage)
             elif name in self.sounds.keys():
+                self.sounds[name].setVolume(self.soundVolume / 100. * self.SNDVOL[name])
                 self.sounds[name].setMuted(False)
                 self.sounds[name].play()
                 self.sounds[name].status()
             else:
+                self.sounds[name].setVolume(self.soundVolume / 100.0 * self.SNDVOL[name])
                 self.sounds["alarm"].setMuted(False)
                 self.sounds["alarm"].play()
                 self.sounds["alarm"].status()

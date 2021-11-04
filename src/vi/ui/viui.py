@@ -50,7 +50,7 @@ MESSAGE_EXPIRY_SECS = 20 * 60
 MAP_UPDATE_INTERVAL_MSECS =  1000
 CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 
-DEFAULT_ROOM_MANES = (u"Scald Intel")
+DEFAULT_ROOM_MANES =[u"Scald Intel",u"FI.RE Intel"]
 
 class MainWindow(QtWidgets.QMainWindow):
 
