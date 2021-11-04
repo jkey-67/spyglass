@@ -245,7 +245,7 @@ class Map(object):
             It takes a look at all the jumps on the map and gets the system under
             which the line ends
         """
-        for jump in self.soup.select("#jumps")[0].select(".j"):
+        for jump in self.soup.select("#jumps")[0].select(".j,.jc,.jr"):
             if "jumpbridge" in jump["class"]: continue
             parts = jump["id"].split("-")
             if parts[0] == "j":
