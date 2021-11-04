@@ -10,7 +10,7 @@ on:
 jobs:
   createrelease:
     name: Create Release
-    runs-on: windows_latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
 
