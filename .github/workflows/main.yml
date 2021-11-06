@@ -1,0 +1,14 @@
+name: Sample Workflow
+
+on:
+  workflow_dispatch: 
+  
+jobs:
+  createrelease:
+    runs-on: windows-latest
+    name: Create Release
+    steps:
+      - id: step1
+        name: Run a one-line script
+        run: echo "Add other actions to build,"
+             echo "test, and deploy your project."
