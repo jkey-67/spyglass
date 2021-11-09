@@ -22,7 +22,6 @@ import logging
 import queue
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
 from vi import evegate
-from vi import koschecker
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 
@@ -88,65 +87,6 @@ class AvatarFindThread(QThread):
     def quit(self):
         self.active = False
         self.queue.put(None)
-        QThread.quit(self)
-
-
-class KOSCheckerThread(QThread):
-
-    kos_result = pyqtSignal(str, str, object, bool)
-
-    def __init__(self):
-        QThread.__init__(self)
-        self.queue = queue.Queue()
-        self.recentRequestNamesAndTimes = {}
-        self.active = True
-
-    def addRequest(self, names, requestType, onlyKos=False):
-        try:
-            # Spam control for multi-client users
-            now = time.time()
-            if names in self.recentRequestNamesAndTimes:
-                lastRequestTime = self.recentRequestNamesAndTimes[names]
-                if now - lastRequestTime < 10:
-                    return
-            self.recentRequestNamesAndTimes[names] = now
-
-            # Enqeue the data to be picked up in run()
-            self.queue.put((names, requestType, onlyKos))
-        except Exception as e:
-            logging.error("Error in KOSCheckerThread.addRequest: %s", e)
-
-    def run(self):
-        while True:
-            # Block waiting for addRequest() to enqueue something
-            names, requestType, onlyKos = self.queue.get()
-            if not self.active:
-                return
-            try:
-                # logging.info("KOSCheckerThread kos checking %s" %  str(names))
-                hasKos = False
-                if not names:
-                    continue
-                checkResult = koschecker.check(names)
-                if not checkResult:
-                    continue
-                text = koschecker.resultToText(checkResult, onlyKos)
-                for name, data in checkResult.items():
-                    if data["kos"] in (koschecker.KOS, koschecker.RED_BY_LAST):
-                        hasKos = True
-                        break
-            except Exception as e:
-                logging.error("Error in KOSCheckerThread.run: %s", e)
-                continue
-
-            logging.info(
-                    "KOSCheckerThread emitting kos_result for: state = {0}, text = {1}, requestType = {2}, hasKos = {3}".format(
-                            "ok", text, requestType, hasKos))
-            self.kos_result.emit("ok", text, requestType, hasKos)
-
-    def quit(self):
-        self.active = False
-        self.queue.put((None, None, None))
         QThread.quit(self)
 
 
