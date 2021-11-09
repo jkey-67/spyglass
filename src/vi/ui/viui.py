@@ -46,8 +46,7 @@ from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QActionGroup
 
 # Timer intervals
-MESSAGE_EXPIRY_SECS = 20 * 60
-MAP_UPDATE_INTERVAL_MSECS =  1000
+MAP_UPDATE_INTERVAL_MSECS = 1000
 CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 
 DEFAULT_ROOM_MANES =[u"Scald Intel",u"FI.RE Intel"]
@@ -126,9 +125,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.intelTimeGroup.intelTime = 20
         for i in (10, 20, 40, 60):
             action = QAction("Past {0}min".format(i), None, checkable=True)
-            action.setChecked(i == 20)
+            action.setChecked(i == self.intelTimeGroup.intelTime)
             action.intelTime = i
-            self.intelTimeGroup.intelTime = i
             action.triggered.connect(self.changeIntelTime)
             self.intelTimeGroup.addAction(action)
             self.menuTime.addAction(action)
@@ -430,7 +428,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.systems = self.dotlan.systems
         logging.debug("Creating chat parser")
         self.chatparser.systems = self.systems
-        self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems,self.intelTimeGroup.intelTime)
+        self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems, self.intelTimeGroup.intelTime)
 
         # Update the new map view, then clear old statistics from the map and request new
         logging.debug("Updating the map")
@@ -478,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
             Persisting things to the cache before closing the window
         """
-        # Known playernames
+        # Known player names
         if self.knownPlayerNames:
             value = ",".join(self.knownPlayerNames)
             self.cache.putIntoCache("known_player_names", value, 60 * 60 * 24 * 30)
@@ -714,16 +712,17 @@ class MainWindow(QtWidgets.QMainWindow):
         # todo:follow region change here
         if self.autoChangeRegion and evegate.getTokenOfChar(char):
             try:
-                system_id = evegate.namesToIds([systemname])[systemname]
-                system = evegate.getSolarSystemInformation(system_id)
-                selected_system = evegate.getSolarSystemInformation(system["system_id"])
-                selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
-                selected_region = selected_constellation["region_id"]
-                selected_region_name = dotlan.convertRegionName( evegate.idsToNames([selected_region])[selected_region] )
-                concurrent_region_name = self.cache.getFromCache("region_name")
-                if (selected_region_name != concurrent_region_name):
-                    Cache().putIntoCache("region_name", selected_region_name)
-                    self.rescanIntel()
+                for name,system_id in evegate.namesToIds([systemname]).items():
+                    if name.lower() == systemname.lower():
+                        system = evegate.getSolarSystemInformation(system_id)
+                        selected_system = evegate.getSolarSystemInformation(system["system_id"])
+                        selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+                        selected_region = selected_constellation["region_id"]
+                        selected_region_name = dotlan.convertRegionName( evegate.idsToNames([selected_region])[selected_region] )
+                        concurrent_region_name = self.cache.getFromCache("region_name")
+                        if (selected_region_name != concurrent_region_name):
+                            Cache().putIntoCache("region_name", selected_region_name)
+                            self.rescanIntel()
             except Exception:
                 pass
 
@@ -882,7 +881,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 chatListWidgetItem = self.chatListWidget.item(0)
                 chatEntryWidget = self.chatListWidget.itemWidget(chatListWidgetItem)
                 message = chatEntryWidget.message
-                if now - time.mktime(message.timestamp.timetuple()) > MESSAGE_EXPIRY_SECS:
+                if now - time.mktime(message.timestamp.timetuple()) > (60 * self.chatparser.intelTime):
                     self.chatEntries.remove(chatEntryWidget)
                     self.chatListWidget.takeItem(0)
 
@@ -1000,19 +999,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 systemList = self.dotlan.systems
                 if message.systems:
                     for system in message.systems:
-                        systemname = system.name
-                        if systemname in systemList.keys():
-                            systemList[systemname].setStatus(message.status, message.timestamp)#todo:unc time here
+                        system_name = system.name
+                        if system_name in systemList.keys():
+                            systemList[system_name].setStatus(message.status, message.timestamp)
                         else:
                             return
-                        if message.status in ( states.ALARM ) and message.user not in self.knownPlayerNames:
-                            alarmDistance = self.alarmDistance if message.status == states.ALARM else 0
-                            for nSystem, data in system.getNeighbours(alarmDistance).items():
+                        if message.status in (states.ALARM) and message.user not in self.knownPlayerNames:
+                            alarm_distance = self.alarmDistance if message.status == states.ALARM else 0
+                            for nSystem, data in system.getNeighbours(alarm_distance).items():
                                 distance = data["distance"]
                                 chars = nSystem.getLocatedCharacters()
                                 if len(chars) > 0 and message.user not in chars:
                                     self.trayIcon.showNotification(message, system.name, ", ".join(chars), distance)
-
 
         for name,sys in locale_to_set.items():
             self.knownPlayerNames.add(name)
