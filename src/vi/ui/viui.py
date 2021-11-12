@@ -276,12 +276,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # Stop the threads
         try:
             SoundManager().quit()
+            SoundManager().wait()
             self.avatarFindThread.quit()
             self.avatarFindThread.wait()
             self.filewatcherThread.quit()
             self.filewatcherThread.wait()
-            #self.kosRequestThread.quit()
-            #self.kosRequestThread.wait()
             self.statisticsThread.quit()
             self.statisticsThread.wait()
             self.mapTimer.stop()
@@ -482,12 +481,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cache.putIntoCache("known_player_names", value, 60 * 60 * 24 * 30)
 
         # Program state to cache (to read it on next startup)
-        settings = ((None, "restoreGeometry", str(self.saveGeometry())), (None, "restoreState", str(self.saveState())),
-                    ("splitter", "restoreGeometry", str(self.splitter.saveGeometry())),
-                    ("splitter", "restoreState", str(self.splitter.saveState())),
+        settings = ((None, "restoreGeometry", str(self.saveGeometry()), True),
+                    (None, "restoreState", str(self.saveState()), True),
+                    ("splitter", "restoreGeometry", str(self.splitter.saveGeometry()), True),
+                    ("splitter", "restoreState", str(self.splitter.saveState()), True),
                     ("mapView", "setZoomFactor", self.mapView.zoomFactor()),
                     (None, "changeChatFontSize", ChatEntryWidget.TEXT_SIZE),
-                    (None, "changeOpacity", self.opacityGroup.checkedAction().opacity),
+                    (None, "setOpacity", self.opacityGroup.checkedAction().opacity),
                     (None, "changeAlwaysOnTop", self.alwaysOnTopAction.isChecked()),
                     (None, "changeShowAvatars", self.showChatAvatarsAction.isChecked()),
                     (None, "changeAlarmDistance", self.alarmDistance),
@@ -501,6 +501,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "changeAutoScanIntel", self.scanIntelForKosRequestsEnabled),
                     (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled),
                     (None, "changeAutoChangeRegion", self.autoChangeRegion))
+
+        self.cache.putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
         self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
         self.terminateThreads()
         self.trayIcon.hide()
@@ -561,6 +563,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chatparser.intelTime = action.intelTime
         self.timeInfo.setText("All Intel( past{} minutes)".format(self.chatparser.intelTime))
         self.rescanIntel()
+
+
+    def setOpacity(self, newValue=None):
+        if newValue:
+            for action in self.opacityGroup.actions():
+                action.setChecked(action.opacity == newValue)
+        action = self.opacityGroup.checkedAction()
+        self.setWindowOpacity(action.opacity)
 
     def changeOpacity(self, newValue=None):
         action = self.opacityGroup.checkedAction()
@@ -709,10 +719,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def setLocation(self, char, systemname):
         for system in self.systems.values():
             system.removeLocatedCharacter(char)
-        # todo:follow region change here
-        if self.autoChangeRegion and evegate.getTokenOfChar(char):
+        # todo:follow region change here, only if the new system is not included in the loaded map
+        if self.autoChangeRegion :#and evegate.getTokenOfChar(char):
             try:
-                for name,system_id in evegate.namesToIds([systemname]).items():
+                for name, system_id in evegate.namesToIds([systemname]).items():
                     if name.lower() == systemname.lower():
                         system = evegate.getSolarSystemInformation(system_id)
                         selected_system = evegate.getSolarSystemInformation(system["system_id"])

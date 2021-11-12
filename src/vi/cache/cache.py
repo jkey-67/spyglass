@@ -20,6 +20,10 @@
 import sqlite3
 import threading
 import time
+import vi.version
+
+from PyQt5.QtCore import QByteArray
+
 
 def to_blob(x):
     return x
@@ -147,6 +151,8 @@ class Cache(object):
             self.con.commit()
 
     def recallAndApplySettings(self, responder, settingsIdentifier):
+        version = self.getFromCache("version")
+        restore_gui = version == vi.version.VERSION
         settings = self.getFromCache(settingsIdentifier)
         if settings:
             settings = eval(settings)
@@ -154,6 +160,19 @@ class Cache(object):
                 obj = responder if not setting[0] else getattr(responder, setting[0])
                 # logging.debug("{0} | {1} | {2}".format(str(obj), setting[1], setting[2]))
                 try:
-                    getattr(obj, setting[1])(setting[2])
+                    if restore_gui and setting[1] == "restoreGeometry":
+                        if not obj.restoreGeometry(eval(setting[2])):
+                            logging.error("Fail to call {0} | {1} | {2}".format(str(obj), setting[1], setting[2]))
+                    elif restore_gui and setting[1] == "restoreState":
+                        if not getattr(obj, setting[1])(eval(setting[2])):
+                            logging.error("Fail to call {0} | {1} | {2}".format(str(obj), setting[1], setting[2]))
+                    elif len(setting)>3 and setting[3]:
+                        if restore_gui:
+                            getattr(obj, setting[1])(eval(setting[2]))
+                    else:
+                        getattr(obj, setting[1])(setting[2])
+
                 except Exception as e:
-                    logging.error(e)
+                    logging.error("Recall application setting failed to set attribute {0} | {1} | {2} | error {3}"
+                                  .format(str(obj), setting[1], setting[2], e))
+

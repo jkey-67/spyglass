@@ -142,5 +142,8 @@ class SoundManager(metaclass=Singleton):
         qApp.processEvents()
 
     def quit(self):
-        pass
+        qApp.processEvents()
+
+    def wait(self):
+        qApp.processEvents()
 
