@@ -5,7 +5,6 @@ import os
 def instFiles():
     
     workdir = os.path.abspath(os.path.join(os.getcwd(),"..",".."))
-    #specfile = os.path.join(workdir, 'spyglass.spec')
     devdir = workdir
     distdir = os.path.join(devdir, 'dist')
     builddir = os.path.join(devdir, 'build')
@@ -17,7 +16,7 @@ def instFiles():
         '--workpath', builddir,
         '--onefile',
         '--windowed',
-        '--name', 'spyglass-1.6.0-RC-08',
+        '--name', 'spyglass-1.6.0-RC-09',
         '../spyglass.py',
         '--icon=../icon.ico',
         "--add-data=../vi/ui/*.ui;./vi/ui",
