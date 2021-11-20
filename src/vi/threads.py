@@ -76,6 +76,8 @@ class AvatarFindThread(QThread):
                     lastCall = time.time()
                     if avatar!=None:
                         cache.putAvatar(charname, avatar)
+                    else:
+                        cache.removeAvatar(charname)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % charname)
                     self.avatar_update.emit(chatEntry, avatar)
