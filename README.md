@@ -15,20 +15,21 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
 
 ## Features
 
- - Platforms supported: Executable for Windows, Linux and Mac runs directly from source.
+ - Platforms supported: Executable for Windows, Linux and Mac runs directly from python source.
  - Monitored intel chat channels are merged to one chat stream. You can add or remove channels via a menu option.
  - These chat channels can be rescanned on startup to allow for existing intel to be displayed
  - An interactive map of Providence / Catch is provided. Systems on the map display real-time intel data as reported through intel channels.
  - Systems on the map display different color backgrounds as their alarms age, with text indicating how long ago the specific system was reported. Background color becomes red when a system is reported and lightens (red->orange->yellow->white) in the following intervals: 4min, 10min, 15min, and 25min.
  - Systems reported clear display on the map with a green background for 10 minutes.
  - For all Systems a right button context menu allows you to open [dotlan](https://www.dotlan.net/) or [zkillboard](https://zkillboard.com/) for the selected system directly.
- - Automatic region change for the pilot with api registration is possible.
  - Clicking on a specific system will display all messages bound on that system in the past 20 minutes. From there one can can set a system alarm, set the systems clear or set it as the current system for one or more of your characters.
  - Clicking on a system in the intel channel (the right side column) causes it to be highlighted on the map with a blue background for 10 seconds.
  - The system where your character is currently located is highlighted on the map with an violet background automatically whenever a character changes systems.
+ - Automatic region change for the pilot with api registration is possible.
  - Alarms can be set so that task-bar notifications are displayed when an intel report calls out a system within a specified number of jumps from your character(s). This can be configured from the task-bar icon.
- - For each alarm distance you can select a different sound file
- - The main window can be set up to remain "always on top", can be displayed with a specified level of transparency and also frameless.
+ - For each alarm distance you can select a different sound file.
+ - The sound volume for the notification is now adapt to the distance, near is louder, far quitter.
+ - The main window can be set up to remain "always on top", can be displayed with a specified level of transparency and also frameless works.
  - Ship names in the intel chat are highlighted.
 
 
@@ -80,15 +81,19 @@ To start spyglass, open a console checkout sources and dependencies and start it
 
 `win> cd spyglass\src`
 
+`win> git checkout qt5`
+
 `win> pip install -r requirements.txt`
 
 `win> python spyglass.py`
 
-Currently, users with Windows should choose Qt 5.15.2  
+Currently, users with Windows may choose Qt 5.15.2  inside requirements.txt
 
 ## The background of Spyglass
 
-Spyglass is a project aimed at the continuation to the work done on the Vintel tool by [Xanthos](https://github.com/Xanthos-Eve) which can be found [here](https://github.com/Xanthos-Eve/vintel).
+DENCI-Spyglass is forked out from qt5 branche of [Crypta-Eve/spyglass](https://github.com/Crypta-Eve/spyglass) 
+
+Spyglass is a project aimed at the continuation to the work done on the Vintel tool by [Xanthos](https://github.com/Xanthos-Eve) which can be found [Xanthos-Eve/vintel](https://github.com/Xanthos-Eve/vintel).
 
 ## FAQ
 
