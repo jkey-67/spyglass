@@ -30,8 +30,6 @@ from vi import states
 from vi.cache.cache import Cache
 from vi.ui.styles import Styles, TextInverter
 
-#from . import evegate
-
 JB_COLORS = ("66CD00", "7CFC00", "32CD32", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
              "90EE90", "8FBC8F", "20B2AA", "2E8B57", "808000", "6B8E23")
 
@@ -232,7 +230,7 @@ class Map(object):
             coords = system.mapCoordinates
             text = "stats n/a"
             style = "text-anchor:middle;font-size:7;font-weight:normal;font-family:Arial;"
-            svgtext = soup.new_tag("text", x=coords["center_x"], y=coords["y"] + coords["height"] + 6, fill="blue",
+            svgtext = soup.new_tag("text", x=coords["center_x"], y=coords["y"] + coords["height"] + 4, fill="blue",
                                    style=style, visibility="hidden", transform=system.transform)
             svgtext["id"] = "stats_" + str(systemId)
             svgtext["class"] = ["statistics", ]
@@ -276,7 +274,7 @@ class Map(object):
         """
         # todo:disable jbs during init
         self.jumpBridges = []
-        if jumpbridgesData== None:
+        if jumpbridgesData is None:
             self.jumpBridges = []
             return
         soup = self.soup
@@ -479,11 +477,11 @@ class System(object):
             if not self.__locatedCharacters:
                 try:
                     elem = self.mapSoup.find(id=idName)
-                    if(elem is not None):
-                        logging.debug("removeLocatedCharacter {0} Decompose {1}".format(charname,str(elem)))
+                    if elem is not None:
+                        logging.debug("removeLocatedCharacter {0} Decompose {1}".format(charname, str(elem)))
                         elem.decompose()
                 except Exception as e:
-                    logging.critical( "Error in removeLocatedCharacter  {0}".format(str(e)))
+                    logging.critical("Error in removeLocatedCharacter  {0}".format(str(e)))
                     pass
 
     def addNeighbour(self, neighbourSystem):
