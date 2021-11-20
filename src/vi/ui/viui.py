@@ -87,6 +87,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialMapPosition = None
         self.autoChangeRegion = False
         self.mapPositionsDict = {}
+        self.invertWheel = False
         self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
         # Load user's toon names
         self.knownPlayerNames = self.cache.getFromCache("known_player_names")
@@ -96,6 +97,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.knownPlayerNames = set()
             diagText = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\nSome features (clipboard KOS checking, alarms, etc.) may not work until your character(s) have been registered. Change systems, with each character you want to monitor, while Spyglass is running to remedy this."
             QMessageBox.warning(None, "Known Characters not Found", diagText, QMessageBox.Ok)
+
+        self.playerUsed = self.cache.getFromCache("used_player_names")
+        if self.playerUsed:
+            self.playerUsed = set(self.playerUsed.split(","))
+        else:
+            self.playerUsed = {self.currentApiChar()}
+
+        if self.invertWheel is None:
+            self.invertWheel = False
+        self.actionInvertMouseWheel.triggered.connect(self.wheelDirChanged)
+        self.actionInvertMouseWheel.setChecked(self.invertWheel)
+        self.addPlayerMenu()
 
         # Set up user's intel rooms
         roomnames = self.cache.getFromCache("room_names")
@@ -170,6 +183,34 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.setupMap(True)
 
+    def addPlayerMenu(self):
+        self.playerGroup = QActionGroup(self.menu)
+        self.playerGroup.setExclusionPolicy(QActionGroup.ExclusionPolicy.None_)
+        self.menuChars.clear()
+        for name in self.knownPlayerNames:
+            action = QAction("{0}".format(name), None, checkable=True)
+            action.playerName = name
+            action.playerUse =  name in self.playerUsed
+            action.setChecked(action.playerUse)
+            action.triggered.connect(self.changePlayerIntel)
+            self.playerGroup.addAction(action)
+            self.menuChars.addAction(action)
+
+    def changePlayerIntel(self, use):
+        player_used = set()
+        for action in self.playerGroup.actions():
+            if action.isChecked():
+                player_used.add(action.playerName)
+        self.playerUsed = player_used
+
+    def wheelDirChanged(self, checked):
+        self.invertWheel = checked
+        if self.invertWheel:
+            self.mapView.wheel_dir = -1.0
+        else:
+            self.mapView.wheel_dir = 1.0
+        self.actionInvertMouseWheel.setChecked(self.invertWheel)
+
     def paintEvent(self, event):
         opt = QStyleOption()
         opt.initFrom(self)
@@ -189,6 +230,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoChangeRegion = autoChange
 
     def wireUpUIConnections(self):
+        logging.info("wireUpUIConnections")
         # Wire up general UI connections
         self.clipboard.dataChanged.connect(self.clipboardChanged)
         #self.autoScanIntelAction.triggered.connect(self.changeAutoScanIntel)
@@ -258,6 +300,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapView.doubleClicked = doubleClicked
 
     def setupThreads(self):
+        logging.info("setupThreads")
         # Set up threads and their connections
         self.avatarFindThread = AvatarFindThread()
         self.avatarFindThread.avatar_update.connect(self.updateAvatarOnChatEntry)
@@ -305,10 +348,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if system_id is None:
             return
         system_name = evegate.idsToNames([str(system_id)])[system_id]
-        view_center = self.mapView.size() / 2
-        pt_system = QPoint(self.systems[system_name].mapCoordinates["center_x"]* self.mapView.zoom-view_center.width(),
-                           self.systems[system_name].mapCoordinates["center_y"]* self.mapView.zoom-view_center.height())
-        self.mapView.setScrollPosition(pt_system)
+        if system_name in self.systems.keys():
+            view_center = self.mapView.size() / 2
+            pt_system = QPoint(self.systems[system_name].mapCoordinates["center_x"]* self.mapView.zoom-view_center.width(),
+                               self.systems[system_name].mapCoordinates["center_y"]* self.mapView.zoom-view_center.height())
+            self.mapView.setScrollPosition(pt_system)
 
     def changeRegionBySystemID(self, system_id):
         """ change to the region of the system with the given id, the intel will be rescanned
@@ -329,7 +373,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def prepareContextMenu(self):
         # Menus - only once
         regionName = self.cache.getFromCache("region_name")
-        logging.critical("Initializing contextual menus")
+        logging.info("Initializing contextual menus")
 
         # Add a contextual menu to the mapView
         def mapContextMenuEvent(event):
@@ -455,8 +499,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     if roomname in self.roomnames:
                         logging.info("Reading log {}".format(roomname))
                         self.logFileChanged(filePath, rescan=True)
-                        self.logFileChanged(filePath, rescan=True)
-
+                        #self.logFileChanged(filePath, rescan=True)
+        logging.info("Intel ReScan done")
+        self.updateMapView()
     def startClipboardTimer(self):
         """
             Start a timer to check the keyboard for changes and kos check them,
@@ -480,6 +525,10 @@ class MainWindow(QtWidgets.QMainWindow):
             value = ",".join(self.knownPlayerNames)
             self.cache.putIntoCache("known_player_names", value, 60 * 60 * 24 * 30)
 
+        if self.playerUsed:
+            value = ",".join(self.playerUsed)
+            self.cache.putIntoCache("used_player_names", value, 60 * 60 * 24 * 30)
+
         # Program state to cache (to read it on next startup)
         settings = ((None, "restoreGeometry", str(self.saveGeometry()), True),
                     (None, "restoreState", str(self.saveState()), True),
@@ -500,7 +549,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "changeKosCheckClipboard", self.kosClipboardActiveAction.isChecked()),
                     (None, "changeAutoScanIntel", self.scanIntelForKosRequestsEnabled),
                     (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled),
-                    (None, "changeAutoChangeRegion", self.autoChangeRegion))
+                    (None, "changeAutoChangeRegion", self.autoChangeRegion),
+                    (None, "wheelDirChanged", self.invertWheel))
 
         self.cache.putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
         self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
@@ -577,7 +627,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowOpacity(action.opacity)
 
     def changeTheme(self, newTheme=None):
-        logging.critical("change theme")
+        logging.info("change theme")
         if newTheme is not None:
             for action in self.themeGroup.actions():
                 if action.theme == newTheme:
@@ -588,7 +638,7 @@ class MainWindow(QtWidgets.QMainWindow):
         theme = styles.getStyle()
         self.setStyleSheet(theme)
         self.trayIcon.contextMenu().setStyleSheet(theme)
-        logging.critical("Setting new theme: {}".format(action.theme))
+        logging.info("Setting new theme: {}".format(action.theme))
         self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
         self.prepareContextMenu()
         if self.autoRescanIntelEnabled:
@@ -710,42 +760,45 @@ class MainWindow(QtWidgets.QMainWindow):
             sc.repaint_needed.connect(self.updateMapView)
             sc.show()
 
-    def markSystemOnMap(self, system_name):
-        self.dotlan.systems[str(system_name)].mark()
-        self.updateMapView()
-        self.focusMapOnSystem(self.systems[str(system_name)].systemId)
+    def markSystemOnMap(self, system_name:str):
+        if system_name in self.systems.keys():
+            self.dotlan.systems[str(system_name)].mark()
+            self.updateMapView()
+            self.focusMapOnSystem(self.systems[str(system_name)].systemId)
 
 
-    def setLocation(self, char, systemname):
+    def setLocation(self, char, system_name:str):
         for system in self.systems.values():
             system.removeLocatedCharacter(char)
-        # todo:follow region change here, only if the new system is not included in the loaded map
-        if self.autoChangeRegion :#and evegate.getTokenOfChar(char):
-            try:
-                for name, system_id in evegate.namesToIds([systemname]).items():
-                    if name.lower() == systemname.lower():
-                        system = evegate.getSolarSystemInformation(system_id)
-                        selected_system = evegate.getSolarSystemInformation(system["system_id"])
-                        selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
-                        selected_region = selected_constellation["region_id"]
-                        selected_region_name = dotlan.convertRegionName( evegate.idsToNames([selected_region])[selected_region] )
-                        concurrent_region_name = self.cache.getFromCache("region_name")
-                        if (selected_region_name != concurrent_region_name):
-                            Cache().putIntoCache("region_name", selected_region_name)
-                            self.rescanIntel()
-            except Exception:
-                pass
 
-        if not systemname == "?" and systemname in self.systems.keys():
-            self.systems[systemname].addLocatedCharacter(char)
-            self.updateMapView()
+        if system_name not in self.systems.keys():
+            if self.autoChangeRegion and evegate.getTokenOfChar(char):
+                try:
+                    for name, system_id in evegate.namesToIds([system_name]).items():
+                        if name.lower() == system_name.lower():
+                            system = evegate.getSolarSystemInformation(system_id)
+                            selected_system = evegate.getSolarSystemInformation(system["system_id"])
+                            selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+                            selected_region = selected_constellation["region_id"]
+                            selected_region_name = dotlan.convertRegionName(evegate.idsToNames([selected_region])[selected_region])
+                            concurrent_region_name = self.cache.getFromCache("region_name")
+                            if selected_region_name != concurrent_region_name:
+                                Cache().putIntoCache("region_name", selected_region_name)
+                                self.rescanIntel()
+                except Exception:
+                    pass
 
-
+        if not system_name == "?" and system_name in self.systems.keys():
+            self.systems[system_name].addLocatedCharacter(char)
+            if evegate.getTokenOfChar(char):
+                self.focusMapOnSystem(self.systems[str(system_name)].systemId)
+            else:
+                self.updateMapView()
 
     def updateMapView(self):
         if self.currContent != self.dotlan.svg:
+            logging.info("Update map view")
             self.mapTimer.stop()
-            #self.mapView.setImgSize(QtCore.QSize(self.dotlan.width, self.dotlan.height))
             self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html")
             self.currContent = self.dotlan.svg
             self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
@@ -1019,13 +1072,15 @@ class MainWindow(QtWidgets.QMainWindow):
                             for nSystem, data in system.getNeighbours(alarm_distance).items():
                                 distance = data["distance"]
                                 chars = nSystem.getLocatedCharacters()
-                                if len(chars) > 0 and message.user not in chars:
-                                    self.trayIcon.showNotification(message, system.name, ", ".join(chars), distance)
+                                if len(chars) > 0:
+                                    if message.user not in chars and len(self.playerUsed.intersection(set(chars))) > 0:
+                                        self.trayIcon.showNotification(message, system.name, ", ".join(chars), distance)
 
         for name,sys in locale_to_set.items():
             self.knownPlayerNames.add(name)
             self.setLocation(name, sys)
-        self.updateMapView()
+        if not rescan:
+            self.updateMapView()
 
     def systemUnderMouse(self, pos: QPoint):
         """returns the name of the system under the mouse pointer
@@ -1245,11 +1300,11 @@ class ChatEntryWidget(QtWidgets.QWidget):
         text = u"<small>{time} - <b>{user}</b> - <i>{room}</i></small><br>{text}".format(user=self.message.user,
                                                                                          room=self.message.room,
                                                                                          time=time,
-                                                                                         text=self.message.message)
+                                                                                         text=self.message.message.rstrip(" \r\n").lstrip(" \r\n"))
         self.textLabel.setText(text)
 
-    def updateAvatar(self, avatarData):
-        image = QImage.fromData(avatarData)
+    def updateAvatar(self, avatar_data):
+        image = QImage.fromData(avatar_data)
         pixmap = QPixmap.fromImage(image)
         if pixmap.isNull():
             return False
@@ -1267,7 +1322,6 @@ class ChatEntryWidget(QtWidgets.QWidget):
         font = self.textLabel.font()
         font.setPointSize(newSize)
         self.textLabel.setFont(font)
-
 
 class JumpbridgeChooser(QtWidgets.QDialog):
     set_jumpbridge_url = pyqtSignal(str)
