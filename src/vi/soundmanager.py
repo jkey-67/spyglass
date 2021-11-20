@@ -18,14 +18,17 @@
 ###########################################################################
 
 import os
+import logging
+
 from PyQt5.QtCore import QThread, QLocale
 from .resources import resourcePath
 from vi.singleton import Singleton
 from PyQt5.QtMultimedia import QSoundEffect
-from PyQt5.QtTextToSpeech import QTextToSpeech, QVoice
+from PyQt5.QtTextToSpeech import QTextToSpeech
 from PyQt5.QtWidgets import qApp
 from PyQt5.QtCore import *
 from vi.cache.cache import Cache
+
 global gPygletAvailable
 
 try:
@@ -48,13 +51,13 @@ class SoundManager(metaclass=Singleton):
               "kos": "178031__zimbot__transporterstartbeep0-sttos-recreated.wav",
               "request": "178028__zimbot__bosun-whistle-sttos-recreated.wav"}
 
-    SNDVOL = {"alarm": 1.00,
+    SNDVOL = {"alarm"  : 1.00,
               "alarm_0": 0.50,
               "alarm_1": 0.25,
               "alarm_2": 0.125,
-              "alarm_3": 0.07,
-              "alarm_4": 0.03,
-              "alarm_5": 0.015,
+              "alarm_3": 0.0625,
+              "alarm_4": 0.03125,
+              "alarm_5": 0.015625,
               "kos": 0.30,
               "request": 0.30}
 
@@ -84,7 +87,7 @@ class SoundManager(metaclass=Singleton):
 
     def setSoundFile(self,mask,filename):
         if mask in self.SOUNDS.keys():
-            if filename is "":
+            if filename == "":
                 filename="178032__zimbot__redalert-klaxon-sttos-recreated.wav"
             self.SOUNDS[mask] = filename
             self.sounds[mask] = QSoundEffect()
@@ -111,12 +114,18 @@ class SoundManager(metaclass=Singleton):
 
     def platformSupportsSpeech(self):
         avail_engines = self.speach_engine.availableEngines()
-        self.speach_engine.setLocale(QLocale(QLocale.English))
-        return len(avail_engines)
+        if len(avail_engines):
+            for eng_name in avail_engines:
+                logging.info("Available sound engine \'{}\'".format(eng_name))
+            self.speach_engine.setLocale(QLocale(QLocale.English))
+            return True
+        else:
+            self.useSpokenNotifications = False
+            logging.critical(" There is no text to speak engine available, all text to speak function disabled.")
+            return False
 
-    def setUseSpokenNotifications(self, newValue):
-        if newValue is not None:
-            self.useSpokenNotifications = newValue
+    def setUseSpokenNotifications(self, new_value):
+        self.useSpokenNotifications = new_value
 
     def setSoundVolume(self, newValue):
         self.soundVolume = max(0.0, min(100.0, newValue))

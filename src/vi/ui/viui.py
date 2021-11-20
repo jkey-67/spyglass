@@ -101,8 +101,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playerUsed = self.cache.getFromCache("used_player_names")
         if self.playerUsed:
             self.playerUsed = set(self.playerUsed.split(","))
-        else:
+        elif self.currentApiChar():
             self.playerUsed = {self.currentApiChar()}
+        else:
+            self.playerUsed =set()
 
         if self.invertWheel is None:
             self.invertWheel = False
