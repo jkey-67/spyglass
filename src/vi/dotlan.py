@@ -85,7 +85,8 @@ class Map(object):
                 svg = self._getSvgFromDotlan(region_to_load)
                 if not svg or svg.startswith("region not found"):
                     svg = self._getSvgFromDotlan("providence")
-                cache.putIntoCache("map_" + self.region, svg, 24*60*60 )###evegate.secondsTillDowntime() + ### 60 * 60)
+                cache.putIntoCache("map_" + self.region, svg,
+                                   24 * 60 * 60)  ###evegate.secondsTillDowntime() + ### 60 * 60)
             except Exception as e:
                 self.outdatedCacheError = e
                 svg = cache.getFromCache("map_" + self.region, True)
@@ -93,7 +94,7 @@ class Map(object):
                     t = "No Map in cache, nothing from dotlan. Must give up " \
                         "because this happened:\n{0} {1}\n\nThis could be a " \
                         "temporary problem (like dotlan is not reachable), or " \
-                        "everythig went to hell. Sorry. This makes no sense " \
+                        "everything went to hell. Sorry. This makes no sense " \
                         "without the map.\n\nRemember the site for possible " \
                         "updates: https://github.com/Crypta-Eve/spyglass".format(type(e), str(e))
                     raise DotlanException(t)
@@ -140,17 +141,19 @@ class Map(object):
         #height = svg["height"]
 
     def _extractSystemsFromSoup(self, soup, scale):
+        #default size of the systems to calculate the center point
+        svg_width  = 62.5
+        svg_height = 30
         systems = {}
         uses = {}
         for use in soup.select("use"):
             useId = use["xlink:href"][1:]
+            use.attrs["width"] = svg_width
+            use.attrs["height"] = svg_height
             use.attrs["x"] = str(float(use.attrs["x"]) * scale)
             use.attrs["y"] = str(float(use.attrs["y"]) * scale)
             uses[useId] = use
 
-        #default size of the systems to calculate the center point
-        svg_width  = 62.5
-        svg_height = 30
         for use in soup.select("line"):
             use.attrs["x1"] = str((float(use.attrs["x1"])-svg_width/2.0) * scale+svg_width/2.0)
             use.attrs["y1"] = str((float(use.attrs["y1"])-svg_height/2.0) * scale+svg_height/2.0)
@@ -174,14 +177,79 @@ class Map(object):
                     except KeyError:
                         mapCoordinates[keyname] = 0
 
-                mapCoordinates["center_x"] = (mapCoordinates["x"] + (mapCoordinates["width"] / 2))
-                mapCoordinates["center_y"] = (mapCoordinates["y"] + (mapCoordinates["height"] / 2))
+                mapCoordinates["center_x"] = (mapCoordinates["x"] + 1.0+56.0/2.0) #(mapCoordinates["width"] / 2.0))
+                mapCoordinates["center_y"] = (mapCoordinates["y"] + (mapCoordinates["height"] / 2.0))
                 try:
-                    transform = uses[symbolId]["transform"]
+                    if symbolId in uses.keys():
+                        keys = uses[symbolId]
+                        if uses[symbolId].find("transform"):
+                            transform = uses[symbolId]["transform"]
+                        else:
+                            transform = "translate(0,0)"
                 except KeyError:
                     transform = "translate(0,0)"
                 systems[name] = System(name, element, self.soup, mapCoordinates, transform, systemId)
         return systems
+
+    def _prepareGradients(self, soup):
+
+        grad_located = soup.new_tag("radialGradient", id="grad_located")
+        stop = soup.new_tag("stop")
+        stop["offset"] = "50%"
+        stop["stop-color"] = "#8b008d"
+        stop["stop-opacity"] = "1"
+        grad_located.append(stop)
+        stop = soup.new_tag("stop")
+        stop["offset"] = "100%"
+        stop["stop-color"] = "#8b008d"
+        stop["stop-opacity"] = "0"
+        grad_located.append(stop)
+
+        grad_watch = soup.new_tag("radialGradient", id="grad_watch")
+        stop = soup.new_tag("stop")
+        stop["offset"] = "50%"
+        stop["stop-color"] = "#909090"
+        stop["stop-opacity"] = "1"
+        grad_watch.append(stop)
+        stop = soup.new_tag("stop")
+        stop["offset"] = "100%"
+        stop["stop-color"] = "#909090"
+        stop["stop-opacity"] = "0"
+        grad_watch.append(stop)
+
+
+        grad_camBg = soup.new_tag("radialGradient", id="camBg")
+        stop = soup.new_tag("stop")
+        stop["offset"] = "30%"
+        stop["stop-color"] = "#FF8800"
+        stop["stop-opacity"] = "1"
+        grad_located.append(stop)
+        stop = soup.new_tag("stop")
+        stop["offset"] = "95%"
+        stop["stop-color"] = "#FF8800"
+        stop["stop-opacity"] = "0"
+        grad_located.append(stop)
+
+        grad_camActiveBg = soup.new_tag("radialGradient", id="camActiveBg")
+        stop = soup.new_tag("stop")
+        stop["offset"] = "40%"
+        stop["stop-color"] = "#FF8800"
+        stop["stop-opacity"] = "1"
+        grad_located.append(stop)
+        stop = soup.new_tag("stop")
+        stop["offset"] = "95%"
+        stop["stop-color"] = "#FF8800"
+        stop["stop-opacity"] = "0"
+        grad_located.append(stop)
+
+        svg = soup.select("svg")[0]
+        for defs in svg.select("defs"):
+            defs.append(grad_located)
+            defs.append(grad_watch)
+            defs.append(grad_camBg)
+            defs.append(grad_camActiveBg)
+
+
 
     def _prepareSvg(self, soup, systems):
         svg = soup.select("svg")[0]
@@ -197,6 +265,8 @@ class Map(object):
         ellipse = soup.new_tag("ellipse", cx="0", cy="0", rx="56", ry="28", style="fill:#462CFF")
         group.append(ellipse)
 
+        self._prepareGradients( soup )
+
         # The giant cross-hairs
         for coord in ((0, -10000), (-10000, 0), (10000, 0), (0, 10000)):
             line = soup.new_tag("line", x1=coord[0], y1=coord[1], x2="0", y2="0", style="stroke:#462CFF")
@@ -204,10 +274,6 @@ class Map(object):
         svg.insert(0, group)
 
         map = svg.select("#map")
-        for defs in svg.select("defs"):
-            for radialgradient in defs.select("radialGradient"):
-                radialgradient.name = "radialGradient"
-                map.insert(0, radialgradient)
 
         for defs in svg.select("defs"):
             for tag in defs.select("a"):
@@ -452,9 +518,9 @@ class System(object):
             self.__locatedCharacters.append(charname)
         if not wasLocated:
             coords = self.mapCoordinates
-            newTag = self.mapSoup.new_tag("ellipse", cx=coords["center_x"] - 2.5, cy=coords["center_y"], id=idName,
-                                          rx=coords["width"] / 2 + 4, ry=coords["height"] / 2 + 4, style="fill:#8b008d",
-                                          transform=self.transform)
+            newTag = self.mapSoup.new_tag("rect", x=coords["x"]-10, y=coords["y"]-8,
+                                          width=coords["width"]+16, height=coords["height"]+16, id=idName,
+                                          rx=12, ry=12, fill="url(#grad_located)" )
             jumps = self.mapSoup.select("#jumps")[0]
             jumps.insert(0, newTag)
 

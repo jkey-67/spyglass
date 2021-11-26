@@ -28,6 +28,7 @@ import os
 
 class PanningWebView(QWidget):
     ZOOM_WHEEL = 0.4
+    webViewScrolled = QtCore.pyqtSignal(bool)
     webViewResized = QtCore.pyqtSignal()
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()
@@ -43,17 +44,20 @@ class PanningWebView(QWidget):
         self.scrollPos = QPointF(0.0, 0.0)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.setMouseTracking(True)
-        self.qsvg = QtSvg.QSvgRenderer()
-        self.qsvg.setAspectRatioMode(Qt.KeepAspectRatioByExpanding)
-        self.qsvg.repaintNeeded.connect(self.update)
+        self.svgRenderer = QtSvg.QSvgRenderer()
+        self.svgRenderer.setAspectRatioMode(Qt.KeepAspectRatioByExpanding)
+        self.svgRenderer.repaintNeeded.connect(self.update)
 
 
     def setContent(self, cnt, type):
-        if not self.qsvg.load(cnt):
+        if self.scrolling:
+            return False
+        if not self.svgRenderer.load(cnt):
             logging.error("error during parse of svg data")
-        self.setImgSize(self.qsvg.defaultSize())
-        self.qsvg.setFramesPerSecond(0)
-        self.qsvg.setAspectRatioMode(Qt.KeepAspectRatio)
+        self.setImgSize(self.svgRenderer.defaultSize())
+        self.svgRenderer.setFramesPerSecond(0)
+        self.svgRenderer.setAspectRatioMode(Qt.KeepAspectRatio)
+        return True
 
     def setImgSize(self, newsize: QtCore.QSize):
         self.imgSize = newsize
@@ -66,12 +70,12 @@ class PanningWebView(QWidget):
         super().resizeEvent(event)
 
     def paintEvent(self, event):
-        if self.qsvg:
+        if self.svgRenderer:
             painter = QPainter(self)
             rect = QtCore.QRectF(-self.scrollPos.x(), -self.scrollPos.y(),
-                                 self.qsvg.defaultSize().width()*self.zoom,
-                                 self.qsvg.defaultSize().height()*self.zoom)
-            self.qsvg.render(painter, rect)
+                                 self.svgRenderer.defaultSize().width() * self.zoom,
+                                 self.svgRenderer.defaultSize().height() * self.zoom)
+            self.svgRenderer.render(painter, rect)
 
     def setZoomFactor(self, zoom):
         if zoom > 8:
@@ -139,6 +143,7 @@ class PanningWebView(QWidget):
             self.handIsClosed = False
             self.positionMousePress = None
             qApp.restoreOverrideCursor()
+            self.webViewScrolled.emit(False)
             return
 
         if self.pressed:
@@ -157,13 +162,13 @@ class PanningWebView(QWidget):
     def mouseDoubleClickEvent(self, mouseEvent:QMouseEvent):
         self.doubleClicked(self.mapPosFromEvent(mouseEvent))
 
-    def mapPosFromPos(self, pos:QPointF)->QPointF:
+    def mapPosFromPos(self, pos: QPointF) -> QPointF:
         return (pos + self.scrollPos) / self.zoom
 
-    def mapPosFromPoint(self,mouseEvent:QPoint)->QPoint:
+    def mapPosFromPoint(self, mouseEvent: QPoint) -> QPoint:
         return (mouseEvent + self.scrollPos) / self.zoom
 
-    def mapPosFromEvent(self,mouseEvent:QMouseEvent)->QPointF:
+    def mapPosFromEvent(self, mouseEvent:QMouseEvent) -> QPointF:
         return (mouseEvent.pos() + self.scrollPos) / self.zoom
 
     def mouseMoveEvent(self, mouseEvent:QMouseEvent):
@@ -179,6 +184,7 @@ class PanningWebView(QWidget):
         if self.pressed:
             self.pressed = False
             self.scrolling = True
+            self.webViewScrolled.emit(True)
             return
         if self.hoveCheck(self.mapPosFromEvent(mouseEvent)):
             QApplication.setOverrideCursor(QtCore.Qt.PointingHandCursor)

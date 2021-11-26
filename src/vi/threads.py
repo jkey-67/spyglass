@@ -64,20 +64,20 @@ class AvatarFindThread(QThread):
                 if charname == "SPYGLASS":
                     with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
-                if  avatar==None:
+                if avatar is None:
                     avatar = cache.getAvatar(charname)
                     if avatar:
                         logging.debug("AvatarFindThread found cached avatar for %s" % charname)
-                if avatar==None:
+                if avatar is None:
                     diffLastCall = time.time() - lastCall
                     if diffLastCall < wait:
                         time.sleep((wait - diffLastCall) / 1000.0)
                     avatar = evegate.getAvatarForPlayer(charname)
                     lastCall = time.time()
-                    if avatar!=None:
-                        cache.putAvatar(charname, avatar)
-                    else:
+                    if avatar is None:
                         cache.removeAvatar(charname)
+                    else:
+                        cache.putAvatar(charname, avatar)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % charname)
                     self.avatar_update.emit(chatEntry, avatar)
@@ -121,55 +121,13 @@ class MapStatisticsThread(QThread):
             try:
                 statistics = evegate.getSystemStatistics()
                 # time.sleep(2)  # sleeping to prevent a "need 2 arguments"-error
-                requestData = {"result": "ok", "statistics": statistics}
+                statistics_data = {"result": "ok", "statistics": statistics}
             except Exception as e:
                 logging.error("Error in MapStatisticsThread: %s", e)
-                requestData = {"result": "error", "text": str(e)}
+                statistics_data = {"result": "error", "text": str(e)}
             self.lastStatisticsUpdate = time.time()
             self.refreshTimer.start(self.pollRate)
-            self.statistic_data_update.emit(requestData)
-            logging.debug("MapStatisticsThread emitted statistic_data_update")
-
-    def quit(self):
-        self.active = False
-        self.queue.put(None)
-        QThread.quit(self)
-
-class GenerateJumpBridgesThread(QThread):
-    jump_bridge_process = pyqtSignal(int, int)
-    jump_bridge_data_update = pyqtSignal(dict)
-
-    def __init__(self):
-        QThread.__init__(self)
-        self.queue = queue.Queue(maxsize=1)
-        self.lastStatisticsUpdate = time.time()
-        self.active = True
-
-    def requestJumpBridgeUpdate(self):
-        self.queue.put(1)
-
-    def run(self):
-        self.refreshTimer = QTimer()
-        # self.connect(self.refreshTimer, SIGNAL("timeout()"), self.requestStatistics)
-        self.refreshTimer.timeout.connect(self.requestStatistics)
-        while True:
-            # Block waiting for requestStatistics() to enqueue a token
-            self.queue.get()
-            if not self.active:
-                return
-            self.refreshTimer.stop()
-            logging.debug("MapStatisticsThread requesting statistics")
-            try:
-                statistics = evegate.getSystemStatistics()
-                # time.sleep(2)  # sleeping to prevent a "need 2 arguments"-error
-                requestData = {"result": "ok", "statistics": statistics}
-            except Exception as e:
-                logging.error("Error in MapStatisticsThread: %s", e)
-                requestData = {"result": "error", "text": str(e)}
-            self.lastStatisticsUpdate = time.time()
-            self.refreshTimer.start(self.pollRate)
-            self.statistic_data_update.emit(requestData)
-            logging.debug("MapStatisticsThread emitted statistic_data_update")
+            self.statistic_data_update.emit(statistics_data)
 
     def quit(self):
         self.active = False

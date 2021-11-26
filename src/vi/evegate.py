@@ -244,7 +244,7 @@ def getCharInfoForCharId(char_id, use_cache=True):
             response.raise_for_status()
             char_info = eval(response.text)
             # should be valid for up to three days
-            cache.putIntoCache(cache_key, response.text, 60*60*24*3)
+            cache.putIntoCache(cache_key, response.text, 60 * 60 * 24 * 3)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if e.response.status_code != 400:
@@ -331,7 +331,7 @@ def getSystemStatistics():
                                                       "faction": int(row["npc_kills"]),
                                                       "pod": int(row["pod_kills"])}
 
-            cache.putIntoCache(cache_key, json.dumps(system_data), 60 )
+            cache.putIntoCache(cache_key, json.dumps(system_data), 60)
         else:
             system_data = json.loads(system_data)
     except Exception as e:

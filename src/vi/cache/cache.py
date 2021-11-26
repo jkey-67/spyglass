@@ -20,9 +20,9 @@
 import sqlite3
 import threading
 import time
+import logging
 import vi.version
-
-from PyQt5.QtCore import QByteArray
+from vi.cache.dbstructure import updateDatabase
 
 
 def to_blob(x):
@@ -32,9 +32,6 @@ def to_blob(x):
 def from_blob(x):
     return x
 
-import logging
-from vi.cache.dbstructure import updateDatabase
-
 
 class Cache(object):
     # Cache checks PATH_TO_CACHE when init, so you can set this on a
@@ -42,15 +39,16 @@ class Cache(object):
     PATH_TO_CACHE = None
 
     # Ok, this is dirty. To make sure we check the database only
-    # one time/runtime we will change this classvariable after the
-    # check. Following inits of Cache will now, that we allready checked.
+    # one time/runtime we will change this class variable after the
+    # check. Following inits of Cache will now, that we already checked.
     VERSION_CHECKED = False
 
     # Cache-Instances in various threads: must handle concurrent writings
     SQLITE_WRITE_LOCK = threading.Lock()
 
     def __init__(self, pathToSQLiteFile="cache.sqlite3"):
-        """ pathToSQLiteFile=path to sqlite-file to save the cache. will be ignored if you set Cache.PATH_TO_CACHE before init
+        """ pathToSQLiteFile=path to sqlite-file to save the cache. will be ignored if you set Cache.PATH_TO_CACHE
+            before init
         """
         if Cache.PATH_TO_CACHE:
             pathToSQLiteFile = Cache.PATH_TO_CACHE
@@ -66,22 +64,22 @@ class Cache(object):
         try:
             version = self.con.execute(query).fetchall()[0][0]
         except Exception as e:
-            if (isinstance(e, sqlite3.OperationalError) and "no such table: version" in str(e)):
+            if isinstance(e, sqlite3.OperationalError) and "no such table: version" in str(e):
                 pass
-            elif (isinstance(e, IndexError)):
+            elif isinstance(e, IndexError):
                 pass
             else:
                 raise e
         updateDatabase(version, self.con)
 
-    def putIntoCache(self, key, value, maxAge=60 * 60 * 24 * 3):
+    def putIntoCache(self, key, value, max_age=60*60*24*3):
         """ Putting something in the cache maxAge is maximum age in seconds
         """
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM cache WHERE key = ?"
             self.con.execute(query, (key,))
             query = "INSERT INTO cache (key, data, modified, maxAge) VALUES (?, ?, ?, ?)"
-            self.con.execute(query, (key, value, time.time(), maxAge))
+            self.con.execute(query, (key, value, time.time(), max_age))
             self.con.commit()
 
     def getFromCache(self, key, outdated=False):
@@ -109,7 +107,8 @@ class Cache(object):
             self.con.commit()
 
     def getPlayerName(self, name):
-        """ Getting back infos about playername from Cache. Returns None if the name was not found, else it returns the status
+        """ Getting back infos about playername from Cache. Returns None if the name was not found, else it returns
+            the status
         """
         selectquery = "SELECT charname, status FROM playernames WHERE charname = ?"
         founds = self.con.execute(selectquery, (name,)).fetchall()
@@ -133,8 +132,8 @@ class Cache(object):
     def getAvatar(self, name):
         """ Getting the avatars_pictures data from the Cache. Returns None if there is no entry in the cache
         """
-        selectQuery = "SELECT data FROM avatars WHERE charname = ?"
-        founds = self.con.execute(selectQuery, (name,)).fetchall()
+        select_query = "SELECT data FROM avatars WHERE charname = ?"
+        founds = self.con.execute(select_query, (name,)).fetchall()
         if len(founds) == 0:
             return None
         else:
@@ -150,10 +149,10 @@ class Cache(object):
             self.con.execute(query, (name,))
             self.con.commit()
 
-    def recallAndApplySettings(self, responder, settingsIdentifier):
+    def recallAndApplySettings(self, responder, settings_identifier):
         version = self.getFromCache("version")
         restore_gui = version == vi.version.VERSION
-        settings = self.getFromCache(settingsIdentifier)
+        settings = self.getFromCache(settings_identifier)
         if settings:
             settings = eval(settings)
             for setting in settings:
@@ -166,7 +165,7 @@ class Cache(object):
                     elif restore_gui and setting[1] == "restoreState":
                         if not getattr(obj, setting[1])(eval(setting[2])):
                             logging.error("Fail to call {0} | {1} | {2}".format(str(obj), setting[1], setting[2]))
-                    elif len(setting)>3 and setting[3]:
+                    elif len(setting) > 3 and setting[3]:
                         if restore_gui:
                             getattr(obj, setting[1])(eval(setting[2]))
                     else:
@@ -175,4 +174,3 @@ class Cache(object):
                 except Exception as e:
                     logging.error("Recall application setting failed to set attribute {0} | {1} | {2} | error {3}"
                                   .format(str(obj), setting[1], setting[2], e))
-

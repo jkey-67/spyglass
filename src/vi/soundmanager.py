@@ -93,7 +93,7 @@ class SoundManager(metaclass=Singleton):
             self.sounds[mask] = QSoundEffect()
             url = QUrl.fromLocalFile(self.SOUNDS[mask])
             self.sounds[mask].setSource(url)
-            Cache().putIntoCache("soundsetting.{}".format(mask),filename)
+            Cache().putIntoCache("soundsetting.{}".format(mask), filename)
             self.loadSoundFiles()
 
     def loadSoundFiles(self):

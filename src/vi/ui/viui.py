@@ -36,7 +36,7 @@ from vi import evegate
 from vi import dotlan, filewatcher
 from vi import states
 from vi.cache.cache import Cache
-from vi.resources import resourcePath
+from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu
@@ -233,7 +233,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def wireUpUIConnections(self):
         logging.info("wireUpUIConnections")
-        # Wire up general UI connections
         self.clipboard.dataChanged.connect(self.clipboardChanged)
         #self.autoScanIntelAction.triggered.connect(self.changeAutoScanIntel)
         #self.kosClipboardActiveAction.triggered.connect(self.changeKosCheckClipboard)
@@ -270,6 +269,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
         self.mapView.webViewResized.connect(self.fixupScrollBars)
         self.mapView.customContextMenuRequested.connect(self.showContextMenu)
+        def mapviewScrolled( scrolled ):
+            if scrolled:
+                self.mapTimer.stop()
+            else:
+                self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
+        self.mapView.webViewScrolled.connect(mapviewScrolled)
         self.connectToEveOnline.clicked.connect(lambda: evegate.openWithEveonline(parent=self))
         def updateX(x):
             pos = self.mapView.scrollPosition()
@@ -443,9 +448,10 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("Finding map file {}".format(regionName))
         svg = None
         try:
-            res_file_name=os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(regionName) )
-            with open(resourcePath(resourcePath(res_file_name)))as svgFile:
-                svg = svgFile.read()
+            res_file_name = os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(regionName))
+            if resourcePathExists(res_file_name):
+                with open(resourcePath(res_file_name))as svgFile:
+                    svg = svgFile.read()
         except Exception as e:
             pass
 
@@ -480,7 +486,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.updateMapView()
         self.setInitialMapPositionForRegion(regionName)
         #todo:why using timer for painting
-        #self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
+        self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
         # Allow the file watcher to run now that all else is set up
         self.filewatcherThread.paused = False
         logging.debug("Map setup complete")
@@ -734,22 +740,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.updateMapView()
 
     def clipboardChanged(self, mode=0):
-        if not (mode == 0 and self.kosClipboardActiveAction.isChecked() and self.clipboard.mimeData().hasText()):
-            return
+        #todo:check for jumpbridge names an auto append
         content = str(self.clipboard.text())
-        contentTuple = tuple(content)
         # Limit redundant kos checks
-        if contentTuple != self.oldClipboardContent:
-            parts = tuple(content.split("\n"))
-            knownPlayers = self.knownPlayerNames
-            for part in parts:
-                # Make sure user is in the content (this is a check of the local system in Eve).
-                # also, special case for when you have no knonwnPlayers (initial use)
-                if not knownPlayers or part in knownPlayers:
-                    self.trayIcon.setIcon(self.taskbarIconWorking)
-                    self.kosRequestThread.addRequest(parts, "clipboard", True)
-                    break
-            self.oldClipboardContent = contentTuple
+        if content != self.oldClipboardContent:
+            self.oldClipboardContent = content
 
     def mapLinkClicked(self, url:QtCore.QUrl):
         systemName = str(url.path().split("/")[-1]).upper()
@@ -799,10 +794,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def updateMapView(self):
         if self.currContent != self.dotlan.svg:
-            logging.info("Update map view")
             self.mapTimer.stop()
-            self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html")
-            self.currContent = self.dotlan.svg
+            if self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html"):
+                self.currContent = self.dotlan.svg
             self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
 
     def loadInitialMapPositions(self, newDictionary):
@@ -1165,11 +1159,8 @@ class RegionChooser(QtWidgets.QDialog):
             url = dotlan.Map.DOTLAN_BASIC_URL.format(text)
             content = requests.get(url).text
             if u"not found" in content:
-                correct = False
-                # Fallback -> ships vintel with this map?
                 try:
-                    with open(resourcePath(os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(text)))) as _:
-                        correct = True
+                    correct = resourcePathExists(os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(text)))
                 except Exception as e:
                     logging.error(e)
                     correct = False

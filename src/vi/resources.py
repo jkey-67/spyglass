@@ -22,15 +22,27 @@ import sys
 import logging
 
 
-def resourcePath(relativePath):
+def resourcePath(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller
     """
     if getattr(sys, 'frozen', False):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        basePath = sys._MEIPASS
+        base_path = sys._MEIPASS
     else:
-        basePath = os.path.abspath(".")
-    basePath = os.path.join(basePath, relativePath)
-    if not os.path.exists( basePath ):
-        logging.error("Unable to load file {}.".format(basePath))
-    return basePath
+        base_path = os.path.abspath(".")
+    base_path = os.path.join(base_path, relative_path)
+    if not os.path.exists( base_path ):
+        logging.error("Unable to load file {}.".format(base_path))
+    return base_path
+
+
+def resourcePathExists(relative_path):
+    """ Checks if the absolute path to resource, works for dev and for PyInstaller
+    """
+    if getattr(sys, 'frozen', False):
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath(".")
+    basePath = os.path.join(basePath, relative_path)
+    return os.path.exists( basePath )
