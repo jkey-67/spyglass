@@ -31,7 +31,7 @@ def resourcePath(relative_path):
     else:
         base_path = os.path.abspath(".")
     base_path = os.path.join(base_path, relative_path)
-    if not os.path.exists( base_path ):
+    if not os.path.exists(base_path):
         logging.error("Unable to load file {}.".format(base_path))
     return base_path
 
@@ -44,5 +44,5 @@ def resourcePathExists(relative_path):
         base_path = sys._MEIPASS
     else:
         base_path = os.path.abspath(".")
-    basePath = os.path.join(basePath, relative_path)
-    return os.path.exists( basePath )
+    base_path = os.path.join(base_path, relative_path)
+    return os.path.exists(base_path)
