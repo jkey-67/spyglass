@@ -793,6 +793,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.updateMapView()
 
     def updateMapView(self):
+        self.dotlan.setIncursionSystems(evegate.getIncursionSystemsIds())
+        self.dotlan.setCampaignsSystems(evegate.getCampaignsSystemsIds())
+
         if self.currContent != self.dotlan.svg:
             self.mapTimer.stop()
             if self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html"):

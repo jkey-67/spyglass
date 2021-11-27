@@ -129,6 +129,14 @@ class Map(object):
         self.updateJumpbridgesVisibility()
         self.updateStatisticsVisibility()
 
+    def setIncursionSystems(self, lst_system_ids):
+        for sys_id, sys in self.systemsById.items():
+            sys.setIncursion(sys_id in lst_system_ids)
+
+    def setCampaignsSystems(self, lst_system_ids):
+        for sys_id, sys in self.systemsById.items():
+            sys.setCampaigns(sys_id in lst_system_ids)
+
     def _extractSizeFromSoup(self, soup):
         svg = soup.select("svg")[0]
         box = svg["viewbox"]
@@ -185,10 +193,15 @@ class Map(object):
                         if uses[symbolId].find("transform"):
                             transform = uses[symbolId]["transform"]
                         else:
-                            transform = "translate(0,0)"
+                            transform = None
+                        systems[name] = System(name, element, self.soup, mapCoordinates, transform, systemId)
+                    else:
+                        logging.error("System {} not found.".format(name))
+
                 except KeyError:
-                    transform = "translate(0,0)"
-                systems[name] = System(name, element, self.soup, mapCoordinates, transform, systemId)
+                    logging.critical("Unable to prepare system {}.".format(name))
+                    pass
+
         return systems
 
     def _prepareGradients(self, soup):
@@ -220,34 +233,62 @@ class Map(object):
 
         grad_camBg = soup.new_tag("radialGradient", id="camBg")
         stop = soup.new_tag("stop")
-        stop["offset"] = "30%"
+        stop["offset"] = "50%"
         stop["stop-color"] = "#FF8800"
         stop["stop-opacity"] = "1"
-        grad_located.append(stop)
+        grad_camBg.append(stop)
         stop = soup.new_tag("stop")
-        stop["offset"] = "95%"
+        stop["offset"] = "100%"
         stop["stop-color"] = "#FF8800"
         stop["stop-opacity"] = "0"
-        grad_located.append(stop)
+        grad_camBg.append(stop)
 
         grad_camActiveBg = soup.new_tag("radialGradient", id="camActiveBg")
         stop = soup.new_tag("stop")
-        stop["offset"] = "40%"
-        stop["stop-color"] = "#FF8800"
-        stop["stop-opacity"] = "1"
-        grad_located.append(stop)
-        stop = soup.new_tag("stop")
-        stop["offset"] = "95%"
-        stop["stop-color"] = "#FF8800"
-        stop["stop-opacity"] = "0"
-        grad_located.append(stop)
+        stop["offset"] = "50%"
+        stop["stop-color"] = "#ff0000"
+        stop["stop-opacity"] = "1.0"
+        grad_camActiveBg.append(stop)
+        stop2 = soup.new_tag("stop")
+        stop2["offset"] = "100%"
+        stop2["stop-color"] = "#ff0000"
+        stop2["stop-opacity"] = "0.0"
+        grad_camActiveBg.append(stop2)
 
+        grad_incBg = soup.new_tag("radialGradient", id="incBg")
+        stop = soup.new_tag("stop")
+        stop["offset"] = "50%"
+        stop["stop-color"] = "#FFC800"
+        stop["stop-opacity"] = "1"
+        grad_incBg.append(stop)
+        stop = soup.new_tag("stop")
+        stop["offset"] = "100%"
+        stop["stop-color"] = "#FFC800"
+        stop["stop-opacity"] = "0"
+        grad_incBg.append(stop)
+
+        grad_incStBg = soup.new_tag("radialGradient", id="incStBg")
+        stop = soup.new_tag("stop")
+        stop["offset"] = "50%"
+        stop["stop-color"] = "#FFC800"
+        stop["stop-opacity"] = "1"
+        grad_incStBg.append(stop)
+        stop = soup.new_tag("stop")
+        stop["offset"] = "100%"
+        stop["stop-color"] = "#FF0000"
+        stop["stop-opacity"] = "0"
+        grad_incStBg.append(stop)
         svg = soup.select("svg")[0]
+
         for defs in svg.select("defs"):
             defs.append(grad_located)
             defs.append(grad_watch)
             defs.append(grad_camBg)
             defs.append(grad_camActiveBg)
+            defs.append(grad_incBg)
+            defs.append(grad_incStBg)
+    #todo:use /sovereignty/campaigns/ and /sovereignty/structures/ and /incursions/ to define system fill
+
 
 
 
@@ -278,13 +319,13 @@ class Map(object):
         for defs in svg.select("defs"):
             for tag in defs.select("a"):
                 tag.attrs = {key: value for key, value in tag.attrs.items() if key not in ["target","xlink:href"]}
-                tag.name="a"
+                tag.name = "a"
 
         for defs in svg.select("defs"):
             for symbol in defs.select("symbol"):
                 if symbol:
-                    symbol.name="g"
-                    map.insert(0,symbol)
+                    symbol.name = "g"
+                    map.insert(0, symbol)
         try:
             jumps = soup.select("#jumps")[0]
         except Exception as e:
@@ -310,7 +351,8 @@ class Map(object):
             which the line ends
         """
         for jump in self.soup.select("#jumps")[0].select(".j,.jc,.jr"):
-            if "jumpbridge" in jump["class"]: continue
+            if "jumpbridge" in jump["class"]:
+                continue
             parts = jump["id"].split("-")
             if parts[0] == "j":
                 startSystem = self.systemsById[int(parts[1])]
@@ -471,11 +513,14 @@ class System(object):
         self.backgroundColor = self.styles.getCommons()["bg_colour"]
         self.mapCoordinates = mapCoordinates
         self.systemId = systemId
-        self.transform = transform
+        self.transform = "translate(0, 0)" if transform is None else transform
         self.cachedOffsetPoint = None
         self._neighbours = set()
         self.statistics = {"jumps": "?", "shipkills": "?", "factionkills": "?", "podkills": "?"}
         self.currentStyle = ""
+        self.__hasCampaigns = False
+        self.__hasIncursion = False
+        self.__hasIncursionBoss = False
 
     def getTransformOffsetPoint(self):
         if not self.cachedOffsetPoint:
@@ -520,9 +565,43 @@ class System(object):
             coords = self.mapCoordinates
             newTag = self.mapSoup.new_tag("rect", x=coords["x"]-10, y=coords["y"]-8,
                                           width=coords["width"]+16, height=coords["height"]+16, id=idName,
-                                          rx=12, ry=12, fill="url(#grad_located)" )
+                                          rx=12, ry=12, fill="url(#grad_located)")
             jumps = self.mapSoup.select("#jumps")[0]
             jumps.insert(0, newTag)
+
+    def setCampaigns(self, campaigns: bool):
+        id_name = self.name + u"_campaigns"
+        if campaigns and not self.__hasCampaigns:
+            camp_node = self.mapSoup.find(id=id_name)
+            if camp_node is None:
+                coords = self.mapCoordinates
+                new_tag = self.mapSoup.new_tag("rect", x=coords["x"]-10, y=coords["y"]-8,
+                                          width=coords["width"]+16, height=coords["height"]+16, id=id_name,
+                                          rx=12, ry=12, fill="url(#camActiveBg)")
+                jumps = self.mapSoup.select("#jumps")[0]
+                jumps.insert(0, new_tag)
+        elif not campaigns and self.__hasCampaigns:
+            camp_node = self.mapSoup.find(id=id_name)
+            camp_node.decompose()
+
+    def setIncursion(self, incursion: bool, hasBoss=False):
+        id_name = self.name + u"_incursion"
+        if incursion and not self.__hasIncursion:
+            curr_node = self.mapSoup.find(id=id_name)
+            if curr_node is None:
+                coords = self.mapCoordinates
+                new_tag = self.mapSoup.new_tag("rect", x=coords["x"]-10, y=coords["y"]-8,
+                                          width=coords["width"]+16, height=coords["height"]+16, id=id_name,
+                                          rx=12, ry=12, fill="url(#incStBg)" if hasBoss else "url(#incBg)")
+                jumps = self.mapSoup.select("#jumps")[0]
+                jumps.insert(0, new_tag)
+        elif not incursion and self.__hasIncursion:
+            camp_node = self.mapSoup.find(id=id_name)
+            camp_node.decompose()
+        self.__hasIncursion = incursion
+        self.__hasIncursionBoss = hasBoss
+
+
 
     def setBackgroundColor(self, color):
         for rect in self.svgElement("rect"):

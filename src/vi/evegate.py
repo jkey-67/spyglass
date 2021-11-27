@@ -623,6 +623,58 @@ def getRouteFromEveOnline(jumpGates, src, dst):
     return eval(result.text)
 
 
+def getIncursions(use_cache=True):
+    """builds a list of incursion dicts cached 300s
+    """
+    cache = Cache()
+    cache_key = "incursions"
+    result = cache.getFromCache(cache_key, use_cache)
+    if use_cache and result:
+        incursion_list = json.loads(result)
+    else:
+        req = "https://esi.evetech.net/latest/incursions/?datasource=tranquility"
+        result = requests.get(req)
+        result.raise_for_status()
+        cache.putIntoCache(cache_key, result.text, 300)
+        incursion_list = result.json()
+    return incursion_list
+
+def getIncursionSystemsIds(use_cache=True):
+    res = list()
+    incursion_list = getIncursions(use_cache)
+    for constellations in incursion_list:
+        for sys in constellations["infested_solar_systems"]:
+            res.append(sys)
+    return res
+
+
+def getCampaigns(use_cache=True):
+    """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
+    """
+    cache = Cache()
+    cache_key = "campaigns"
+    result = cache.getFromCache(cache_key, use_cache)
+    if use_cache and result:
+        campaigns_list = json.loads(result)
+    else:
+        req = "https://esi.evetech.net/latest/sovereignty/campaigns/?datasource=tranquility"
+        result = requests.get(req)
+        result.raise_for_status()
+        cache.putIntoCache(cache_key, result.text, 60)
+        campaigns_list = result.json()
+    return campaigns_list
+
+
+def getCampaignsSystemsIds(use_cache=True):
+    """builds a list of system ids being part of campaigns for hubs and tcus dicts cached 60s
+    """
+    res = list()
+    incursion_list = getCampaigns(use_cache)
+    for system in incursion_list:
+        res.append(system["solar_system_id"])
+    return res
+
+
 def getAllStructures(typeid=None):
     req = "https://esi.evetech.net/latest/universe/structures/?datasource=tranquility"
     result = requests.get(req)
@@ -779,7 +831,7 @@ def getRegionInformation(region_id:int,use_cache=True):
         req = "https://esi.evetech.net/latest/universe/regions/{}/?datasource=tranquility&language=en".format(region_id)
         res_constellation = requests.get(req)
         res_constellation.raise_for_status()
-        cache.putIntoCache(cache_key, res_constellation.text)
+        cache.putIntoCache(cache_key, res_constellation.text,24*60*60)
         return res_constellation.json()
 
 
@@ -814,51 +866,57 @@ def applyRouteToEveOnline(name_char, jump_list):
 
 SHIPIDS = [24692,22448,2836,23919,32872,642,11936,17726,37604,29266,11969,628,23757,11202,28850,643,11938,32305,17922,22466,33468,608,625,29337,11567,648,582,33820,11985,630,1944,17920,37480,632,34328,598,12013,16229,33151,599,12731,11192,42246,45647,17619,672,32788,621,17634,16240,633,11993,33675,20185,11182,42243,23915,33397,48648,11196,22468,16236,583,34317,32876,16238,34496,17476,12729,11176,2161,37453,17926,11184,20125,16231,17720,42242,47269,22474,17928,37457,12023,12017,645,32307,32874,24698,33153,17932,52254,49711,12011,3532,617,37135,44995,12044,22442,655,671,22460,32790,589,634,29344,11957,17841,20189,16227,35781,22464,32207,11129,33816,17715,3756,11940,28710,21097,584,37455,11987,11011,21628,24696,33155,11381,11379,35683,22852,11172,33079,22452,605,651,12034,11961,22544,24702,33157,48636,11387,24690,601,52252,607,615,35779,596,12753,17703,594,590,30842,12042,12005,657,34828,11400,11174,602,49710,37458,11194,45649,28661,654,11971,29986,33513,47271,3764,37606,45645,29990,17738,22548,24694,29248,37483,11186,3516,624,652,12032,44996,12747,609,37456,641,13202,17728,603,656,32811,4363,4388,32209,11132,37605,623,42241,45534,33395,19724,12015,24700,4306,19722,592,11377,650,52250,33472,24483,22470,17736,37607,2998,28846,23913,20187,12745,2006,17709,11989,11995,635,4302,28606,33818,620,29340,44993,28659,22440,17718,12021,19726,11965,33677,37481,42244,47466,2863,586,17480,16233,12733,33697,29988,20183,12735,597,12038,42245,23773,11963,11178,17918,638,17636,26840,588,22428,17812,11393,17478,19720,3514,28844,587,49712,24688,11959,28352,629,22456,12019,37460,11978,640,4005,32309,631,29336,11190,19744,11942,22430,22546,54731,585,22444,622,17713,11198,37482,54732,33470,17924,42685,34562,33081,4308,32878,11200,649,639,17732,26842,29984,52267,37459,23911,627,16242,54733,48635,591,4310,593,644,32311,2834,11999,3518,42132,42126,28665,47270,42124,606,42125,42133,11365,32880,626,17843,12743,45531,34590,3766,37454,17722,17740,33083,45530,22446,33673,22436,11371,17930,653,23917,49713,12003,2078,52907]
 
-SHIPNAMES = (u'ABADDON',u'ABSOLUTION',u'ADRESTIA',u'AEON',u'ALGOS',u'APOCALYPSE',u'APOCALYPSE IMPERIAL ISSUE',
-             u'APOCALYPSE NAVY ISSUE',u'APOSTLE',u'APOTHEOSIS',u'ARAZU',u'ARBITRATOR',u'ARCHON',u'ARES',u'ARK',
-             u'ARMAGEDDON',u'ARMAGEDDON IMPERIAL ISSUE',u'ARMAGEDDON NAVY ISSUE',u'ASHIMMU',u'ASTARTE',u'ASTERO',
-             u'ATRON',u'AUGOROR',u'AUGOROR NAVY ISSUE',u'AVATAR',u'BADGER',u'BANTAM',u'BARGHEST',u'BASILISK',
-             u'BELLICOSE',u'BESTOWER',u'BHAALGORN',u'BIFROST',u'BLACKBIRD',u'BOWHEAD',u'BREACHER',u'BROADSWORD',
-             u'BRUTIX',u'BRUTIX NAVY ISSUE',u'BURST',u'BUSTARD',u'BUZZARD',u'CAEDES',u'CAIMAN',u'CALDARI NAVY HOOKBILL',
-             u'CALDARI SHUTTLE',u'CAMBION',u'CARACAL',u'CARACAL NAVY ISSUE',u'CATALYST',u'CELESTIS',u'CERBERUS',
-             u'CHAMELEON',u'CHARON',u'CHEETAH',u'CHEMOSH',u'CHIMERA',u'CHREMOAS',u'CITIZEN VENTURE',u'CLAW',u'CLAYMORE',
-             u'COERCER',u'CONDOR',u'CONFESSOR',u'CORAX',u'CORMORANT',u'COUNCIL DIPLOMATIC SHUTTLE',u'COVETOR',u'CRANE',
-             u'CROW',u'CRUCIFIER',u'CRUCIFIER NAVY ISSUE',u'CRUOR',u'CRUSADER',u'CURSE',u'CYCLONE',u'CYNABAL',u'DAGON',
-             u'DAMAVIK',u'DAMNATION',u'DAREDEVIL',u'DEACON',u'DEIMOS',u'DEVOTER',u'DOMINIX',u'DOMINIX NAVY ISSUE',
-             u'DRAGOON',u'DRAKE',u'DRAKE NAVY ISSUE',u'DRAMIEL',u'DRAUGUR',u'DREKAVAC',u'EAGLE',u'ECHELON',u'ECHO',
-             u'ENDURANCE',u'ENFORCER',u'ENYO',u'EOS',u'EPITHAL',u'EREBUS',u'ERIS',u'ETANA',u'EXECUTIONER',u'EXEQUROR',
-             u'EXEQUROR NAVY ISSUE',u'FALCON',u'FEDERATION NAVY COMET',u'FENRIR',u'FEROX',u'FIEND',u'FLYCATCHER',
-             u'FREKI',u'GALLENTE SHUTTLE',u'GARMUR',u'GILA',u'GNOSIS',u'GOLD MAGNATE',u'GOLEM',u'GORU\'S SHUTTLE',
-             u'GRIFFIN',u'GRIFFIN NAVY ISSUE',u'GUARDIAN',u'GUARDIAN-VEXOR',u'GURISTAS SHUTTLE',u'HARBINGER',
-             u'HARBINGER NAVY ISSUE',u'HARPY',u'HAWK',u'HECATE',u'HEL',u'HELIOS',u'HEMATOS',u'HERETIC',u'HERON',
-             u'HOARDER',u'HOUND',u'HUGINN',u'HULK',u'HURRICANE',u'HURRICANE FLEET ISSUE',u'HYDRA',u'HYENA',u'HYPERION',
-             u'IBIS',u'IKITURSA',u'IMICUS',u'IMMOLATOR',u'IMP',u'IMPAIROR',u'IMPEL',u'IMPERIAL NAVY SLICER',u'INCURSUS',
-             u'INQUISITOR',u'INTERBUS SHUTTLE',u'ISHKUR',u'ISHTAR',u'ITERON MARK V',u'JACKDAW',u'JAGUAR',u'KERES',
-             u'KESTREL',u'KIKIMORA',u'KIRIN',u'KITSUNE',u'KOMODO',u'KRONOS',u'KRYOS',u'LACHESIS',u'LEGION',u'LEOPARD',
-             u'LESHAK',u'LEVIATHAN',u'LIF',u'LOGGERHEAD',u'LOKI',u'MACHARIEL',u'MACKINAW',u'MAELSTROM',u'MAGNATE',
-             u'MAGUS',u'MALEDICTION',u'MALICE',u'MALLER',u'MAMMOTH',u'MANTICORE',u'MARSHAL',u'MASTODON',u'MAULUS',
-             u'MAULUS NAVY ISSUE',u'MEGATHRON',u'MEGATHRON FEDERATE ISSUE',u'MEGATHRON NAVY ISSUE',u'MERLIN',u'MIASMOS',
-             u'MIASMOS AMASTRIS EDITION',u'MIASMOS QUAFE ULTRA EDITION',u'MIASMOS QUAFE ULTRAMARINE EDITION',u'MIMIR',
-             u'MINMATAR SHUTTLE',u'MINOKAWA',u'MOA',u'MOLOK',u'MONITOR',u'MORACHA',u'MOROS',u'MUNINN',u'MYRMIDON',
-             u'NAGA',u'NAGLFAR',u'NAVITAS',u'NEMESIS',u'NEREUS',u'NERGAL',u'NESTOR',u'NIDHOGGUR',u'NIGHTHAWK',
-             u'NIGHTMARE',u'NINAZU',u'NOCTIS',u'NOMAD',u'NYX',u'OBELISK',u'OCCATOR',u'OMEN',u'OMEN NAVY ISSUE',
-             u'ONEIROS',u'ONYX',u'OPUX LUXURY YACHT',u'ORACLE',u'ORCA',u'ORTHRUS',u'OSPREY',u'OSPREY NAVY ISSUE',
-             u'PACIFIER',u'PALADIN',u'PANTHER',u'PHANTASM',u'PHOBOS',u'PHOENIX',u'PILGRIM',u'POLICE PURSUIT COMET',
-             u'PONTIFEX',u'PORPOISE',u'PRAXIS',u'PRIMAE',u'PROBE',u'PROCURER',u'PROPHECY',u'PRORATOR',u'PROSPECT',
-             u'PROTEUS',u'PROVIDENCE',u'PROWLER',u'PUNISHER',u'PURIFIER',u'RABISU',u'RAGNAROK',u'RAPIER',u'RAPTOR',
-             u'RATTLESNAKE',u'RAVEN',u'RAVEN NAVY ISSUE',u'RAVEN STATE ISSUE',u'REAPER',u'REDEEMER',
-             u'REPUBLIC FLEET FIRETAIL',u'RETRIBUTION',u'RETRIEVER',u'REVELATION',u'REVENANT',u'RHEA',u'RIFTER',
-             u'RODIVA',u'ROKH',u'ROOK',u'RORQUAL',u'RUPTURE',u'SABRE',u'SACRILEGE',u'SCALPEL',u'SCIMITAR',u'SCORPION',
-             u'SCORPION ISHUKONE WATCH',u'SCORPION NAVY ISSUE',u'SCYTHE',u'SCYTHE FLEET ISSUE',u'SENTINEL',u'SIGIL',
-             u'SILVER MAGNATE',u'SIN',u'SKIFF',u'SKYBREAKER',u'SLASHER',u'SLEIPNIR',u'STABBER',u'STABBER FLEET ISSUE',
-             u'STILETTO',u'STORK',u'STORMBRINGER',u'STRATIOS',u'SUCCUBUS',u'SUNESIS',u'SVIPUL',u'TAIPAN',u'TALOS',
-             u'TALWAR',u'TARANIS',u'TAYRA',u'TEMPEST',u'TEMPEST FLEET ISSUE',u'TEMPEST TRIBAL ISSUE',u'TENGU',
-             u'TEST SITE MALLER',u'THALIA',u'THANATOS',u'THORAX',u'THRASHER',u'THUNDERCHILD',u'TIAMAT',u'TORMENTOR',
-             u'TORNADO',u'TRISTAN',u'TYPHOON',u'TYPHOON FLEET ISSUE',u'UTU',u'VAGABOND',u'VANGEL',u'VANGUARD',
-             u'VANQUISHER',u'VARGUR',u'VEDMAK',u'VEHEMENT',u'VELATOR',u'VENDETTA',u'VENERABLE',u'VENGEANCE',u'VENTURE',
-             u'VEXOR',u'VEXOR NAVY ISSUE',u'VIATOR',u'VICTOR',u'VICTORIEUX LUXURY YACHT',u'VIGIL',u'VIGIL FLEET ISSUE',
-             u'VIGILANT',u'VINDICATOR',u'VIOLATOR',u'VIRTUOSO',u'VULTURE',u'WHIPTAIL',u'WIDOW',u'WOLF',u'WORM',u'WREATHE',
-             u'WYVERN',u'ZARMAZD',u'ZEALOT',u'ZEPHYR',u'ZIRNITRA',)
+SHIPNAMES = (u'ABADDON',u'ABSOLUTION',u'ADRESTIA',u'AEON',u'ALGOS',u'APOCALYPSE',
+            u'APOCALYPSE IMPERIAL ISSUE',u'APOCALYPSE NAVY ISSUE',u'APOSTLE',u'APOTHEOSIS',u'ARAZU',u'ARBITRATOR',
+            u'ARCHON',u'ARES',u'ARK',u'ARMAGEDDON',u'ARMAGEDDON IMPERIAL ISSUE',
+            u'ARMAGEDDON NAVY ISSUE',u'ASHIMMU',u'ASTARTE',u'ASTERO',u'ATRON',u'AUGOROR',u'AUGOROR NAVY ISSUE',
+            u'AVATAR',u'BADGER',u'BANTAM',u'BARGHEST',u'BASILISK',u'BELLICOSE',u'BESTOWER',u'BHAALGORN',
+            u'BIFROST',u'BLACKBIRD',u'BOWHEAD',u'BREACHER',u'BROADSWORD',u'BRUTIX',
+            u'BRUTIX NAVY ISSUE',u'BURST',u'BUSTARD',u'BUZZARD',u'CAEDES',u'CAIMAN',u'CALDARI NAVY HOOKBILL',
+            u'CALDARI SHUTTLE',u'CAMBION',u'CARACAL',u'CARACAL NAVY ISSUE',u'CATALYST',u'CELESTIS',u'CERBERUS',
+            u'CHAMELEON',u'CHARON',u'CHEETAH',u'CHEMOSH',u'CHIMERA',u'CHREMOAS',u'CITIZEN VENTURE',u'CLAW',
+            u'CLAYMORE',u'COERCER',u'CONDOR',u'CONFESSOR',u'CORAX',u'CORMORANT',
+            u'COUNCIL DIPLOMATIC SHUTTLE',u'COVETOR',u'CRANE',u'CROW',u'CRUCIFIER',u'CRUCIFIER NAVY ISSUE',u'CRUOR',
+            u'CRUSADER',u'CURSE',u'CYCLONE',u'CYNABAL',u'DAGON',u'DAMAVIK',u'DAMNATION',u'DAREDEVIL',
+            u'DEACON',u'DEIMOS',u'DEVOTER',u'DOMINIX',u'DOMINIX NAVY ISSUE',u'DRAGOON',u'DRAKE',
+            u'DRAKE NAVY ISSUE',u'DRAMIEL',u'DRAUGUR',u'DREKAVAC',u'EAGLE',u'ECHELON',u'ECHO',u'ENDURANCE',
+            u'ENFORCER',u'ENYO',u'EOS',u'EPITHAL',u'EREBUS',u'ERIS',u'ETANA',u'EXECUTIONER',u'EXEQUROR',
+            u'EXEQUROR NAVY ISSUE',u'FALCON',u'FEDERATION NAVY COMET',u'FENRIR',u'FEROX',u'FIEND',u'FLYCATCHER',
+            u'FREKI',u'GALLENTE SHUTTLE',u'GARMUR',u'GILA',u'GNOSIS',u'GOLD MAGNATE',u'GOLEM',
+            u'GORU\'S SHUTTLE',u'GRIFFIN',u'GRIFFIN NAVY ISSUE',u'GUARDIAN',u'GUARDIAN-VEXOR',
+            u'GURISTAS SHUTTLE',u'HARBINGER',u'HARBINGER NAVY ISSUE',u'HARPY',u'HAWK',u'HECATE',u'HEL',u'HELIOS',
+            u'HEMATOS',u'HERETIC',u'HERON',u'HOARDER',u'HOUND',u'HUGINN',u'HULK',u'HURRICANE',
+            u'HURRICANE FLEET ISSUE',u'HYDRA',u'HYENA',u'HYPERION',u'IBIS',u'IKITURSA',u'IMICUS',u'IMMOLATOR',u'IMP',
+            u'IMPAIROR',u'IMPEL',u'IMPERIAL NAVY SLICER',u'INCURSUS',u'INQUISITOR',
+            u'INTERBUS SHUTTLE',u'ISHKUR',u'ISHTAR',u'ITERON MARK V',u'JACKDAW',u'JAGUAR',u'KERES',u'KESTREL',
+            u'KIKIMORA',u'KIRIN',u'KITSUNE',u'KOMODO',u'KRONOS',u'KRYOS',u'LACHESIS',u'LEGION',u'LEOPARD',
+            u'LESHAK',u'LEVIATHAN',u'LIF',u'LOGGERHEAD',u'LOKI',u'MACHARIEL',u'MACKINAW',u'MAELSTROM',
+            u'MAGNATE',u'MAGUS',u'MALEDICTION',u'MALICE',u'MALLER',u'MAMMOTH',u'MANTICORE',u'MARSHAL',
+            u'MASTODON',u'MAULUS',u'MAULUS NAVY ISSUE',u'MEGATHRON',u'MEGATHRON FEDERATE ISSUE',
+            u'MEGATHRON NAVY ISSUE',u'MERLIN',u'MIASMOS',u'MIASMOS AMASTRIS EDITION',
+            u'MIASMOS QUAFE ULTRA EDITION',u'MIASMOS QUAFE ULTRAMARINE EDITION',u'MIMIR',u'MINMATAR SHUTTLE',
+            u'MINOKAWA',u'MOA',u'MOLOK',u'MONITOR',u'MORACHA',u'MOROS',u'MUNINN',u'MYRMIDON',u'NAGA',
+            u'NAGLFAR',u'NAVITAS',u'NEMESIS',u'NEREUS',u'NERGAL',u'NESTOR',u'NIDHOGGUR',u'NIGHTHAWK',
+            u'NIGHTMARE',u'NINAZU',u'NOCTIS',u'NOMAD',u'NYX',u'OBELISK',u'OCCATOR',u'OMEN',
+            u'OMEN NAVY ISSUE',u'ONEIROS',u'ONYX',u'OPUX LUXURY YACHT',u'ORACLE',u'ORCA',u'ORTHRUS',u'OSPREY',
+            u'OSPREY NAVY ISSUE',u'PACIFIER',u'PALADIN',u'PANTHER',u'PHANTASM',u'PHOBOS',u'PHOENIX',u'PILGRIM',
+            u'POLICE PURSUIT COMET',u'PONTIFEX',u'PORPOISE',u'PRAXIS',u'PRIMAE',u'PROBE',u'PROCURER',u'PROPHECY',
+            u'PRORATOR',u'PROSPECT',u'PROTEUS',u'PROVIDENCE',u'PROWLER',u'PUNISHER',u'PURIFIER',u'RABISU',
+            u'RAGNAROK',u'RAPIER',u'RAPTOR',u'RATTLESNAKE',u'RAVEN',u'RAVEN NAVY ISSUE',
+            u'RAVEN STATE ISSUE',u'REAPER',u'REDEEMER',u'REPUBLIC FLEET FIRETAIL',u'RETRIBUTION',u'RETRIEVER',
+            u'REVELATION',u'REVENANT',u'RHEA',u'RIFTER',u'RODIVA',u'ROKH',u'ROOK',u'RORQUAL',u'RUPTURE',
+            u'SABRE',u'SACRILEGE',u'SCALPEL',u'SCIMITAR',u'SCORPION',u'SCORPION ISHUKONE WATCH',
+            u'SCORPION NAVY ISSUE',u'SCYTHE',u'SCYTHE FLEET ISSUE',u'SENTINEL',u'SIGIL',u'SILVER MAGNATE',u'SIN',
+            u'SKIFF',u'SKYBREAKER',u'SLASHER',u'SLEIPNIR',u'STABBER',u'STABBER FLEET ISSUE',
+            u'STILETTO',u'STORK',u'STORMBRINGER',u'STRATIOS',u'SUCCUBUS',u'SUNESIS',u'SVIPUL',u'TAIPAN',
+            u'TALOS',u'TALWAR',u'TARANIS',u'TAYRA',u'TEMPEST',u'TEMPEST FLEET ISSUE',
+            u'TEMPEST TRIBAL ISSUE',u'TENGU',u'TEST SITE MALLER',u'THALIA',u'THANATOS',u'THORAX',u'THRASHER',
+            u'THUNDERCHILD',u'TIAMAT',u'TORMENTOR',u'TORNADO',u'TRISTAN',u'TYPHOON',u'TYPHOON FLEET ISSUE',
+            u'UTU',u'VAGABOND',u'VANGEL',u'VANGUARD',u'VANQUISHER',u'VARGUR',u'VEDMAK',u'VEHEMENT',
+            u'VELATOR',u'VENDETTA',u'VENERABLE',u'VENGEANCE',u'VENTURE',u'VEXOR',u'VEXOR NAVY ISSUE',
+            u'VIATOR',u'VICTOR',u'VICTORIEUX LUXURY YACHT',u'VIGIL',u'VIGIL FLEET ISSUE',
+            u'VIGILANT',u'VINDICATOR',u'VIOLATOR',u'VIRTUOSO',u'VULTURE',u'WHIPTAIL',u'WIDOW',u'WOLF',
+            u'WORM',u'WREATHE',u'WYVERN',u'ZARMAZD',u'ZEALOT',u'ZEPHYR',u'ZIRNITRA')
 
 SHIPNAMES = sorted(SHIPNAMES, key=lambda x: len(x), reverse=True)
 
@@ -909,14 +967,30 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
 
 # The main application for testing
 if __name__ == "__main__":
+
+    camp_systems = getCampaignsSystemsIds()
+    inc_systems =getIncursionSystemsIds()
+
+
+    tgnA = getRegionInformation(10000006,False)
+    tgnB = getRegionInformation(10000006, True)
+
+    incursionsA = getIncursions(False)
+    incursionsB = getIncursions(True)
     shipnames = idsToNames(SHIPIDS)
     res =sorted( {value for key, value in shipnames.items()} )
     with open("/home/jkeymer/projects/spyglass/src/ships.txt", "wt") as file:
         file.write("SHIPNAMES = (")
+        line_len = 13;
         for sname in res:
+            line_len = line_len + 2 + len(sname.upper());
+            if line_len > 80:
+                file.write("\r\n            ")
+                line_len = 12
             file.write("u'{}',".format(sname.upper()))
         file.write(")")
         file.close()
+    pass
 
     self = currentEveTime()
     nase = namesToIds(list({"nele McCool", "G-M4GK", "Rovengard Ogaster"}), False)
