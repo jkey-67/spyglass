@@ -708,6 +708,44 @@ def getStructures(nameChar:str, id_structure:int, use_cache=True):
         return eval(res.text)
 
 
+def getSovereignty(use_cache=True):
+    """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
+    """
+    cache = Cache()
+    cache_key = "sovereignty"
+    result = cache.getFromCache(cache_key, use_cache)
+    if use_cache and result:
+        campaigns_list = json.loads(result)
+    else:
+        req = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
+        result = requests.get(req)
+        result.raise_for_status()
+        cache.putIntoCache(cache_key, result.text, 3600)
+        campaigns_list = result.json()
+    return campaigns_list
+
+
+def getPlayerSovereignty(use_cache=True):
+    cache_key = "player_sovereignty"
+    cache = Cache()
+    cached_result = cache.getFromCache(cache_key, use_cache)
+    if use_cache and cached_result:
+        return json.loads(cached_result)
+    else:
+        player_sov = dict()
+        for sov in getSovereignty(use_cache):
+            if len(sov) > 2:
+                player_sov[int(sov["system_id"])] = sov
+        list_of_all_aliances = list()
+        for sov in player_sov.values():
+            alli_id = sov["alliance_id"]
+            use_cache = alli_id in list_of_all_aliances
+            sov["ticker"] = getAlliances(alli_id, use_cache)["ticker"]
+            if not use_cache:
+                list_of_all_aliances.append(alli_id)
+        cache.putIntoCache(cache_key, json.dumps(player_sov), 3600)
+        return player_sov
+
 class JumpBridge(object):
     def __init__(self, name:str, structureId:int, systemId:int, ownerId:int):
         tok = name.split(" ")
@@ -816,6 +854,22 @@ def getSolarSystemInformation(system_id,use_cache=True):
         return eval(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/systems/{}/?datasource=tranquility&language=en".format(system_id)
+        res_system = requests.get(req)
+        res_system.raise_for_status()
+        cache.putIntoCache(cache_key, res_system.text)
+        return res_system.json()
+
+
+def getAlliances(alliance_id, use_cache=True):
+    """gets the alliance from allicance id
+    """
+    cache_key = "_".join(("alliance", str(alliance_id)))
+    cache = Cache()
+    cached_id = cache.getFromCache(cache_key, use_cache)
+    if use_cache and cached_id:
+        return eval(cached_id)
+    else:
+        req = "https://esi.evetech.net/latest/alliances/{}/?datasource=tranquility".format(alliance_id)
         res_system = requests.get(req)
         res_system.raise_for_status()
         cache.putIntoCache(cache_key, res_system.text)
@@ -967,7 +1021,11 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
 
 # The main application for testing
 if __name__ == "__main__":
-
+    allicance1 = getAlliances(99008941, False)
+    allicance2 = getAlliances(982284363, False)
+    player_sov1 = getPlayerSovereignty(False)
+    player_sov2 = getPlayerSovereignty(True)
+    sov_systems = getSovereignty()
     camp_systems = getCampaignsSystemsIds()
     inc_systems =getIncursionSystemsIds()
 

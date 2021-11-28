@@ -460,6 +460,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 setJumpMapsVisible=self.jumpbridgesButton.isChecked())
             #todo:fix static updates
                 #setSatisticsVisible=self.statisticsButton.isChecked()
+
+            self.dotlan._applySystemStatistic( evegate.getPlayerSovereignty())
         except dotlan.DotlanException as e:
             logging.error(e)
             QMessageBox.critical(None, "Error getting map", str(e), QMessageBox.Close)
@@ -1247,11 +1249,11 @@ class SystemChat(QtWidgets.QDialog):
                 entry.updateAvatar(avatarData)
 
     def setSystemAlarm(self):
-        self.system.setStatus(states.ALARM)
+        self.system.setStatus(states.ALARM,datetime.datetime.utcnow())
         self.repaint_needed.emit()
 
     def setSystemClear(self):
-        self.system.setStatus(states.CLEAR)
+        self.system.setStatus(states.CLEAR,datetime.datetime.utcnow())
         self.repaint_needed.emit()
 
     def closeDialog(self):
