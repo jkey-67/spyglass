@@ -44,13 +44,13 @@ NOT_EXISTS = 0
 EXISTS = 1
 
 
-def charNameToId(name, use_cache=True):
+def charNameToId(name, use_outdated=False):
     """ Uses the EVE API to convert a character name to his ID
     """
     cache_key = "_".join(("name", "id", name))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_cache)
-    if use_cache and cached_id:
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
         return cached_id
     else:
         url = "https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search={iname}&strict=true"
@@ -71,7 +71,7 @@ def charNameToId(name, use_cache=True):
     return None
 
 
-def namesToIds(names, use_cache=True):
+def namesToIds(names, use_outdated=False):
     """ Uses the EVE API to convert a list of names to ids_to_names
         names: list of names
         returns a dict: key=name, value=id
@@ -84,8 +84,8 @@ def namesToIds(names, use_cache=True):
     # do we have already something in the cache?
     for name in names:
         cache_key = "_".join(("id", "name", name))
-        id_from_cache = cache.getFromCache(cache_key, use_cache)
-        if id_from_cache and use_cache:
+        id_from_cache = cache.getFromCache(cache_key, use_outdated)
+        if id_from_cache:
             data[name] = id_from_cache
         else:
             api_check_names.add(name)
@@ -121,23 +121,23 @@ def namesToIds(names, use_cache=True):
     return data
 
 
-def getAllRegions(use_cache=True):
+def getAllRegions(use_outdated=False):
     """ Uses the EVE API to get the list of all system ids
     """
     cache = Cache()
-    all_systems = cache.getFromCache("list_of_all_systems", use_cache)
-    if use_cache and all_systems is not None:
+    all_systems = cache.getFromCache("universe_regions", use_outdated)
+    if all_systems is not None:
         return eval(all_systems)
     else:
         url = "https://esi.evetech.net/latest/universe/regions/?datasource=tranquility"
         response = requests.get(url)
         response.raise_for_status()
         content = response.json()
-        cache.putIntoCache("list_of_all_systems", str(content), 60 * 60 * 24 * 365)
+        cache.putIntoCache("universe_regions", str(content), 60 * 60 * 24 * 365)
         return content
 
 
-def idsToNames(ids, use_cache=True):
+def idsToNames(ids, use_outdated=False):
     """ Returns the names for ids
         ids = iterable list of ids
         returns a dict key = id, value = name
@@ -151,8 +151,8 @@ def idsToNames(ids, use_cache=True):
     # something already in the cache?
     for checked_id in ids:
         cache_key = u"_".join(("name", "id", str(checked_id)))
-        name = cache.getFromCache(cache_key, use_cache)
-        if name and use_cache:
+        name = cache.getFromCache(cache_key, use_outdated)
+        if name:
             data[checked_id] = name
         else:
             api_check_ids.add(checked_id)
@@ -230,11 +230,11 @@ def currentEveTime():
     """
     return datetime.datetime.utcnow()
 
-def getCharInfoForCharId(char_id, use_cache=True):
+def getCharInfoForCharId(char_id, use_outdated=False):
     cache_key = u"_".join(("playerinfo_id_", str(char_id)))
     cache = Cache()
-    char_info = cache.getFromCache(cache_key, use_cache)
-    if use_cache and char_info is not None:
+    char_info = cache.getFromCache(cache_key, use_outdated)
+    if char_info is not None:
         char_info = eval(char_info)
     else:
         try:
@@ -244,7 +244,7 @@ def getCharInfoForCharId(char_id, use_cache=True):
             response.raise_for_status()
             char_info = eval(response.text)
             # should be valid for up to three days
-            cache.putIntoCache(cache_key, response.text, 60 * 60 * 24 * 3)
+            cache.putIntoCache(cache_key, response.text, 86400)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if e.response.status_code != 400:
@@ -252,14 +252,14 @@ def getCharInfoForCharId(char_id, use_cache=True):
     return char_info
 
 
-def getCorpIdsForCharId(char_id,use_cache=True):
+def getCorpIdsForCharId(char_id, use_outdated=True):
     """ Returns a list with the ids if the corporation history of a charId
         returns a list of only the corp ids
     """
     cache_key = u"_".join(("corp_history_id_", str(char_id)))
     cache = Cache()
-    corp_ids = cache.getFromCache(cache_key, use_cache)
-    if use_cache and corp_ids is not None:
+    corp_ids = cache.getFromCache(cache_key, use_outdated)
+    if corp_ids is not None:
         corp_ids = eval(corp_ids)
     else:
         try:
@@ -268,7 +268,7 @@ def getCorpIdsForCharId(char_id,use_cache=True):
             response = requests.get(url)
             response.raise_for_status()
             corp_ids = response.json()
-            cache.putIntoCache(cache_key, response.text)
+            cache.putIntoCache(cache_key, response.text, 86400)
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if e.response.status_code != 400:
@@ -279,10 +279,10 @@ def getCorpIdsForCharId(char_id,use_cache=True):
     return id_list
 
 
-def getCurrentCorpForCharId(char_id, use_cache=True):
+def getCurrentCorpForCharId(char_id, use_outdated=True):
     """ Returns the ID of the players current corporation.
     """
-    info = getCharInfoForCharId(char_id, use_cache)
+    info = getCharInfoForCharId(char_id, use_outdated)
     if info and "corporation_id" in info.keys():
         return info["corporation_id"]
     else:
@@ -312,7 +312,7 @@ def getSystemStatistics():
             for row in resp:
                 jump_data[int(row["system_id"])] = int(row["ship_jumps"])
 
-            cache.putIntoCache(cache_key, json.dumps(jump_data), 60)
+            cache.putIntoCache(cache_key, json.dumps(jump_data), 3600)
         else:
             jump_data = json.loads(jump_data)
 
@@ -331,7 +331,7 @@ def getSystemStatistics():
                                                       "faction": int(row["npc_kills"]),
                                                       "pod": int(row["pod_kills"])}
 
-            cache.putIntoCache(cache_key, json.dumps(system_data), 60)
+            cache.putIntoCache(cache_key, json.dumps(system_data), 3600)
         else:
             system_data = json.loads(system_data)
     except Exception as e:
@@ -623,13 +623,13 @@ def getRouteFromEveOnline(jumpGates, src, dst):
     return eval(result.text)
 
 
-def getIncursions(use_cache=True):
+def getIncursions(use_outdated=False):
     """builds a list of incursion dicts cached 300s
     """
     cache = Cache()
     cache_key = "incursions"
-    result = cache.getFromCache(cache_key, use_cache)
-    if use_cache and result:
+    result = cache.getFromCache(cache_key, use_outdated)
+    if result:
         incursion_list = json.loads(result)
     else:
         req = "https://esi.evetech.net/latest/incursions/?datasource=tranquility"
@@ -639,40 +639,39 @@ def getIncursions(use_cache=True):
         incursion_list = result.json()
     return incursion_list
 
-def getIncursionSystemsIds(use_cache=True):
+def getIncursionSystemsIds(use_outdated=False):
     res = list()
-    incursion_list = getIncursions(use_cache)
+    incursion_list = getIncursions(use_outdated)
     for constellations in incursion_list:
         for sys in constellations["infested_solar_systems"]:
             res.append(sys)
     return res
 
 
-def getCampaigns(use_cache=True):
+def getCampaigns(use_outdated=False):
     """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
     """
     cache = Cache()
     cache_key = "campaigns"
-    result = cache.getFromCache(cache_key, use_cache)
-    if use_cache and result:
+    result = cache.getFromCache(cache_key, use_outdated)
+    if result:
         campaigns_list = json.loads(result)
     else:
         req = "https://esi.evetech.net/latest/sovereignty/campaigns/?datasource=tranquility"
         result = requests.get(req)
         result.raise_for_status()
-        cache.putIntoCache(cache_key, result.text, 60)
+        cache.putIntoCache(cache_key, result.text, 60)#5 seconds from esi
         campaigns_list = result.json()
     return campaigns_list
 
 
-def getCampaignsSystemsIds(use_cache=True):
+def getCampaignsSystemsIds(use_outdated=False):
     """builds a list of system ids being part of campaigns for hubs and tcus dicts cached 60s
     """
-    res = list()
-    incursion_list = getCampaigns(use_cache)
-    for system in incursion_list:
-        res.append(system["solar_system_id"])
-    return res
+    curr_campaigns = list()
+    for system in getCampaigns(use_outdated):
+        curr_campaigns.append(system["solar_system_id"])
+    return curr_campaigns
 
 
 def getAllStructures(typeid=None):
@@ -690,14 +689,14 @@ def getAllStructures(typeid=None):
     return types
 
 
-def getStructures(nameChar:str, id_structure:int, use_cache=True):
+def getStructures(nameChar:str, id_structure:int, use_outdated=False):
     if nameChar == None:
         logging.error("getStructures needs the eve-online api account.")
         return None
     cache_key = "_".join(("structure", "id", str(id_structure)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_cache)
-    if use_cache and cached_id:
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
         return eval(cached_id)
     else:
         token = checkTokenTimeLine(getTokenOfChar(nameChar))
@@ -708,13 +707,14 @@ def getStructures(nameChar:str, id_structure:int, use_cache=True):
         return eval(res.text)
 
 
-def getSovereignty(use_cache=True):
+def getSovereignty(use_outdated=False):
     """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
+       https://esi.evetech.net/ui/?version=latest#/Sovereignty/get_sovereignty_map
     """
     cache = Cache()
     cache_key = "sovereignty"
-    result = cache.getFromCache(cache_key, use_cache)
-    if use_cache and result:
+    result = cache.getFromCache(cache_key, use_outdated)
+    if result:
         campaigns_list = json.loads(result)
     else:
         req = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
@@ -725,23 +725,23 @@ def getSovereignty(use_cache=True):
     return campaigns_list
 
 
-def getPlayerSovereignty(use_cache=True):
+def getPlayerSovereignty(use_outdated=False):
     cache_key = "player_sovereignty"
     cache = Cache()
-    cached_result = cache.getFromCache(cache_key, use_cache)
-    if use_cache and cached_result:
+    cached_result = cache.getFromCache(cache_key, use_outdated)
+    if cached_result:
         return json.loads(cached_result)
     else:
         player_sov = dict()
-        for sov in getSovereignty(use_cache):
+        for sov in getSovereignty(use_outdated):
             if len(sov) > 2:
-                player_sov[int(sov["system_id"])] = sov
+                player_sov[str(sov["system_id"])] = sov
         list_of_all_aliances = list()
         for sov in player_sov.values():
             alli_id = sov["alliance_id"]
-            use_cache = alli_id in list_of_all_aliances
-            sov["ticker"] = getAlliances(alli_id, use_cache)["ticker"]
-            if not use_cache:
+            use_outdated = alli_id in list_of_all_aliances
+            sov["ticker"] = getAlliances(alli_id, alli_id in list_of_all_aliances)["ticker"]
+            if not use_outdated:
                 list_of_all_aliances.append(alli_id)
         cache.putIntoCache(cache_key, json.dumps(player_sov), 3600)
         return player_sov
@@ -782,7 +782,7 @@ def countCheckGates( gates ):
                 gate.links = gate.links+1
 
 
-def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
+def getAllJumpGates(nameChar:str,systemName="", callback=None, use_outdated=False):
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
     if nameChar == None:
@@ -803,7 +803,7 @@ def getAllJumpGates(nameChar:str,systemName="",callback=None,use_cache=True):
         if callback and not callback(len(structs["structure"]), process):
             return gates
         for id_structure in structs["structure"]:
-            item = getStructures(nameChar=nameChar, id_structure=id_structure,use_cache=use_cache)
+            item = getStructures(nameChar=nameChar, id_structure=id_structure, use_outdated=use_outdated)
             process = process + 1
             if callback and not callback(len(structs["structure"]), process):
                 break
@@ -829,13 +829,13 @@ def writeGatestToFile(gates, filename="jb.txt"):
                 gates_list.append(s_t_d)
         gf.close()
 
-def getStargateInformation(starget_id,use_cache=True):
+def getStargateInformation(starget_id,use_outdated=False):
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "systems", str(starget_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_cache)
-    if use_cache and cached_id:
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
         return eval(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/stargates/{}/?datasource=tranquility&language=en".format(starget_id)
@@ -844,13 +844,13 @@ def getStargateInformation(starget_id,use_cache=True):
         cache.putIntoCache(cache_key, res_system.text)
         return res_system.json()
 
-def getSolarSystemInformation(system_id,use_cache=True):
+def getSolarSystemInformation(system_id,use_outdated=False):
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "systems", str(system_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_cache)
-    if use_cache and cached_id:
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
         return eval(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/systems/{}/?datasource=tranquility&language=en".format(system_id)
@@ -860,40 +860,40 @@ def getSolarSystemInformation(system_id,use_cache=True):
         return res_system.json()
 
 
-def getAlliances(alliance_id, use_cache=True):
+def getAlliances(alliance_id, use_outdated=True):
     """gets the alliance from allicance id
     """
     cache_key = "_".join(("alliance", str(alliance_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_cache)
-    if use_cache and cached_id:
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
         return eval(cached_id)
     else:
         req = "https://esi.evetech.net/latest/alliances/{}/?datasource=tranquility".format(alliance_id)
         res_system = requests.get(req)
         res_system.raise_for_status()
-        cache.putIntoCache(cache_key, res_system.text)
+        cache.putIntoCache(cache_key, res_system.text, 3600)
         return res_system.json()
 
-def getRegionInformation(region_id:int,use_cache=True):
+def getRegionInformation(region_id:int,use_outdated=False):
     cache_key = "_".join(("universe", "regions", str(region_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_cache)
-    if use_cache and cached_id:
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
         return eval(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/regions/{}/?datasource=tranquility&language=en".format(region_id)
         res_constellation = requests.get(req)
         res_constellation.raise_for_status()
-        cache.putIntoCache(cache_key, res_constellation.text,24*60*60)
+        cache.putIntoCache(cache_key, res_constellation.text, 24*60*60)
         return res_constellation.json()
 
 
-def getConstellationInformation(constellation_id:int,use_cache=True):
+def getConstellationInformation(constellation_id:int,use_outdated=False):
     cache_key = "_".join(("universe", "constellations", str(constellation_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_cache)
-    if use_cache and cached_id:
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
         return eval(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/constellations/{}/?datasource=tranquility&language=en".format(constellation_id)
@@ -1058,14 +1058,14 @@ if __name__ == "__main__":
     sysnames = idsToNames(getAllRegions())
     some = ["{}".format(itm) for key,itm in sysnames.items()]
     id = charNameToId("nele McCool", False)
-    corp=getCurrentCorpForCharId(1350114619, False)
+    corp = getCurrentCorpForCharId(1350114619, False)
     res = getCorpIdsForCharId(charNameToId("nele McCool"))
     res = getCharInfoForCharId(charNameToId("nele McCool"))
     gates = getAllJumpGates("nele McCool", "G-M4GK")
     setDestination("nele McCool", 1035408540831)  # ansiblex
     setDestination("nele McCool", 1034969570497)  # ansiblex
     setDestination("nele McCool", 1034954775591)  # ansiblex
-    jumpGates=[[30004935,30004961]]
+    jumpGates = [[30004935, 30004961]]
     src = 30004935
     dst = 30004961
     route = getRouteFromEveOnline( jumpGates, src,dst)
