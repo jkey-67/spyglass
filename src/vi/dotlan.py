@@ -513,7 +513,7 @@ class System(object):
     UNKNOWN_COLOR = styles.getCommons()["unknown_colour"]
     CLEAR_COLOR = CLEAR_COLORS[0][1]
 
-    def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId, ticker="?"):
+    def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId, ticker="npc"):
         self.status = states.UNKNOWN
         self.name = name
         self.ticker = ticker
