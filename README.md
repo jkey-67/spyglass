@@ -90,6 +90,10 @@ To start spyglass, open a console checkout sources and dependencies and start it
 
 `win> python spyglass.py`
 
+You need a private third party application key stored in src\eve_api_key.py
+
+`CLIENTS_API_KEY = "-top-secret-api-key-"`
+
 Currently, users with Windows may choose Qt 5.15.2  inside requirements.txt
 
 ## The background of Spyglass
