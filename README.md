@@ -37,7 +37,8 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
 
 
 ## Features with API registration
-Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentification.
+Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentification.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
+
 The following access rights will be use
  - esi-ui.write_waypoint.v1 
  - esi-universe.read_structures.v1 
@@ -51,7 +52,6 @@ The following access rights will be use
 
 ### API access monitoring and removal
 Please remember to manage your access to all [third-party-applications](https://community.eveonline.com/support/third-party-applications)  
-
 
 ## Intel Rescan
 
