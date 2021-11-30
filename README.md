@@ -11,7 +11,8 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
 
 ## Screenshot
 
-![](https://raw.githubusercontent.com/jkey-67/spyglass/qt5/src/docs/Screenshot%201.6-abyss.png)
+![image](https://user-images.githubusercontent.com/78883927/144115669-fa302dd7-d283-418a-b7fb-ff3f28c94b12.png)
+
 
 ## Features
 
@@ -31,11 +32,13 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
  - The sound volume for the notification is now adapt to the distance, near is louder, far quitter.
  - The main window can be set up to remain "always on top", can be displayed with a specified level of transparency and also frameless works.
  - Ship names in the intel chat are highlighted.
+ - Incursion system and systems with reinforced TCU IHUB are mareked with orange and red borders.
+ - The alliance ticker is shown for systems with player alliance sovereignty.
 
 
 ## Features with API registration
-
-Spyglass  use the following access rights 
+Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentification.
+The following access rights will be use
  - esi-ui.write_waypoint.v1 
  - esi-universe.read_structures.v1 
  - esi-search.search_structures.v1
