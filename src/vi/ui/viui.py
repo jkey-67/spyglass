@@ -73,6 +73,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.currContent = None
         self.mapTimer = QtCore.QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
+        self.statisticTimer = QtCore.QTimer(self)
         self.clipboardTimer = QtCore.QTimer(self)
         self.oldClipboardContent = ""
         self.trayIcon = trayIcon
@@ -178,12 +179,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.wireUpUIConnections()
         self.recallCachedSettings()
         self.setupThreads()
+        self.startStatisticTimer()
 
         initialTheme = self.cache.getFromCache("theme")
         if initialTheme:
             self.changeTheme(initialTheme)
         else:
             self.setupMap(True)
+
+
 
     def addPlayerMenu(self):
         self.playerGroup = QActionGroup(self.menu)
@@ -235,7 +239,6 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("wireUpUIConnections")
         self.clipboard.dataChanged.connect(self.clipboardChanged)
         #self.autoScanIntelAction.triggered.connect(self.changeAutoScanIntel)
-        #self.kosClipboardActiveAction.triggered.connect(self.changeKosCheckClipboard)
         self.zoomInButton.clicked.connect(self.zoomMapIn)
         self.zoomOutButton.clicked.connect(self.zoomMapOut)
         self.statisticsButton.clicked.connect(self.changeStatisticsVisibility)
@@ -320,7 +323,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread = MapStatisticsThread()
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
         self.statisticsThread.start()
-        # statisticsThread is blocked until first call of requestStatistics
+
 
     def terminateThreads(self):
         # Stop the threads
@@ -461,7 +464,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #todo:fix static updates
                 #setSatisticsVisible=self.statisticsButton.isChecked()
 
-            self.dotlan._applySystemStatistic( evegate.getPlayerSovereignty())
+            self.dotlan._applySystemStatistic(evegate.getPlayerSovereignty())
         except dotlan.DotlanException as e:
             logging.error(e)
             QMessageBox.critical(None, "Error getting map", str(e), QMessageBox.Close)
@@ -523,8 +526,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def stopClipboardTimer(self):
         if self.clipboardTimer:
-            self.disconnect()
+            self.clipboardTimer.disconnect()
             self.clipboardTimer.stop()
+
+    def startStatisticTimer(self):
+        self.statisticTimer.timeout.connect(self.statisticsThread.requestStatistics)
+        self.statisticsThread.requestStatistics()
+        self.statisticTimer.start(60000)
+
+    def stopStatisticTimer(self):
+        if self.statisticTimer:
+            self.statisticTimer.disconnect()
+            self.statisticTimer.stop()
 
     def closeEvent(self, event):
         """
@@ -556,7 +569,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "setSoundVolume", SoundManager().soundVolume),
                     (None, "changeFrameless", self.framelessWindowAction.isChecked()),
                     (None, "changeUseSpokenNotifications", self.useSpokenNotificationsAction.isChecked()),
-                    (None, "changeKosCheckClipboard", self.kosClipboardActiveAction.isChecked()),
                     (None, "changeAutoScanIntel", self.scanIntelForKosRequestsEnabled),
                     (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled),
                     (None, "changeAutoChangeRegion", self.autoChangeRegion),
@@ -579,15 +591,6 @@ class MainWindow(QtWidgets.QMainWindow):
             newValue = self.showChatAction.isChecked()
         self.showChatAction.setChecked(newValue)
         self.chatbox.setVisible(newValue)
-
-    def changeKosCheckClipboard(self, newValue=None):
-        if newValue is None:
-            newValue = self.kosClipboardActiveAction.isChecked()
-        self.kosClipboardActiveAction.setChecked(newValue)
-        if newValue:
-            self.startClipboardTimer()
-        else:
-            self.stopClipboardTimer()
 
     def changeAutoScanIntel(self, newValue=None):
         if newValue is None:
@@ -737,9 +740,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def changeStatisticsVisibility(self):
         newValue = self.dotlan.changeStatisticsVisibility()
         self.statisticsButton.setChecked(newValue)
-        if newValue:
-            self.statisticsThread.requestStatistics()
-        self.updateMapView()
+        self.statisticsThread.requestStatistics()
 
     def clipboardChanged(self, mode=0):
         #todo:check for jumpbridge names an auto append
@@ -1031,7 +1032,6 @@ class MainWindow(QtWidgets.QMainWindow):
             text = data["text"]
             self.trayIcon.showMessage("Loading statstics failed", text, 3)
             logging.error("updateStatisticsOnMap, error: %s" % text)
-
 
     def zoomMapIn(self):
         self.mapView.zoomIn()
@@ -1327,7 +1327,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "JumpbridgeChooser.ui")), self)
         self.saveButton.clicked.connect(self.savePath)
-        self.cancelButton.clicked.connect(self.cancle)
+        self.cancelButton.clicked.connect(self.cancelGenerateJumpBridge)
         self.fileChooser.clicked.connect(self.choosePath)
         self.generateJumpBridgeButton.clicked.connect(self.generateJumpBridge)
         self.urlField.setText(url)
@@ -1351,7 +1351,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
 
-    def cancle(self):
+    def cancelGenerateJumpBridge(self):
         if self.run_jb_generation:
             self.run_jb_generation = False
         else:

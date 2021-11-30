@@ -99,34 +99,25 @@ class MapStatisticsThread(QThread):
     def __init__(self):
         QThread.__init__(self)
         self.queue = queue.Queue(maxsize=1)
-        self.lastStatisticsUpdate = time.time()
-        self.pollRate = STATISTICS_UPDATE_INTERVAL_MSECS
-        self.refreshTimer = None
         self.active = True
 
     def requestStatistics(self):
-        self.queue.put(1)
+        self.queue.put(None)
+
 
     def run(self):
-        self.refreshTimer = QTimer()
-        # self.connect(self.refreshTimer, SIGNAL("timeout()"), self.requestStatistics)
-        self.refreshTimer.timeout.connect(self.requestStatistics)
         while True:
-            # Block waiting for requestStatistics() to enqueue a token
             self.queue.get()
             if not self.active:
                 return
-            self.refreshTimer.stop()
-            logging.debug("MapStatisticsThread requesting statistics")
             try:
+                evegate.getIncursionSystemsIds(False)
+                evegate.getCampaignsSystemsIds(False)
                 statistics = evegate.getSystemStatistics()
-                # time.sleep(2)  # sleeping to prevent a "need 2 arguments"-error
                 statistics_data = {"result": "ok", "statistics": statistics}
             except Exception as e:
                 logging.error("Error in MapStatisticsThread: %s", e)
                 statistics_data = {"result": "error", "text": str(e)}
-            self.lastStatisticsUpdate = time.time()
-            self.refreshTimer.start(self.pollRate)
             self.statistic_data_update.emit(statistics_data)
 
     def quit(self):

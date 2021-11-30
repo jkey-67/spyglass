@@ -345,12 +345,12 @@ class Map(object):
             coords = system.mapCoordinates
             text = "stats n/a"
             style = "text-anchor:middle;font-size:7;font-weight:normal;font-family:Arial;"
-            svgtext = soup.new_tag("text", x=coords["center_x"], y=coords["y"] + coords["height"] + 4, fill="blue",
+            system.svgtext = soup.new_tag("text", x=coords["center_x"], y=coords["y"] + coords["height"] + 4, fill="blue",
                                    style=style, visibility="hidden", transform=system.transform)
-            svgtext["id"] = "stats_" + str(systemId)
-            svgtext["class"] = ["statistics", ]
-            svgtext.string = text
-            jumps.append(svgtext)
+            system.svgtext["id"] = "stats_" + str(systemId)
+            system.svgtext["class"] = "statistics"
+            system.svgtext.string = text
+            jumps.append(system.svgtext)
 
     def _connectNeighbours(self):
         """
@@ -373,15 +373,13 @@ class Map(object):
         return content
 
     def addSystemStatistics(self, statistics):
-        logging.info("addSystemStatistics start")
         if statistics is not None:
             for systemId, system in self.systemsById.items():
-                if systemId in statistics:
+                if systemId in statistics.keys():
                     system.setStatistics(statistics[systemId])
         else:
             for system in self.systemsById.values():
                 system.setStatistics(None)
-        logging.info("addSystemStatistics complete")
 
     def setJumpbridges(self, jumpbridgesData):
         """
@@ -541,7 +539,7 @@ class System(object):
         self.__hasCampaigns = False
         self.__hasIncursion = False
         self.__hasIncursionBoss = False
-
+        self.svgtext = None
     def getTransformOffsetPoint(self):
         if not self.cachedOffsetPoint:
             if self.transform:
@@ -721,12 +719,12 @@ class System(object):
             self.status = newStatus
 
     def setStatistics(self, statistics):
-        if statistics is None:
-            text = "stats n/a"
-        else:
-            text = "j-{jumps} f-{factionkills} s-{shipkills} p-{podkills}".format(**statistics)
-        svgtext = self.mapSoup.select("#stats_" + str(self.systemId))[0]
-        svgtext.string = text
+        if self.svgtext is not None:
+            if statistics is None:
+                self.svgtext.string = "stats n/a"
+            else:
+                self.svgtext.string = "j-{jumps} f-{factionkills} s-{shipkills} p-{podkills}".format(**statistics)
+
 
     def update(self):
         # state changed?
