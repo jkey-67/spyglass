@@ -174,3 +174,24 @@ class Cache(object):
                 except Exception as e:
                     logging.error("Recall application setting failed to set attribute {0} | {1} | {2} | error {3}"
                                   .format(str(obj), setting[1], setting[2], e))
+
+    def putJumpbridge(self, src, dst, src_id=None, dst_id=None, max_age=60*60*24*14):
+        """
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            # data is a blob, so we have to change it to buffer
+            query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ? or src LIKE ? or dst LIKE ?"
+            self.con.execute(query, (src, src, dst, dst))
+            query = "INSERT INTO jumpbridge (src, dst, id_src, id_dst, modified, maxage) VALUES (?, ?, ?, ?, ?, ?)"
+            self.con.execute(query, (src, dst, src_id, dst_id, time.time(), max_age))
+            self.con.commit()
+
+    def getJumpbridge(self, src=None):
+        """
+        """
+        selectquery = "SELECT src, ' ', dst FROM jumpbridge "
+        founds = self.con.execute(selectquery, ()).fetchall()
+        if len(founds) == 0:
+            return None
+        else:
+            return founds
