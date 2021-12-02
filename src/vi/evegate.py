@@ -38,7 +38,7 @@ import secrets
 """
 import eve_api_key
 from vi.cache.cache import Cache
-
+from vi.version import VERSION
 ERROR = -1
 NOT_EXISTS = 0
 EXISTS = 1
@@ -176,7 +176,7 @@ def idsToNames(ids, use_outdated=False):
             for checked_id in api_check_ids:
                 cache_key = u"_".join(("name", "id", str(checked_id)))
                 if checked_id in data.keys():
-                    cache.putIntoCache(cache_key, data[str(checked_id)], 60 * 60 * 24 * 365)
+                    cache.putIntoCache(cache_key, data[int(checked_id)], 60 * 60 * 24 * 365)
     except Exception as e:
         logging.error("Exception during idsToNames: %s", e)
     return data
@@ -707,14 +707,14 @@ def getStructures(nameChar:str, id_structure:int, use_outdated=False):
         return eval(res.text)
 
 
-def getSovereignty(use_outdated=False):
+def getSovereignty(use_outdated=False, fore_refresh=False):
     """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
        https://esi.evetech.net/ui/?version=latest#/Sovereignty/get_sovereignty_map
     """
     cache = Cache()
     cache_key = "sovereignty"
     result = cache.getFromCache(cache_key, use_outdated)
-    if result:
+    if result and not fore_refresh:
         campaigns_list = json.loads(result)
     else:
         req = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
@@ -725,24 +725,48 @@ def getSovereignty(use_outdated=False):
     return campaigns_list
 
 
-def getPlayerSovereignty(use_outdated=False):
+def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None):
+    seq = ""
+    def update_callback(seq):
+        if callback:
+            seq = seq + "."
+            callback("updating alliance and system database {}".format(seq))
+            if len(seq) > 40:
+                seq = ""
+        return seq
+
     cache_key = "player_sovereignty"
     cache = Cache()
     cached_result = cache.getFromCache(cache_key, use_outdated)
-    if cached_result:
+    if cached_result and not fore_refresh:
         return json.loads(cached_result)
     else:
         player_sov = dict()
-        for sov in getSovereignty(use_outdated):
+        npc_sov = dict()
+        list_of_all_alliances = list()
+        list_of_all_factions = list()
+        for sov in getSovereignty(use_outdated,fore_refresh):
             if len(sov) > 2:
                 player_sov[str(sov["system_id"])] = sov
-        list_of_all_aliances = list()
+            elif show_npc and len(sov) > 1:
+                list_of_all_factions.append(sov["faction_id"])
+                npc_sov[str(sov["system_id"])] = sov
         for sov in player_sov.values():
-            alli_id = sov["alliance_id"]
-            use_outdated = alli_id in list_of_all_aliances
-            sov["ticker"] = getAlliances(alli_id, alli_id in list_of_all_aliances)["ticker"]
-            if not use_outdated:
-                list_of_all_aliances.append(alli_id)
+            if "alliance_id" in sov.keys():
+                alli_id = sov["alliance_id"]
+                sov["ticker"] = getAlliances(alli_id)["ticker"]
+            seq = update_callback(seq)
+
+        if show_npc:
+            npc_list = idsToNames(list_of_all_factions)
+            for sov in npc_sov.values():
+                if "faction_id" in sov.keys():
+                    faction_id = sov["faction_id"]
+                    sov["ticker"] = npc_list[faction_id]
+                seq = update_callback(seq)
+
+            player_sov.update(npc_sov)
+
         cache.putIntoCache(cache_key, json.dumps(player_sov), 3600)
         return player_sov
 
@@ -1019,11 +1043,39 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
              u'Minmatar Mining Corporation', u'Supreme Court')
 
 
+def checkSpyglassVersionUpdate(current_version=VERSION):
+    new_version = None
+    req = "https://github.com/jkey-67/spyglass/releases/latest"
+    res_constellation = requests.get(req)
+    res_constellation.raise_for_status()
+    page_ver_found = res_constellation.text.find(".exe")
+    if page_ver_found:
+        page_ver_found_start = res_constellation.text.rfind('-',page_ver_found-32,page_ver_found)+1
+        if page_ver_found_start:
+            new_version = res_constellation.text[page_ver_found_start:page_ver_found]
+
+    if new_version != current_version:
+        return [new_version != current_version,
+                "An newer Spyglass Version {} is available, you are currently running Version {}.".format(
+                    new_version, current_version)]
+    else:
+        return [new_version != current_version,
+                "You are running the actual Spyglass Version {}.".format(current_version)]
+
+def getSpyglassUpdateLink(ver=VERSION):
+    req = "https://github.com/jkey-67/spyglass/releases/latest"
+    res_constellation = requests.get(req)
+    res_constellation.raise_for_status()
+    pos_start = res_constellation.text.find("jkey-67/spyglass/releases/download/")
+    pos_exe = res_constellation.text.find(".exe")
+    return "https://github.com/{}.exe".format(res_constellation.text[pos_start:pos_exe])
+
 # The main application for testing
 if __name__ == "__main__":
-    allicance1 = getAlliances(99008941, False)
-    allicance2 = getAlliances(982284363, False)
-    player_sov1 = getPlayerSovereignty(False)
+    res = checkSpyglassVersionUpdate()
+    res =  getSpyglassUpdateLink()
+    webbrowser.open_new(res)
+    player_sov1 = getPlayerSovereignty(use_outdated=False,fore_refresh=True,show_npc=False)
     player_sov2 = getPlayerSovereignty(True)
     sov_systems = getSovereignty()
     camp_systems = getCampaignsSystemsIds()
