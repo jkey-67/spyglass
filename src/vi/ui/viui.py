@@ -55,7 +55,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     chat_message_added = pyqtSignal(object, object)
     avatar_loaded = pyqtSignal(object, object)
-    def __init__(self, pathToLogs, trayIcon, backGroundColor):
+    def __init__(self, pathToLogs, trayIcon, update_splash=None):
+        def update_splash_window_info(string):
+            if update_splash:
+                update_splash(string)
 
         QtWidgets.QMainWindow.__init__(self)
         self.cache = Cache()
@@ -186,7 +189,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.changeTheme(initialTheme)
         else:
             self.setupMap(True)
+        update_avail = evegate.checkSpyglassVersionUpdate()
+        if update_avail[0]:
+            self.updateAvail.show()
+            self.updateAvail.setText(update_avail[1])
+            def openDownloadLink():
+                webbrowser.open_new(evegate.getSpyglassUpdateLink())
+                self.updateAvail.hide()
+                self.updateAvail.disconnect()
+            self.updateAvail.clicked.connect(openDownloadLink)
 
+        else:
+            self.updateAvail.hide()
 
 
     def addPlayerMenu(self):
@@ -196,7 +210,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for name in self.knownPlayerNames:
             action = QAction("{0}".format(name), None, checkable=True)
             action.playerName = name
-            action.playerUse =  name in self.playerUsed
+            action.playerUse = name in self.playerUsed
             action.setChecked(action.playerUse)
             action.triggered.connect(self.changePlayerIntel)
             self.playerGroup.addAction(action)
@@ -464,7 +478,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #todo:fix static updates
                 #setSatisticsVisible=self.statisticsButton.isChecked()
 
-            self.dotlan._applySystemStatistic(evegate.getPlayerSovereignty())
+            self.dotlan._applySystemStatistic(evegate.getPlayerSovereignty(True))
         except dotlan.DotlanException as e:
             logging.error(e)
             QMessageBox.critical(None, "Error getting map", str(e), QMessageBox.Close)
@@ -747,6 +761,9 @@ class MainWindow(QtWidgets.QMainWindow):
         content = str(self.clipboard.text())
         # Limit redundant kos checks
         if content != self.oldClipboardContent:
+            parts = content.strip().split()
+            if len(parts) > 2 and parts[1] == '»':
+                Cache().putJumpbridge(src=parts[0], dst=parts[2])
             self.oldClipboardContent = content
 
     def mapLinkClicked(self, url:QtCore.QUrl):
@@ -869,10 +886,11 @@ class MainWindow(QtWidgets.QMainWindow):
                         #src <-> dst system_id jump_bridge_id
                         if len(parts) > 2:
                             data.append(parts)
+                            Cache().putJumpbridge(src=parts[0], dst=parts[2])
             else:
                 #data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
                 data = None
-            self.dotlan.setJumpbridges(data)
+            self.dotlan.setJumpbridges(Cache().getJumpbridge())
             self.cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
             logging.error("Error: {0}".format(str(e)))
