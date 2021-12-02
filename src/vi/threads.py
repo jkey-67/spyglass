@@ -106,6 +106,10 @@ class MapStatisticsThread(QThread):
 
 
     def run(self):
+        evegate.getPlayerSovereignty(fore_refresh=False, show_npc=False)
+        evegate.getIncursionSystemsIds(False)
+        evegate.getCampaignsSystemsIds(False)
+        evegate.getSystemStatistics()
         while True:
             self.queue.get()
             if not self.active:

@@ -26,7 +26,8 @@ import traceback
 from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
 
-from PyQt5 import QtGui, QtWidgets
+from PyInstaller.building import splash
+from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWebEngine import QtWebEngine
 from vi import version, PanningWebView
 from vi.ui import viui, systemtray
@@ -147,11 +148,12 @@ class Application(QApplication):
         logging.critical(" Writing logs to: {0}".format(spyglassLogDirectory))
         trayIcon = systemtray.TrayIcon(self)
         trayIcon.show()
-        self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, backGroundColor)
+        def change_splash_text( txt ):
+            if len(txt):
+                splash.showMessage("    {} ...".format(txt), QtCore.Qt.AlignLeft, QtGui.QColor(0x808000))
+        self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, change_splash_text)
         self.mainWindow.show()
         self.mainWindow.raise_()
-        splash.finish(self.mainWindow)
-
 
 # The main application
 if __name__ == "__main__":

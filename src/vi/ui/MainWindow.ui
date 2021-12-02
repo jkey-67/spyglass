@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1125</width>
-    <height>868</height>
+    <height>758</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -423,6 +423,13 @@
         </item>
        </layout>
       </widget>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QPushButton" name="updateAvail">
+      <property name="text">
+       <string>PushButton</string>
+      </property>
      </widget>
     </item>
    </layout>
