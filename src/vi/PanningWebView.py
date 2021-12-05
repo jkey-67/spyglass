@@ -61,9 +61,6 @@ class PanningWebView(QWidget):
 
     def setImgSize(self, newsize: QtCore.QSize):
         self.imgSize = newsize
-        rcNew = self.imgSize*self.zoom
-        rcNew.setWidth(self.imgSize.width() * self.zoom)
-        rcNew.setHeight(self.imgSize.height() * self.zoom)
 
     def resizeEvent(self, event: QResizeEvent):
         self.webViewResized.emit()
@@ -102,14 +99,14 @@ class PanningWebView(QWidget):
             self.webViewResized.emit()
         self.update()
 
-    def zoomIn(self,pos=None):
+    def zoomIn(self, pos=None):
         if pos==None:
             self.setZoomFactor(self.zoomFactor() * (1.0+self.ZOOM_WHEEL))
         else:
             elemOri=self.mapPosFromPos(pos)
             self.setZoomFactor(self.zoom * (1.0+self.ZOOM_WHEEL))
             elemDelta =elemOri-self.mapPosFromPos(pos)
-            self.scrollPos=self.scrollPos+elemDelta*self.zoom
+            self.scrollPos = self.scrollPos+elemDelta*self.zoom
 
     def zoomOut(self, pos=None):
         if pos == None:

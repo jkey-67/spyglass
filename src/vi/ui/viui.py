@@ -836,19 +836,15 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
 
     def fixupScrollBars(self):
-        widget_size = self.mapView.size()
-        content_size = self.mapView.imgSize*self.mapView.zoom
-        scrollPosition = self.mapView.scrollPosition()
-        #logging.debug("fixupScrollBars {} widget:{} content:{} ".format(scrollPosition, widget_size, content_size))
-        self.mapHorzScrollBar.setVisible(content_size.width() > widget_size.width())
-        self.mapVertScrollBar.setVisible(content_size.height() > widget_size.height())
-        self.mapHorzScrollBar.setPageStep(content_size.width())
-        self.mapVertScrollBar.setPageStep(content_size.height())
-        self.mapHorzScrollBar.setRange(0, content_size.width() - widget_size.width())
-        self.mapVertScrollBar.setRange(0, content_size.height() - widget_size.height())
-        self.mapHorzScrollBar.setValue(self.mapView.scrollPosition().x())
-        self.mapVertScrollBar.setValue(self.mapView.scrollPosition().y())
-
+        fac = self.mapView.zoomFactor()
+        pos = self.mapView.scrollPosition()
+        size = self.mapView.imgSize
+        self.mapHorzScrollBar.setPageStep(size.width())
+        self.mapVertScrollBar.setPageStep(size.height())
+        self.mapHorzScrollBar.setRange(min(pos.x(), 0), size.width()*fac)
+        self.mapVertScrollBar.setRange(min(pos.y(), 0), size.height()*fac)
+        self.mapHorzScrollBar.setValue(pos.x())
+        self.mapVertScrollBar.setValue(pos.y())
     def showChatroomChooser(self):
         chooser = ChatroomsChooser(self)
         chooser.rooms_changed.connect(self.changedRoomnames)
