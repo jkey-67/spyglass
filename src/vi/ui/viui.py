@@ -389,7 +389,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_region = selected_constellation["region_id"]
         selected_region_name = evegate.idsToNames([selected_region])[selected_region]
         selected_region_name = dotlan.convertRegionName(selected_region_name)
-        Cache().putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
+        self.cache.putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
         self.rescanIntel()
         self.updateMapView()
         self.focusMapOnSystem(system_id)
@@ -426,11 +426,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def openDotlan(checked):
             sys = self.trayIcon.contextMenu().currentSystem
-            webbrowser.open("https://evemaps.dotlan.net/system/{}".format(self.trayIcon.contextMenu().currentSystem[0]),2)
+            webbrowser.open_new_tab("https://evemaps.dotlan.net/system/{}".format(self.trayIcon.contextMenu().currentSystem[0]))
         self.trayIcon.contextMenu().openDotlan.triggered.connect(openDotlan)
 
         def openZKillboard(checked):
-            webbrowser.open("https://zkillboard.com/system/{}".format(self.trayIcon.contextMenu().currentSystem[1].systemId),2)
+            webbrowser.open_new_tab("https://zkillboard.com/system/{}".format(self.trayIcon.contextMenu().currentSystem[1].systemId))
         self.trayIcon.contextMenu().openZKillboard.triggered.connect(openZKillboard)
 
         def setDets(checked):
@@ -504,7 +504,6 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.debug("Updating the map")
         self.updateMapView()
         self.setInitialMapPositionForRegion(regionName)
-        #todo:why using timer for painting
         self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
         # Allow the file watcher to run now that all else is set up
         self.filewatcherThread.paused = False
@@ -593,9 +592,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.terminateThreads()
         self.trayIcon.hide()
         event.accept()
-        #todo:double check termination
-        sys.exit(0)
-        #QtCore.QCoreApplication.quit()
+        QtCore.QCoreApplication.quit()
 
     def notifyNewerVersion(self, newestVersion):
         self.trayIcon.showMessage("Newer Version", ("An update is available for Spyglass.\n www.crypta.tech"), 1)
@@ -757,13 +754,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.requestStatistics()
 
     def clipboardChanged(self, mode=0):
-        #todo:check for jumpbridge names an auto append
         content = str(self.clipboard.text())
-        # Limit redundant kos checks
         if content != self.oldClipboardContent:
             parts = content.strip().split()
             if len(parts) > 2 and parts[1] == '»':
-                Cache().putJumpbridge(src=parts[0], dst=parts[2])
+                self.cache.putJumpbridge(src=parts[0], dst=parts[2])
+                self.dotlan.setJumpbridges(self.cache.getJumpbridge())
             self.oldClipboardContent = content
 
     def mapLinkClicked(self, url:QtCore.QUrl):
@@ -800,7 +796,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             selected_region_name = dotlan.convertRegionName(evegate.idsToNames([selected_region])[selected_region])
                             concurrent_region_name = self.cache.getFromCache("region_name")
                             if selected_region_name != concurrent_region_name:
-                                Cache().putIntoCache("region_name", selected_region_name)
+                                self.cache.putIntoCache("region_name", selected_region_name)
                                 self.rescanIntel()
                 except Exception:
                     pass
@@ -882,11 +878,11 @@ class MainWindow(QtWidgets.QMainWindow):
                         #src <-> dst system_id jump_bridge_id
                         if len(parts) > 2:
                             data.append(parts)
-                            Cache().putJumpbridge(src=parts[0], dst=parts[2])
+                            self.cache.putJumpbridge(src=parts[0], dst=parts[2])
             else:
                 #data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
                 data = None
-            self.dotlan.setJumpbridges(Cache().getJumpbridge())
+            self.dotlan.setJumpbridges(self.cache.getJumpbridge())
             self.cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
             logging.error("Error: {0}".format(str(e)))
@@ -904,7 +900,7 @@ class MainWindow(QtWidgets.QMainWindow):
             menuAction.setChecked(True)
             regionName = str(menuAction.property("regionName"))
             regionName = dotlan.convertRegionName(regionName)
-            Cache().putIntoCache("region_name", regionName, 60 * 60 * 24 * 365)
+            self.cache.putIntoCache("region_name", regionName, 60 * 60 * 24 * 365)
             self.setupMap()
 
     def showRegionChooser(self):
@@ -919,7 +915,6 @@ class MainWindow(QtWidgets.QMainWindow):
         chooser.show()
 
     def addMessageToIntelChat(self, message):
-        #todo: use timestamp from message
         scrollToBottom = False
         if (self.chatListWidget.verticalScrollBar().value() == self.chatListWidget.verticalScrollBar().maximum()):
             scrollToBottom = True
@@ -953,7 +948,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def pruneMessages(self):
         try:
-            now = time.mktime(evegate.currentEveTime().timetuple())#todo:fix utc time here
+            now = time.mktime(evegate.currentEveTime().timetuple())
             now_to = time.time()
             delta_time = now_to - now
             for row in range(self.chatListWidget.count()):
@@ -1114,18 +1109,21 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_region_name = evegate.idsToNames([selected_region])[selected_region]
         return selected_region_name
 
-    def showContextMenu(self,event):
-        #todo:get systemname from pos and post to function
+    def showContextMenu(self, event):
+        """ checks if there is a system below the mouse position, if the systems region differs from the current
+            region, the menu item to change the current region is added.
+        """
         selected_sys = self.systemUnderMouse(self.mapView.mapPosFromPoint(event))
         if selected_sys:
             concurrent_region_name = self.cache.getFromCache("region_name")
             selected_region_name = self.regionNameFromSystemID(selected_sys)
-            if ( dotlan.convertRegionName(selected_region_name) == concurrent_region_name ):
+            if dotlan.convertRegionName(selected_region_name) == concurrent_region_name:
                 selected_region_name = None
             self.trayIcon.contextMenu().updateMenu(selected_sys, selected_region_name)
         else:
             self.trayIcon.contextMenu().updateMenu()
         self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
+
 
 class ChatroomsChooser(QtWidgets.QDialog):
     rooms_changed = pyqtSignal(list)
@@ -1192,7 +1190,7 @@ class RegionChooser(QtWidgets.QDialog):
             logging.error(e)
             correct = False
         if correct:
-            Cache().putIntoCache("region_name", text, 60 * 60 * 24 * 365)
+            self.cache.putIntoCache("region_name", text, 60 * 60 * 24 * 365)
             self.accept()
             self.new_region_chosen.emit()
 
@@ -1247,7 +1245,7 @@ class SystemChat(QtWidgets.QDialog):
     def openDotlan(self):
         try:
             url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
-            webbrowser.open(url, 2)
+            webbrowser.open_new_tab(url)
         except webbrowser.Error as e:
             logging.critical("Unable to open browser {0}".format(e))
             return
@@ -1291,10 +1289,6 @@ class ChatEntryWidget(QtWidgets.QWidget):
         self.message = message
         self.updateText()
         self.textLabel.linkActivated['QString'].connect(self.linkClicked)
-        if sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
-            #todo:why size 8 should be managed by css
-            #ChatEntryWidget.TEXT_SIZE = 8
-            pass
         self.changeFontSize(self.TEXT_SIZE)
         if not ChatEntryWidget.SHOW_AVATAR:
             self.avatarLabel.setVisible(False)
@@ -1305,7 +1299,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
         if function == "mark_system":
             self.mark_system.emit(parameter)
         elif function == "link":
-            webbrowser.open(parameter, 2)
+            webbrowser.open_new_tab(parameter)
 
     def updateText(self):
         time = datetime.datetime.strftime(self.message.timestamp, "%H:%M:%S")
@@ -1360,7 +1354,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
     def generateJumpBridge(self):
         self.run_jb_generation = True
         self.generateJumpBridgeProgress.show()
-        gates = evegate.getAllJumpGates(Cache().getFromCache("api_char_name", True), callback=self.processUpdate)
+        gates = evegate.getAllJumpGates(self.cache.getFromCache("api_char_name", True), callback=self.processUpdate)
         evegate.writeGatestToFile(gates, str(self.urlField.text()))
         self.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False

@@ -392,13 +392,14 @@ class Map(object):
             self.jumpBridges = []
             return
         soup = self.soup
-        for bridge in soup.select("#jumpbridge"):
+        for bridge in soup.select(".jumpbridge"):
             bridge.decompose()
         jumps = soup.select("#jumps")
         if jumps!=None:
             jumps = soup.select("#jumps")[0]
         else:
             return
+
         colorCount = 0
         for bridge in jumpbridgesData:
             sys1 = bridge[0]
