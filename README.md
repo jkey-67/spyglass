@@ -2,7 +2,6 @@
   <img align="middle" src="https://raw.githubusercontent.com/jkey-67/spyglass/master/src/vi/ui/res/logo_splash.png">
 </p>
 
-
 # Welcome To Spyglass 1.6
 
 Spyglass is an intel visualisation and alarm system for [EVE Online](http://www.eveonline.com). This too gathers information from in game chat channels and presents the data on a [dotlan](http://evemaps.dotlan.net/map/Catch#npc24) generated map. The map is highlighted in real time as players report intel in monitored chat channels.
@@ -15,29 +14,33 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
 
 
 ## Features
-
+### 1.6.0
  - Platforms supported: Executable for Windows, Linux and Mac runs directly from python source.
  - Monitored intel chat channels are merged to one chat stream. You can add or remove channels via a menu option.
  - These chat channels can be rescanned on startup to allow for existing intel to be displayed
  - An interactive map of Providence / Catch is provided. Systems on the map display real-time intel data as reported through intel channels.
  - Systems on the map display different color backgrounds as their alarms age, with text indicating how long ago the specific system was reported. Background color becomes red when a system is reported and lightens (red->orange->yellow->white) in the following intervals: 4min, 10min, 15min, and 25min.
- - Systems reported clear display on the map with a green background for 10 minutes.
- - For all Systems a right button context menu allows you to open [dotlan](https://www.dotlan.net/) or [zkillboard](https://zkillboard.com/) for the selected system directly.
- - Clicking on a specific system will display all messages bound on that system in the past 20 minutes. From there one can can set a system alarm, set the systems clear or set it as the current system for one or more of your characters.
+ - Systems reported clear display on the map with a green background for 20 minutes.
+ - For all Systems, a right button context menu allows you to open [dotlan](https://www.dotlan.net/) or [zkillboard](https://zkillboard.com/) for the selected system directly.
+ - Manual follow a Region, a right button context menu allows to select a different Region directly from inside the map.
+ - Clicking on a specific system will display all messages bound on that system in the past 20 minutes. From there one can set a system alarm, set the systems clear or set it as the current system for one or more of your characters.
  - Clicking on a system in the intel channel (the right side column) causes it to be highlighted on the map with a blue background for 10 seconds.
- - The system where your character is currently located is highlighted on the map with an violet background automatically whenever a character changes systems.
+ - The system where your character is currently located is highlighted on the map with a violet background automatically whenever a character changes systems.
  - Automatic region change for the pilot with api registration is possible.
  - Alarms can be set so that task-bar notifications are displayed when an intel report calls out a system within a specified number of jumps from your character(s). This can be configured from the task-bar icon.
  - For each alarm distance you can select a different sound file.
- - The sound volume for the notification is now adapt to the distance, near is louder, far quitter.
+ - The sound volume for the notification is now adapt to the distance, closer it is louder, further away it gets quieter.
  - The main window can be set up to remain "always on top", can be displayed with a specified level of transparency and also frameless works.
  - Ship names in the intel chat are highlighted.
- - Incursion system and systems with reinforced TCU IHUB are mareked with orange and red borders.
- - The alliance ticker is shown for systems with player alliance sovereignty.
+ - Incursion system and systems with reinforced TCU Territorial Claim Unit or I-HUB Infrastructure Hub are marked with orange and red borders.
 
+### 1.6.1
+ - You can see the alliance ticker for all systems under sovereignty of a player alliance.
+ - During startup, the software automatically double check for a new version ready to download. If there is an update available four your version, you will get a button start the download on screen. You can check for new version manually, try [double check latest release](https://github.com/jkey-67/spyglass/releases/latest)  
+ - If you copy the name of the jump bridge in game, the connection is automatically added into the database, the software will remove all pairs with the same source or destination system. 
 
 ## Features with API registration
-Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentification.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
+Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
 The following access rights will be use
  - esi-ui.write_waypoint.v1 
@@ -58,7 +61,7 @@ Please remember to manage your access to all [third-party-applications](https://
  - Spyglass can look over all of your previous logs to check for intel. This is useful in two main cases. Firstly when you start up Spyglass but have already had eve running and want to see the intel you have already collected. Secondly, when changing theme the intel in Spyglass is all reset. You can rescan to get it back.
  - By default, automatically rescanning is disabled, this is so people don't complain of speed issues.
  - THIS IS VERY SLOW! looking over existing logs can be incredibly time-consuming so if you use it, please be patient. This is especially the case for more characters/chat channels you have.
- - If you want to use thi feature, but find it to be too slow, clear out your chatlogs regularly.
+ - If you want to use thi feature, but find it to be too slow, clear out your chat logs regularly.
 
 
 ## Running Spyglass from Source
@@ -90,15 +93,15 @@ To start spyglass, open a console checkout sources and dependencies and start it
 
 `win> python spyglass.py`
 
-You need a private third party application key stored in src\eve_api_key.py
+You need a private third party application key stored in src\eve_api_key.py like
 
 `CLIENTS_API_KEY = "-top-secret-api-key-"`
 
-Currently, users with Windows may choose Qt 5.15.2  inside requirements.txt
+Currently, users with Windows may want to choose Qt 5.15.2 inside requirements.txt
 
 ## The background of Spyglass
 
-DENCI-Spyglass is forked out from qt5 branche of [Crypta-Eve/spyglass](https://github.com/Crypta-Eve/spyglass) 
+DENCI-Spyglass is forked out from qt5 branch of [Crypta-Eve/spyglass](https://github.com/Crypta-Eve/spyglass) 
 
 Spyglass is a project aimed at the continuation to the work done on the Vintel tool by [Xanthos](https://github.com/Xanthos-Eve) which can be found [Xanthos-Eve/vintel](https://github.com/Xanthos-Eve/vintel).
 
@@ -108,7 +111,7 @@ Spyglass is a project aimed at the continuation to the work done on the Vintel t
 
 Spyglass is licensed under the [GPLv3](http://www.gnu.org/licenses/gpl-3.0.html).
 
-**A little bit to big for such a little tool.**
+**A little too big for such a little tool.**
 
 The .exe ships with the complete python environment and needed libs. You could save some space using the source code instead.
 
@@ -118,9 +121,10 @@ Spyglass runs on Windows, Linux and Mac. A Windows standalone packages are provi
 
 **What file system permissions does Spyglass need?**
 
-- It reads your EVE chatlogs
+- It reads your PCs EVE chatlogs stored on the local hard drive 
 - It creates and writes to **path-to-your-chatlogs**/../../spyglass/.
 - It needs to connect the internet [dotlan](https://dotlan.evemaps.net), and [EVE Swagger Interface](https://esi.evetech.net/).
+- If activated, the software use the [EVE Swagger Interface](https://esi.evetech.net/ui/?version=latest#/Swagger/get_v6_swagger). 
 
 **Spyglass calls home?**
 

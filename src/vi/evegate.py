@@ -21,6 +21,7 @@ import datetime
 import json
 import time
 
+from packaging import version
 from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtCore import QUrl
 import queue
@@ -1042,8 +1043,9 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
              u'Senate', u"Mordu's Legion", u'State Protectorate', u'Jove Navy', u'X-Sense', u'Corporate Police Force',
              u'Minmatar Mining Corporation', u'Supreme Court')
 
-
 def checkSpyglassVersionUpdate(current_version=VERSION):
+    """check github for a new latest release
+    """
     new_version = None
     req = "https://github.com/jkey-67/spyglass/releases/latest"
     res_constellation = requests.get(req)
@@ -1054,12 +1056,12 @@ def checkSpyglassVersionUpdate(current_version=VERSION):
         if page_ver_found_start:
             new_version = res_constellation.text[page_ver_found_start:page_ver_found]
 
-    if new_version != current_version:
-        return [new_version != current_version,
+    if version.parse(new_version) > version.parse(current_version):
+        return [True,
                 "An newer Spyglass Version {} is available, you are currently running Version {}.".format(
                     new_version, current_version)]
     else:
-        return [new_version != current_version,
+        return [False,
                 "You are running the actual Spyglass Version {}.".format(current_version)]
 
 def getSpyglassUpdateLink(ver=VERSION):
@@ -1073,7 +1075,7 @@ def getSpyglassUpdateLink(ver=VERSION):
 # The main application for testing
 if __name__ == "__main__":
     res = checkSpyglassVersionUpdate()
-    res =  getSpyglassUpdateLink()
+    res = getSpyglassUpdateLink()
     webbrowser.open_new(res)
     player_sov1 = getPlayerSovereignty(use_outdated=False,fore_refresh=True,show_npc=False)
     player_sov2 = getPlayerSovereignty(True)
