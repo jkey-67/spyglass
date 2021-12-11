@@ -61,8 +61,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 update_splash(string)
 
         QtWidgets.QMainWindow.__init__(self)
-        self.cache = Cache()
-
         #if backGroundColor:
         #    self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "MainWindow.ui")), self)
@@ -92,9 +90,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoChangeRegion = False
         self.mapPositionsDict = {}
         self.invertWheel = False
-        self.autoRescanIntelEnabled = self.cache.getFromCache("changeAutoRescanIntel")
+        self.autoRescanIntelEnabled = Cache().getFromCache("changeAutoRescanIntel")
         # Load user's toon names
-        self.knownPlayerNames = self.cache.getFromCache("known_player_names")
+        self.knownPlayerNames = Cache().getFromCache("known_player_names")
         if self.knownPlayerNames:
             self.knownPlayerNames = set(self.knownPlayerNames.split(","))
         else:
@@ -102,7 +100,7 @@ class MainWindow(QtWidgets.QMainWindow):
             diagText = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\nSome features (clipboard KOS checking, alarms, etc.) may not work until your character(s) have been registered. Change systems, with each character you want to monitor, while Spyglass is running to remedy this."
             QMessageBox.warning(None, "Known Characters not Found", diagText, QMessageBox.Ok)
 
-        self.playerUsed = self.cache.getFromCache("used_player_names")
+        self.playerUsed = Cache().getFromCache("used_player_names")
         if self.playerUsed:
             self.playerUsed = set(self.playerUsed.split(","))
         elif self.currentApiChar():
@@ -117,12 +115,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addPlayerMenu()
 
         # Set up user's intel rooms
-        roomnames = self.cache.getFromCache("room_names")
+        roomnames = Cache().getFromCache("room_names")
         if roomnames:
             roomnames = roomnames.split(",")
         else:
             roomnames = DEFAULT_ROOM_MANES
-            self.cache.putIntoCache("room_names", u",".join(roomnames), 60 * 60 * 24 * 365 * 5)
+            Cache().putIntoCache("room_names", u",".join(roomnames), 60 * 60 * 24 * 365 * 5)
         self.roomnames = roomnames
 
         # Disable the sound UI if sound is not available
@@ -184,7 +182,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setupThreads()
         self.startStatisticTimer()
 
-        initialTheme = self.cache.getFromCache("theme")
+        initialTheme = Cache().getFromCache("theme")
         if initialTheme:
             self.changeTheme(initialTheme)
         else:
@@ -239,7 +237,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def recallCachedSettings(self):
         try:
-            self.cache.recallAndApplySettings(self, "settings")
+            Cache().recallAndApplySettings(self, "settings")
         except Exception as e:
             logging.error(e)
             # todo: add a button to delete the cache / DB
@@ -358,7 +356,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def currentApiChar(self)->str:
         """returns the current char which is assingend by api
         """
-        return self.cache.getFromCache("api_char_name", True)
+        return Cache().getFromCache("api_char_name", True)
 
     def changeRegionFromCtxMenu(self, checked):
         selected_system = self.trayIcon.contextMenu().currentSystem
@@ -389,14 +387,14 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_region = selected_constellation["region_id"]
         selected_region_name = evegate.idsToNames([selected_region])[selected_region]
         selected_region_name = dotlan.convertRegionName(selected_region_name)
-        self.cache.putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
+        Cache().putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
         self.rescanIntel()
         self.updateMapView()
         self.focusMapOnSystem(system_id)
 
     def prepareContextMenu(self):
         # Menus - only once
-        regionName = self.cache.getFromCache("region_name")
+        regionName = Cache().getFromCache("region_name")
         logging.info("Initializing contextual menus")
 
         # Add a contextual menu to the mapView
@@ -459,7 +457,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setupMap(self, initialize=False):
         self.filewatcherThread.paused = True
-        regionName = self.cache.getFromCache("region_name")
+        regionName = Cache().getFromCache("region_name")
         if not regionName:
             regionName = "Providence"
         logging.info("Finding map file {}".format(regionName))
@@ -494,7 +492,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Load the jumpbridges
         logging.debug("Load jump bridges")
-        self.setJumpbridges(self.cache.getFromCache("jumpbridge_url"))
+        self.setJumpbridges(Cache().getFromCache("jumpbridge_url"))
         self.systems = self.dotlan.systems
         logging.debug("Creating chat parser")
         self.chatparser.systems = self.systems
@@ -559,11 +557,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # Known player names
         if self.knownPlayerNames:
             value = ",".join(self.knownPlayerNames)
-            self.cache.putIntoCache("known_player_names", value, 60 * 60 * 24 * 30)
+            Cache().putIntoCache("known_player_names", value, 60 * 60 * 24 * 30)
 
         if self.playerUsed:
             value = ",".join(self.playerUsed)
-            self.cache.putIntoCache("used_player_names", value, 60 * 60 * 24 * 30)
+            Cache().putIntoCache("used_player_names", value, 60 * 60 * 24 * 30)
 
         # Program state to cache (to read it on next startup)
         settings = ((None, "restoreGeometry", str(self.saveGeometry()), True),
@@ -587,8 +585,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "changeAutoChangeRegion", self.autoChangeRegion),
                     (None, "wheelDirChanged", self.invertWheel))
 
-        self.cache.putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
-        self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
+        Cache().putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
+        Cache().putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
         self.terminateThreads()
         self.trayIcon.hide()
         event.accept()
@@ -663,7 +661,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStyleSheet(theme)
         self.trayIcon.contextMenu().setStyleSheet(theme)
         logging.info("Setting new theme: {}".format(action.theme))
-        self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
+        Cache().putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
         self.prepareContextMenu()
         if self.autoRescanIntelEnabled:
             self.rescanIntel() # calls setupMap
@@ -758,8 +756,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if content != self.oldClipboardContent:
             parts = content.strip().split()
             if len(parts) > 2 and parts[1] == '»':
-                self.cache.putJumpbridge(src=parts[0], dst=parts[2])
-                self.dotlan.setJumpbridges(self.cache.getJumpbridge())
+                Cache().putJumpbridge(src=parts[0], dst=parts[2])
+                self.dotlan.setJumpbridges(Cache().getJumpbridge())
             self.oldClipboardContent = content
 
     def mapLinkClicked(self, url:QtCore.QUrl):
@@ -794,9 +792,9 @@ class MainWindow(QtWidgets.QMainWindow):
                             selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
                             selected_region = selected_constellation["region_id"]
                             selected_region_name = dotlan.convertRegionName(evegate.idsToNames([selected_region])[selected_region])
-                            concurrent_region_name = self.cache.getFromCache("region_name")
+                            concurrent_region_name = Cache().getFromCache("region_name")
                             if selected_region_name != concurrent_region_name:
-                                self.cache.putIntoCache("region_name", selected_region_name)
+                                Cache().putIntoCache("region_name", selected_region_name)
                                 self.rescanIntel()
                 except Exception:
                     pass
@@ -818,15 +816,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.currContent = self.dotlan.svg
             self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
 
-    def loadInitialMapPositions(self, newDictionary):
-        self.mapPositionsDict = newDictionary
+    def loadInitialMapPositions(self, new_dictionary):
+        self.mapPositionsDict = new_dictionary
 
-    def setInitialMapPositionForRegion(self, regionName):
+    def setInitialMapPositionForRegion(self, region_name):
         try:
-            if not regionName:
-                regionName = self.cache.getFromCache("region_name")
-            if regionName:
-                xy = self.mapPositionsDict[regionName]
+            if not region_name:
+                region_name = Cache().getFromCache("region_name")
+            if region_name:
+                xy = self.mapPositionsDict[region_name]
                 self.initialMapPosition = QPointF(xy[0], xy[1])
         except Exception:
             pass
@@ -847,7 +845,7 @@ class MainWindow(QtWidgets.QMainWindow):
         chooser.show()
 
     def showJumbridgeChooser(self):
-        url = self.cache.getFromCache("jumpbridge_url")
+        url = Cache().getFromCache("jumpbridge_url")
         chooser = JumpbridgeChooser(self, url)
         chooser.set_jumpbridge_url.connect(self.setJumpbridges)
         chooser.show()
@@ -878,12 +876,12 @@ class MainWindow(QtWidgets.QMainWindow):
                         #src <-> dst system_id jump_bridge_id
                         if len(parts) > 2:
                             data.append(parts)
-                            self.cache.putJumpbridge(src=parts[0], dst=parts[2])
+                            Cache().putJumpbridge(src=parts[0], dst=parts[2])
             else:
                 #data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
                 data = None
-            self.dotlan.setJumpbridges(self.cache.getJumpbridge())
-            self.cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
+            self.dotlan.setJumpbridges(Cache().getJumpbridge())
+            Cache().putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
             logging.error("Error: {0}".format(str(e)))
             QMessageBox.warning(None, "Loading jumpbridges failed!", "Error: {0}".format(str(e)), QMessageBox.Ok)
@@ -900,7 +898,7 @@ class MainWindow(QtWidgets.QMainWindow):
             menuAction.setChecked(True)
             regionName = str(menuAction.property("regionName"))
             regionName = dotlan.convertRegionName(regionName)
-            self.cache.putIntoCache("region_name", regionName, 60 * 60 * 24 * 365)
+            Cache().putIntoCache("region_name", regionName, 60 * 60 * 24 * 365)
             self.setupMap()
 
     def showRegionChooser(self):
@@ -967,7 +965,7 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error(e)
 
     def changedRoomnames(self, newRoomnames):
-        self.cache.putIntoCache("room_names", u",".join(newRoomnames), 60 * 60 * 24 * 365 * 5)
+        Cache().putIntoCache("room_names", u",".join(newRoomnames), 60 * 60 * 24 * 365 * 5)
         self.chatparser.rooms = newRoomnames
 
     def showInfo(self):
@@ -1115,7 +1113,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         selected_sys = self.systemUnderMouse(self.mapView.mapPosFromPoint(event))
         if selected_sys:
-            concurrent_region_name = self.cache.getFromCache("region_name")
+            concurrent_region_name = Cache().getFromCache("region_name")
             selected_region_name = self.regionNameFromSystemID(selected_sys)
             if dotlan.convertRegionName(selected_region_name) == concurrent_region_name:
                 selected_region_name = None
@@ -1134,11 +1132,10 @@ class ChatroomsChooser(QtWidgets.QDialog):
         self.defaultButton.clicked.connect(self.setDefaults)
         self.cancelButton.clicked.connect(self.accept)
         self.saveButton.clicked.connect(self.saveClicked)
-        cache = Cache()
-        roomnames = cache.getFromCache("room_names")
-        if not roomnames:
-            roomnames = u','.join(DEFAULT_ROOM_MANES)
-        self.roomnamesField.setPlainText(roomnames)
+        room_names = Cache().getFromCache("room_names")
+        if not room_names:
+            room_names = u','.join(DEFAULT_ROOM_MANES)
+        self.roomnamesField.setPlainText(room_names)
 
     def saveClicked(self):
         text = str(self.roomnamesField.toPlainText())
@@ -1156,7 +1153,7 @@ class RegionChooser(QtWidgets.QDialog):
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "RegionChooser.ui")), self)
-        self.strList = QtWidgets.QCompleter(["{}".format(name) for key,name in evegate.idsToNames(evegate.getAllRegions()).items()],parent=self)
+        self.strList = QtWidgets.QCompleter(["{}".format(name) for key, name in evegate.idsToNames(evegate.getAllRegions()).items()],parent=self)
         self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.regionNameField.setCompleter(self.strList)
         self.cancelButton.clicked.connect(self.accept)
@@ -1190,7 +1187,7 @@ class RegionChooser(QtWidgets.QDialog):
             logging.error(e)
             correct = False
         if correct:
-            self.cache.putIntoCache("region_name", text, 60 * 60 * 24 * 365)
+            Cache().putIntoCache("region_name", text, 60 * 60 * 24 * 365)
             self.accept()
             self.new_region_chosen.emit()
 
@@ -1354,7 +1351,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
     def generateJumpBridge(self):
         self.run_jb_generation = True
         self.generateJumpBridgeProgress.show()
-        gates = evegate.getAllJumpGates(self.cache.getFromCache("api_char_name", True), callback=self.processUpdate)
+        gates = evegate.getAllJumpGates(Cache().getFromCache("api_char_name", True), callback=self.processUpdate)
         evegate.writeGatestToFile(gates, str(self.urlField.text()))
         self.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False

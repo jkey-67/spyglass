@@ -1055,6 +1055,8 @@ def checkSpyglassVersionUpdate(current_version=VERSION):
         page_ver_found_start = res_constellation.text.rfind('-',page_ver_found-32,page_ver_found)+1
         if page_ver_found_start:
             new_version = res_constellation.text[page_ver_found_start:page_ver_found]
+    if new_version is None:
+        return [False, "Unable to read version from github."]
 
     if version.parse(new_version) > version.parse(current_version):
         return [True,
