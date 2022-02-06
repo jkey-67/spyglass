@@ -42,7 +42,10 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.trayIcon = trayIcon
         self._buildMenu()
 
-    def updateMenu(self, sys_name=None,rgn_name=None):
+    def hasJumpGate(sys_name=None) -> bool:
+        return False
+
+    def updateMenu(self, sys_name=None, rgn_name=None):
         if sys_name:
             self.gameMenu.setTitle("EVE-Online {}".format(sys_name[0]))
             self.setDestination.setEnabled(True)
@@ -50,6 +53,7 @@ class TrayContextMenu(QtWidgets.QMenu):
             self.openDotlan.setEnabled(True)
             self.openZKillboard.setEnabled(True)
             self.avoidSystem.setEnabled(True)
+            self.clearJumpGate.setEnabled(self.hasJumpGate(sys_name[0]))
             self.currentSystem = sys_name
         else:
             self.gameMenu.setTitle("EVE-Online")
@@ -58,6 +62,7 @@ class TrayContextMenu(QtWidgets.QMenu):
             self.openDotlan.setEnabled(False)
             self.openZKillboard.setEnabled(False)
             self.avoidSystem.setEnabled(False)
+            self.clearJumpGate.setEnabled(False)
             self.currentSystem = None
         if rgn_name:
             self.changeRegion.setText("Change Region {}".format(rgn_name))
@@ -75,12 +80,14 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.setDestination = QAction("Set Destination", None, checkable=False)
         self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
         self.avoidSystem = QAction("Avoid System", None, checkable=False)
+        self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
         self.clearAvoidList = QAction("Clear Avoid Systems", None, checkable=False)
         self.clearAll = QAction("Clear all Waypoints", None, checkable=False)
         self.gameMenu.addAction(self.setDestination)
         self.gameMenu.addAction(self.addWaypoint)
         self.gameMenu.addAction(self.avoidSystem)
         self.gameMenu.addAction(self.clearAvoidList)
+        self.gameMenu.addAction(self.clearJumpGate)
         self.gameMenu.addSeparator()
         self.gameMenu.addAction(self.clearAll)
         self.addMenu(self.gameMenu)

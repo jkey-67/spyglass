@@ -106,7 +106,7 @@ class MainWindow(QtWidgets.QMainWindow):
         elif self.currentApiChar():
             self.playerUsed = {self.currentApiChar()}
         else:
-            self.playerUsed =set()
+            self.playerUsed = set()
 
         if self.invertWheel is None:
             self.invertWheel = False
@@ -372,7 +372,7 @@ class MainWindow(QtWidgets.QMainWindow):
         system_name = evegate.idsToNames([str(system_id)])[system_id]
         if system_name in self.systems.keys():
             view_center = self.mapView.size() / 2
-            pt_system = QPoint(self.systems[system_name].mapCoordinates["center_x"]* self.mapView.zoom-view_center.width(),
+            pt_system = QPointF(self.systems[system_name].mapCoordinates["center_x"]* self.mapView.zoom-view_center.width(),
                                self.systems[system_name].mapCoordinates["center_y"]* self.mapView.zoom-view_center.height())
             self.mapView.setScrollPosition(pt_system)
 
@@ -417,6 +417,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.providenceRegionAction.setChecked(True)
         elif regionName.startswith("Wicked"):
             self.wickedcreekScaldingpassRegionAction.setChecked(True)
+        elif regionName.startswith("Tack"):
+            self.wickedcreekScaldingpassRegionAction.setChecked(True)
         elif regionName.startswith("Querious"):
             self.queriousRegionAction.setChecked(True)
         else:
@@ -434,6 +436,12 @@ class MainWindow(QtWidgets.QMainWindow):
         def setDets(checked):
             evegate.setDestination( self.currentApiChar(), self.trayIcon.contextMenu().currentSystem[1].systemId)
         self.trayIcon.contextMenu().setDestination.triggered.connect(setDets)
+
+        self.trayIcon.contextMenu().hasJumpGate = lambda name: Cache().haseJumpGate(name)
+        def clearJumpGate():
+            Cache().clearJumpGate(self.trayIcon.contextMenu().currentSystem[0])
+            self.dotlan.setJumpbridges(Cache().getJumpGates())
+        self.trayIcon.contextMenu().clearJumpGate.triggered.connect(clearJumpGate)
 
         def addWaypoint(checked):
             selected_system = self.trayIcon.contextMenu().currentSystem
@@ -756,8 +764,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if content != self.oldClipboardContent:
             parts = content.strip().split()
             if len(parts) > 2 and parts[1] == '»':
-                Cache().putJumpbridge(src=parts[0], dst=parts[2])
-                self.dotlan.setJumpbridges(Cache().getJumpbridge())
+                Cache().putJumpGate(src=parts[0], dst=parts[2])
+                self.dotlan.setJumpbridges(Cache().getJumpGates())
             self.oldClipboardContent = content
 
     def mapLinkClicked(self, url:QtCore.QUrl):
@@ -835,10 +843,11 @@ class MainWindow(QtWidgets.QMainWindow):
         size = self.mapView.imgSize
         self.mapHorzScrollBar.setPageStep(size.width())
         self.mapVertScrollBar.setPageStep(size.height())
-        self.mapHorzScrollBar.setRange(min(pos.x(), 0), size.width()*fac)
-        self.mapVertScrollBar.setRange(min(pos.y(), 0), size.height()*fac)
-        self.mapHorzScrollBar.setValue(pos.x())
-        self.mapVertScrollBar.setValue(pos.y())
+        self.mapHorzScrollBar.setRange(int(min(pos.x(), 0)), int(size.width()*fac))
+        self.mapVertScrollBar.setRange(int(min(pos.y(), 0)), int(size.height()*fac))
+        self.mapHorzScrollBar.setValue(int(pos.x()))
+        self.mapVertScrollBar.setValue(int(pos.y()))
+
     def showChatroomChooser(self):
         chooser = ChatroomsChooser(self)
         chooser.rooms_changed.connect(self.changedRoomnames)
@@ -854,7 +863,6 @@ class MainWindow(QtWidgets.QMainWindow):
         SoundManager().setSoundVolume(value)
 
     def setJumpbridges(self, url):
-        logging.info("setJB")
         if url is None:
             url = ""
         try:
@@ -876,14 +884,14 @@ class MainWindow(QtWidgets.QMainWindow):
                         #src <-> dst system_id jump_bridge_id
                         if len(parts) > 2:
                             data.append(parts)
-                            Cache().putJumpbridge(src=parts[0], dst=parts[2])
+                            Cache().putJumpGate(src=parts[0], dst=parts[2])
             else:
                 #data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
                 data = None
-            self.dotlan.setJumpbridges(Cache().getJumpbridge())
+            self.dotlan.setJumpbridges(Cache().getJumpGates())
             Cache().putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
-            logging.error("Error: {0}".format(str(e)))
+            logging.error("Error setJumpbridges failed: {0}".format(str(e)))
             QMessageBox.warning(None, "Loading jumpbridges failed!", "Error: {0}".format(str(e)), QMessageBox.Ok)
 
     def handleRegionMenuItemSelected(self, menuAction=None):
