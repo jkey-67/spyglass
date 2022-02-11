@@ -16,7 +16,7 @@ def instFiles():
         '--workpath', builddir,
         '--onefile',
         '--windowed',
-        '--name', 'spyglass-1.6.0',
+        '--name', 'spyglass-1.6.1',
         '../spyglass.py',
         '--icon=../icon.ico',
         "--add-data=../vi/ui/*.ui;./vi/ui",
@@ -24,12 +24,13 @@ def instFiles():
         "--add-data=../vi/ui/res/mapdata*;./vi/ui/res/mapdata",
         "--add-data=../docs/*.*;./docs/",
         "--add-data=../vi/ui/res/styles/*;./vi/ui/res/styles",
-        "--add-binary=../lib/*.dll;./lib",
+        #"--add-binary=../lib/*.dll;./lib",
         '--hidden-import=pyttsx3.drivers',
         '--hidden-import=pyttsx3.drivers.dummy',
         '--hidden-import=import=pyttsx3.drivers.espeak',
         '--hidden-import=pyttsx3.drivers.nsss',
-        '--hidden-import=pyttsx3.drivers.sapi5'
+        '--hidden-import=pyttsx3.drivers.sapi5',
+        '--hidden-import=packaging'
     ])
 
 if __name__ == "__main__":

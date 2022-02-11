@@ -2,8 +2,8 @@ altgraph
 beautifulsoup4
 future
 pyglet
-PyQtWebEngine==5.15.5
-PyQt5==5.15.5
+PyQtWebEngine
+PyQt5
 PyQt5-sip
 PyQt5-stubs
 pyttsx3
@@ -13,3 +13,5 @@ six
 urllib3
 pyinstaller
 jose
+pywin32
+packaging
