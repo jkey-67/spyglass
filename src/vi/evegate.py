@@ -21,12 +21,12 @@ import datetime
 import json
 import time
 
-from packaging import version
-from PyQt5.QtWebEngineWidgets import *
-from PyQt5.QtCore import QUrl
-import queue
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, QUrl
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 
+from packaging import version
+
+import queue
 import requests
 import logging
 import urllib
@@ -123,7 +123,7 @@ def namesToIds(names, use_outdated=False):
 
 
 def getAllRegions(use_outdated=False):
-    """ Uses the EVE API to get the list of all system ids
+    """ Uses the EVE API to get the list of all region ids
     """
     cache = Cache()
     all_systems = cache.getFromCache("universe_regions", use_outdated)
@@ -252,6 +252,35 @@ def getCharInfoForCharId(char_id, use_outdated=False):
                 logging.error("Exception during getCharInfoForCharId: %s", str(e))
     return char_info
 
+
+def isCharOnline(char_name:str)->bool:
+    """ Returns the online state of the char with id char_id
+    """
+    token = checkTokenTimeLine(getTokenOfChar(char_name))
+    if token:
+        url = "https://esi.evetech.net/latest/characters/{}/online/?datasource=tranquility&token={}".format(charNameToId(char_name),token.access_token)
+        response = requests.get(url)
+        response.raise_for_status()
+        char_online = response.json()
+        if "online" in char_online.keys():
+            return char_online["online"]
+        else:
+            return False
+    return None
+
+
+def getCharLocation(char_name:int):
+    """ Returns the current system  of the char with id char_id, or None
+    """
+    token = checkTokenTimeLine(getTokenOfChar(char_name))
+    if token:
+        url = "https://esi.evetech.net/latest/characters/{}/location/?datasource=tranquility&token={}".format(charNameToId(char_name),token.access_token)
+        response = requests.get(url)
+        response.raise_for_status()
+        char_online = response.json()
+        if "solar_system_id" in char_online.keys():
+            return char_online["solar_system_id"]
+    return None
 
 def getCorpIdsForCharId(char_id, use_outdated=True):
     """ Returns a list with the ids if the corporation history of a charId
@@ -406,6 +435,7 @@ class api_server_thread(QThread):
                 webserver = http.server.HTTPServer(("localhost", 8182), MyApiServer)
                 webserver.timeout = 120
                 webserver.api_code = None
+                webserver.close_connection = True
                 webserver.handle_request()
                 auth_code = webserver.api_code
                 del webserver
@@ -415,6 +445,7 @@ class api_server_thread(QThread):
                 logging.error("Error in api_server_thread.run: %s", e)
                 #continue
             self.elem = None
+            self.active = False
 
     def quit(self):
         self.active = False
@@ -422,7 +453,7 @@ class api_server_thread(QThread):
         QThread.quit(self)
 
 
-def getApiKey(client_param, parent=None) -> str:
+def oauthLoginEveOnline(client_param, parent=None) -> str:
     """ Queries the eve-online api key valid for one eve online account,
         using http://localhost:8182/oauth-callback as application defined
         callback from inside the webb browser
@@ -444,17 +475,20 @@ def getApiKey(client_param, parent=None) -> str:
     string_params = urllib.parse.urlencode(params)
     #todo:use qwebview here
     if parent:
+        if hasattr(parent, 'api_thread'):
+            parent.api_thread.quit()
         parent.api_thread = api_server_thread()
         parent.api_thread.client_param = client_param
+        parent.api_thread.elem = None
         parent.api_thread.elem = QWebEngineView()
-        parent.api_thread.elem.destroyed.connect(parent.api_thread.quit)
         parent.api_thread.start()
         if parent.api_thread.elem:
+            parent.api_thread.elem.destroyed.connect(parent.api_thread.quit)
             parent.api_thread.elem.load(QUrl("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params)))
             parent.api_thread.elem.resize(600, 800)
             parent.api_thread.elem.show()
-    else:
-        webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params),2)
+        else:
+            webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
 
 
 def getAccessToken(client_param, auth_code:str, add_headers={}) -> str:
@@ -480,35 +514,32 @@ def getAccessToken(client_param, auth_code:str, add_headers={}) -> str:
     )
     res.raise_for_status()
     if res.status_code == 200:
-        aut_call = res.json()
+        oauth_call = res.json()
         header={
-            "Authorization": "{} {}".format(aut_call["token_type"],aut_call["access_token"]),
+            "Authorization": "{} {}".format(oauth_call["token_type"], oauth_call["access_token"]),
         }
-        res = requests.get( "https://login.eveonline.com/oauth/verify",headers=header)
-        res.raise_for_status()
-        char_id = res.json()
-        cache = Cache()
-        char_id.update(aut_call)
-        cache_key = "_".join(("api_key", "character_name", char_id["CharacterName"]))
-        cache.putIntoCache(cache_key, str(char_id))
-        cache.putIntoCache("api_char_name", char_id["CharacterName"])
-        return char_id["CharacterName"];
+        oauth_result = requests.get("https://login.eveonline.com/oauth/verify", headers=header)
+        oauth_result.raise_for_status()
+        char_api_key_set = oauth_result.json()
+        char_api_key_set.update(oauth_call)
+        Cache().putAPIKey(char_api_key_set)
+        return char_api_key_set["CharacterName"]
     else:
         res.raise_for_status()
     return None
 
 
 def openWithEveonline(parent=None):
-    """perform a api key request and updates the cache on case of an positive response
+    """perform an api key request and updates the cache on case of a positive response
         returns the selected user name from the login
     """
     client_param_set = {
         "client_id": eve_api_key.CLIENTS_API_KEY,
-        "scope": "esi-ui.write_waypoint.v1 esi-universe.read_structures.v1 esi-search.search_structures.v1",
+        "scope": "esi-ui.write_waypoint.v1 esi-universe.read_structures.v1 esi-search.search_structures.v1 esi-location.read_online.v1 esi-location.read_location.v1",
         "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
         "state": base64.urlsafe_b64encode(secrets.token_bytes(8))
     }
-    getApiKey(client_param_set,parent)
+    oauthLoginEveOnline(client_param_set, parent)
 
 
 class ApiKey(object):
@@ -524,19 +555,16 @@ class ApiKey(object):
             setattr(self, k, v)
 
 
-def getTokenOfChar(char_name:str):
-    """gets  the api key for chae_name from the cache
+def getTokenOfChar(char_name) -> ApiKey:
+    """gets the api key for char_name, or id from the cache, Result is the last ApiKey, or None
     """
     if char_name is None:
         return None
-    cache = Cache()
-    cache_key = "_".join(("api_key", "character_name", char_name))
-    char_data = cache.getFromCache(cache_key, True)
+    char_data = Cache().getAPIKey(char_name)
     if char_data:
         return ApiKey(eval(char_data))
     else:
         return None
-
 
 def refreshToken(params:ApiKey):
     """ refreshes the token using the previously acquired data structure from the cache
@@ -650,7 +678,7 @@ def getIncursionSystemsIds(use_outdated=False):
 
 
 def getCampaigns(use_outdated=False):
-    """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
+    """builds a list of reinforced campaigns for IHUB  and TCU dicts cached 60s
     """
     cache = Cache()
     cache_key = "campaigns"
@@ -908,10 +936,10 @@ def getRegionInformation(region_id:int,use_outdated=False):
         return eval(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/regions/{}/?datasource=tranquility&language=en".format(region_id)
-        res_constellation = requests.get(req)
-        res_constellation.raise_for_status()
-        cache.putIntoCache(cache_key, res_constellation.text, 24*60*60)
-        return res_constellation.json()
+        res_region = requests.get(req)
+        res_region.raise_for_status()
+        cache.putIntoCache(cache_key, res_region.text, 24*60*60)
+        return res_region.json()
 
 
 def getConstellationInformation(constellation_id:int,use_outdated=False):
@@ -1076,14 +1104,30 @@ def getSpyglassUpdateLink(ver=VERSION):
 
 # The main application for testing
 if __name__ == "__main__":
+    openWithEveonline()
+    id = charNameToId("nele McCool", False)
+    cache = Cache()
+    has_key = cache.hasAPIKey(1350114619)
+    has_key = cache.hasAPIKey("nele McCool")
+    has_key = cache.hasAPIKey(1350114618)
+    has_key = cache.hasAPIKey("Nele McCool")
+    used_key = cache.getAPIKey(1350114619)
+    used_key = cache.getAPIKey("nele McCool")
+    exit(1)
+    online = isCharOnline("nele McCool")
+    online = isCharOnline("Rovengard")
+    location = getSolarSystemInformation(getCharLocation("nele McCool"))
+    location = getSolarSystemInformation(getCharLocation("Rovengard"))
+    exit(1)
+
+    camp_systems = getCampaignsSystemsIds()
+    inc_systems =getIncursionSystemsIds()
     res = checkSpyglassVersionUpdate()
     res = getSpyglassUpdateLink()
     webbrowser.open_new(res)
     player_sov1 = getPlayerSovereignty(use_outdated=False,fore_refresh=True,show_npc=False)
     player_sov2 = getPlayerSovereignty(True)
     sov_systems = getSovereignty()
-    camp_systems = getCampaignsSystemsIds()
-    inc_systems =getIncursionSystemsIds()
 
 
     tgnA = getRegionInformation(10000006,False)

@@ -206,10 +206,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playerGroup.setExclusionPolicy(QActionGroup.ExclusionPolicy.None_)
         self.menuChars.clear()
         for name in self.knownPlayerNames:
-            action = QAction("{0}".format(name), None, checkable=True)
+            icon = QIcon()
+            if Cache().hasAPIKey(name):
+                avatar_icon = evegate.getAvatarForPlayer(name)
+                if avatar_icon is not None:
+                    img = QImage.fromData(avatar_icon)
+                    icon = QIcon(QPixmap.fromImage(img))
+            action = QAction(icon, "{0}".format(name), checkable=True)
             action.playerName = name
+            action.triggered.connect(self.changePlayerIntel)
             action.playerUse = name in self.playerUsed
             action.setChecked(action.playerUse)
+            action.setIconVisibleInMenu(action.playerUse)
             action.triggered.connect(self.changePlayerIntel)
             self.playerGroup.addAction(action)
             self.menuChars.addAction(action)
@@ -217,6 +225,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def changePlayerIntel(self, use):
         player_used = set()
         for action in self.playerGroup.actions():
+            action.setIconVisibleInMenu(action.isChecked())
             if action.isChecked():
                 player_used.add(action.playerName)
         self.playerUsed = player_used
@@ -373,7 +382,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if system_name in self.systems.keys():
             view_center = self.mapView.size() / 2
             pt_system = QPointF(self.systems[system_name].mapCoordinates["center_x"]* self.mapView.zoom-view_center.width(),
-                               self.systems[system_name].mapCoordinates["center_y"]* self.mapView.zoom-view_center.height())
+                                self.systems[system_name].mapCoordinates["center_y"]* self.mapView.zoom-view_center.height())
             self.mapView.setScrollPosition(pt_system)
 
     def changeRegionBySystemID(self, system_id):
@@ -437,7 +446,7 @@ class MainWindow(QtWidgets.QMainWindow):
             evegate.setDestination( self.currentApiChar(), self.trayIcon.contextMenu().currentSystem[1].systemId)
         self.trayIcon.contextMenu().setDestination.triggered.connect(setDets)
 
-        self.trayIcon.contextMenu().hasJumpGate = lambda name: Cache().haseJumpGate(name)
+        self.trayIcon.contextMenu().hasJumpGate = lambda name: Cache().hasJumpGate(name)
         def clearJumpGate():
             Cache().clearJumpGate(self.trayIcon.contextMenu().currentSystem[0])
             self.dotlan.setJumpbridges(Cache().getJumpGates())

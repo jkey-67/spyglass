@@ -195,7 +195,7 @@ class Cache(object):
             self.con.execute(query, (src, src))
             self.con.commit()
 
-    def haseJumpGate(self, src) -> bool:
+    def hasJumpGate(self, src) -> bool:
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
@@ -213,3 +213,35 @@ class Cache(object):
             return None
         else:
             return founds
+
+    def clearAPIKey(self, char) -> None:
+        with Cache.SQLITE_WRITE_LOCK:
+            # data is a blob, so we have to change it to buffer
+            query = "DELETE FROM players WHERE id IS ? or name IS ?"
+            self.con.execute(query, (char, char))
+            self.con.commit()
+
+    def hasAPIKey(self, char) -> bool:
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT key FROM players WHERE id IS ? or name IS ?"
+            res = self.con.execute(query, (char, char)).fetchall()
+            return len(res) > 0 and ( res[0] != None )
+        return False
+
+    def getAPIKey(self, char):
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT key FROM players WHERE id IS ? or name IS ?"
+            res = self.con.execute(query, (char, char)).fetchall()
+            if len(res) > 0:
+                return res[0][0]
+            else:
+                return None
+
+
+    def putAPIKey(self, key, max_age=60 * 60 * 24 * 90):
+        self.clearAPIKey(key["CharacterName"])
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "INSERT INTO players (id, name, key, active, max_age) VALUES (?, ?, ?, ?, ?)"
+            self.con.execute(query, (key["CharacterID"], key["CharacterName"], str(key), 1, max_age))
+            self.con.commit()
+

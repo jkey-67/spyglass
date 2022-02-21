@@ -46,6 +46,10 @@ def updateDatabase(oldVersion, con):
         queries += ["CREATE TABLE jumpbridge (src VARCHAR PRIMARY KEY, dst VARCHAR, id_src INT, id_dst INT, used INT, modified INT, maxage INT)",
                     "UPDATE version SET version = 4"]
 
+    if oldVersion < 5:
+        queries += ["CREATE TABLE players (id INT PRIMARY KEY, name VARCHAR, key VARCHAR, active INT, max_age INT)",
+                    "UPDATE version SET version = 5"]
+
     for query in queries:
         con.execute(query)
     for update in databaseUpdates:

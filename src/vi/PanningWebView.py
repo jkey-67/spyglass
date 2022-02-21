@@ -17,14 +17,13 @@
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 
-from PyQt5.QtWidgets import QApplication, qApp, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import *
 from PyQt5 import QtCore, QtSvg
 
 from PyQt5.QtCore import QPoint, QPointF
 from PyQt5.QtCore import Qt
 import logging
-import os
 
 class PanningWebView(QWidget):
     ZOOM_WHEEL = 0.4
@@ -129,7 +128,7 @@ class PanningWebView(QWidget):
                 self.pressed = True
                 self.scrolling = False
                 self.handIsClosed = False
-                qApp.setOverrideCursor(QtCore.Qt.OpenHandCursor)
+                QApplication.setOverrideCursor(QtCore.Qt.OpenHandCursor)
                 self.scrollMousePress = self.scrollPosition()
                 self.positionMousePress = mouseEvent.pos()
 
@@ -139,7 +138,7 @@ class PanningWebView(QWidget):
             self.scrolling = False
             self.handIsClosed = False
             self.positionMousePress = None
-            qApp.restoreOverrideCursor()
+            QApplication.restoreOverrideCursor()
             self.webViewScrolled.emit(False)
             return
 
@@ -147,10 +146,10 @@ class PanningWebView(QWidget):
             self.pressed = False
             self.scrolling = False
             self.handIsClosed = False
-            qApp.restoreOverrideCursor()
+            QApplication.restoreOverrideCursor()
             return
 
-    def hoveCheck(self,pos:QPoint)->bool:
+    def hoveCheck(self,pos:QPointF)->bool:
         return False
 
     def doubleClicked(self,pos:QPoint)->bool:
@@ -166,7 +165,7 @@ class PanningWebView(QWidget):
         return (mouseEvent + self.scrollPos) / self.zoom
 
     def mapPosFromEvent(self, mouseEvent:QMouseEvent) -> QPointF:
-        return (mouseEvent.pos() + self.scrollPos) / self.zoom
+        return (QPointF(mouseEvent.pos()) + self.scrollPos) / self.zoom
 
     def mouseMoveEvent(self, mouseEvent:QMouseEvent):
         if self.scrolling:
