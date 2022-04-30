@@ -195,6 +195,14 @@ class Cache(object):
             self.con.execute(query, (src, src))
             self.con.commit()
 
+    def clearOutdatedJumpGates(self):
+        """ delete all outdated jumpbridges from database
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "DELETE FROM jumpbridge WHERE modified < unixepoch()-maxage"
+            self.con.execute(query)
+            self.con.commit()
+
     def hasJumpGate(self, src) -> bool:
         """
         """

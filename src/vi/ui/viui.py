@@ -774,6 +774,7 @@ class MainWindow(QtWidgets.QMainWindow):
             parts = content.strip().split()
             if len(parts) > 2 and parts[1] == '»':
                 Cache().putJumpGate(src=parts[0], dst=parts[2])
+                Cache().clearOutdatedJumpGates()
                 self.dotlan.setJumpbridges(Cache().getJumpGates())
             self.oldClipboardContent = content
 
@@ -887,7 +888,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     content = None
                     with open(url, 'r') as f:
                         content = f.readlines()
-
+                    Cache().clearOutdatedJumpGates()
                     for line in content:
                         parts = line.strip().split()
                         #src <-> dst system_id jump_bridge_id
