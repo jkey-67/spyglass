@@ -29,6 +29,7 @@ from logging import StreamHandler
 from PyInstaller.building import splash
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWebEngine import QtWebEngine
+from PyQt5.QtSql import QSqlDatabase
 from vi import version, PanningWebView
 from vi.ui import viui, systemtray
 from vi.cache import cache
@@ -105,6 +106,9 @@ class Application(QApplication):
         if not os.path.exists(spyglassDir):
             os.mkdir(spyglassDir)
         cache.Cache.PATH_TO_CACHE = os.path.join(spyglassDir, "cache-2.sqlite3")
+        self.con = QSqlDatabase.addDatabase("QSQLITE")
+        self.con.setDatabaseName(cache.Cache.PATH_TO_CACHE)
+        self.con.open()
 
         spyglassLogDirectory = os.path.join(spyglassDir, "logs")
         if not os.path.exists(spyglassLogDirectory):

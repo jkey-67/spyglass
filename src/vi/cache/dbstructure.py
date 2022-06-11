@@ -50,6 +50,16 @@ def updateDatabase(oldVersion, con):
         queries += ["CREATE TABLE players (id INT PRIMARY KEY, name VARCHAR, key VARCHAR, active INT, max_age INT)",
                     "UPDATE version SET version = 5"]
 
+    if oldVersion < 6:
+        queries += ["CREATE TABLE pointofinterest  (id INT PRIMARY KEY, type INT, name VARCHAR, json VARCHAR )",
+                    "UPDATE version SET version = 6"]
+
+    if oldVersion < 7:
+        queries += ["ALTER TABLE jumpbridge add COLUMN json_src",
+                    "ALTER TABLE jumpbridge add COLUMN json_dst",
+                    "UPDATE version SET version = 7"]
+
+
     for query in queries:
         con.execute(query)
     for update in databaseUpdates:

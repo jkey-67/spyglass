@@ -175,15 +175,15 @@ class Cache(object):
                     logging.error("Recall application setting failed to set attribute {0} | {1} | {2} | error {3}"
                                   .format(str(obj), setting[1], setting[2], e))
 
-    def putJumpGate(self, src, dst, src_id=None, dst_id=None, max_age=60 * 60 * 24 * 14):
+    def putJumpGate(self, src, dst, src_id=None, dst_id=None,json_src=None, json_dst=None, max_age=60 * 60 * 24 * 14):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
             # data is a blob, so we have to change it to buffer
             query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ? or src LIKE ? or dst LIKE ?"
             self.con.execute(query, (src, src, dst, dst))
-            query = "INSERT INTO jumpbridge (src, dst, id_src, id_dst, modified, maxage) VALUES (?, ?, ?, ?, ?, ?)"
-            self.con.execute(query, (src, dst, src_id, dst_id, time.time(), max_age))
+            query = "INSERT INTO jumpbridge (src, dst, id_src, id_dst, json_src, json_dst, modified, maxage) VALUES (?, ?, ?, ?, ?, ?, ? , ?)"
+            self.con.execute(query, (src, dst, src_id, dst_id, str(json_src), str(json_dst), time.time(), max_age))
             self.con.commit()
 
     def clearJumpGate(self, src):
@@ -215,12 +215,47 @@ class Cache(object):
     def getJumpGates(self, src=None):
         """
         """
-        selectquery = "SELECT src, ' ', dst FROM jumpbridge "
-        founds = self.con.execute(selectquery, ()).fetchall()
-        if len(founds) == 0:
-            return None
-        else:
-            return founds
+        with Cache.SQLITE_WRITE_LOCK:
+            selectquery = "SELECT src, ' ', dst FROM jumpbridge "
+            founds = self.con.execute(selectquery, ()).fetchall()
+            if len(founds) == 0:
+                return None
+            else:
+                return founds
+
+    def getJumpGatesAtIndex(self, inx:int):
+        """
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            selectquery = "select src, dst, id_src, json_src  from jumpbridge  LIMIT 1 OFFSET ?"
+            founds = self.con.execute(selectquery, (inx,)).fetchall()
+            if len(founds) == 0:
+                return None
+            else:
+                return {
+                    "src": founds[0][0],
+                    "dst": founds[0][1],
+                    "id_src": founds[0][2],
+                    "json_src" : eval(founds[0][3])if founds[0][3] else None
+                }
+
+    def putPOI(self, data):
+        """ data can be structure or station dict
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            # data is a blob, so we have to change it to buffer
+            if "station_id" in data.keys():
+                query = "DELETE FROM pointofinterest WHERE id IS ?"
+                self.con.execute(query, (data["station_id"],))
+                query = "INSERT INTO pointofinterest (id,type,name,json) VALUES (?, ?, ?, ?)"
+                self.con.execute(query, (data["station_id"], data["type_id"], data["name"], str(data)))
+            if "structure_id" in data.keys():
+                query = "DELETE FROM pointofinterest WHERE id IS ?"
+                self.con.execute(query, (data["structure_id"],))
+                query = "INSERT INTO pointofinterest (id,type,name,json) VALUES (?, ?, ?, ?)"
+                self.con.execute(query, (data["structure_id"], data["type_id"], data["name"], str(data)))
+            self.con.commit()
+
 
     def clearAPIKey(self, char) -> None:
         with Cache.SQLITE_WRITE_LOCK:
@@ -238,7 +273,7 @@ class Cache(object):
 
     def getAPIKey(self, char):
         with Cache.SQLITE_WRITE_LOCK:
-            query = "SELECT key FROM players WHERE id IS ? or name IS ?"
+            query = "SELECT key FROM players WHERE id IS ? or name IS ?;"
             res = self.con.execute(query, (char, char)).fetchall()
             if len(res) > 0:
                 return res[0][0]
@@ -253,3 +288,13 @@ class Cache(object):
             self.con.execute(query, (key["CharacterID"], key["CharacterName"], str(key), 1, max_age))
             self.con.commit()
 
+    def removeAPIKey(self, char_name):
+        self.clearAPIKey(char_name)
+
+    def getAPICharNames(self):
+        query = "SELECT name FROM players;"
+        res = self.con.execute(query).fetchall()
+        lst = list()
+        for i in res:
+            lst.append(i[0])
+        return lst

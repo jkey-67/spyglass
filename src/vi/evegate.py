@@ -20,6 +20,7 @@
 import datetime
 import json
 import time
+import parse
 
 from PyQt5.QtCore import QThread, pyqtSignal, QUrl
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -182,6 +183,19 @@ def idsToNames(ids, use_outdated=False):
         logging.error("Exception during idsToNames: %s", e)
     return data
 
+def getTypesIcon(type_id:int):
+    cache = Cache()
+    img = cache.getAvatar(str(type_id))
+    if img is None:
+        image_url = "https://images.evetech.net/types/{id}/icon"
+        response = requests.get(image_url.format(id=type_id, size=64))
+        response.raise_for_status()
+        cache.putAvatar(str(type_id), response.content)
+        img = response.content
+    if img:
+        return bytearray(img)
+    else:
+        return None
 
 def getAvatarForPlayer(char_name):
     """ Downloading the avatar for a player/character
@@ -201,7 +215,6 @@ def getAvatarForPlayer(char_name):
         logging.error("Exception during getAvatarForPlayer: %s", e)
         avatar = None
     return avatar
-
 
 def checkPlayerName(char_name):
     """ Checking on esi for an exiting exact player name
@@ -267,7 +280,6 @@ def isCharOnline(char_name:str)->bool:
         else:
             return False
     return None
-
 
 def getCharLocation(char_name:int):
     """ Returns the current system  of the char with id char_id, or None
@@ -480,7 +492,7 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
         parent.api_thread = api_server_thread()
         parent.api_thread.client_param = client_param
         parent.api_thread.elem = None
-        parent.api_thread.elem = QWebEngineView()
+        #parent.api_thread.elem = QWebEngineView()
         parent.api_thread.start()
         if parent.api_thread.elem:
             parent.api_thread.elem.destroyed.connect(parent.api_thread.quit)
@@ -547,8 +559,10 @@ class ApiKey(object):
         self.__dict__ = dictionary
         #self.CharacterID = None
         #self.CharacterName = None
-        self.valid_until = None
-        self.expires_in = None
+        if not hasattr(self, 'valid_until'):
+            self.valid_until = None
+        if not hasattr(self, 'expires_in'):
+            self.expires_in = None
 
     def update(self, dictionary):
         for k, v in dictionary.items():
@@ -580,14 +594,18 @@ def refreshToken(params:ApiKey):
         "Host": "login.eveonline.com",
     }
     req_post = requests.post("https://login.eveonline.com/v2/oauth/token", data=data, headers=headers)
-    req_post.raise_for_status()
-    ref_token = req_post.json()
-    params.update(ref_token)
-    params.valid_until = time.time()+params.expires_in
-    cache = Cache()
-    cache_key = "_".join(("api_key", "character_name", params.CharacterName))
-    cache.putIntoCache(cache_key, params.__dict__.__str__())
-    return params
+    if req_post.status_code == 200:
+        ref_token = req_post.json()
+        params.update(ref_token)
+
+        cache = Cache()
+        char_api_key_set = eval(cache.getAPIKey(params.CharacterName))
+        char_api_key_set["valid_until"] = time.time() + params.expires_in
+        char_api_key_set.update(ref_token)
+        cache.putAPIKey(char_api_key_set)
+        return params
+    else:
+        return params
 
 
 def checkTokenTimeLine(param:ApiKey):
@@ -633,7 +651,8 @@ def setDestination(nameChar:str,idSystem:int,beginning=True, clear_all=True):
             "token": token.access_token,
         }
         req = "https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
-        requests.post(req).raise_for_status()
+        response = requests.post(req)
+        response.raise_for_status()
 
 
 def getRouteFromEveOnline(jumpGates, src, dst):
@@ -718,22 +737,28 @@ def getAllStructures(typeid=None):
     return types
 
 
-def getStructures(nameChar:str, id_structure:int, use_outdated=False):
-    if nameChar == None:
-        logging.error("getStructures needs the eve-online api account.")
-        return None
-    cache_key = "_".join(("structure", "id", str(id_structure)))
+def esiUniverseStructure(esi_char_name:str, structure_id:int, use_outdated=False):
+    res_value = None
+    if esi_char_name == None:
+        logging.error("esiUniverseStructure needs the eve-online api account.")
+        return res_value
+    cache_key = "_".join(("structure", "id", str(structure_id)))
     cache = Cache()
     cached_id = cache.getFromCache(cache_key, use_outdated)
     if cached_id:
-        return eval(cached_id)
+        res_value = eval(cached_id)
+        res_value["structure_id"] = structure_id
     else:
-        token = checkTokenTimeLine(getTokenOfChar(nameChar))
-        req = "https://esi.evetech.net/latest/universe/structures/{}/?datasource=tranquility&token={}".format(id_structure,token.access_token)
-        res = requests.get(req)
-        # res.raise_for_status()
-        cache.putIntoCache(cache_key, res.text, 3600)
-        return eval(res.text)
+        token = checkTokenTimeLine(getTokenOfChar(esi_char_name))
+        if token:
+            req = "https://esi.evetech.net/latest/universe/structures/{}/?datasource=tranquility&token={}".format(structure_id,token.access_token)
+            res = requests.get(req)
+            # res.raise_for_status()
+            if res.status_code == 200:
+                cache.putIntoCache(cache_key, res.text, 3600)
+                res_value = eval(res.text)
+                res_value["structure_id"] = structure_id
+    return res_value
 
 
 def getSovereignty(use_outdated=False, fore_refresh=False):
@@ -834,8 +859,40 @@ def countCheckGates( gates ):
             if (gate.src_system_name == elem.src_system_name) or (gate.src_system_name == elem.dst_system_name):
                 gate.links = gate.links+1
 
+class category:
+    agent = "agent"
+    alliance = "alliance"
+    character = "character"
+    constellation = "constellation"
+    corporation = "corporation"
+    faction = "faction"
+    inventory_type = "inventory_type"
+    region ="region"
+    solar_system = "solar_system"
+    station ="station"
+    structure = "structure"
 
-def getAllJumpGates(nameChar:str,systemName="", callback=None, use_outdated=False):
+
+def esiSearch(esi_char_name: str, search_text, search_category: category, search_strict=False):
+    """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
+    """
+    if esi_char_name == None:
+        logging.error("esiSearch needs the eve-online api account.")
+        return None
+    token = checkTokenTimeLine(getTokenOfChar(esi_char_name))
+    if token == None:
+        logging.error("esiSearch needs the eve-online api account.")
+        return None
+    search_strict = "true" if search_strict else "false"
+    req = "https://esi.evetech.net/v3/characters/{id}/search/?datasource=tranquility"\
+          "&categories={cat}&strict={sstr}&search={sys}&token={tok}".format(
+        id=token.CharacterID, tok=token.access_token, sys=search_text, cat=search_category, sstr=search_strict)
+    res = requests.get(req)
+    res.raise_for_status()
+    return res.json()
+
+
+def getAllJumpGates(nameChar:str,systemName="",systemNameDst="", callback=None, use_outdated=False):
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
     if nameChar == None:
@@ -846,17 +903,52 @@ def getAllJumpGates(nameChar:str,systemName="", callback=None, use_outdated=Fals
         logging.error("getAllJumpGates needs the eve-online api account.")
         return None
 
-    req = "https://esi.evetech.net/v3/characters/{id}/search/?datasource=tranquility&categories=structure&search={sys}%20%C2%BB%20&token={tok}".format(id=token.CharacterID, tok=token.access_token,sys=systemName)
+    req = "https://esi.evetech.net/v3/characters/{id}/search/?datasource=tranquility&categories=structure&search={src}%20%C2%BB%20{dst}&token={tok}".format(id=token.CharacterID, tok=token.access_token,src=systemName,dst=systemNameDst)
     res = requests.get(req)
     res.raise_for_status()
     structs = eval(res.text)
     gates = list()
+    processed = list()
     if token and len(structs):
         process = 0
         if callback and not callback(len(structs["structure"]), process):
             return gates
         for id_structure in structs["structure"]:
-            item = getStructures(nameChar=nameChar, id_structure=id_structure, use_outdated=use_outdated)
+            if id_structure in processed:
+                continue
+            json_src = esiUniverseStructure(esi_char_name=nameChar, structure_id=id_structure, use_outdated=use_outdated)
+            jump_bridge_text = parse.parse("{src} » {dst} - {info}", json_src["name"])
+            structure = esiSearch(
+                esi_char_name=nameChar,
+                search_text="{} » {}".format(jump_bridge_text["src"], jump_bridge_text["dst"]),
+                search_category=category.structure)
+
+            if "structure" not in structure.keys():
+                Cache().clearJumpGate(jump_bridge_text["src"])
+                Cache().clearJumpGate(jump_bridge_text["dst"])
+                continue
+            if len( structure["structure"])<2:
+                Cache().clearJumpGate(jump_bridge_text["src"])
+                Cache().clearJumpGate(jump_bridge_text["dst"])
+                continue
+            json_src = esiUniverseStructure(
+                esi_char_name=nameChar,
+                structure_id=structure["structure"][0])
+            json_dst = esiUniverseStructure(
+                esi_char_name=nameChar,
+                structure_id=structure["structure"][1])
+
+            Cache().putJumpGate(
+                src=jump_bridge_text.named["src"],
+                dst=jump_bridge_text.named["dst"],
+                src_id=structure["structure"][0] if structure and len(structure["structure"]) == 2 else None,
+                dst_id=structure["structure"][1] if structure and len(structure["structure"]) == 2 else None,
+                json_src=json_src,
+                json_dst=json_dst
+            )
+            processed.append(structure["structure"][0])
+            processed.append(structure["structure"][1])
+
             process = process + 1
             if callback and not callback(len(structs["structure"]), process):
                 break
@@ -867,6 +959,10 @@ def getAllJumpGates(nameChar:str,systemName="", callback=None, use_outdated=Fals
             except Exception as e:
                 pass
     #gates=sanityCheckGates(gates)
+    elif token and (systemName != "" and systemNameDst != ""):
+        Cache().clearJumpGate(systemName)
+        Cache().clearJumpGate(systemNameDst)
+
     countCheckGates(gates)
     return gates
 
@@ -892,6 +988,21 @@ def getStargateInformation(starget_id,use_outdated=False):
         return eval(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/stargates/{}/?datasource=tranquility&language=en".format(starget_id)
+        res_system = requests.get(req)
+        res_system.raise_for_status()
+        cache.putIntoCache(cache_key, res_system.text)
+        return res_system.json()
+
+def getStationsInformation(station_id,use_outdated=False):
+    """gets the solar system info from system id
+    """
+    cache_key = "_".join(("universe", "stations", str(station_id)))
+    cache = Cache()
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
+        return eval(cached_id)
+    else:
+        req = "https://esi.evetech.net/latest/universe/stations/{}/?datasource=tranquility&language=en".format(station_id)
         res_system = requests.get(req)
         res_system.raise_for_status()
         cache.putIntoCache(cache_key, res_system.text)
@@ -1104,9 +1215,40 @@ def getSpyglassUpdateLink(ver=VERSION):
 
 # The main application for testing
 if __name__ == "__main__":
-    openWithEveonline()
+#    openWithEveonline()
+    Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
     id = charNameToId("nele McCool", False)
     cache = Cache()
+    cache.removeAvatar(str(52678))
+    cache.removeAvatar(str(35833))
+    cache.removeAvatar(str(35832))
+
+    image_1 = getTypesIcon(52678)
+    image_2 = getTypesIcon(52678)
+    image_3 = getTypesIcon(35832)
+    image_4 = getTypesIcon(35833)
+    image_5 = getTypesIcon(35833)
+    info = esiSearch(esi_char_name="nele McCool", search_text="Jita IV - Moon 4 - Caldari Navy Assembly Plant",search_category=category.station)
+    station_info = getStationsInformation(info["station"][0])
+
+    cache.putPOI(station_info)
+    structure_info = esiSearch(esi_char_name="nele McCool", search_text="OX-S7P - House of Pain", search_category=category.structure)
+    structure_info = esiUniverseStructure(esi_char_name="nele McCool", structure_id=structure_info["structure"][0])
+    cache.putPOI(structure_info)
+
+
+    info = esiSearch(esi_char_name="nele McCool", search_text="46DP-O", search_category=category.structure)
+    info = esiSearch(esi_char_name="nele McCool", search_text="Cemetry and memorial to fallen capsuleers",
+                        search_category=category.station)
+    info = esiSearch(esi_char_name="nele McCool", search_text=" » ",
+                        search_category=category.structure)
+    all_jbs = list()
+    for struct_id in info["structure"]:
+        all_jbs.append(esiUniverseStructure(esi_char_name="nele McCool", structure_id=struct_id))
+
+    loc = getCharLocation("Rovengard Ogaster")
+    location = getSolarSystemInformation(getCharLocation("Rovengard Ogaster"))
+    loc = getCharLocation("nele McCool")
     has_key = cache.hasAPIKey(1350114619)
     has_key = cache.hasAPIKey("nele McCool")
     has_key = cache.hasAPIKey(1350114618)
@@ -1125,7 +1267,7 @@ if __name__ == "__main__":
     res = checkSpyglassVersionUpdate()
     res = getSpyglassUpdateLink()
     webbrowser.open_new(res)
-    player_sov1 = getPlayerSovereignty(use_outdated=False,fore_refresh=True,show_npc=False)
+    player_sov1 = getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=False)
     player_sov2 = getPlayerSovereignty(True)
     sov_systems = getSovereignty()
 

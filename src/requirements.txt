@@ -11,4 +11,5 @@ urllib3
 pyinstaller
 #jose
 packaging
+parse
 

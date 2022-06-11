@@ -129,6 +129,28 @@ class TrayContextMenu(QtWidgets.QMenu):
                 self.trayIcon.alarmDistance = action.alarmDistance
                 self.trayIcon.changeAlarmDistance()
 
+class JumpBridgeContextMenu(QtWidgets.QMenu):
+    def __init__(self):
+        QtWidgets.QMenu.__init__(self)
+        self.destination = QAction("Set destination")
+        self.waypoint = QAction("Add waypoint")
+        self.update = QAction("Update")
+        self.delete = QAction("Delete")
+
+        self.addAction(self.destination)
+        self.addAction(self.waypoint)
+        self.addAction(self.update)
+        self.addSeparator()
+        self.addAction(self.delete)
+
+    def updateContextMenu(self, items):
+        keys = items.keys()
+        has_id_src = ("id_src" in keys) and (items["id_src"] is not None)
+        self.waypoint.setEnabled(has_id_src)
+        self.destination.setEnabled(has_id_src)
+
+
+
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
     # Min seconds between two notifications
@@ -202,3 +224,4 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         if not (title is None or text is None or icon):
             text = text.format(**locals())
             self.showMessage(title, text, icon)
+

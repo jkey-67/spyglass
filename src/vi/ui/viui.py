@@ -26,12 +26,14 @@ import webbrowser
 
 import vi.version
 import logging
+from parse import parse
 from PyQt5.QtGui import *
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 
-from PyQt5.QtCore import QPoint,QPointF, QByteArray, pyqtSignal
+from PyQt5.QtCore import QPoint, QPointF, QByteArray, pyqtSignal, QSortFilterProxyModel
 from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog
+from PyQt5.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, QStyledItemDelegate, QMenu
+from PyQt5.QtSql import  QSqlQueryModel
 from vi import evegate
 from vi import dotlan, filewatcher
 from vi import states
@@ -39,11 +41,12 @@ from vi.cache.cache import Cache
 from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
-from vi.ui.systemtray import TrayContextMenu
+from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser, Message
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QActionGroup
+from xml.dom import minidom
 
 # Timer intervals
 MAP_UPDATE_INTERVAL_MSECS = 1000
@@ -51,10 +54,48 @@ CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
 
 DEFAULT_ROOM_MANES =[u"Scald Intel",u"FI.RE Intel"]
 
+
+class StyledItemDelegatePOI(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super(StyledItemDelegatePOI, self).__init__(parent)
+
+    def paint(self, painter, option, index):
+        if index.column() == 0:
+            type_id = index.data()
+            type_data = evegate.getTypesIcon(type_id)
+            img = QImage.fromData(type_data)
+            painter.drawImage(option.rect,img)
+        else:
+            super(StyledItemDelegatePOI, self).paint(painter, option, index)
+
+        polygonTriangle = QtGui.QPolygon(3)
+        polygonTriangle.setPoint(0, QtCore.QPoint(option.rect.x() + 5, option.rect.y()))
+        polygonTriangle.setPoint(1, QtCore.QPoint(option.rect.x(), option.rect.y()))
+        polygonTriangle.setPoint(2, QtCore.QPoint(option.rect.x(), option.rect.y() + 5))
+
+        painter.save()
+        painter.setRenderHint(painter.Antialiasing)
+        painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
+        painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
+        painter.drawPolygon(polygonTriangle)
+        painter.restore()
+
+    def sizeHint(self, option, index):
+        return QtCore.QSize(64, 64)
+
+        if index.column() == 0:
+            return QtCore.QSize( 64, 64 )
+        else:
+            return QStyledItemDelegate.sizeHint(self, option, index)
+
 class MainWindow(QtWidgets.QMainWindow):
 
     chat_message_added = pyqtSignal(object, object)
     avatar_loaded = pyqtSignal(object, object)
+    jbs_changed = pyqtSignal()
+    users_changed = pyqtSignal()
+    poi_changed = pyqtSignal()
+
     def __init__(self, pathToLogs, trayIcon, update_splash=None):
         def update_splash_window_info(string):
             if update_splash:
@@ -181,6 +222,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.recallCachedSettings()
         self.setupThreads()
         self.startStatisticTimer()
+        self.wireUpDatabaseViews()
 
         initialTheme = Cache().getFromCache("theme")
         if initialTheme:
@@ -330,6 +372,88 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.mapLinkClicked(QtCore.QUrl( "map_link/{0}".format(system[0])))
         self.mapView.doubleClicked = doubleClicked
 
+    def wireUpDatabaseViews(self):
+        self.wireUpDatabaseViewsJB()
+        self.wireUpDatabaseViewPOI()
+
+
+    def wireUpDatabaseViewPOI(self):
+        model = QSqlQueryModel()
+        def callOnUpdate():
+            model.setQuery("SELECT type as Type, name as Name FROM pointofinterest")
+            self.tableViewPOIs.resizeColumnsToContents()
+            self.tableViewPOIs.resizeRowsToContents()
+
+        callOnUpdate()
+        sort = QSortFilterProxyModel()
+        sort.setSourceModel(model)
+        self.tableViewPOIsDelegate = StyledItemDelegatePOI(self)
+        self.tableViewPOIs.setModel(sort)
+        self.tableViewPOIs.setItemDelegate(self.tableViewPOIsDelegate)
+        self.tableViewPOIs.resizeColumnsToContents()
+        self.tableViewPOIs.resizeRowsToContents()
+        callOnUpdate()
+        self.poi_changed.connect(callOnUpdate)
+        self.tableViewPOIs.show()
+
+    def wireUpDatabaseViewsJB(self):
+        model = QSqlQueryModel()
+        def callOnUpdate():
+            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch')as 'last update', ((id_src is not Null) and (id_dst is not null)) as 'Idents Valid' FROM jumpbridge")
+        callOnUpdate()
+
+        self.jbs_changed.connect(callOnUpdate)
+        sort = QSortFilterProxyModel()
+        sort.setSourceModel(model)
+        self.tableViewJBs.setModel(sort)
+        self.tableViewJBs.show()
+
+        def callOnSelChanged(name):
+            Cache().putIntoCache("api_char_name", name)
+
+        self.currentESICharacter.addItems(Cache().getAPICharNames())
+        self.currentESICharacter.setCurrentText(self.currentApiChar())
+        self.currentESICharacter.currentTextChanged.connect(callOnSelChanged)
+
+        def callOnRemoveChar():
+            ret = QMessageBox.warning(self, "Remove Character",
+                        "Do you really want to remove the ESI registration for the character {}\n\n"\
+                        "The assess key will be removed from database.".format(self.currentApiChar()),
+                        QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                Cache().removeAPIKey(self.currentApiChar())
+                self.currentESICharacter.addItems(Cache().getAPICharNames())
+
+        self.removeChar.clicked.connect(callOnRemoveChar)
+
+        def showContextMenu(pos):
+            cache = Cache()
+            index = self.tableViewJBs.model().mapToSource(self.tableViewJBs.indexAt(pos)).row()
+            item = cache.getJumpGatesAtIndex(index)
+            lps_ctx_menu = JumpBridgeContextMenu()
+            lps_ctx_menu.updateContextMenu(item)
+            lps_ctx_menu.setStyleSheet(Styles().getStyle())
+            res = lps_ctx_menu.exec_(self.tableViewJBs.mapToGlobal(pos))
+            if res == lps_ctx_menu.destination:
+                evegate.setDestination(self.currentApiChar(), item["id_src"])
+                return
+            elif res == lps_ctx_menu.waypoint:
+                return
+            elif res == lps_ctx_menu.update:
+                evegate.getAllJumpGates(self.currentApiChar(), item["src"], item["dst"])
+                self.jbs_changed.emit()
+            elif res == lps_ctx_menu.delete:
+                cache.clearJumpGate(item["src"])
+                self.jbs_changed.emit()
+                return
+            #self.trayIcon.contextMenu().exec_(self.tableViewJBs.mapToGlobal(pos))
+
+
+        self.tableViewJBs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tableViewJBs.customContextMenuRequested.connect(showContextMenu)
+        return
+
+
     def setupThreads(self):
         logging.info("setupThreads")
         # Set up threads and their connections
@@ -361,6 +485,9 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as ex:
             logging.critical(ex)
             pass
+
+    def usedPlayerNames(self) -> str:
+        return Cache().getFromCache("used_player_names")
 
     def currentApiChar(self)->str:
         """returns the current char which is assingend by api
@@ -450,6 +577,7 @@ class MainWindow(QtWidgets.QMainWindow):
         def clearJumpGate():
             Cache().clearJumpGate(self.trayIcon.contextMenu().currentSystem[0])
             self.dotlan.setJumpbridges(Cache().getJumpGates())
+            self.jbs_changed.emit()
         self.trayIcon.contextMenu().clearJumpGate.triggered.connect(clearJumpGate)
 
         def addWaypoint(checked):
@@ -771,11 +899,65 @@ class MainWindow(QtWidgets.QMainWindow):
     def clipboardChanged(self, mode=0):
         content = str(self.clipboard.text())
         if content != self.oldClipboardContent:
-            parts = content.strip().split()
-            if len(parts) > 2 and parts[1] == '»':
-                Cache().putJumpGate(src=parts[0], dst=parts[2])
-                Cache().clearOutdatedJumpGates()
-                self.dotlan.setJumpbridges(Cache().getJumpGates())
+
+            simple_text = parse("{info}<br>{}", content)
+            jump_bridge_text = parse("{src} » {dst} - {info}<br>{}", content)
+            if jump_bridge_text and simple_text:
+                cache = Cache()
+                structure = evegate.esiSearch(
+                    esi_char_name=self.currentApiChar(),
+                    search_text="{} » {}".format(jump_bridge_text["src"], jump_bridge_text["dst"]),
+                    search_category=evegate.category.structure)
+                if "structure" not in structure.keys():
+                    cache.clearJumpGate(jump_bridge_text["dst"])
+                    cache.clearJumpGate(jump_bridge_text["src"])
+                else:
+                    json_src = evegate.esiUniverseStructure(
+                        esi_char_name=self.currentApiChar(),
+                        id_structure=structure["structure"][0])
+                    json_dst = evegate.esiUniverseStructure(
+                        esi_char_name=self.currentApiChar(),
+                        id_structure=structure["structure"][1])
+
+                    cache.putJumpGate(
+                        src=jump_bridge_text.named["src"],
+                        dst=jump_bridge_text.named["dst"],
+                        src_id=structure["structure"][0] if structure and len(structure["structure"])==2 else None,
+                        dst_id=structure["structure"][1] if structure and len(structure["structure"])==2 else None,
+                        json_src=json_src,
+                        json_dst=json_dst
+                    )
+                    cache.clearOutdatedJumpGates()
+                    self.dotlan.setJumpbridges(Cache().getJumpGates())
+                    self.jbs_changed.emit()
+
+            else:
+                if simple_text is None:
+                    simple_text = parse("<url=showinfo:{}//{} {}>{info}</url>", content)
+
+                if simple_text:
+                    cache = Cache()
+                    info = evegate.esiSearch(
+                        esi_char_name=self.currentApiChar(),
+                        search_text=simple_text["info"],
+                        search_category=evegate.category.station)
+                    if "station" in info.keys():
+                        station_info = evegate.getStationsInformation(info["station"][0])
+                        cache.putPOI(station_info)
+                        self.poi_changed.emit()
+
+                    info = evegate.esiSearch(
+                        esi_char_name=self.currentApiChar(),
+                        search_text=simple_text["info"],
+                        search_category=evegate.category.structure)
+                    if "structure" in info.keys():
+                        structure_info = evegate.esiUniverseStructure(
+                            esi_char_name=self.currentApiChar(),
+                            structure_id=info["structure"][0])
+                        cache.putPOI(structure_info)
+                        self.poi_changed.emit()
+
+
             self.oldClipboardContent = content
 
     def mapLinkClicked(self, url:QtCore.QUrl):
