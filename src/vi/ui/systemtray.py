@@ -149,6 +149,18 @@ class JumpBridgeContextMenu(QtWidgets.QMenu):
         self.waypoint.setEnabled(has_id_src)
         self.destination.setEnabled(has_id_src)
 
+class POIContextMenu(QtWidgets.QMenu):
+    def __init__(self):
+        QtWidgets.QMenu.__init__(self)
+        self.destination = QAction("Set destination")
+        self.waypoint = QAction("Add waypoint")
+        self.delete = QAction("Delete POI")
+
+        self.addAction(self.destination)
+        self.addAction(self.waypoint)
+        self.addSeparator()
+        self.addAction(self.delete)
+
 
 
 

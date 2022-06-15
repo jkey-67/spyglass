@@ -256,6 +256,21 @@ class Cache(object):
                 self.con.execute(query, (data["structure_id"], data["type_id"], data["name"], str(data)))
             self.con.commit()
 
+    def getPOIAtIndex(self, inx:int):
+        """
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            selectquery = "select json from pointofinterest  LIMIT 1 OFFSET ?"
+            founds = self.con.execute(selectquery, (inx,)).fetchall()
+            if len(founds) == 0:
+                return None
+            else:
+                ret_val = eval(founds[0][0])
+                if "station_id" in ret_val.keys():
+                    ret_val["destination_id"] = ret_val["station_id"]
+                if "structure_id" in ret_val.keys():
+                    ret_val["destination_id"] = ret_val["structure_id"]
+                return ret_val
 
     def clearAPIKey(self, char) -> None:
         with Cache.SQLITE_WRITE_LOCK:

@@ -41,7 +41,7 @@ from vi.cache.cache import Cache
 from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
-from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu
+from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu, POIContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser, Message
 from PyQt5.QtWidgets import QAction
@@ -64,7 +64,8 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
             type_id = index.data()
             type_data = evegate.getTypesIcon(type_id)
             img = QImage.fromData(type_data)
-            painter.drawImage(option.rect,img)
+            painter.setClipRect(option.rect)
+            painter.drawImage(option.rect.topLeft(),img)
         else:
             super(StyledItemDelegatePOI, self).paint(painter, option, index)
 
@@ -395,6 +396,38 @@ class MainWindow(QtWidgets.QMainWindow):
         callOnUpdate()
         self.poi_changed.connect(callOnUpdate)
         self.tableViewPOIs.show()
+        def showContextMenu(pos):
+            cache = Cache()
+            index = self.tableViewPOIs.model().mapToSource(self.tableViewPOIs.indexAt(pos)).row()
+            item = cache.getPOIAtIndex(index)
+            lps_ctx_menu = POIContextMenu()
+            lps_ctx_menu.setStyleSheet(Styles().getStyle())
+            res = lps_ctx_menu.exec_(self.tableViewJBs.mapToGlobal(pos))
+            if res == lps_ctx_menu.destination:
+                evegate.setDestination(self.currentApiChar(), item["destination_id"])
+                return
+            elif res == lps_ctx_menu.waypoint:
+                evegate.setDestination(
+                    nameChar=self.currentApiChar(),
+                    idSystem=item["destination_id"],
+                    clear_all=False,
+                    beginning=False
+                )
+
+
+                return
+            elif res == lps_ctx_menu.update:
+                #evegate.getAllJumpGates(self.currentApiChar(), item["src"], item["dst"])
+                self.jbs_changed.emit()
+            elif res == lps_ctx_menu.delete:
+                #cache.clearJumpGate(item["src"])
+                self.jbs_changed.emit()
+                return
+            #self.trayIcon.contextMenu().exec_(self.tableViewJBs.mapToGlobal(pos))
+
+
+        self.tableViewPOIs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tableViewPOIs.customContextMenuRequested.connect(showContextMenu)
 
     def wireUpDatabaseViewsJB(self):
         model = QSqlQueryModel()
@@ -914,10 +947,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     json_src = evegate.esiUniverseStructure(
                         esi_char_name=self.currentApiChar(),
-                        id_structure=structure["structure"][0])
+                        structure_id=structure["structure"][0])
                     json_dst = evegate.esiUniverseStructure(
                         esi_char_name=self.currentApiChar(),
-                        id_structure=structure["structure"][1])
+                        structure_id=structure["structure"][1])
 
                     cache.putJumpGate(
                         src=jump_bridge_text.named["src"],
