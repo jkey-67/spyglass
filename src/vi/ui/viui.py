@@ -65,27 +65,26 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
             type_data = evegate.getTypesIcon(type_id)
             img = QImage.fromData(type_data)
             painter.setClipRect(option.rect)
-            painter.drawImage(option.rect.topLeft(),img)
+            painter.drawImage(option.rect.topLeft(), img)
         else:
             super(StyledItemDelegatePOI, self).paint(painter, option, index)
 
-        polygonTriangle = QtGui.QPolygon(3)
-        polygonTriangle.setPoint(0, QtCore.QPoint(option.rect.x() + 5, option.rect.y()))
-        polygonTriangle.setPoint(1, QtCore.QPoint(option.rect.x(), option.rect.y()))
-        polygonTriangle.setPoint(2, QtCore.QPoint(option.rect.x(), option.rect.y() + 5))
+            polygonTriangle = QtGui.QPolygon(3)
+            polygonTriangle.setPoint(0, QtCore.QPoint(option.rect.x() + 5, option.rect.y()))
+            polygonTriangle.setPoint(1, QtCore.QPoint(option.rect.x(), option.rect.y()))
+            polygonTriangle.setPoint(2, QtCore.QPoint(option.rect.x(), option.rect.y() + 5))
 
-        painter.save()
-        painter.setRenderHint(painter.Antialiasing)
-        painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
-        painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
-        painter.drawPolygon(polygonTriangle)
-        painter.restore()
+            painter.save()
+            painter.setRenderHint(painter.Antialiasing)
+            painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
+            painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
+            painter.drawPolygon(polygonTriangle)
+            painter.restore()
 
     def sizeHint(self, option, index):
         return QtCore.QSize(64, 64)
-
         if index.column() == 0:
-            return QtCore.QSize( 64, 64 )
+            return QtCore.QSize(64, 64)
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
 
@@ -413,15 +412,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     clear_all=False,
                     beginning=False
                 )
-
-
                 return
-            elif res == lps_ctx_menu.update:
-                #evegate.getAllJumpGates(self.currentApiChar(), item["src"], item["dst"])
-                self.jbs_changed.emit()
             elif res == lps_ctx_menu.delete:
-                #cache.clearJumpGate(item["src"])
-                self.jbs_changed.emit()
+                cache.clearPOI(item["destination_id"])
+                self.poi_changed.emit()
                 return
             #self.trayIcon.contextMenu().exec_(self.tableViewJBs.mapToGlobal(pos))
 
@@ -432,7 +426,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def wireUpDatabaseViewsJB(self):
         model = QSqlQueryModel()
         def callOnUpdate():
-            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch')as 'last update', ((id_src is not Null) and (id_dst is not null)) as 'Idents Valid' FROM jumpbridge")
+            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch')as 'last update', ( case used when 2 then 'full Pair' else '' END ) 'Paired' FROM jumpbridge")
         callOnUpdate()
 
         self.jbs_changed.connect(callOnUpdate)
@@ -966,9 +960,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
             else:
                 if simple_text is None:
-                    simple_text = parse("<url=showinfo:{}//{} {}>{info}</url>", content)
+                    simple_text = parse("<url=showinfo:{type_id}//{structure_id} {}>{info}</url>", content)
 
-                if simple_text:
+                if simple_text and len(simple_text.named)==3:
                     cache = Cache()
                     info = evegate.esiSearch(
                         esi_char_name=self.currentApiChar(),

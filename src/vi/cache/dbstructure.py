@@ -59,6 +59,12 @@ def updateDatabase(oldVersion, con):
                     "ALTER TABLE jumpbridge add COLUMN json_dst",
                     "UPDATE version SET version = 7"]
 
+    if False:
+        if oldVersion < 8:
+            queries += ["CREATE TABLE constellation (constellation_id INT PRIMARY KEY, name VARCHAR, position VARCHAR, region_id INT, systems VARCHAR )",
+                        "CREATE TABLE systems  (system_id INT PRIMARY KEY, name VARCHAR, constellation_id INT, VARCHAR, region_id INT, constellation_id INT, stargates VARCHAR )",
+                        "UPDATE version SET version = 8"]
+
 
     for query in queries:
         con.execute(query)

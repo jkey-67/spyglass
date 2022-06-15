@@ -189,9 +189,9 @@ def getTypesIcon(type_id:int):
     if img is None:
         image_url = "https://images.evetech.net/types/{id}/icon"
         response = requests.get(image_url.format(id=type_id, size=64))
-        response.raise_for_status()
-        cache.putAvatar(str(type_id), response.content)
-        img = response.content
+        if response.status_code == 200:
+            cache.putAvatar(str(type_id), response.content)
+            img = response.content
     if img:
         return bytearray(img)
     else:
@@ -878,18 +878,20 @@ def esiSearch(esi_char_name: str, search_text, search_category: category, search
     """
     if esi_char_name == None:
         logging.error("esiSearch needs the eve-online api account.")
-        return None
+        return {}
     token = checkTokenTimeLine(getTokenOfChar(esi_char_name))
     if token == None:
         logging.error("esiSearch needs the eve-online api account.")
-        return None
+        return {}
     search_strict = "true" if search_strict else "false"
     req = "https://esi.evetech.net/v3/characters/{id}/search/?datasource=tranquility"\
           "&categories={cat}&strict={sstr}&search={sys}&token={tok}".format(
         id=token.CharacterID, tok=token.access_token, sys=search_text, cat=search_category, sstr=search_strict)
     res = requests.get(req)
-    res.raise_for_status()
-    return res.json()
+    if res.status_code == 200:
+        return res.json()
+    else:
+        return {}
 
 
 def getAllJumpGates(nameChar:str,systemName="",systemNameDst="", callback=None, use_outdated=False):
@@ -905,7 +907,8 @@ def getAllJumpGates(nameChar:str,systemName="",systemNameDst="", callback=None, 
 
     req = "https://esi.evetech.net/v3/characters/{id}/search/?datasource=tranquility&categories=structure&search={src}%20%C2%BB%20{dst}&token={tok}".format(id=token.CharacterID, tok=token.access_token,src=systemName,dst=systemNameDst)
     res = requests.get(req)
-    res.raise_for_status()
+    if res.status_code != 200:
+        return None
     structs = eval(res.text)
     gates = list()
     processed = list()
@@ -927,27 +930,31 @@ def getAllJumpGates(nameChar:str,systemName="",systemNameDst="", callback=None, 
                 Cache().clearJumpGate(jump_bridge_text["src"])
                 Cache().clearJumpGate(jump_bridge_text["dst"])
                 continue
-            if len( structure["structure"])<2:
+            cnt_structures = len(structure["structure"])
+            if cnt_structures < 2:
                 Cache().clearJumpGate(jump_bridge_text["src"])
                 Cache().clearJumpGate(jump_bridge_text["dst"])
                 continue
+
+            for id in structure["structure"]:
+                processed.append(id)
+
             json_src = esiUniverseStructure(
                 esi_char_name=nameChar,
                 structure_id=structure["structure"][0])
             json_dst = esiUniverseStructure(
                 esi_char_name=nameChar,
-                structure_id=structure["structure"][1])
+                structure_id=structure["structure"][cnt_structures-1])
 
             Cache().putJumpGate(
                 src=jump_bridge_text.named["src"],
                 dst=jump_bridge_text.named["dst"],
-                src_id=structure["structure"][0] if structure and len(structure["structure"]) == 2 else None,
-                dst_id=structure["structure"][1] if structure and len(structure["structure"]) == 2 else None,
+                src_id=structure["structure"][0],
+                dst_id=structure["structure"][cnt_structures-1],
                 json_src=json_src,
-                json_dst=json_dst
+                json_dst=json_dst,
+                used=cnt_structures
             )
-            processed.append(structure["structure"][0])
-            processed.append(structure["structure"][1])
 
             process = process + 1
             if callback and not callback(len(structs["structure"]), process):
@@ -1219,6 +1226,11 @@ if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
     id = charNameToId("nele McCool", False)
     cache = Cache()
+
+    poi = cache.getPOIAtIndex(0)
+    poi = cache.getPOIAtIndex(999)
+
+
     cache.removeAvatar(str(52678))
     cache.removeAvatar(str(35833))
     cache.removeAvatar(str(35832))
@@ -1228,6 +1240,7 @@ if __name__ == "__main__":
     image_3 = getTypesIcon(35832)
     image_4 = getTypesIcon(35833)
     image_5 = getTypesIcon(35833)
+    image_fail = getTypesIcon(12335833)
     info = esiSearch(esi_char_name="nele McCool", search_text="Jita IV - Moon 4 - Caldari Navy Assembly Plant",search_category=category.station)
     station_info = getStationsInformation(info["station"][0])
 

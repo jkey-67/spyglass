@@ -22,6 +22,7 @@ import threading
 import time
 import logging
 import vi.version
+import json
 from vi.cache.dbstructure import updateDatabase
 
 
@@ -175,15 +176,15 @@ class Cache(object):
                     logging.error("Recall application setting failed to set attribute {0} | {1} | {2} | error {3}"
                                   .format(str(obj), setting[1], setting[2], e))
 
-    def putJumpGate(self, src, dst, src_id=None, dst_id=None,json_src=None, json_dst=None, max_age=60 * 60 * 24 * 14):
+    def putJumpGate(self, src, dst, src_id=None, dst_id=None,json_src=None, json_dst=None, used=None, max_age=60 * 60 * 24 * 14):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
             # data is a blob, so we have to change it to buffer
             query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ? or src LIKE ? or dst LIKE ?"
             self.con.execute(query, (src, src, dst, dst))
-            query = "INSERT INTO jumpbridge (src, dst, id_src, id_dst, json_src, json_dst, modified, maxage) VALUES (?, ?, ?, ?, ?, ?, ? , ?)"
-            self.con.execute(query, (src, dst, src_id, dst_id, str(json_src), str(json_dst), time.time(), max_age))
+            query = "INSERT INTO jumpbridge (src, dst, used, id_src, id_dst, json_src, json_dst, modified, maxage) VALUES (?, ?, ?, ?, ?, ?, ? , ?, ?)"
+            self.con.execute(query, (src, dst, used, src_id, dst_id, json.dumps(json_src), json.dumps(json_dst), time.time(), max_age))
             self.con.commit()
 
     def clearJumpGate(self, src):
@@ -248,12 +249,12 @@ class Cache(object):
                 query = "DELETE FROM pointofinterest WHERE id IS ?"
                 self.con.execute(query, (data["station_id"],))
                 query = "INSERT INTO pointofinterest (id,type,name,json) VALUES (?, ?, ?, ?)"
-                self.con.execute(query, (data["station_id"], data["type_id"], data["name"], str(data)))
+                self.con.execute(query, (data["station_id"], data["type_id"], data["name"], json.dumps(data)))
             if "structure_id" in data.keys():
                 query = "DELETE FROM pointofinterest WHERE id IS ?"
                 self.con.execute(query, (data["structure_id"],))
                 query = "INSERT INTO pointofinterest (id,type,name,json) VALUES (?, ?, ?, ?)"
-                self.con.execute(query, (data["structure_id"], data["type_id"], data["name"], str(data)))
+                self.con.execute(query, (data["structure_id"], data["type_id"], data["name"], json.dumps(data)))
             self.con.commit()
 
     def getPOIAtIndex(self, inx:int):
@@ -271,6 +272,13 @@ class Cache(object):
                 if "structure_id" in ret_val.keys():
                     ret_val["destination_id"] = ret_val["structure_id"]
                 return ret_val
+
+    def clearPOI(self,destination_id:int) -> None:
+        with Cache.SQLITE_WRITE_LOCK:
+            selectquery = "DELETE FROM pointofinterest  WHERE id IS ?"
+            founds = self.con.execute(selectquery, (destination_id,)).fetchall()
+            self.con.commit()
+
 
     def clearAPIKey(self, char) -> None:
         with Cache.SQLITE_WRITE_LOCK:
@@ -300,7 +308,7 @@ class Cache(object):
         self.clearAPIKey(key["CharacterName"])
         with Cache.SQLITE_WRITE_LOCK:
             query = "INSERT INTO players (id, name, key, active, max_age) VALUES (?, ?, ?, ?, ?)"
-            self.con.execute(query, (key["CharacterID"], key["CharacterName"], str(key), 1, max_age))
+            self.con.execute(query, (key["CharacterID"], key["CharacterName"], json.dumps(key), 1, max_age))
             self.con.commit()
 
     def removeAPIKey(self, char_name):
