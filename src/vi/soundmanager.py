@@ -41,17 +41,18 @@ except ImportError:
 #todo:warn sound not match to alarm system distance
 
 class SoundManager(metaclass=Singleton):
-    SOUNDS = {"alarm": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
-              "alarm_0": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
-              "alarm_1": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
-              "alarm_2": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
-              "alarm_3": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
-              "alarm_4": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
-              "alarm_5": "178032__zimbot__redalert-klaxon-sttos-recreated.wav",
+    DEF_SND_FILE = "178032__zimbot__redalert-klaxon-sttos-recreated.wav"
+    SOUNDS = {"alarm":  DEF_SND_FILE,
+              "alarm_0": DEF_SND_FILE,
+              "alarm_1": DEF_SND_FILE,
+              "alarm_2": DEF_SND_FILE,
+              "alarm_3": DEF_SND_FILE,
+              "alarm_4": DEF_SND_FILE,
+              "alarm_5": DEF_SND_FILE,
               "kos": "178031__zimbot__transporterstartbeep0-sttos-recreated.wav",
               "request": "178028__zimbot__bosun-whistle-sttos-recreated.wav"}
 
-    SNDVOL = {"alarm"  : 1.00,
+    SNDVOL = {"alarm": 1.00,
               "alarm_0": 0.50,
               "alarm_1": 0.25,
               "alarm_2": 0.125,
@@ -76,7 +77,7 @@ class SoundManager(metaclass=Singleton):
         self.setSoundFile("alarm_5", cache.getFromCache("soundsetting.alarm_5"))
         vol = cache.getFromCache("soundsetting.volume")
         if vol:
-            self.setSoundVolume(float(vol))
+            self.setSoundVolume(vol)
         self.loadSoundFiles()
 
     def soundFile(self, mask):
@@ -85,10 +86,10 @@ class SoundManager(metaclass=Singleton):
         else:
             return ""
 
-    def setSoundFile(self,mask,filename):
+    def setSoundFile(self, mask, filename):
         if mask in self.SOUNDS.keys():
             if filename == "":
-                filename="178032__zimbot__redalert-klaxon-sttos-recreated.wav"
+                filename = SoundManager.DEF_SND_FILE
             self.SOUNDS[mask] = filename
             self.sounds[mask] = QSoundEffect()
             url = QUrl.fromLocalFile(self.SOUNDS[mask])
@@ -127,8 +128,8 @@ class SoundManager(metaclass=Singleton):
     def setUseSpokenNotifications(self, new_value):
         self.useSpokenNotifications = new_value
 
-    def setSoundVolume(self, newValue):
-        self.soundVolume = max(0.0, min(100.0, newValue))
+    def setSoundVolume(self, newValue:int):
+        self.soundVolume = max(0, min(100, newValue))
         Cache().putIntoCache("soundsetting.volume", self.soundVolume)
         for itm in self.sounds.keys():
             self.sounds[itm].setVolume(self.soundVolume/100)
@@ -139,12 +140,12 @@ class SoundManager(metaclass=Singleton):
                 self.speach_engine.setVolume(self.soundVolume/100.0)
                 self.speach_engine.say(abbreviatedMessage)
             elif name in self.sounds.keys():
-                self.sounds[name].setVolume(self.soundVolume / 100. * self.SNDVOL[name])
+                self.sounds[name].setVolume(self.soundVolume / 100 * self.SNDVOL[name])
                 self.sounds[name].setMuted(False)
                 self.sounds[name].play()
                 self.sounds[name].status()
             else:
-                self.sounds[name].setVolume(self.soundVolume / 100.0 * self.SNDVOL[name])
+                self.sounds[name].setVolume(self.soundVolume / 100 * self.SNDVOL[name])
                 self.sounds["alarm"].setMuted(False)
                 self.sounds["alarm"].play()
                 self.sounds["alarm"].status()

@@ -72,7 +72,7 @@ class AvatarFindThread(QThread):
                     diffLastCall = time.time() - lastCall
                     if diffLastCall < wait:
                         time.sleep((wait - diffLastCall) / 1000.0)
-                    avatar = evegate.getAvatarForPlayer(charname)
+                    avatar = evegate.esiCharactersPortrait(charname)
                     lastCall = time.time()
                     if avatar is None:
                         cache.removeAvatar(charname)
@@ -109,7 +109,7 @@ class MapStatisticsThread(QThread):
         evegate.getPlayerSovereignty(fore_refresh=False, show_npc=False)
         evegate.getIncursionSystemsIds(False)
         evegate.getCampaignsSystemsIds(False)
-        evegate.getSystemStatistics()
+        evegate.esiUniverseSystem_jumps()
         while True:
             self.queue.get()
             if not self.active:
@@ -117,7 +117,7 @@ class MapStatisticsThread(QThread):
             try:
                 evegate.getIncursionSystemsIds(False)
                 evegate.getCampaignsSystemsIds(False)
-                statistics = evegate.getSystemStatistics()
+                statistics = evegate.esiUniverseSystem_jumps()
                 statistics_data = {"result": "ok", "statistics": statistics}
             except Exception as e:
                 logging.error("Error in MapStatisticsThread: %s", e)

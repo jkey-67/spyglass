@@ -42,8 +42,8 @@ def loadSvg(path):
     return BeautifulSoup(content)
 
 def is_diffrent_region( src, dst):
-    rgn_src = evegate.getConstellationInformation(src["constellation_id"], True)
-    rgn_dst = evegate.getConstellationInformation(dst["constellation_id"], True)
+    rgn_src = evegate.esiUniverseConstellations(src["constellation_id"], True)
+    rgn_dst = evegate.esiUniverseConstellations(dst["constellation_id"], True)
     return rgn_src["region_id"] != rgn_dst["region_id"]
 
 def is_different_constellation(src, dst):
@@ -54,7 +54,7 @@ missing_sys = list()
 def addJumpsToSvgFile( system, jumps, svg_template, use_cache=True):
 
     for gate_id in system["stargates"]:
-        gates = evegate.getStargateInformation(gate_id, use_cache)
+        gates = evegate.esiUniverseStargates(gate_id, use_cache)
         src = system["system_id"]
         dst = gates["destination"]["system_id"]
         revert = svg_template.find(id="j-{}-{}".format(dst, src))
@@ -62,8 +62,8 @@ def addJumpsToSvgFile( system, jumps, svg_template, use_cache=True):
         dst_pos = svg_template.find(id="sys{}".format(str(dst)))
         if src_pos and dst_pos and revert is None:
             line_tag = svg_template.new_tag("line", id="j-{}-{}".format(src, dst), x1=float(src_pos["x"])+31.25, y1=float(src_pos["y"])+15,x2=float(dst_pos["x"])+31.25, y2=float(dst_pos["y"])+15,)
-            src_system = evegate.getSolarSystemInformation(src, use_cache)
-            dst_system = evegate.getSolarSystemInformation(dst, use_cache)
+            src_system = evegate.esiUniverseSystems(src, use_cache)
+            dst_system = evegate.esiUniverseSystems(dst, use_cache)
             if is_diffrent_region(src_system, dst_system):
                 line_tag["class"] ="jr"
             elif is_different_constellation(src_system, dst_system):
@@ -84,7 +84,7 @@ def addIceBeltsToSvgFile( system, svg_template, use_cache=True):
 def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
     for system_id in systems:
         systemUses = svg_template.select("#sysuse")[0]
-        system = evegate.getSolarSystemInformation(system_id, use_cache)
+        system = evegate.esiUniverseSystems(system_id, use_cache)
         a_tag = svg_template.new_tag("a")
         a_tag["xlink:href"] = "http://evemaps.dotlan.net/system/{}".format(system["name"])
         a_tag["class"] = "sys link-5-{}".format(system_id)
@@ -150,7 +150,7 @@ def updateSvgFile(filename):
     for sysuse in systemUses.select("use"):
         symbol_id = sysuse["id"]
         system_id = symbol_id[3:]
-        system = evegate.getSolarSystemInformation(system_id, use_cache)
+        system = evegate.esiUniverseSystems(system_id, use_cache)
         addJumpsToSvgFile(system, jumps, svg_template, use_cache)
 
     #addSystemToSvg( svg_template, missing_sys, 0, -30, True)
@@ -193,11 +193,11 @@ def createSvgFile( region_ids ):
     x_min = None
 
     for region_id in region_ids:
-        region_json = evegate.getRegionInformation(region_id, use_cache)
+        region_json = evegate.esiUniverseRegions(region_id, use_cache)
         for const_id in region_json["constellations"]:
-            systems_json = evegate.getConstellationInformation(const_id, use_cache)
+            systems_json = evegate.esiUniverseConstellations(const_id, use_cache)
             for system_id in systems_json["systems"]:
-                system = evegate.getSolarSystemInformation( system_id, use_cache )
+                system = evegate.esiUniverseSystems(system_id, use_cache)
                 x_cur = float(systems_json["position"]["x"]) + float(system["position"]["x"])
                 y_cur = float(systems_json["position"]["y"]) + float(system["position"]["y"])
                 if x_min is None:
@@ -216,11 +216,11 @@ def createSvgFile( region_ids ):
 
 
     for region_id in region_ids:
-        region_json = evegate.getRegionInformation(region_id, use_cache)
+        region_json = evegate.esiUniverseRegions(region_id, use_cache)
         for const_id in region_json["constellations"]:
-            systems_json = evegate.getConstellationInformation(const_id, use_cache)
+            systems_json = evegate.esiUniverseConstellations(const_id, use_cache)
             for system_id in systems_json["systems"]:
-                system = evegate.getSolarSystemInformation( system_id, use_cache )
+                system = evegate.esiUniverseSystems(system_id, use_cache)
                 a_tag = svg_template.new_tag("a")
                 a_tag["xlink:href"] = "http://evemaps.dotlan.net/system/{}".format(system["name"])
                 a_tag["constellation"] = system["constellation_id"]
@@ -252,11 +252,11 @@ def createSvgFile( region_ids ):
                 systemUses.append(use_tag)
 
     for region_id in region_ids:
-        region_json = evegate.getRegionInformation(region_id, use_cache)
+        region_json = evegate.esiUniverseRegions(region_id, use_cache)
         for const_id in region_json["constellations"]:
-            systems_json = evegate.getConstellationInformation(const_id, use_cache)
+            systems_json = evegate.esiUniverseConstellations(const_id, use_cache)
             for system_id in systems_json["systems"]:
-                system = evegate.getSolarSystemInformation(system_id, use_cache)
+                system = evegate.esiUniverseSystems(system_id, use_cache)
                 addJumpsToSvgFile(system, jumps,svg_template,use_cache )
 
     svg_template.svg["width"] = "4096"

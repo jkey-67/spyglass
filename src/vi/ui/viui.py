@@ -144,8 +144,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playerUsed = Cache().getFromCache("used_player_names")
         if self.playerUsed:
             self.playerUsed = set(self.playerUsed.split(","))
-        elif self.currentApiChar():
-            self.playerUsed = {self.currentApiChar()}
+        elif evegate.esiCharName():
+            self.playerUsed = {evegate.esiCharName()}
         else:
             self.playerUsed = set()
 
@@ -250,7 +250,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for name in self.knownPlayerNames:
             icon = QIcon()
             if Cache().hasAPIKey(name):
-                avatar_icon = evegate.getAvatarForPlayer(name)
+                avatar_icon = evegate.esiCharactersPortrait(name)
                 if avatar_icon is not None:
                     img = QImage.fromData(avatar_icon)
                     icon = QIcon(QPixmap.fromImage(img))
@@ -403,11 +403,11 @@ class MainWindow(QtWidgets.QMainWindow):
             lps_ctx_menu.setStyleSheet(Styles().getStyle())
             res = lps_ctx_menu.exec_(self.tableViewJBs.mapToGlobal(pos))
             if res == lps_ctx_menu.destination:
-                evegate.setDestination(self.currentApiChar(), item["destination_id"])
+                evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["destination_id"])
                 return
             elif res == lps_ctx_menu.waypoint:
-                evegate.setDestination(
-                    nameChar=self.currentApiChar(),
+                evegate.esiAutopilotWaypoint(
+                    nameChar=evegate.esiCharName(),
                     idSystem=item["destination_id"],
                     clear_all=False,
                     beginning=False
@@ -439,16 +439,16 @@ class MainWindow(QtWidgets.QMainWindow):
             Cache().putIntoCache("api_char_name", name)
 
         self.currentESICharacter.addItems(Cache().getAPICharNames())
-        self.currentESICharacter.setCurrentText(self.currentApiChar())
+        self.currentESICharacter.setCurrentText(evegate.esiCharName())
         self.currentESICharacter.currentTextChanged.connect(callOnSelChanged)
 
         def callOnRemoveChar():
             ret = QMessageBox.warning(self, "Remove Character",
                         "Do you really want to remove the ESI registration for the character {}\n\n"\
-                        "The assess key will be removed from database.".format(self.currentApiChar()),
+                        "The assess key will be removed from database.".format(evegate.esiCharName()),
                         QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
             if ret == QMessageBox.Yes:
-                Cache().removeAPIKey(self.currentApiChar())
+                Cache().removeAPIKey(evegate.esiCharName())
                 self.currentESICharacter.addItems(Cache().getAPICharNames())
 
         self.removeChar.clicked.connect(callOnRemoveChar)
@@ -462,12 +462,12 @@ class MainWindow(QtWidgets.QMainWindow):
             lps_ctx_menu.setStyleSheet(Styles().getStyle())
             res = lps_ctx_menu.exec_(self.tableViewJBs.mapToGlobal(pos))
             if res == lps_ctx_menu.destination:
-                evegate.setDestination(self.currentApiChar(), item["id_src"])
+                evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["id_src"])
                 return
             elif res == lps_ctx_menu.waypoint:
                 return
             elif res == lps_ctx_menu.update:
-                evegate.getAllJumpGates(self.currentApiChar(), item["src"], item["dst"])
+                evegate.getAllJumpGates(evegate.esiCharName(), item["src"], item["dst"])
                 self.jbs_changed.emit()
             elif res == lps_ctx_menu.delete:
                 cache.clearJumpGate(item["src"])
@@ -516,10 +516,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def usedPlayerNames(self) -> str:
         return Cache().getFromCache("used_player_names")
 
-    def currentApiChar(self)->str:
-        """returns the current char which is assingend by api
-        """
-        return Cache().getFromCache("api_char_name", True)
 
     def changeRegionFromCtxMenu(self, checked):
         selected_system = self.trayIcon.contextMenu().currentSystem
@@ -532,7 +528,7 @@ class MainWindow(QtWidgets.QMainWindow):
          """
         if system_id is None:
             return
-        system_name = evegate.idsToNames([str(system_id)])[system_id]
+        system_name = evegate.esiUniverseNames([str(system_id)])[system_id]
         if system_name in self.systems.keys():
             view_center = self.mapView.size() / 2
             pt_system = QPointF(self.systems[system_name].mapCoordinates["center_x"]* self.mapView.zoom-view_center.width(),
@@ -545,10 +541,10 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if system_id is None:
             return
-        selected_system = evegate.getSolarSystemInformation(system_id)
-        selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+        selected_system = evegate.esiUniverseSystems(system_id)
+        selected_constellation = evegate.esiUniverseConstellations(selected_system["constellation_id"])
         selected_region = selected_constellation["region_id"]
-        selected_region_name = evegate.idsToNames([selected_region])[selected_region]
+        selected_region_name = evegate.esiUniverseNames([selected_region])[selected_region]
         selected_region_name = dotlan.convertRegionName(selected_region_name)
         Cache().putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
         self.rescanIntel()
@@ -597,7 +593,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon.contextMenu().openZKillboard.triggered.connect(openZKillboard)
 
         def setDets(checked):
-            evegate.setDestination( self.currentApiChar(), self.trayIcon.contextMenu().currentSystem[1].systemId)
+            evegate.esiAutopilotWaypoint(evegate.esiCharName(), self.trayIcon.contextMenu().currentSystem[1].systemId)
         self.trayIcon.contextMenu().setDestination.triggered.connect(setDets)
 
         self.trayIcon.contextMenu().hasJumpGate = lambda name: Cache().hasJumpGate(name)
@@ -609,7 +605,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def addWaypoint(checked):
             selected_system = self.trayIcon.contextMenu().currentSystem
-            evegate.setDestination(self.currentApiChar(), selected_system[1].systemId, False, False)
+            evegate.esiAutopilotWaypoint(evegate.esiCharName(), selected_system[1].systemId, False, False)
         self.trayIcon.contextMenu().addWaypoint.triggered.connect(addWaypoint)
 
         def avoidSystem(checked):
@@ -617,10 +613,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon.contextMenu().avoidSystem.triggered.connect(avoidSystem)
 
         def clearAll(checked):
-            charName = self.currentApiChar()
+            charName = evegate.esiCharName()
             for system in self.systems.values():
                 if charName in system.getLocatedCharacters():
-                    evegate.setDestination(charName, system.systemId)
+                    evegate.esiAutopilotWaypoint(charName, system.systemId)
                     return
             return
         self.trayIcon.contextMenu().clearAll.triggered.connect(clearAll)
@@ -923,16 +919,55 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsButton.setChecked(newValue)
         self.statisticsThread.requestStatistics()
 
+
+    def AppendJumpGate(self, src_system, dst_system):
+        cache = Cache()
+        structure = evegate.esiSearch(
+            esi_char_name=evegate.esiCharName(),
+            search_text="{} » {}".format(src_system, dst_system),
+            search_category=evegate.category.structure)
+
+        if structure is None or "structure" not in structure.keys() or len(structure["structure"])<2:
+            cache.clearJumpGate(dst_system)
+            cache.clearJumpGate(src_system)
+        else:
+            cnt_structures = len(structure["structure"])
+            inx_src = 0
+            inx_dst = cnt_structures-1
+            json_src = evegate.esiUniverseStructure(
+                esi_char_name=evegate.esiCharName(),
+                structure_id=structure["structure"][inx_src])
+            json_dst = evegate.esiUniverseStructure(
+                esi_char_name=evegate.esiCharName(),
+                structure_id=structure["structure"][inx_dst])
+            cnt_structures = None if structure is None else len(structure["structure"])
+            cache.putJumpGate(
+                src=src_system,
+                dst=dst_system,
+                src_id=structure["structure"][inx_src] if cnt_structures > 1 else None,
+                dst_id=structure["structure"][inx_dst] if cnt_structures > 1 else None,
+                json_src=json_src,
+                json_dst=json_dst,
+                used=cnt_structures
+            )
+            cache.clearOutdatedJumpGates()
+            self.dotlan.setJumpbridges(Cache().getJumpGates())
+            self.jbs_changed.emit()
+
     def clipboardChanged(self, mode=0):
+        """ the content of the clip board is used to set jump bridge and poi
+        """
         content = str(self.clipboard.text())
         if content != self.oldClipboardContent:
-
+            self.oldClipboardContent = content
             simple_text = parse("{info}<br>{}", content)
             jump_bridge_text = parse("{src} » {dst} - {info}<br>{}", content)
-            if jump_bridge_text and simple_text:
+            if jump_bridge_text is None:
+                jump_bridge_text = parse("{src} » {dst} - {info}\n{}", content)
+            if len(jump_bridge_text.named)==3:
                 cache = Cache()
                 structure = evegate.esiSearch(
-                    esi_char_name=self.currentApiChar(),
+                    esi_char_name=evegate.esiCharName(),
                     search_text="{} » {}".format(jump_bridge_text["src"], jump_bridge_text["dst"]),
                     search_category=evegate.category.structure)
                 if "structure" not in structure.keys():
@@ -940,10 +975,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     cache.clearJumpGate(jump_bridge_text["src"])
                 else:
                     json_src = evegate.esiUniverseStructure(
-                        esi_char_name=self.currentApiChar(),
+                        esi_char_name=evegate.esiCharName(),
                         structure_id=structure["structure"][0])
                     json_dst = evegate.esiUniverseStructure(
-                        esi_char_name=self.currentApiChar(),
+                        esi_char_name=evegate.esiCharName(),
                         structure_id=structure["structure"][1])
 
                     cache.putJumpGate(
@@ -961,31 +996,50 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 if simple_text is None:
                     simple_text = parse("<url=showinfo:{type_id}//{structure_id} {}>{info}</url>", content)
+                    if simple_text and len(simple_text.named) != 3:
+                        simple_text = None
 
-                if simple_text and len(simple_text.named)==3:
+                if simple_text is None:
+                    simple_text = parse('<a href="showinfo:{type_id}//{structure_id}">{src} » {dst} - {info}</a>{}', content)
+                    if simple_text and len(simple_text.named) == 5:
+                        self.AppendJumpGate(simple_text.named["src"], simple_text.named["dst"])
+                        return
+                    else:
+                        simple_text = None
+
+                if simple_text is None:
+                    simple_text = parse('{src} » {dst} - {info}', content)
+                    if simple_text and len(simple_text.named) == 3:
+                        self.AppendJumpGate(simple_text.named["src"], simple_text.named["dst"])
+                        return
+                    else:
+                        simple_text = None
+
+                if simple_text is None:
+                    simple_text = parse('{sys} - {info}', content)
+                    if simple_text and len(simple_text.named) != 2:
+                        simple_text = None
+
+                if simple_text:
                     cache = Cache()
-                    info = evegate.esiSearch(
-                        esi_char_name=self.currentApiChar(),
-                        search_text=simple_text["info"],
-                        search_category=evegate.category.station)
-                    if "station" in info.keys():
-                        station_info = evegate.getStationsInformation(info["station"][0])
-                        cache.putPOI(station_info)
-                        self.poi_changed.emit()
+                    info = simple_text.named
+                    if "structure_id" in info.keys():
+                        station_info = evegate.esiUniverseStations(info["structure_id"])
+                        if station_info:
+                            cache.putPOI(station_info)
+                            self.poi_changed.emit()
+                            return
 
-                    info = evegate.esiSearch(
-                        esi_char_name=self.currentApiChar(),
-                        search_text=simple_text["info"],
-                        search_category=evegate.category.structure)
-                    if "structure" in info.keys():
                         structure_info = evegate.esiUniverseStructure(
-                            esi_char_name=self.currentApiChar(),
-                            structure_id=info["structure"][0])
-                        cache.putPOI(structure_info)
-                        self.poi_changed.emit()
+                            esi_char_name=evegate.esiCharName(),
+                            structure_id=info["structure_id"])
+                        if structure_info:
+                            cache.putPOI(structure_info)
+                            self.poi_changed.emit()
+                            return
 
 
-            self.oldClipboardContent = content
+
 
     def mapLinkClicked(self, url:QtCore.QUrl):
         systemName = str(url.path().split("/")[-1]).upper()
@@ -1012,13 +1066,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if system_name not in self.systems.keys():
             if self.autoChangeRegion and evegate.getTokenOfChar(char):
                 try:
-                    for name, system_id in evegate.namesToIds([system_name]).items():
+
+                    for test in evegate.esiUniverseIds([system_name])["systems"]:
+                        name = test["name"]
+                        system_id = test["id"]
                         if name.lower() == system_name.lower():
-                            system = evegate.getSolarSystemInformation(system_id)
-                            selected_system = evegate.getSolarSystemInformation(system["system_id"])
-                            selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+                            system = evegate.esiUniverseSystems(system_id)
+                            selected_system = evegate.esiUniverseSystems(system["system_id"])
+                            selected_constellation = evegate.esiUniverseConstellations(selected_system["constellation_id"])
                             selected_region = selected_constellation["region_id"]
-                            selected_region_name = dotlan.convertRegionName(evegate.idsToNames([selected_region])[selected_region])
+                            selected_region_name = dotlan.convertRegionName(evegate.esiUniverseNames([selected_region])[selected_region])
                             concurrent_region_name = Cache().getFromCache("region_name")
                             if selected_region_name != concurrent_region_name:
                                 Cache().putIntoCache("region_name", selected_region_name)
@@ -1328,10 +1385,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return None
 
     def regionNameFromSystemID(self,selected_sys):
-        selected_system = evegate.getSolarSystemInformation(selected_sys[1].systemId)
-        selected_constellation = evegate.getConstellationInformation(selected_system["constellation_id"])
+        selected_system = evegate.esiUniverseSystems(selected_sys[1].systemId)
+        selected_constellation = evegate.esiUniverseConstellations(selected_system["constellation_id"])
         selected_region = selected_constellation["region_id"]
-        selected_region_name = evegate.idsToNames([selected_region])[selected_region]
+        selected_region_name = evegate.esiUniverseNames([selected_region])[selected_region]
         return selected_region_name
 
     def showContextMenu(self, event):
@@ -1380,7 +1437,7 @@ class RegionChooser(QtWidgets.QDialog):
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "RegionChooser.ui")), self)
-        self.strList = QtWidgets.QCompleter(["{}".format(name) for key, name in evegate.idsToNames(evegate.getAllRegions()).items()],parent=self)
+        self.strList = QtWidgets.QCompleter(["{}".format(name) for key, name in evegate.esiUniverseNames(evegate.getAllRegions()).items()], parent=self)
         self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.regionNameField.setCompleter(self.strList)
         self.cancelButton.clicked.connect(self.accept)

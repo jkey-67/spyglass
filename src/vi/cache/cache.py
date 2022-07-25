@@ -243,6 +243,8 @@ class Cache(object):
     def putPOI(self, data):
         """ data can be structure or station dict
         """
+        if data is None:
+            return
         with Cache.SQLITE_WRITE_LOCK:
             # data is a blob, so we have to change it to buffer
             if "station_id" in data.keys():
