@@ -50,7 +50,9 @@ Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[
 The following access rights will be use
  - esi-ui.write_waypoint.v1 
  - esi-universe.read_structures.v1 
- - esi-search.search_structures.v1
+ - esi-search.search_structures.v1 
+ - esi-location.read_online.v1 
+ - esi-location.read_location.v1
 
 
 ### API access enables 
