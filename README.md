@@ -10,8 +10,7 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
 
 ## Screenshot
 
-![image](https://user-images.githubusercontent.com/78883927/144115669-fa302dd7-d283-418a-b7fb-ff3f28c94b12.png)
-
+![image](https://user-images.githubusercontent.com/78883927/181164561-8e81cc23-46a9-4127-a75e-090887a4bddc.png)
 
 ## Features
 ### 1.6.0
