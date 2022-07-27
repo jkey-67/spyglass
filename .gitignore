@@ -4,4 +4,7 @@
 *.pyproj
 src/build/*
 src/dist/*
-.travis.yml
+src/.idea/*
+venv/
+eve_api_key.py
+workspace.xml

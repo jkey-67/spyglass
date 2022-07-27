@@ -18,41 +18,94 @@
 ###########################################################################
 
 import time
+import os
 
-from six.moves import range
-from PyQt4 import QtGui, QtCore, Qt
-from PyQt4.QtGui import QAction, QActionGroup
-from PyQt4.QtGui import QIcon, QSystemTrayIcon
-
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QAction, QActionGroup
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QSystemTrayIcon
 from vi.resources import resourcePath
 from vi import states
 from vi.soundmanager import SoundManager
-from PyQt4.QtCore import SIGNAL
 
-
-class TrayContextMenu(QtGui.QMenu):
+class TrayContextMenu(QtWidgets.QMenu):
     instances = set()
 
     def __init__(self, trayIcon):
         """ trayIcon = the object with the methods to call
         """
-        QtGui.QMenu.__init__(self)
+        QtWidgets.QMenu.__init__(self)
         TrayContextMenu.instances.add(self)
+        self.currentUser = None
+        self.currentSystem = None
         self.trayIcon = trayIcon
         self._buildMenu()
 
+    def hasJumpGate(sys_name=None) -> bool:
+        return False
+
+    def updateMenu(self, sys_name=None, rgn_name=None):
+        if sys_name:
+            self.gameMenu.setTitle("EVE-Online {}".format(sys_name[0]))
+            self.setDestination.setEnabled(True)
+            self.addWaypoint.setEnabled(True)
+            self.openDotlan.setEnabled(True)
+            self.openZKillboard.setEnabled(True)
+            self.avoidSystem.setEnabled(True)
+            self.clearJumpGate.setEnabled(self.hasJumpGate(sys_name[0]))
+            self.currentSystem = sys_name
+        else:
+            self.gameMenu.setTitle("EVE-Online")
+            self.setDestination.setEnabled(False)
+            self.addWaypoint.setEnabled(False)
+            self.openDotlan.setEnabled(False)
+            self.openZKillboard.setEnabled(False)
+            self.avoidSystem.setEnabled(False)
+            self.clearJumpGate.setEnabled(False)
+            self.currentSystem = None
+        if rgn_name:
+            self.changeRegion.setText("Change Region {}".format(rgn_name))
+            self.changeRegion.setEnabled(True)
+        else:
+            self.changeRegion.setText("Change Region")
+            self.changeRegion.setEnabled(False)
+
     def _buildMenu(self):
-        self.framelessCheck = QtGui.QAction("Frameless Window", self, checkable=True)
-        self.connect(self.framelessCheck, SIGNAL("triggered()"), self.trayIcon.changeFrameless)
+        self.framelessCheck = QtWidgets.QAction("Frameless Window", self, checkable=True)
+        self.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
         self.addAction(self.framelessCheck)
         self.addSeparator()
-        self.requestCheck = QtGui.QAction("Show status request notifications", self, checkable=True)
+        self.gameMenu = self.addMenu("EVE-Online")
+        self.setDestination = QAction("Set Destination", None, checkable=False)
+        self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
+        self.avoidSystem = QAction("Avoid System", None, checkable=False)
+        self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
+        self.clearAvoidList = QAction("Clear Avoid Systems", None, checkable=False)
+        self.clearAll = QAction("Clear all Waypoints", None, checkable=False)
+        self.gameMenu.addAction(self.setDestination)
+        self.gameMenu.addAction(self.addWaypoint)
+        self.gameMenu.addAction(self.avoidSystem)
+        self.gameMenu.addAction(self.clearAvoidList)
+        self.gameMenu.addAction(self.clearJumpGate)
+        self.gameMenu.addSeparator()
+        self.gameMenu.addAction(self.clearAll)
+        self.addMenu(self.gameMenu)
+        self.addSeparator()
+        self.openDotlan = QAction("Dotlan", None, checkable=False)
+        self.addAction(self.openDotlan)
+        self.openZKillboard = QAction("zKillbard", None, checkable=False)
+        self.addAction(self.openZKillboard)
+        self.changeRegion = QAction("Change Region", None, checkable=False)
+        self.addAction(self.changeRegion)
+        self.addSeparator()
+        self.requestCheck = QtWidgets.QAction("Show status request notifications", self, checkable=True)
         self.requestCheck.setChecked(True)
         self.addAction(self.requestCheck)
-        self.connect(self.requestCheck, SIGNAL("triggered()"), self.trayIcon.switchRequest)
-        self.alarmCheck = QtGui.QAction("Show alarm notifications", self, checkable=True)
+        self.requestCheck.triggered.connect(self.trayIcon.switchRequest)
+        self.alarmCheck = QtWidgets.QAction("Show alarm notifications", self, checkable=True)
         self.alarmCheck.setChecked(True)
-        self.connect(self.alarmCheck, SIGNAL("triggered()"), self.trayIcon.switchAlarm)
+        self.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
         self.addAction(self.alarmCheck)
         distanceMenu = self.addMenu("Alarm Distance")
         self.distanceGroup = QActionGroup(self)
@@ -61,13 +114,13 @@ class TrayContextMenu(QtGui.QMenu):
             if i == 0:
                 action.setChecked(True)
             action.alarmDistance = i
-            self.connect(action, SIGNAL("triggered()"), self.changeAlarmDistance)
+            action.triggered.connect(self.changeAlarmDistance)
             self.distanceGroup.addAction(action)
             distanceMenu.addAction(action)
         self.addMenu(distanceMenu)
         self.addSeparator()
         self.quitAction = QAction("Quit", self)
-        self.connect(self.quitAction, SIGNAL("triggered()"), self.trayIcon.quit)
+        self.quitAction.triggered.connect(self.trayIcon.quit)
         self.addAction(self.quitAction)
 
     def changeAlarmDistance(self):
@@ -76,13 +129,51 @@ class TrayContextMenu(QtGui.QMenu):
                 self.trayIcon.alarmDistance = action.alarmDistance
                 self.trayIcon.changeAlarmDistance()
 
+class JumpBridgeContextMenu(QtWidgets.QMenu):
+    def __init__(self):
+        QtWidgets.QMenu.__init__(self)
+        self.destination = QAction("Set destination")
+        self.waypoint = QAction("Add waypoint")
+        self.update = QAction("Update")
+        self.delete = QAction("Delete")
 
-class TrayIcon(QtGui.QSystemTrayIcon):
+        self.addAction(self.destination)
+        self.addAction(self.waypoint)
+        self.addAction(self.update)
+        self.addSeparator()
+        self.addAction(self.delete)
+
+    def updateContextMenu(self, items):
+        keys = items.keys()
+        has_id_src = ("id_src" in keys) and (items["id_src"] is not None)
+        self.waypoint.setEnabled(has_id_src)
+        self.destination.setEnabled(has_id_src)
+
+class POIContextMenu(QtWidgets.QMenu):
+    def __init__(self):
+        QtWidgets.QMenu.__init__(self)
+        self.destination = QAction("Set destination")
+        self.waypoint = QAction("Add waypoint")
+        self.delete = QAction("Delete POI")
+
+        self.addAction(self.destination)
+        self.addAction(self.waypoint)
+        self.addSeparator()
+        self.addAction(self.delete)
+
+
+
+
+class TrayIcon(QtWidgets.QSystemTrayIcon):
     # Min seconds between two notifications
     MIN_WAIT_NOTIFICATION = 15
 
+    alarm_distance = pyqtSignal(int)
+    change_frameless = pyqtSignal()
+    quit_signal = pyqtSignal()
+
     def __init__(self, app):
-        self.icon = QIcon(resourcePath("vi/ui/res/logo_small.png"))
+        self.icon = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
         QSystemTrayIcon.__init__(self, self.icon, app)
         self.setToolTip("Your Spyglass Information Service! :)")
         self.lastNotifications = {}
@@ -91,19 +182,20 @@ class TrayIcon(QtGui.QSystemTrayIcon):
         self.showRequest = True
         self.alarmDistance = 0
 
+
     def changeAlarmDistance(self):
         distance = self.alarmDistance
-        self.emit(SIGNAL("alarm_distance"), distance)
+        self.alarm_distance.emit(distance)
 
     def changeFrameless(self):
-        self.emit(SIGNAL("change_frameless"))
+        self.change_frameless.emit()
 
     @property
     def distanceGroup(self):
         return self.contextMenu().distanceGroup
 
     def quit(self):
-        self.emit(SIGNAL("quit"))
+        self.quit_signal.emit()
 
     def switchAlarm(self):
         newValue = not self.showAlarm
@@ -125,13 +217,14 @@ class TrayIcon(QtGui.QSystemTrayIcon):
         text = None
         icon = None
         text = ""
+
         if (message.status == states.ALARM and self.showAlarm and self.lastNotifications.get(states.ALARM,
                                                                                              0) < time.time() - self.MIN_WAIT_NOTIFICATION):
             title = "ALARM!"
             icon = 2
             speechText = (u"{0} alarmed in {1}, {2} jumps from {3}".format(system, room, distance, char))
             text = speechText + (u"\nText: %s" % text)
-            SoundManager().playSound("alarm", text, speechText)
+            SoundManager().playSound("alarm_{}".format(distance), text, speechText)
             self.lastNotifications[states.ALARM] = time.time()
         elif (message.status == states.REQUEST and self.showRequest and self.lastNotifications.get(states.REQUEST,
                                                                                                    0) < time.time() - self.MIN_WAIT_NOTIFICATION):
@@ -139,7 +232,8 @@ class TrayIcon(QtGui.QSystemTrayIcon):
             icon = 1
             text = (u"Someone is requesting status of {0} in {1}.".format(system, room))
             self.lastNotifications[states.REQUEST] = time.time()
-            SoundManager().playSound("request", text)
+            #SoundManager().playSound("request", text)
         if not (title is None or text is None or icon):
             text = text.format(**locals())
             self.showMessage(title, text, icon)
+

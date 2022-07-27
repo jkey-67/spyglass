@@ -35,7 +35,6 @@
 		the tree and so the original generator is not longer stable.
 """
 
-import six
 
 import vi.evegate as evegate
 from bs4 import BeautifulSoup
@@ -52,7 +51,7 @@ def textReplace(element, newText):
         newElements.append(newPart)
     for newElement in newElements:
         element.insert_before(newElement)
-    element.replace_with(six.text_type(""))
+    element.replace_with("")
 
 
 def parseStatus(rtext):
@@ -96,6 +95,8 @@ def parseShips(rtext):
                     textReplace(text, formatted)
                     return True
 
+def isCharName( name ):
+    return False
 
 def parseSystems(systems, rtext, foundSystems):
     systemNames = systems.keys()
@@ -132,7 +133,9 @@ def parseSystems(systems, rtext, foundSystems):
                         # '_____ GATE' mentioned in message, which is not what we're
                         # interested in, so go to checking next word.
                         continue
-
+                if (words[idx + 1].upper() == 'CLR') or (words[idx + 1].upper() == 'CLEAR'):
+                    if (isCharName( words[idx ]+ " "+words[idx + 1])):
+                        continue
             upperWord = word.upper()
             if upperWord != word and upperWord in WORDS_TO_IGNORE: continue
             if upperWord in systemNames:  # - direct hit on name
@@ -167,7 +170,8 @@ def parseSystems(systems, rtext, foundSystems):
                         formattedText = formatSystem(text, word, system)
                         textReplace(text, formattedText)
                         return True
-
+    #if ( len(foundSystems) > 1):
+    #todo check for sytemname clear/clr here
     return False
 
 

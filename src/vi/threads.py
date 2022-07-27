@@ -18,18 +18,10 @@
 ###########################################################################
 
 import time
-import datetime
 import logging
-import six
-import pyttsx
-import threading
-
-from Queue import Queue
-from six.moves import queue
-from PyQt4.QtCore import QThread, SIGNAL, QTimer
+import queue
+from PyQt5.QtCore import QThread, QTimer, pyqtSignal
 from vi import evegate
-from vi import koschecker
-from vi import states
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 
@@ -37,6 +29,9 @@ STATISTICS_UPDATE_INTERVAL_MSECS = 1 * 60 * 1000
 
 
 class AvatarFindThread(QThread):
+
+    avatar_update = pyqtSignal(object, object)
+
     def __init__(self):
         QThread.__init__(self)
         self.queue = queue.Queue()
@@ -56,7 +51,7 @@ class AvatarFindThread(QThread):
     def run(self):
         cache = Cache()
         lastCall = 0
-        wait = 300  # time between 2 requests in ms
+        wait = 500  # time between 2 requests in ms
         while True:
             try:
                 # Block waiting for addChatEntry() to enqueue something
@@ -67,23 +62,27 @@ class AvatarFindThread(QThread):
                 logging.debug("AvatarFindThread getting avatar for %s" % charname)
                 avatar = None
                 if charname == "SPYGLASS":
-                    with open(resourcePath("vi/ui/res/logo_small.png"), "rb") as f:
+                    with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
-                if not avatar:
+                if avatar is None:
                     avatar = cache.getAvatar(charname)
                     if avatar:
                         logging.debug("AvatarFindThread found cached avatar for %s" % charname)
-                if not avatar:
+                if avatar is None:
                     diffLastCall = time.time() - lastCall
                     if diffLastCall < wait:
                         time.sleep((wait - diffLastCall) / 1000.0)
-                    avatar = evegate.getAvatarForPlayer(charname)
+                    avatar = evegate.esiCharactersPortrait(charname)
                     lastCall = time.time()
-                    if avatar:
+                    if avatar is None:
+                        cache.removeAvatar(charname)
+                    else:
                         cache.putAvatar(charname, avatar)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % charname)
-                    self.emit(SIGNAL("avatar_update"), chatEntry, avatar)
+                    self.avatar_update.emit(chatEntry, avatar)
+                else:
+                    logging.warning("AvatarFindThread unable to find avatar for %s" % charname)
             except Exception as e:
                 logging.error("Error in AvatarFindThread : %s", e)
 
@@ -93,127 +92,39 @@ class AvatarFindThread(QThread):
         QThread.quit(self)
 
 
-class KOSCheckerThread(QThread):
-    def __init__(self):
-        QThread.__init__(self)
-        self.queue = queue.Queue()
-        self.recentRequestNamesAndTimes = {}
-        self.active = True
-
-    def addRequest(self, names, requestType, onlyKos=False):
-        try:
-            # Spam control for multi-client users
-            now = time.time()
-            if names in self.recentRequestNamesAndTimes:
-                lastRequestTime = self.recentRequestNamesAndTimes[names]
-                if now - lastRequestTime < 10:
-                    return
-            self.recentRequestNamesAndTimes[names] = now
-
-            # Enqeue the data to be picked up in run()
-            self.queue.put((names, requestType, onlyKos))
-        except Exception as e:
-            logging.error("Error in KOSCheckerThread.addRequest: %s", e)
-
-    def run(self):
-        while True:
-            # Block waiting for addRequest() to enqueue something
-            names, requestType, onlyKos = self.queue.get()
-            if not self.active:
-                return
-            try:
-                # logging.info("KOSCheckerThread kos checking %s" %  str(names))
-                hasKos = False
-                if not names:
-                    continue
-                checkResult = koschecker.check(names)
-                if not checkResult:
-                    continue
-                text = koschecker.resultToText(checkResult, onlyKos)
-                for name, data in checkResult.items():
-                    if data["kos"] in (koschecker.KOS, koschecker.RED_BY_LAST):
-                        hasKos = True
-                        break
-            except Exception as e:
-                logging.error("Error in KOSCheckerThread.run: %s", e)
-                continue
-
-            logging.info(
-                    "KOSCheckerThread emitting kos_result for: state = {0}, text = {1}, requestType = {2}, hasKos = {3}".format(
-                            "ok", text, requestType, hasKos))
-            self.emit(SIGNAL("kos_result"), "ok", text, requestType, hasKos)
-
-    def quit(self):
-        self.active = False
-        self.queue.put((None, None, None))
-        QThread.quit(self)
-
-
 class MapStatisticsThread(QThread):
+
+    statistic_data_update = pyqtSignal(dict)
+
     def __init__(self):
         QThread.__init__(self)
         self.queue = queue.Queue(maxsize=1)
-        self.lastStatisticsUpdate = time.time()
-        self.pollRate = STATISTICS_UPDATE_INTERVAL_MSECS
-        self.refreshTimer = None
         self.active = True
 
     def requestStatistics(self):
-        self.queue.put(1)
+        self.queue.put(None)
+
 
     def run(self):
-        self.refreshTimer = QTimer()
-        self.connect(self.refreshTimer, SIGNAL("timeout()"), self.requestStatistics)
+        evegate.getPlayerSovereignty(fore_refresh=False, show_npc=False)
+        evegate.getIncursionSystemsIds(False)
+        evegate.getCampaignsSystemsIds(False)
+        evegate.esiUniverseSystem_jumps()
         while True:
-            # Block waiting for requestStatistics() to enqueue a token
             self.queue.get()
             if not self.active:
                 return
-            self.refreshTimer.stop()
-            logging.debug("MapStatisticsThread requesting statistics")
             try:
-                statistics = evegate.getSystemStatistics()
-                # time.sleep(2)  # sleeping to prevent a "need 2 arguments"-error
-                requestData = {"result": "ok", "statistics": statistics}
+                evegate.getIncursionSystemsIds(False)
+                evegate.getCampaignsSystemsIds(False)
+                statistics = evegate.esiUniverseSystem_jumps()
+                statistics_data = {"result": "ok", "statistics": statistics}
             except Exception as e:
                 logging.error("Error in MapStatisticsThread: %s", e)
-                requestData = {"result": "error", "text": six.text_type(e)}
-            self.lastStatisticsUpdate = time.time()
-            self.refreshTimer.start(self.pollRate)
-            self.emit(SIGNAL("statistic_data_update"), requestData)
-            logging.debug("MapStatisticsThread emitted statistic_data_update")
+                statistics_data = {"result": "error", "text": str(e)}
+            self.statistic_data_update.emit(statistics_data)
 
     def quit(self):
         self.active = False
         self.queue.put(None)
         QThread.quit(self)
-
-
-class VoiceOverThread(threading.Thread):
-    def __init__(self):
-        super(VoiceOverThread, self).__init__()
-        self.engine = pyttsx.init()
-        self.engine.setProperty('rate', 185)
-        self.engine.setProperty('voice', 'english-us')
-        self.queue = Queue()
-        self.daemon = True
-        self.stoprequest = threading.Event()
-
-    def add_message(self, msg):
-        self.queue.put(msg)
-
-    def run(self):
-        while not self.stoprequest.is_set:
-            try:
-                # Will block until it gets a something or times out
-                words = self.queue.get(True, 1)
-                # Init every time, only takes ~20us on slow machines and avoids colliding words
-                self.engine = pyttsx.init()
-                self.engine.setProperty('rate', 160)
-                self.engine.setProperty('voice', 'english-us')
-                self.engine.say(words)
-                # should block until the end of the words
-                self.queue.task_done()
-                self.engine = None
-            except Queue.Empty:
-                continue
