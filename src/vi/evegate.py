@@ -1244,14 +1244,14 @@ if __name__ == "__main__":
     "<url=showinfo:29633//50003218 alt='Nearest'>4-43BW</url>"
     "<a href=showinfo:5//30000731 alt='Current Solar System'>8CN-CH</a>"
     '<a href=showinfo:35841//1037567353379">OX-S7P » 8CN-CH - Speedway 2</a> in OX-S7P'
-    res = esiCharactersPortrait("Nele McCool")
+    characters_portrait = esiCharactersPortrait("Nele McCool")
     location = esiUniverseSystems(30000731)
     structures = esiUniverseStructure(esi_char_name="nele McCool",structure_id=1037567353379)
     nase = esiUniverseIds(list({"nele McCool", "G-M4GK", "Rovengard Ogaster"}), False)
     id = charNameToId("nele McCool", False)
     res = checkPlayerName( "Nele McCool" )
     info = esiSearch(esi_char_name="nele McCool", search_text="Cemetry and memorial to fallen capsuleers",
-                        search_category=category.station)
+                        search_category=category.structure)
     info = esiSearch(esi_char_name="nele McCool", search_text="Jita IV - Moon 4 - Caldari Navy Assembly Plant",search_category=category.station)
     cache = Cache()
     camp = esiSovereigntyCampaigns()

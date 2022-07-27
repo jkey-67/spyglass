@@ -964,7 +964,7 @@ class MainWindow(QtWidgets.QMainWindow):
             jump_bridge_text = parse("{src} » {dst} - {info}<br>{}", content)
             if jump_bridge_text is None:
                 jump_bridge_text = parse("{src} » {dst} - {info}\n{}", content)
-            if len(jump_bridge_text.named)==3:
+            if jump_bridge_text and len(jump_bridge_text.named)==3:
                 cache = Cache()
                 structure = evegate.esiSearch(
                     esi_char_name=evegate.esiCharName(),

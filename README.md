@@ -39,6 +39,12 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
  - During startup, the software automatically double check for a new version ready to download. If there is an update available four your version, you will get a button start the download on screen. You can check for new version manually, try [double check latest release](https://github.com/jkey-67/spyglass/releases/latest)  
  - If you copy the name of the jump bridge in game, the connection is automatically added into the database, the software will remove all pairs with the same source or destination system. 
 
+ ### 1.6.2
+ - list of POI added, you can use the list items to set the destination
+ - now you can manage the Ansiblex Jump Gates from inside Spyglass
+ - the registered chars can be switched from Spyglass
+ - fixing ESI search changes
+
 ## Features with API registration
 Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
