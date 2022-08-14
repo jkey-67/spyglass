@@ -73,7 +73,7 @@ class FileWatcher(QtCore.QThread):
                 if not stat.S_ISREG(pathStat.st_mode):
                     continue
                 if modified < pathStat.st_size:
-                    self.file_change.emit(path, True)
+                    self.file_change.emit(path, False)
                 self.files[path] = pathStat.st_size
 
     def quit(self):
