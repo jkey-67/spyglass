@@ -47,13 +47,15 @@ class Cache(object):
     # Cache-Instances in various threads: must handle concurrent writings
     SQLITE_WRITE_LOCK = threading.Lock()
 
-    def __init__(self, pathToSQLiteFile="cache.sqlite3"):
-        """ pathToSQLiteFile=path to sqlite-file to save the cache. will be ignored if you set Cache.PATH_TO_CACHE
+    def __init__(self, path_to_sql_file="cache.sqlite3"):
+        """
+        Args:
+            path_to_sql_file(str): Path to sqlite-file to save the cache. will be ignored if you set Cache.PATH_TO_CACHE
             before init
         """
         if Cache.PATH_TO_CACHE:
-            pathToSQLiteFile = Cache.PATH_TO_CACHE
-        self.con = sqlite3.connect(pathToSQLiteFile)
+            path_to_sql_file = Cache.PATH_TO_CACHE
+        self.con = sqlite3.connect(path_to_sql_file)
         if not Cache.VERSION_CHECKED:
             with Cache.SQLITE_WRITE_LOCK:
                 self.checkVersion()
@@ -73,6 +75,17 @@ class Cache(object):
                 raise e
         updateDatabase(version, self.con)
 
+    def removeFromCache(self, key):
+        """ Remove an item from the table cache
+
+        Args:
+            key: the key to be removed
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "DELETE FROM cache WHERE key = ?"
+            self.con.execute(query, (key,))
+            self.con.commit()
+
     def putIntoCache(self, key, value, max_age=60*60*24*3):
         """ Putting something in the cache maxAge is maximum age in seconds
         """
@@ -84,9 +97,15 @@ class Cache(object):
             self.con.commit()
 
     def getFromCache(self, key, outdated=False):
-        """ Getting a value from cache
-            key = the key for the value
-            outdated = returns the value also if it is outdated
+        """ Getting something from cache
+        Args:
+            key : the key for the value
+
+        Args:
+            outdated: if true, the function returns the value even if it is outdated
+
+        Returns:
+            str:The resulting string from the cache table , or None
         """
         query = "SELECT key, data, modified, maxage FROM cache WHERE key = ?"
         founds = self.con.execute(query, (key,)).fetchall()
@@ -97,29 +116,14 @@ class Cache(object):
         else:
             return founds[0][1]
 
-    def putPlayerName(self, name, status):
-        """ Putting a playername into the cache
-        """
-        with Cache.SQLITE_WRITE_LOCK:
-            query = "DELETE FROM playernames WHERE charname = ?"
-            self.con.execute(query, (name,))
-            query = "INSERT INTO playernames (charname, status, modified) VALUES (?, ?, ?)"
-            self.con.execute(query, (name, status, time.time()))
-            self.con.commit()
+    def putImageToCache(self, name, data):
+        """ Put the picture of a player or other item into the avatars table
 
-    def getPlayerName(self, name):
-        """ Getting back infos about playername from Cache. Returns None if the name was not found, else it returns
-            the status
-        """
-        selectquery = "SELECT charname, status FROM playernames WHERE charname = ?"
-        founds = self.con.execute(selectquery, (name,)).fetchall()
-        if len(founds) == 0:
-            return None
-        else:
-            return founds[0][1]
+        Args:
+            name(str):Key of interests
 
-    def putAvatar(self, name, data):
-        """ Put the picture of an player into the cache
+        Args:
+              data:Picture data to be inserted as blob
         """
         with Cache.SQLITE_WRITE_LOCK:
             # data is a blob, so we have to change it to buffer
@@ -130,8 +134,14 @@ class Cache(object):
             self.con.execute(query, (name, data, time.time()))
             self.con.commit()
 
-    def getAvatar(self, name):
+    def getImageFromCache(self, name):
         """ Getting the avatars_pictures data from the Cache. Returns None if there is no entry in the cache
+
+        Args:
+            name(str):Key of interests
+
+        Returns:
+            bytes:blob of data or None
         """
         select_query = "SELECT data FROM avatars WHERE charname = ?"
         founds = self.con.execute(select_query, (name,)).fetchall()
@@ -144,6 +154,9 @@ class Cache(object):
 
     def removeAvatar(self, name):
         """ Removing an avatar from the cache
+
+        Args:
+            name(str):Key of interests
         """
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM avatars WHERE charname = ?"
@@ -176,28 +189,34 @@ class Cache(object):
                     logging.error("Recall application setting failed to set attribute {0} | {1} | {2} | error {3}"
                                   .format(str(obj), setting[1], setting[2], e))
 
-    def putJumpGate(self, src, dst, src_id=None, dst_id=None,json_src=None, json_dst=None, used=None, max_age=60 * 60 * 24 * 14):
+    def putJumpGate(self, src, dst, src_id=None, dst_id=None,
+                    json_src=None, json_dst=None, used=None, max_age=60 * 60 * 24 * 14):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
             # data is a blob, so we have to change it to buffer
             query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ? or src LIKE ? or dst LIKE ?"
             self.con.execute(query, (src, src, dst, dst))
-            query = "INSERT INTO jumpbridge (src, dst, used, id_src, id_dst, json_src, json_dst, modified, maxage) VALUES (?, ?, ?, ?, ?, ?, ? , ?, ?)"
-            self.con.execute(query, (src, dst, used, src_id, dst_id, json.dumps(json_src), json.dumps(json_dst), time.time(), max_age))
+            query = "INSERT INTO jumpbridge (src, dst, used, id_src, id_dst, json_src, json_dst, modified, maxage) "\
+                    "VALUES (?, ?, ?, ?, ?, ?, ? , ?, ?)"
+            self.con.execute(query, (src, dst, used, src_id, dst_id,
+                                     json.dumps(json_src), json.dumps(json_dst), time.time(), max_age))
             self.con.commit()
 
-    def clearJumpGate(self, src):
-        """
+    def clearJumpGate(self, src) -> None:
+        """ Removes all items from the jumpbridge table where FROM  or TO match str
+
+        Args:
+            src(str):Name of the system which can be FROM or TO
+
         """
         with Cache.SQLITE_WRITE_LOCK:
-            # data is a blob, so we have to change it to buffer
             query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ?"
             self.con.execute(query, (src, src))
             self.con.commit()
 
     def clearOutdatedJumpGates(self):
-        """ delete all outdated jumpbridges from database
+        """ Delete all outdated jumpbridges from database
         """
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM jumpbridge WHERE modified < unixepoch()-maxage"
@@ -205,7 +224,14 @@ class Cache(object):
             self.con.commit()
 
     def hasJumpGate(self, src) -> bool:
-        """
+        """Check the database  for an existing jumpbpridge
+
+        Args:
+            src(str):Name of the system which match FROM
+
+        Returns:
+            bool:True if a jumpgridge is anchored in the system
+
         """
         with Cache.SQLITE_WRITE_LOCK:
             # data is a blob, so we have to change it to buffer
@@ -213,23 +239,25 @@ class Cache(object):
             res = self.con.execute(query, (src, src)).fetchall()
         return len(res) > 0
 
-    def getJumpGates(self, src=None):
+    def getJumpGates(self):
+        """Get a list of all jumpgridges
+
+        Returns:
+            list(tuple(str,str,str): List of tuple of strings
         """
-        """
-        with Cache.SQLITE_WRITE_LOCK:
-            selectquery = "SELECT src, ' ', dst FROM jumpbridge "
-            founds = self.con.execute(selectquery, ()).fetchall()
-            if len(founds) == 0:
-                return None
-            else:
-                return founds
+        query = "SELECT src, ' ', dst FROM jumpbridge "
+        founds = self.con.execute(query, ()).fetchall()
+        if len(founds) == 0:
+            return None
+        else:
+            return founds
 
     def getJumpGatesAtIndex(self, inx:int):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
-            selectquery = "select src, dst, id_src, json_src  from jumpbridge  LIMIT 1 OFFSET ?"
-            founds = self.con.execute(selectquery, (inx,)).fetchall()
+            query = "select src, dst, id_src, json_src  from jumpbridge  LIMIT 1 OFFSET ?"
+            founds = self.con.execute(query, (inx,)).fetchall()
             if len(founds) == 0:
                 return None
             else:
@@ -237,7 +265,7 @@ class Cache(object):
                     "src": founds[0][0],
                     "dst": founds[0][1],
                     "id_src": founds[0][2],
-                    "json_src" : eval(founds[0][3])if founds[0][3] else None
+                    "json_src": eval(founds[0][3])if founds[0][3] != "null" else None
                 }
 
     def putPOI(self, data):
@@ -263,8 +291,8 @@ class Cache(object):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
-            selectquery = "select json from pointofinterest  LIMIT 1 OFFSET ?"
-            founds = self.con.execute(selectquery, (inx,)).fetchall()
+            query = "select json from pointofinterest  LIMIT 1 OFFSET ?"
+            founds = self.con.execute(query, (inx,)).fetchall()
             if len(founds) == 0:
                 return None
             else:
@@ -277,10 +305,9 @@ class Cache(object):
 
     def clearPOI(self,destination_id:int) -> None:
         with Cache.SQLITE_WRITE_LOCK:
-            selectquery = "DELETE FROM pointofinterest  WHERE id IS ?"
-            founds = self.con.execute(selectquery, (destination_id,)).fetchall()
+            query = "DELETE FROM pointofinterest  WHERE id IS ?"
+            founds = self.con.execute(query, (destination_id,)).fetchall()
             self.con.commit()
-
 
     def clearAPIKey(self, char) -> None:
         with Cache.SQLITE_WRITE_LOCK:
@@ -293,7 +320,7 @@ class Cache(object):
         with Cache.SQLITE_WRITE_LOCK:
             query = "SELECT key FROM players WHERE id IS ? or name IS ?"
             res = self.con.execute(query, (char, char)).fetchall()
-            return len(res) > 0 and ( res[0] != None )
+            return len(res) > 0 and res[0] is None
         return False
 
     def getAPIKey(self, char):
@@ -304,7 +331,6 @@ class Cache(object):
                 return res[0][0]
             else:
                 return None
-
 
     def putAPIKey(self, key, max_age=60 * 60 * 24 * 90):
         self.clearAPIKey(key["CharacterName"])
