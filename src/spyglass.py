@@ -114,52 +114,61 @@ class Application(QApplication):
         if not os.path.exists(spyglassLogDirectory):
             os.mkdir(spyglassLogDirectory)
 
-        spyglassCache = Cache()
-        logLevel = spyglassCache.getFromCache("logging_level")
-        if not logLevel:
-            logLevel = logging.WARN
+        spyglass_cache = Cache()
+        log_level = spyglass_cache.getFromCache("logging_level")
+        if not log_level:
+            log_level = logging.INFO
         if version.SNAPSHOT:
-            logLevel = logging.DEBUG  # For Testing
-        backGroundColor = spyglassCache.getFromCache("background_color")
+            log_level = logging.DEBUG  # For Testing
 
-        if backGroundColor:
-            self.setStyleSheet("background-color: %s;" % backGroundColor)
+        back_ground_color = spyglass_cache.getFromCache("background_color")
+
+        if back_ground_color:
+            self.setStyleSheet("background-color: %s;" % back_ground_color)
         css = Styles().getStyle()
         self.setStyleSheet(css)
         del css
 
-
+        root_logger = logging.getLogger()
+        root_logger.setLevel(level=log_level)
         # Setup logging for console and rotated log files
-        formatter = logging.Formatter('%(asctime)s| %(message)s', datefmt='%m/%d %I:%M:%S')
-        rootLogger = logging.getLogger()
-        rootLogger.setLevel(level=logLevel)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(logging.Formatter('"%(asctime)s - "/%(pathname)s:%(lineno)s)" : %(message)s'))
 
-        logFilename = spyglassLogDirectory + "/output.log"
+        log_filename = spyglassLogDirectory + "/output.log"
+        file_handler = RotatingFileHandler(maxBytes=(1048576 * 5), backupCount=7, filename=log_filename, mode='a')
+        file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)9s [%(filename)s:%(lineno)s] - %(message)s"))
+        root_logger.addHandler(stream_handler)
+        root_logger.addHandler(file_handler)
 
-        fileHandler = RotatingFileHandler(maxBytes=(1048576 * 5), backupCount=7, filename=logFilename, mode='a')
-        fileHandler.setFormatter(formatter)
-        rootLogger.addHandler(fileHandler)
+        logging.info("================================================================================================")
+        logging.info("Spyglass %s starting up", version.VERSION)
+        logging.info("Looking for chat logs at: {0}".format(chatLogDirectory))
+        logging.info("Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE))
+        logging.info("Writing logs to: {0}".format(spyglassLogDirectory))
+        logging.info("================================================================================================")
+        tray_icon = systemtray.TrayIcon(self)
+        tray_icon.show()
 
-        consoleHandler = StreamHandler()
-        consoleHandler.setFormatter(formatter)
-        rootLogger.addHandler(consoleHandler)
-
-        logging.critical("")
-        logging.critical("------------------- Spyglass %s starting up -------------------", version.VERSION)
-        logging.critical("")
-        logging.critical(" Looking for chat logs at: {0}".format(chatLogDirectory))
-        logging.critical(" Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE))
-        logging.critical(" Writing logs to: {0}".format(spyglassLogDirectory))
-        trayIcon = systemtray.TrayIcon(self)
-        trayIcon.show()
         def change_splash_text( txt ):
             if len(txt):
                 splash.showMessage("    {} ...".format(txt), QtCore.Qt.AlignLeft, QtGui.QColor(0x808000))
-        self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, change_splash_text)
+
+        self.mainWindow = viui.MainWindow(chatLogDirectory, tray_icon, change_splash_text)
         self.mainWindow.show()
         self.mainWindow.raise_()
 
+    def __del__(self):
+        logging.info(" Spyglass terminated normal.")
+
+
 # The main application
 if __name__ == "__main__":
-    app = Application(sys.argv)
-    sys.exit(app.exec_())
+    res = 0
+    try:
+        app = Application(sys.argv)
+        res = app.exec_()
+        del app
+    except Exception as e:
+        logging.critical("Spyglass terminated abnormal %s.", e.__str__())
+    sys.exit(res)
