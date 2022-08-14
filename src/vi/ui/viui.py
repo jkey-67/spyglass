@@ -97,6 +97,8 @@ class MainWindow(QtWidgets.QMainWindow):
     poi_changed = pyqtSignal()
 
     def __init__(self, pathToLogs, trayIcon, update_splash=None):
+        self.tableViewJBs = None
+
         def update_splash_window_info(string):
             if update_splash:
                 update_splash(string)
@@ -217,7 +219,8 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
         elif sys.platform.startswith("linux"):
             pass
-        self.chatparser = ChatParser(self.pathToLogs, self.roomnames, None, self.intelTimeGroup.intelTime)
+
+        self.chatparser = ChatParser()
         self.wireUpUIConnections()
         self.recallCachedSettings()
         self.setupThreads()
@@ -252,8 +255,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if Cache().hasAPIKey(name):
                 avatar_icon = evegate.esiCharactersPortrait(name)
                 if avatar_icon is not None:
-                    img = QImage.fromData(avatar_icon)
-                    icon = QIcon(QPixmap.fromImage(img))
+                    icon = QIcon(QPixmap.fromImage(QImage.fromData(avatar_icon)))
             action = QAction(icon, "{0}".format(name), checkable=True)
             action.playerName = name
             action.triggered.connect(self.changePlayerIntel)
@@ -467,7 +469,12 @@ class MainWindow(QtWidgets.QMainWindow):
             elif res == lps_ctx_menu.waypoint:
                 return
             elif res == lps_ctx_menu.update:
-                evegate.getAllJumpGates(evegate.esiCharName(), item["src"], item["dst"])
+                inx_selected = self.tableViewJBs.selectedIndexes()
+                items = dict()
+                for inx in inx_selected:
+                    items[inx.row()] = cache.getJumpGatesAtIndex(inx.row())
+                for item in items.values():
+                    evegate.getAllJumpGates(evegate.esiCharName(), item["src"], item["dst"])
                 self.jbs_changed.emit()
             elif res == lps_ctx_menu.delete:
                 cache.clearJumpGate(item["src"])
@@ -624,29 +631,35 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon.contextMenu().changeRegion.triggered.connect(self.changeRegionFromCtxMenu)
 
     def setupMap(self, initialize=False):
+        logging.debug("setupMap started...")
+        cache = Cache()
         self.filewatcherThread.paused = True
-        regionName = Cache().getFromCache("region_name")
-        if not regionName:
-            regionName = "Providence"
-        logging.info("Finding map file {}".format(regionName))
+        region_name = cache.getFromCache("region_name")
+
+        if not region_name:
+            region_name = "Providence"
+
         svg = None
         try:
-            res_file_name = os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(regionName))
+            res_file_name = os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(region_name))
             if resourcePathExists(res_file_name):
                 with open(resourcePath(res_file_name))as svgFile:
                     svg = svgFile.read()
+            logging.info("Using local stored map file {}".format(res_file_name))
         except Exception as e:
             pass
 
         try:
-            self.dotlan = dotlan.Map(regionName, svg,
+            self.dotlan = dotlan.Map(region_name, svg,
                 setJumpMapsVisible=self.jumpbridgesButton.isChecked())
             #todo:fix static updates
                 #setSatisticsVisible=self.statisticsButton.isChecked()
 
             self.dotlan._applySystemStatistic(evegate.getPlayerSovereignty(True))
+            self.dotlan.setJumpbridges(cache.getJumpGates())
+            logging.info("Using dotlan map {}".format(region_name))
         except dotlan.DotlanException as e:
-            logging.error(e)
+            logging.critical(e)
             QMessageBox.critical(None, "Error getting map", str(e), QMessageBox.Close)
             sys.exit(1)
 
@@ -658,22 +671,18 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.warning(diagText)
             QMessageBox.warning(None, "Using map from cache", diagText, QMessageBox.Ok)
 
-        # Load the jumpbridges
-        logging.debug("Load jump bridges")
-        self.setJumpbridges(Cache().getFromCache("jumpbridge_url"))
         self.systems = self.dotlan.systems
-        logging.debug("Creating chat parser")
-        self.chatparser.systems = self.systems
+        logging.debug("Creating chat parser for the current map")
         self.chatparser = ChatParser(self.pathToLogs, self.roomnames, self.systems, self.intelTimeGroup.intelTime)
 
         # Update the new map view, then clear old statistics from the map and request new
         logging.debug("Updating the map")
         self.updateMapView()
-        self.setInitialMapPositionForRegion(regionName)
+        self.setInitialMapPositionForRegion(region_name)
         self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
         # Allow the file watcher to run now that all else is set up
         self.filewatcherThread.paused = False
-        logging.debug("Map setup complete")
+        logging.debug("setupMap succeeded.")
 
     def rescanIntel(self):
         logging.info("Intel ReScan begun")
@@ -691,9 +700,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     if roomname in self.roomnames:
                         logging.info("Reading log {}".format(roomname))
                         self.logFileChanged(filePath, rescan=True)
-                        #self.logFileChanged(filePath, rescan=True)
+
         logging.info("Intel ReScan done")
         self.updateMapView()
+
+
     def startClipboardTimer(self):
         """
             Start a timer to check the keyboard for changes and kos check them,
@@ -1063,10 +1074,12 @@ class MainWindow(QtWidgets.QMainWindow):
         for system in self.systems.values():
             system.removeLocatedCharacter(char)
 
-        if system_name not in self.systems.keys():
-            if self.autoChangeRegion and evegate.getTokenOfChar(char):
-                try:
+        if evegate.esiCheckCharacterToken(char) and not evegate.esiCharactersOnline(char):
+            return
 
+        if system_name not in self.systems.keys():
+            if self.autoChangeRegion :#and evegate.getTokenOfChar(char):
+                try:
                     for test in evegate.esiUniverseIds([system_name])["systems"]:
                         name = test["name"]
                         system_id = test["id"]
@@ -1085,20 +1098,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not system_name == "?" and system_name in self.systems.keys():
             self.systems[system_name].addLocatedCharacter(char)
-            if evegate.getTokenOfChar(char):
+            if evegate.esiCheckCharacterToken(char):
                 self.focusMapOnSystem(self.systems[str(system_name)].systemId)
             else:
                 self.updateMapView()
 
     def updateMapView(self):
-        self.dotlan.setIncursionSystems(evegate.getIncursionSystemsIds())
-        self.dotlan.setCampaignsSystems(evegate.getCampaignsSystemsIds())
+        try:
+            self.dotlan.setIncursionSystems(evegate.getIncursionSystemsIds())
+            self.dotlan.setCampaignsSystems(evegate.getCampaignsSystemsIds())
 
-        if self.currContent != self.dotlan.svg:
-            self.mapTimer.stop()
-            if self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html"):
-                self.currContent = self.dotlan.svg
-            self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
+            if self.currContent != self.dotlan.svg:
+                self.mapTimer.stop()
+                if self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html"):
+                    self.currContent = self.dotlan.svg
+                self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
+        except Exception as e:
+            logging.error("Error updateMapView failed: {0}".format(str(e)))
+            pass
 
     def loadInitialMapPositions(self, new_dictionary):
         self.mapPositionsDict = new_dictionary
@@ -1107,10 +1124,13 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if not region_name:
                 region_name = Cache().getFromCache("region_name")
-            if region_name:
+            if region_name and region_name in self.mapPositionsDict:
                 xy = self.mapPositionsDict[region_name]
                 self.initialMapPosition = QPointF(xy[0], xy[1])
-        except Exception:
+            else:
+                self.initialMapPosition = None
+        except Exception as e:
+            logging.error("Error setInitialMapPositionForRegion failed: {0}".format(str(e)))
             pass
 
     def fixupScrollBars(self):
@@ -1143,6 +1163,7 @@ class MainWindow(QtWidgets.QMainWindow):
             url = ""
         try:
             data = []
+            cache = Cache()
             if url != "":
                 if url.startswith("http://") or url.startswith("https://"):
                     resp = requests.get(url)
@@ -1154,18 +1175,18 @@ class MainWindow(QtWidgets.QMainWindow):
                     content = None
                     with open(url, 'r') as f:
                         content = f.readlines()
-                    Cache().clearOutdatedJumpGates()
+                    cache.clearOutdatedJumpGates()
                     for line in content:
                         parts = line.strip().split()
                         #src <-> dst system_id jump_bridge_id
                         if len(parts) > 2:
                             data.append(parts)
-                            Cache().putJumpGate(src=parts[0], dst=parts[2])
+                            cache.putJumpGate(src=parts[0], dst=parts[2])
             else:
                 #data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
                 data = None
-            self.dotlan.setJumpbridges(Cache().getJumpGates())
-            Cache().putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
+            self.dotlan.setJumpbridges(cache.getJumpGates())
+            cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
         except Exception as e:
             logging.error("Error setJumpbridges failed: {0}".format(str(e)))
             QMessageBox.warning(None, "Loading jumpbridges failed!", "Error: {0}".format(str(e)), QMessageBox.Ok)
@@ -1220,11 +1241,8 @@ class MainWindow(QtWidgets.QMainWindow):
             for row in range(self.chatListWidget.count()):
                 item = self.chatListWidget.item(0)
                 entry = self.chatListWidget.itemWidget(item)
-                message = entry.message
                 self.chatEntries.remove(entry)
                 self.chatListWidget.takeItem(0)
-                for widgetInMessage in message.widgets:
-                    widgetInMessage.removeItemWidget(item)
         except Exception as e:
             logging.error(e)
 
@@ -1240,9 +1258,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 if now - time.mktime(message.timestamp.timetuple()) > (60 * self.chatparser.intelTime):
                     self.chatEntries.remove(chatEntryWidget)
                     self.chatListWidget.takeItem(0)
-
-                    for widgetInMessage in message.widgets:
-                        widgetInMessage.removeItemWidget(chatListWidgetItem)
                 else:
                     break
         except Exception as e:
@@ -1337,17 +1352,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # If players location has changed
             if message.status == states.LOCATION:
                 locale_to_set[message.user] = message.systems[0]
-            elif message.status == states.KOS_STATUS_REQUEST:
-                # Do not accept KOS requests from any but monitored intel channels
-                # as we don't want to encourage the use of xxx in those channels.
-                if not message.room in self.roomnames:
-                    text = message.message[4:]
-                    text = text.replace("  ", ",")
-                    parts = (name.strip() for name in text.split(","))
-                    self.trayIcon.setIcon(self.taskbarIconWorking)
-                    self.kosRequestThread.addRequest(parts, "xxx", False)
-            # Otherwise consider it a 'normal' chat message
-            elif message.user not in ("EVE-System", "EVE System") and message.status != states.IGNORE:
+            elif message.canProcess():
                 self.addMessageToIntelChat(message)
                 # For each system that was mentioned in the message, check for alarm distance to the current system
                 # and alarm if within alarm distance.
@@ -1437,7 +1442,7 @@ class RegionChooser(QtWidgets.QDialog):
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "RegionChooser.ui")), self)
-        self.strList = QtWidgets.QCompleter(["{}".format(name) for key, name in evegate.esiUniverseNames(evegate.getAllRegions()).items()], parent=self)
+        self.strList = QtWidgets.QCompleter(["{}".format(name) for key, name in evegate.esiUniverseNames(evegate.esiUniverseGetAllRegions()).items()], parent=self)
         self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.regionNameField.setCompleter(self.strList)
         self.cancelButton.clicked.connect(self.accept)
@@ -1574,6 +1579,9 @@ class ChatEntryWidget(QtWidgets.QWidget):
         if not ChatEntryWidget.SHOW_AVATAR:
             self.avatarLabel.setVisible(False)
 
+    def __del__(self):
+        logging.debug("ChatEntryWidget __del__ for message {}".format(self.message.message))
+
     def linkClicked(self, link):
         link = str(link)
         function, parameter = link.split("/", 1)
@@ -1635,7 +1643,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
     def generateJumpBridge(self):
         self.run_jb_generation = True
         self.generateJumpBridgeProgress.show()
-        gates = evegate.getAllJumpGates(Cache().getFromCache("api_char_name", True), callback=self.processUpdate)
+        gates = evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
         evegate.writeGatestToFile(gates, str(self.urlField.text()))
         self.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
