@@ -20,6 +20,7 @@
 import time
 import logging
 import queue
+import os
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
 from vi import evegate
 from vi.cache.cache import Cache
@@ -65,7 +66,7 @@ class AvatarFindThread(QThread):
                     with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
                 if avatar is None:
-                    avatar = cache.getAvatar(charname)
+                    avatar = cache.getImageFromCache(charname)
                     if avatar:
                         logging.debug("AvatarFindThread found cached avatar for %s" % charname)
                 if avatar is None:
@@ -77,7 +78,7 @@ class AvatarFindThread(QThread):
                     if avatar is None:
                         cache.removeAvatar(charname)
                     else:
-                        cache.putAvatar(charname, avatar)
+                        cache.putImageToCache(charname, avatar)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % charname)
                     self.avatar_update.emit(chatEntry, avatar)
