@@ -294,7 +294,7 @@
            <enum>QTabWidget::East</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <property name="documentMode">
            <bool>true</bool>
@@ -682,7 +682,7 @@
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>DENCI Spyglass</string>
+     <string>DENCI Spy</string>
     </property>
     <addaction name="separator"/>
     <addaction name="infoAction"/>
@@ -778,7 +778,7 @@
   </widget>
   <action name="infoAction">
    <property name="text">
-    <string>Info</string>
+    <string>Info ...</string>
    </property>
   </action>
   <action name="alwaysOnTopAction">
@@ -825,7 +825,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Choose Chatrooms...</string>
+    <string>Choose Chatrooms ...</string>
    </property>
   </action>
   <action name="showChatAvatarsAction">
@@ -893,7 +893,7 @@
   </action>
   <action name="chooseRegionAction">
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>Other Region...</string>
