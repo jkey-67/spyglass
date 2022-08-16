@@ -534,6 +534,7 @@ def esiUniverseSystem_jumps():
         data[i]["shipkills"] = v["ship"] if "ship" in v else 0
         data[i]["factionkills"] = v["faction"] if "faction" in v else 0
         data[i]["podkills"] = v["pod"] if "pod" in v else 0
+
     return data
 
 

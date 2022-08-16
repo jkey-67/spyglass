@@ -194,7 +194,7 @@
                 <bool>true</bool>
                </property>
                <property name="checked">
-                <bool>false</bool>
+                <bool>true</bool>
                </property>
                <property name="flat">
                 <bool>true</bool>
@@ -227,6 +227,9 @@
                 <string>Statistics</string>
                </property>
                <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
                 <bool>true</bool>
                </property>
                <property name="flat">
@@ -691,9 +694,8 @@
    </widget>
    <widget class="QMenu" name="menuChat">
     <property name="title">
-     <string>Chat</string>
+     <string>Chatrooms</string>
     </property>
-    <addaction name="showChatAction"/>
     <addaction name="showChatAvatarsAction"/>
     <addaction name="chooseChatRoomsAction"/>
     <addaction name="separator"/>
@@ -703,9 +705,9 @@
      <string>Sound</string>
     </property>
     <addaction name="activateSoundAction"/>
+    <addaction name="useSpokenNotificationsAction"/>
     <addaction name="soundSetupAction"/>
     <addaction name="separator"/>
-    <addaction name="useSpokenNotificationsAction"/>
    </widget>
    <widget class="QMenu" name="menuRegion">
     <property name="title">
@@ -740,6 +742,7 @@
       <string>Theme</string>
      </property>
     </widget>
+    <addaction name="showChatAction"/>
     <addaction name="alwaysOnTopAction"/>
     <addaction name="actionInvertMouseWheel"/>
     <addaction name="framelessWindowAction"/>
@@ -753,7 +756,7 @@
     </property>
     <widget class="QMenu" name="menuTime">
      <property name="title">
-      <string>Time</string>
+      <string>Intel Time</string>
      </property>
      <addaction name="separator"/>
     </widget>
@@ -861,7 +864,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Chat</string>
+    <string>Show Tabs</string>
    </property>
   </action>
   <action name="activateSoundAction">
@@ -896,7 +899,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Other Region...</string>
+    <string>Select Region...</string>
    </property>
   </action>
   <action name="soundSetupAction">

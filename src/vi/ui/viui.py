@@ -88,6 +88,7 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
         else:
             return QStyledItemDelegate.sizeHint(self, option, index)
 
+
 class MainWindow(QtWidgets.QMainWindow):
 
     chat_message_added = pyqtSignal(object, object)
@@ -108,7 +109,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #    self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "MainWindow.ui")), self)
         self.setWindowTitle(
-            "DENCI Spyglass " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
+            "DENCI-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
         self.taskbarIconQuiescent = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
         self.taskbarIconWorking = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
         self.setWindowIcon(self.taskbarIconQuiescent)
@@ -132,6 +133,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialMapPosition = None
         self.autoChangeRegion = False
         self.mapPositionsDict = {}
+        self.mapStatisticCache = {}
         self.invertWheel = False
         self.autoRescanIntelEnabled = Cache().getFromCache("changeAutoRescanIntel")
         # Load user's toon names
@@ -140,8 +142,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.knownPlayerNames = set(self.knownPlayerNames.split(","))
         else:
             self.knownPlayerNames = set()
-            diagText = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\nSome features (clipboard KOS checking, alarms, etc.) may not work until your character(s) have been registered. Change systems, with each character you want to monitor, while Spyglass is running to remedy this."
-            QMessageBox.warning(None, "Known Characters not Found", diagText, QMessageBox.Ok)
+            diag_text = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\n"\
+                        "Some features (clipboard KOS checking, alarms, etc.) may not work until your character(s)" "" \
+                        "have been registered. Change systems, with each character you want to monitor, while " \
+                        "Spyglass is running to remedy this."
+            QMessageBox.warning(None, "Known Characters not Found", diag_text, QMessageBox.Ok)
 
         self.playerUsed = Cache().getFromCache("used_player_names")
         if self.playerUsed:
@@ -158,13 +163,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addPlayerMenu()
 
         # Set up user's intel rooms
-        roomnames = Cache().getFromCache("room_names")
-        if roomnames:
-            roomnames = roomnames.split(",")
+        cached_room_name = Cache().getFromCache("room_names")
+        if cached_room_name:
+            cached_room_name = cached_room_name.split(",")
         else:
-            roomnames = DEFAULT_ROOM_MANES
-            Cache().putIntoCache("room_names", u",".join(roomnames), 60 * 60 * 24 * 365 * 5)
-        self.roomnames = roomnames
+            cached_room_name = DEFAULT_ROOM_MANES
+            Cache().putIntoCache("room_names", u",".join(cached_room_name), 60 * 60 * 24 * 365 * 5)
+        self.roomnames = cached_room_name
 
         # Disable the sound UI if sound is not available
         if not SoundManager().soundAvailable:
@@ -227,9 +232,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.startStatisticTimer()
         self.wireUpDatabaseViews()
 
-        initialTheme = Cache().getFromCache("theme")
-        if initialTheme:
-            self.changeTheme(initialTheme)
+        initial_theme = Cache().getFromCache("theme")
+        if initial_theme:
+            self.changeTheme(initial_theme)
         else:
             self.setupMap(True)
         update_avail = evegate.checkSpyglassVersionUpdate()
@@ -337,6 +342,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
         self.mapView.webViewResized.connect(self.fixupScrollBars)
         self.mapView.customContextMenuRequested.connect(self.showContextMenu)
+
         def mapviewScrolled( scrolled ):
             if scrolled:
                 self.mapTimer.stop()
@@ -428,7 +434,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def wireUpDatabaseViewsJB(self):
         model = QSqlQueryModel()
         def callOnUpdate():
-            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch')as 'last update', ( case used when 2 then 'full Pair' else '' END ) 'Paired' FROM jumpbridge")
+            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch')as 'last update', ( case used when 2 then 'okay' else 'probably okay' END ) 'Paired' FROM jumpbridge")
         callOnUpdate()
 
         self.jbs_changed.connect(callOnUpdate)
@@ -588,7 +594,7 @@ class MainWindow(QtWidgets.QMainWindow):
         elif regionName.startswith("Querious"):
             self.queriousRegionAction.setChecked(True)
         else:
-            self.chooseRegionAction.setChecked(True)
+            self.chooseRegionAction.setChecked(False)
 
         def openDotlan(checked):
             sys = self.trayIcon.contextMenu().currentSystem
@@ -604,6 +610,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon.contextMenu().setDestination.triggered.connect(setDets)
 
         self.trayIcon.contextMenu().hasJumpGate = lambda name: Cache().hasJumpGate(name)
+
         def clearJumpGate():
             Cache().clearJumpGate(self.trayIcon.contextMenu().currentSystem[0])
             self.dotlan.setJumpbridges(Cache().getJumpGates())
@@ -645,17 +652,18 @@ class MainWindow(QtWidgets.QMainWindow):
             if resourcePathExists(res_file_name):
                 with open(resourcePath(res_file_name))as svgFile:
                     svg = svgFile.read()
-            logging.info("Using local stored map file {}".format(res_file_name))
+                    logging.info("Using local stored map file {}".format(res_file_name))
         except Exception as e:
             pass
 
         try:
-            self.dotlan = dotlan.Map(region_name, svg,
-                setJumpMapsVisible=self.jumpbridgesButton.isChecked())
-            #todo:fix static updates
-                #setSatisticsVisible=self.statisticsButton.isChecked()
+            self.dotlan = dotlan.Map(
+                region=region_name,
+                svgFile=svg,
+                setJumpMapsVisible=self.jumpbridgesButton.isChecked(),
+                setSatisticsVisible=self.statisticsButton.isChecked(),
+                setSystemStatistic=self.mapStatisticCache)
 
-            self.dotlan._applySystemStatistic(evegate.getPlayerSovereignty(True))
             self.dotlan.setJumpbridges(cache.getJumpGates())
             logging.info("Using dotlan map {}".format(region_name))
         except dotlan.DotlanException as e:
@@ -691,15 +699,15 @@ class MainWindow(QtWidgets.QMainWindow):
         now = datetime.datetime.now()
         for file in os.listdir(self.pathToLogs):
             if file.endswith(".txt"):
-                filePath = self.pathToLogs + str(os.sep) + file
+                file_path = self.pathToLogs + str(os.sep) + file
                 roomname = file[:-31]
 
-                mtime = datetime.datetime.fromtimestamp(os.path.getmtime(filePath))
+                mtime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
                 delta = (now - mtime)
                 if delta.total_seconds() < (60 * self.chatparser.intelTime) and delta.total_seconds() > 0:
                     if roomname in self.roomnames:
                         logging.info("Reading log {}".format(roomname))
-                        self.logFileChanged(filePath, rescan=True)
+                        self.logFileChanged(file_path, rescan=True)
 
         logging.info("Intel ReScan done")
         self.updateMapView()
@@ -762,7 +770,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "changeAutoScanIntel", self.scanIntelForKosRequestsEnabled),
                     (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled),
                     (None, "changeAutoChangeRegion", self.autoChangeRegion),
-                    (None, "wheelDirChanged", self.invertWheel))
+                    (None, "wheelDirChanged", self.invertWheel),
+                    (None, "showJumpbridge", self.jumpbridgesButton.isChecked()),
+                    (None, "showStatistic", self.statisticsButton.isChecked()))
 
         Cache().putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
         Cache().putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
@@ -807,6 +817,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.useSpokenNotificationsAction.setChecked(False)
             self.useSpokenNotificationsAction.setEnabled(False)
+
 
     def changeIntelTime(self):
         action = self.intelTimeGroup.checkedAction()
@@ -920,15 +931,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setChecked(True)
         self.trayIcon.alarmDistance = distance
 
-    def changeJumpbridgesVisibility(self):
-        newValue = self.dotlan.changeJumpbridgesVisibility()
-        self.jumpbridgesButton.setChecked(newValue)
-        self.updateMapView()
+    def changeJumpbridgesVisibility(self, val):
+        self.dotlan.changeJumpbridgesVisibility(val)
+        if val:
+            self.updateMapView()
 
-    def changeStatisticsVisibility(self):
-        newValue = self.dotlan.changeStatisticsVisibility()
-        self.statisticsButton.setChecked(newValue)
-        self.statisticsThread.requestStatistics()
+    def changeStatisticsVisibility(self, val):
+        self.dotlan.changeStatisticsVisibility(val)
+        if val:
+            self.statisticsThread.requestStatistics()
 
 
     def AppendJumpGate(self, src_system, dst_system):
@@ -1158,6 +1169,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def setSoundVolume(self, value):
         SoundManager().setSoundVolume(value)
 
+    def showStatistic(self, value):
+        self.statisticsButton.setChecked(value)
+
+    def showJumpbridge(self, value):
+        self.jumpbridgesButton.setChecked(value)
+
+
     def setJumpbridges(self, url):
         if url is None:
             url = ""
@@ -1201,15 +1219,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chooseRegionAction.setChecked(False)
         if menuAction:
             menuAction.setChecked(True)
-            regionName = str(menuAction.property("regionName"))
-            regionName = dotlan.convertRegionName(regionName)
-            Cache().putIntoCache("region_name", regionName, 60 * 60 * 24 * 365)
+            region_name = str(menuAction.property("regionName"))
+            region_name = dotlan.convertRegionName(region_name)
+            Cache().putIntoCache("region_name", region_name, 60 * 60 * 24 * 365)
             self.setupMap()
 
     def showRegionChooser(self):
         def handleRegionChosen():
             self.handleRegionMenuItemSelected(None)
-            self.chooseRegionAction.setChecked(True)
+            self.chooseRegionAction.setChecked(False)
             self.setupMap()
 
         self.chooseRegionAction.setChecked(False)
@@ -1333,7 +1351,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.statisticsButton.isChecked():
             return
         if data["result"] == "ok":
-            self.dotlan.addSystemStatistics(data["statistics"])
+            self.mapStatisticCache = data["statistics"]
+            self.dotlan.addSystemStatistics(self.mapStatisticCache)
         elif data["result"] == "error":
             text = data["text"]
             self.trayIcon.showMessage("Loading statstics failed", text, 3)

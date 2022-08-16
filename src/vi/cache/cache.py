@@ -1,18 +1,18 @@
 ###########################################################################
 #  Vintel - Visual Intel Chat Analyzer									  #
 #  Copyright (C) 2014-15 Sebastian Meyer (sparrow.242.de+eve@gmail.com )  #
-#																		  #
+#                                                                         #
 #  This program is free software: you can redistribute it and/or modify	  #
 #  it under the terms of the GNU General Public License as published by	  #
 #  the Free Software Foundation, either version 3 of the License, or	  #
 #  (at your option) any later version.									  #
-#																		  #
+#                                                                         #
 #  This program is distributed in the hope that it will be useful,		  #
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
 #  GNU General Public License for more details.							  #
-#																		  #
-#																		  #
+#                                                                         #
+#                                                                         #
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
@@ -239,20 +239,23 @@ class Cache(object):
             res = self.con.execute(query, (src, src)).fetchall()
         return len(res) > 0
 
+    def getPlayerSovereignty(self):
+        return eval(self.getFromCache("player_sovereignty", True))
+
     def getJumpGates(self):
-        """Get a list of all jumpgridges
+        """Get a list of all jumpbridges
 
         Returns:
             list(tuple(str,str,str): List of tuple of strings
         """
-        query = "SELECT src, ' ', dst FROM jumpbridge "
+        query = "SELECT src, ' ', dst FROM jumpbridge"
         founds = self.con.execute(query, ()).fetchall()
         if len(founds) == 0:
             return None
         else:
             return founds
 
-    def getJumpGatesAtIndex(self, inx:int):
+    def getJumpGatesAtIndex(self, inx: int):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
@@ -287,7 +290,7 @@ class Cache(object):
                 self.con.execute(query, (data["structure_id"], data["type_id"], data["name"], json.dumps(data)))
             self.con.commit()
 
-    def getPOIAtIndex(self, inx:int):
+    def getPOIAtIndex(self, inx: int):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
@@ -303,7 +306,7 @@ class Cache(object):
                     ret_val["destination_id"] = ret_val["structure_id"]
                 return ret_val
 
-    def clearPOI(self,destination_id:int) -> None:
+    def clearPOI(self, destination_id: int) -> None:
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM pointofinterest  WHERE id IS ?"
             founds = self.con.execute(query, (destination_id,)).fetchall()
@@ -321,7 +324,6 @@ class Cache(object):
             query = "SELECT key FROM players WHERE id IS ? or name IS ?"
             res = self.con.execute(query, (char, char)).fetchall()
             return len(res) > 0 and res[0] is None
-        return False
 
     def getAPIKey(self, char):
         with Cache.SQLITE_WRITE_LOCK:
