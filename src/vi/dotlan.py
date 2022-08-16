@@ -33,6 +33,7 @@ from vi.ui.styles import Styles, TextInverter
 JB_COLORS = ("66CD00", "7CFC00", "32CD32", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
              "90EE90", "8FBC8F", "20B2AA", "2E8B57", "808000", "6B8E23")
 
+
 class DotlanException(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
@@ -297,22 +298,19 @@ class Map(object):
             defs.append(grad_inc_bg)
             defs.append(grad_inc_st_bg)
 
-
     def _prepareSvg(self, soup, systems):
         svg = soup.select("svg")[0]
         svg.attrs = {key: value for key, value in svg.attrs.items() if key not in ["style", "onmousedown", "viewbox"]}
-        # Disable dotlan mouse functionality
-        #css = soup.select("style")[0]
-        #svg["style"] = "background: {}".format(self.styles.getCommons()["bg_colour"])
         if self.styles.getCommons()["change_lines"]:
             for line in soup.select("line"):
                 line["class"] = "j"
+
         # Current system marker ellipse
         group = soup.new_tag("g", id="select_marker", opacity="0", activated="0", transform="translate(0, 0)")
         ellipse = soup.new_tag("ellipse", cx="0", cy="0", rx="56", ry="28", style="fill:#462CFF")
         group.append(ellipse)
 
-        self._prepareGradients( soup )
+        self._prepareGradients(soup)
 
         # The giant cross-hairs
         for coord in ((0, -10000), (-10000, 0), (10000, 0), (0, 10000)):
@@ -393,7 +391,7 @@ class Map(object):
         for bridge in soup.select(".jumpbridge"):
             bridge.decompose()
         jumps = soup.select("#jumps")
-        if jumps != None:
+        if jumps !=  None:
             jumps = soup.select("#jumps")[0]
         else:
             return
@@ -418,8 +416,6 @@ class Map(object):
             systemOneOffsetPoint = systemOne.getTransformOffsetPoint()
             systemTwoOffsetPoint = systemTwo.getTransformOffsetPoint()
 
-            # systemOne.setJumpbridgeColor(jbColor)
-            # systemTwo.setJumpbridgeColor(jbColor)
             # Construct the line, color it and add it to the jumps
             if True:
                 x1 = systemOneCoords["center_x"] + systemOneOffsetPoint[0]

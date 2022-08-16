@@ -1080,7 +1080,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.updateMapView()
             self.focusMapOnSystem(self.systems[str(system_name)].systemId)
 
-
     def setLocation(self, char, system_name:str):
         for system in self.systems.values():
             system.removeLocatedCharacter(char)

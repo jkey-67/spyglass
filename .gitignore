@@ -8,3 +8,4 @@ src/.idea/*
 venv/
 eve_api_key.py
 workspace.xml
+cache.sqlit3
