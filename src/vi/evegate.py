@@ -643,7 +643,7 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
     parent.api_thread = api_server_thread()
     parent.api_thread.client_param = client_param
     parent.api_thread.elem = None
-    #parent.api_thread.elem = QWebEngineView()
+    parent.api_thread.elem = QWebEngineView()
     parent.api_thread.start()
     if parent.api_thread.elem:
         parent.api_thread.elem.destroyed.connect(parent.api_thread.quit)

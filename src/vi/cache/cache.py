@@ -23,7 +23,7 @@ import time
 import logging
 import vi.version
 import json
-from vi.cache.dbstructure import updateDatabase
+from .dbstructure import updateDatabase
 
 
 def to_blob(x):
@@ -164,13 +164,24 @@ class Cache(object):
             self.con.commit()
 
     def recallAndApplySettings(self, responder, settings_identifier):
+
+        def getattrlist(responder, attr):
+            if len(attr) == 1:
+                return getattr(responder, attr[0])
+            else:
+                for itms in attr:
+                    if isinstance(itms, str) :
+                        responder= getattr(responder, itms)
+                return responder
+
+
         version = self.getFromCache("version")
         restore_gui = version == vi.version.VERSION
         settings = self.getFromCache(settings_identifier)
         if settings:
             settings = eval(settings)
             for setting in settings:
-                obj = responder if not setting[0] else getattr(responder, setting[0])
+                obj = responder if not setting[0] else getattrlist(responder, setting[0].split('.'))
                 # logging.debug("{0} | {1} | {2}".format(str(obj), setting[1], setting[2]))
                 try:
                     if restore_gui and setting[1] == "restoreGeometry":

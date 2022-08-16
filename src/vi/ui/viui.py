@@ -1,18 +1,18 @@
 ###########################################################################
 #  Spyglass - Visual Intel Chat Analyzer								  #
 #  Copyright (C) 2017 Crypta Eve (crypta@crypta.tech)                     #
-#																		  #
+#   																	  #
 #  This program is free software: you can redistribute it and/or modify	  #
 #  it under the terms of the GNU General Public License as published by	  #
 #  the Free Software Foundation, either version 3 of the License, or	  #
 #  (at your option) any later version.									  #
-#																		  #
+#                                                                         #
 #  This program is distributed in the hope that it will be useful,		  #
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
 #  GNU General Public License for more details.							  #
-#																		  #
-#																		  #
+#   				                                                      #
+#   				                                                      #
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
@@ -46,7 +46,9 @@ from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser, Message
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QActionGroup
-from xml.dom import minidom
+
+from vi.ui.ui_MainWindow import Ui_MainWindow
+
 
 # Timer intervals
 MAP_UPDATE_INTERVAL_MSECS = 1000
@@ -68,25 +70,25 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
             painter.drawImage(option.rect.topLeft(), img)
         else:
             super(StyledItemDelegatePOI, self).paint(painter, option, index)
+            return
+            # polygon_triangle = QtGui.QPolygon(3)
+            # polygon_triangle.setPoint(0, QtCore.QPoint(option.rect.x() + 5, option.rect.y()))
+            # polygon_triangle.setPoint(1, QtCore.QPoint(option.rect.x(), option.rect.y()))
+            # polygon_triangle.setPoint(2, QtCore.QPoint(option.rect.x(), option.rect.y() + 5))
 
-            polygonTriangle = QtGui.QPolygon(3)
-            polygonTriangle.setPoint(0, QtCore.QPoint(option.rect.x() + 5, option.rect.y()))
-            polygonTriangle.setPoint(1, QtCore.QPoint(option.rect.x(), option.rect.y()))
-            polygonTriangle.setPoint(2, QtCore.QPoint(option.rect.x(), option.rect.y() + 5))
-
-            painter.save()
-            painter.setRenderHint(painter.Antialiasing)
-            painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
-            painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
-            painter.drawPolygon(polygonTriangle)
-            painter.restore()
+            # painter.save()
+            # painter.setRenderHint(painter.Antialiasing)
+            # painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
+            # painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
+            # painter.drawPolygon(polygon_triangle)
+            #painter.restore()
 
     def sizeHint(self, option, index):
         return QtCore.QSize(64, 64)
-        if index.column() == 0:
-            return QtCore.QSize(64, 64)
-        else:
-            return QStyledItemDelegate.sizeHint(self, option, index)
+        # if index.column() == 0:
+        #     return QtCore.QSize(64, 64)
+        # else:
+        #    return QStyledItemDelegate.sizeHint(self, option, index)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -98,8 +100,6 @@ class MainWindow(QtWidgets.QMainWindow):
     poi_changed = pyqtSignal()
 
     def __init__(self, pathToLogs, trayIcon, update_splash=None):
-        self.tableViewJBs = None
-
         def update_splash_window_info(string):
             if update_splash:
                 update_splash(string)
@@ -107,7 +107,20 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
         #if backGroundColor:
         #    self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "MainWindow.ui")), self)
+        if 0:
+            self.ui = uic.loadUi(resourcePath(os.path.join("vi", "ui", "MainWindow.ui")), baseinstance=self)
+        else:
+            self.ui = Ui_MainWindow()
+            self.ui.setupUi(self)
+
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "eve-sso-login-black-small.png"))),
+                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
+
+        self.ui.connectToEveOnline.setIcon(icon)
+        self.ui.connectToEveOnline.setIconSize(QtCore.QSize(163, 38))
+        self.ui.connectToEveOnline.setFlat(False)
+
         self.setWindowTitle(
             "DENCI-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
         self.taskbarIconQuiescent = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
@@ -128,7 +141,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.alarmDistance = 0
         self.lastStatisticsUpdate = 0
         self.chatEntries = []
-        self.frameButton.setVisible(False)
+        self.ui.frameButton.setVisible(False)
         self.scanIntelForKosRequestsEnabled = False
         self.initialMapPosition = None
         self.autoChangeRegion = False
@@ -158,9 +171,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.invertWheel is None:
             self.invertWheel = False
-        self.actionInvertMouseWheel.triggered.connect(self.wheelDirChanged)
-        self.actionInvertMouseWheel.setChecked(self.invertWheel)
-        self.addPlayerMenu()
+        self.ui.actionInvertMouseWheel.triggered.connect(self.wheelDirChanged)
+        self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
+        self._addPlayerMenu()
 
         # Set up user's intel rooms
         cached_room_name = Cache().getFromCache("room_names")
@@ -178,37 +191,40 @@ class MainWindow(QtWidgets.QMainWindow):
             self.changeSound()
 
         # Set up Transparency menu - fill in opacity values and make connections
-        self.opacityGroup = QActionGroup(self.menu)
+        self.opacityGroup = QActionGroup(self.ui.menu)
         for i in (100, 80, 60, 40, 20):
-            action = QAction("Opacity {0}%".format(i), None, checkable=True)
+            action = QAction("Opacity {0}%".format(i), None)
+            action.setCheckable(True)
             action.setChecked(i == 100)
             action.opacity = float(i) / 100.0
             action.triggered.connect(self.changeOpacity)
             self.opacityGroup.addAction(action)
-            self.menuTransparency.addAction(action)
-        self.intelTimeGroup = QActionGroup(self.menu)
+            self.ui.menuTransparency.addAction(action)
+        self.intelTimeGroup = QActionGroup(self.ui.menu)
         self.intelTimeGroup.intelTime = 20
         for i in (10, 20, 40, 60):
-            action = QAction("Past {0}min".format(i), None, checkable=True)
+            action = QAction("Past {0}min".format(i), None)
+            action.setCheckable(True)
             action.setChecked(i == self.intelTimeGroup.intelTime)
             action.intelTime = i
             action.triggered.connect(self.changeIntelTime)
             self.intelTimeGroup.addAction(action)
-            self.menuTime.addAction(action)
+            self.ui.menuTime.addAction(action)
 
-        self.actionAuto_switch.triggered.connect(self.changeAutoRegion)
+        self.ui.actionAuto_switch.triggered.connect(self.changeAutoRegion)
         # Set up Theme menu - fill in list of themes and add connections
-        self.themeGroup = QActionGroup(self.menu)
+        self.themeGroup = QActionGroup(self.ui.menu)
         styles = Styles()
         for theme in styles.getStyles():
-            action = QAction(theme, None, checkable=True)
+            action = QAction(theme, None)
+            action.setCheckable(True)
             action.theme = theme
             if action.theme == "default":
                 action.setChecked(True)
             logging.info("Adding theme {}".format(theme))
             action.triggered.connect(self.changeTheme)
             self.themeGroup.addAction(action)
-            self.menuTheme.addAction(action)
+            self.ui.menuTheme.addAction(action)
         styles = None
 
         #
@@ -217,20 +233,20 @@ class MainWindow(QtWidgets.QMainWindow):
         #
         if sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
             # todo:why changing font size 8, should be managed also by css
-            #font = self.statisticsButton.font()
-            #font.setPointSize(8)
-            #self.statisticsButton.setFont(font)
-            #self.jumpbridgesButton.setFont(font)
+            # font = self.statisticsButton.font()
+            # font.setPointSize(8)
+            # self.statisticsButton.setFont(font)
+            # self.jumpbridgesButton.setFont(font)
             pass
         elif sys.platform.startswith("linux"):
             pass
 
         self.chatparser = ChatParser()
-        self.wireUpUIConnections()
+        self._wireUpUIConnections()
         self.recallCachedSettings()
-        self.setupThreads()
+        self._setupThreads()
         self.startStatisticTimer()
-        self.wireUpDatabaseViews()
+        self._wireUpDatabaseViews()
 
         initial_theme = Cache().getFromCache("theme")
         if initial_theme:
@@ -239,29 +255,30 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setupMap(True)
         update_avail = evegate.checkSpyglassVersionUpdate()
         if update_avail[0]:
-            self.updateAvail.show()
-            self.updateAvail.setText(update_avail[1])
+            self.ui.updateAvail.show()
+            self.ui.updateAvail.setText(update_avail[1])
+
             def openDownloadLink():
                 webbrowser.open_new(evegate.getSpyglassUpdateLink())
-                self.updateAvail.hide()
-                self.updateAvail.disconnect()
-            self.updateAvail.clicked.connect(openDownloadLink)
+                self.ui.updateAvail.hide()
+                self.ui.updateAvail.disconnect()
+            self.ui.updateAvail.clicked.connect(openDownloadLink)
 
         else:
-            self.updateAvail.hide()
+            self.ui.updateAvail.hide()
 
-
-    def addPlayerMenu(self):
-        self.playerGroup = QActionGroup(self.menu)
+    def _addPlayerMenu(self):
+        self.playerGroup = QActionGroup(self.ui.menu)
         self.playerGroup.setExclusionPolicy(QActionGroup.ExclusionPolicy.None_)
-        self.menuChars.clear()
+        self.ui.menuChars.clear()
         for name in self.knownPlayerNames:
             icon = QIcon()
-            if Cache().hasAPIKey(name):
+            if evegate.esiCheckCharacterToken(name):
                 avatar_icon = evegate.esiCharactersPortrait(name)
                 if avatar_icon is not None:
                     icon = QIcon(QPixmap.fromImage(QImage.fromData(avatar_icon)))
-            action = QAction(icon, "{0}".format(name), checkable=True)
+            action = QAction(icon, "{0}".format(name))
+            action.setCheckable(True)
             action.playerName = name
             action.triggered.connect(self.changePlayerIntel)
             action.playerUse = name in self.playerUsed
@@ -269,7 +286,7 @@ class MainWindow(QtWidgets.QMainWindow):
             action.setIconVisibleInMenu(action.playerUse)
             action.triggered.connect(self.changePlayerIntel)
             self.playerGroup.addAction(action)
-            self.menuChars.addAction(action)
+            self.ui.menuChars.addAction(action)
 
     def changePlayerIntel(self, use):
         player_used = set()
@@ -282,10 +299,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def wheelDirChanged(self, checked):
         self.invertWheel = checked
         if self.invertWheel:
-            self.mapView.wheel_dir = -1.0
+            self.ui.mapView.wheel_dir = -1.0
         else:
-            self.mapView.wheel_dir = 1.0
-        self.actionInvertMouseWheel.setChecked(self.invertWheel)
+            self.ui.mapView.wheel_dir = 1.0
+        self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
 
     def paintEvent(self, event):
         opt = QStyleOption()
@@ -305,61 +322,63 @@ class MainWindow(QtWidgets.QMainWindow):
     def changeAutoRegion(self, autoChange:bool):
         self.autoChangeRegion = autoChange
 
-    def wireUpUIConnections(self):
+    def _wireUpUIConnections(self):
         logging.info("wireUpUIConnections")
         self.clipboard.dataChanged.connect(self.clipboardChanged)
-        #self.autoScanIntelAction.triggered.connect(self.changeAutoScanIntel)
-        self.zoomInButton.clicked.connect(self.zoomMapIn)
-        self.zoomOutButton.clicked.connect(self.zoomMapOut)
-        self.statisticsButton.clicked.connect(self.changeStatisticsVisibility)
-        self.jumpbridgesButton.clicked.connect(self.changeJumpbridgesVisibility)
-        self.chatLargeButton.clicked.connect(self.chatLarger)
-        self.chatSmallButton.clicked.connect(self.chatSmaller)
-        self.infoAction.triggered.connect(self.showInfo)
-        self.showChatAvatarsAction.triggered.connect(self.changeShowAvatars)
-        self.alwaysOnTopAction.triggered.connect(self.changeAlwaysOnTop)
-        self.chooseChatRoomsAction.triggered.connect(self.showChatroomChooser)
-        self.catchRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.catchRegionAction))
-        self.providenceRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.providenceRegionAction))
-        self.queriousRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.queriousRegionAction))
-        self.providenceCatchRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.providenceCatchRegionAction))
-        self.providenceCatchCompactRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.providenceCatchCompactRegionAction))
-        self.wickedcreekScaldingpassRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.wickedcreekScaldingpassRegionAction))
-        self.chooseRegionAction.triggered.connect(self.showRegionChooser)
-        self.showChatAction.triggered.connect(self.changeChatVisibility)
-        self.soundSetupAction.triggered.connect(self.showSoundSetup)
-        self.activateSoundAction.triggered.connect(self.changeSound)
-        self.useSpokenNotificationsAction.triggered.connect(self.changeUseSpokenNotifications)
+        # self.autoScanIntelAction.triggered.connect(self.changeAutoScanIntel)
+        self.ui.zoomInButton.clicked.connect(self.zoomMapIn)
+        self.ui.zoomOutButton.clicked.connect(self.zoomMapOut)
+        self.ui.statisticsButton.clicked.connect(self.changeStatisticsVisibility)
+        self.ui.jumpbridgesButton.clicked.connect(self.changeJumpbridgesVisibility)
+        self.ui.chatLargeButton.clicked.connect(self.chatLarger)
+        self.ui.chatSmallButton.clicked.connect(self.chatSmaller)
+        self.ui.infoAction.triggered.connect(self.showInfo)
+        self.ui.showChatAvatarsAction.triggered.connect(self.changeShowAvatars)
+        self.ui.alwaysOnTopAction.triggered.connect(self.changeAlwaysOnTop)
+        self.ui.chooseChatRoomsAction.triggered.connect(self.showChatroomChooser)
+        self.ui.catchRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.ui.catchRegionAction))
+        self.ui.providenceRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.ui.providenceRegionAction))
+        self.ui.queriousRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.ui.queriousRegionAction))
+        self.ui.providenceCatchRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.ui.providenceCatchRegionAction))
+        self.ui.providenceCatchCompactRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.ui.providenceCatchCompactRegionAction))
+        self.ui.wickedcreekScaldingpassRegionAction.triggered.connect(lambda: self.handleRegionMenuItemSelected(self.ui.wickedcreekScaldingpassRegionAction))
+        self.ui.chooseRegionAction.triggered.connect(self.showRegionChooser)
+        self.ui.showChatAction.triggered.connect(self.changeChatVisibility)
+        self.ui.soundSetupAction.triggered.connect(self.showSoundSetup)
+        self.ui.activateSoundAction.triggered.connect(self.changeSound)
+        self.ui.useSpokenNotificationsAction.triggered.connect(self.changeUseSpokenNotifications)
         self.trayIcon.alarm_distance.connect(self.changeAlarmDistance)
-        self.framelessWindowAction.triggered.connect(self.changeFrameless)
+        self.ui.framelessWindowAction.triggered.connect(self.changeFrameless)
         self.trayIcon.change_frameless.connect(self.changeFrameless)
-        self.frameButton.clicked.connect(self.changeFrameless)
-        self.quitAction.triggered.connect(self.close)
+        self.ui.frameButton.clicked.connect(self.changeFrameless)
+        self.ui.quitAction.triggered.connect(self.close)
         self.trayIcon.quit_signal.connect(self.close)
-        self.jumpbridgeDataAction.triggered.connect(self.showJumbridgeChooser)
-        self.rescanNowAction.triggered.connect(self.rescanIntel)
-        self.clearIntelAction.triggered.connect(self.clearIntelChat)
-        self.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
-        self.mapView.webViewResized.connect(self.fixupScrollBars)
-        self.mapView.customContextMenuRequested.connect(self.showContextMenu)
+        self.ui.jumpbridgeDataAction.triggered.connect(self.showJumbridgeChooser)
+        self.ui.rescanNowAction.triggered.connect(self.rescanIntel)
+        self.ui.clearIntelAction.triggered.connect(self.clearIntelChat)
+        self.ui.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
+        self.ui.mapView.webViewResized.connect(self.fixupScrollBars)
+        self.ui.mapView.customContextMenuRequested.connect(self.showContextMenu)
 
         def mapviewScrolled( scrolled ):
             if scrolled:
                 self.mapTimer.stop()
             else:
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
-        self.mapView.webViewScrolled.connect(mapviewScrolled)
-        self.connectToEveOnline.clicked.connect(lambda: evegate.openWithEveonline(parent=self))
+        self.ui.mapView.webViewScrolled.connect(mapviewScrolled)
+        self.ui.connectToEveOnline.clicked.connect(lambda: evegate.openWithEveonline(parent=self))
+
         def updateX(x):
-            pos = self.mapView.scrollPosition()
+            pos = self.ui.mapView.scrollPosition()
             pos.setX(x)
-            self.mapView.setScrollPosition(pos)
-        self.mapHorzScrollBar.valueChanged.connect(updateX)
+            self.ui.mapView.setScrollPosition(pos)
+        self.ui.mapHorzScrollBar.valueChanged.connect(updateX)
+
         def updateY(y):
-            pos = self.mapView.scrollPosition()
+            pos = self.ui.mapView.scrollPosition()
             pos.setY(y)
-            self.mapView.setScrollPosition(pos)
-        self.mapVertScrollBar.valueChanged.connect(updateY)
+            self.ui.mapView.setScrollPosition(pos)
+        self.ui.mapVertScrollBar.valueChanged.connect(updateY)
 
         def hoveCheck( pos:QPoint) -> bool:
             """returns true if the mouse is above a system, else false
@@ -370,7 +389,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if rc.contains(pos):
                     return True
             return False
-        self.mapView.hoveCheck = hoveCheck
+        self.ui.mapView.hoveCheck = hoveCheck
 
         def doubleClicked( pos:QPoint):
             for system in self.dotlan.systems.items():
@@ -378,38 +397,39 @@ class MainWindow(QtWidgets.QMainWindow):
                 rc = QtCore.QRectF(val["x"],val["y"],val["width"],val["height"])
                 if rc.contains(pos):
                     self.mapLinkClicked(QtCore.QUrl( "map_link/{0}".format(system[0])))
-        self.mapView.doubleClicked = doubleClicked
+        self.ui.mapView.doubleClicked = doubleClicked
 
-    def wireUpDatabaseViews(self):
-        self.wireUpDatabaseViewsJB()
-        self.wireUpDatabaseViewPOI()
+    def _wireUpDatabaseViews(self):
+        self._wireUpDatabaseViewsJB()
+        self._wireUpDatabaseViewPOI()
 
-
-    def wireUpDatabaseViewPOI(self):
+    def _wireUpDatabaseViewPOI(self):
         model = QSqlQueryModel()
+
         def callOnUpdate():
             model.setQuery("SELECT type as Type, name as Name FROM pointofinterest")
-            self.tableViewPOIs.resizeColumnsToContents()
-            self.tableViewPOIs.resizeRowsToContents()
+            self.ui.tableViewPOIs.resizeColumnsToContents()
+            self.ui.tableViewPOIs.resizeRowsToContents()
 
         callOnUpdate()
         sort = QSortFilterProxyModel()
         sort.setSourceModel(model)
         self.tableViewPOIsDelegate = StyledItemDelegatePOI(self)
-        self.tableViewPOIs.setModel(sort)
-        self.tableViewPOIs.setItemDelegate(self.tableViewPOIsDelegate)
-        self.tableViewPOIs.resizeColumnsToContents()
-        self.tableViewPOIs.resizeRowsToContents()
+        self.ui.tableViewPOIs.setModel(sort)
+        self.ui.tableViewPOIs.setItemDelegate(self.tableViewPOIsDelegate)
+        self.ui.tableViewPOIs.resizeColumnsToContents()
+        self.ui.tableViewPOIs.resizeRowsToContents()
         callOnUpdate()
         self.poi_changed.connect(callOnUpdate)
-        self.tableViewPOIs.show()
+        self.ui.tableViewPOIs.show()
+
         def showContextMenu(pos):
             cache = Cache()
-            index = self.tableViewPOIs.model().mapToSource(self.tableViewPOIs.indexAt(pos)).row()
+            index = self.ui.tableViewPOIs.model().mapToSource(self.ui.tableViewPOIs.indexAt(pos)).row()
             item = cache.getPOIAtIndex(index)
             lps_ctx_menu = POIContextMenu()
             lps_ctx_menu.setStyleSheet(Styles().getStyle())
-            res = lps_ctx_menu.exec_(self.tableViewJBs.mapToGlobal(pos))
+            res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
             if res == lps_ctx_menu.destination:
                 evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["destination_id"])
                 return
@@ -425,14 +445,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 cache.clearPOI(item["destination_id"])
                 self.poi_changed.emit()
                 return
-            #self.trayIcon.contextMenu().exec_(self.tableViewJBs.mapToGlobal(pos))
 
+        self.ui.tableViewPOIs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ui.tableViewPOIs.customContextMenuRequested.connect(showContextMenu)
 
-        self.tableViewPOIs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.tableViewPOIs.customContextMenuRequested.connect(showContextMenu)
-
-    def wireUpDatabaseViewsJB(self):
+    def _wireUpDatabaseViewsJB(self):
         model = QSqlQueryModel()
+
         def callOnUpdate():
             model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch')as 'last update', ( case used when 2 then 'okay' else 'probably okay' END ) 'Paired' FROM jumpbridge")
         callOnUpdate()
@@ -440,15 +459,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.jbs_changed.connect(callOnUpdate)
         sort = QSortFilterProxyModel()
         sort.setSourceModel(model)
-        self.tableViewJBs.setModel(sort)
-        self.tableViewJBs.show()
+        self.ui.tableViewJBs.setModel(sort)
+        self.ui.tableViewJBs.show()
 
         def callOnSelChanged(name):
             Cache().putIntoCache("api_char_name", name)
 
-        self.currentESICharacter.addItems(Cache().getAPICharNames())
-        self.currentESICharacter.setCurrentText(evegate.esiCharName())
-        self.currentESICharacter.currentTextChanged.connect(callOnSelChanged)
+        self.ui.currentESICharacter.addItems(Cache().getAPICharNames())
+        self.ui.currentESICharacter.setCurrentText(evegate.esiCharName())
+        self.ui.currentESICharacter.currentTextChanged.connect(callOnSelChanged)
 
         def callOnRemoveChar():
             ret = QMessageBox.warning(self, "Remove Character",
@@ -457,25 +476,25 @@ class MainWindow(QtWidgets.QMainWindow):
                         QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
             if ret == QMessageBox.Yes:
                 Cache().removeAPIKey(evegate.esiCharName())
-                self.currentESICharacter.addItems(Cache().getAPICharNames())
+                self.ui.currentESICharacter.addItems(Cache().getAPICharNames())
 
-        self.removeChar.clicked.connect(callOnRemoveChar)
+        self.ui.removeChar.clicked.connect(callOnRemoveChar)
 
         def showContextMenu(pos):
             cache = Cache()
-            index = self.tableViewJBs.model().mapToSource(self.tableViewJBs.indexAt(pos)).row()
+            index = self.ui.tableViewJBs.model().mapToSource(self.ui.tableViewJBs.indexAt(pos)).row()
             item = cache.getJumpGatesAtIndex(index)
             lps_ctx_menu = JumpBridgeContextMenu()
             lps_ctx_menu.updateContextMenu(item)
             lps_ctx_menu.setStyleSheet(Styles().getStyle())
-            res = lps_ctx_menu.exec_(self.tableViewJBs.mapToGlobal(pos))
+            res = lps_ctx_menu.exec_(self.ui.tableViewJBs.mapToGlobal(pos))
             if res == lps_ctx_menu.destination:
                 evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["id_src"])
                 return
             elif res == lps_ctx_menu.waypoint:
                 return
             elif res == lps_ctx_menu.update:
-                inx_selected = self.tableViewJBs.selectedIndexes()
+                inx_selected = self.ui.tableViewJBs.selectedIndexes()
                 items = dict()
                 for inx in inx_selected:
                     items[inx.row()] = cache.getJumpGatesAtIndex(inx.row())
@@ -486,17 +505,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 cache.clearJumpGate(item["src"])
                 self.jbs_changed.emit()
                 return
-            #self.trayIcon.contextMenu().exec_(self.tableViewJBs.mapToGlobal(pos))
 
-
-        self.tableViewJBs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.tableViewJBs.customContextMenuRequested.connect(showContextMenu)
+        self.ui.tableViewJBs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ui.tableViewJBs.customContextMenuRequested.connect(showContextMenu)
         return
 
-
-    def setupThreads(self):
+    def _setupThreads(self):
         logging.info("setupThreads")
         # Set up threads and their connections
+
         self.avatarFindThread = AvatarFindThread()
         self.avatarFindThread.avatar_update.connect(self.updateAvatarOnChatEntry)
         self.avatarFindThread.start()
@@ -509,8 +526,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
         self.statisticsThread.start()
 
-
-    def terminateThreads(self):
+    def _terminateThreads(self):
         # Stop the threads
         try:
             SoundManager().quit()
@@ -529,7 +545,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def usedPlayerNames(self) -> str:
         return Cache().getFromCache("used_player_names")
 
-
     def changeRegionFromCtxMenu(self, checked):
         selected_system = self.trayIcon.contextMenu().currentSystem
         if selected_system is None:
@@ -537,16 +552,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.changeRegionBySystemID(selected_system[1].systemId)
 
     def focusMapOnSystem(self, system_id):
-        """sets the system defind by the id to the focus of the map
+        """sets the system defined by the id to the focus of the map
          """
         if system_id is None:
             return
         system_name = evegate.esiUniverseNames([str(system_id)])[system_id]
         if system_name in self.systems.keys():
-            view_center = self.mapView.size() / 2
-            pt_system = QPointF(self.systems[system_name].mapCoordinates["center_x"]* self.mapView.zoom-view_center.width(),
-                                self.systems[system_name].mapCoordinates["center_y"]* self.mapView.zoom-view_center.height())
-            self.mapView.setScrollPosition(pt_system)
+            view_center = self.ui.mapView.size() / 2
+            pt_system = QPointF(self.systems[system_name].mapCoordinates["center_x"]
+                                * self.ui.mapView.zoom-view_center.width(),
+                                self.systems[system_name].mapCoordinates["center_y"]
+                                * self.ui.mapView.zoom-view_center.height())
+            self.ui.mapView.setScrollPosition(pt_system)
 
     def changeRegionBySystemID(self, system_id):
         """ change to the region of the system with the given id, the intel will be rescanned
@@ -566,7 +583,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def prepareContextMenu(self):
         # Menus - only once
-        regionName = Cache().getFromCache("region_name")
+        region_name = Cache().getFromCache("region_name")
         logging.info("Initializing contextual menus")
 
         # Add a contextual menu to the mapView
@@ -575,26 +592,26 @@ class MainWindow(QtWidgets.QMainWindow):
             self.trayIcon.contextMenu().updateMenu(None)
             self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
 
-        self.mapView.contextMenuEvent = mapContextMenuEvent
-        self.mapView.contextMenu = self.trayIcon.contextMenu()
+        self.ui.mapView.contextMenuEvent = mapContextMenuEvent
+        self.ui.mapView.contextMenu = self.trayIcon.contextMenu()
 
         # Also set up our app menus
-        if not regionName:
-            self.providenceCatchRegionAction.setChecked(True)
-        elif regionName.startswith("Providencecatch"):
-            self.providenceCatchRegionAction.setChecked(True)
-        elif regionName.startswith("Catch"):
-            self.catchRegionAction.setChecked(True)
-        elif regionName.startswith("Providence"):
-            self.providenceRegionAction.setChecked(True)
-        elif regionName.startswith("Wicked"):
-            self.wickedcreekScaldingpassRegionAction.setChecked(True)
-        elif regionName.startswith("Tack"):
-            self.wickedcreekScaldingpassRegionAction.setChecked(True)
-        elif regionName.startswith("Querious"):
-            self.queriousRegionAction.setChecked(True)
+        if not region_name:
+            self.ui.providenceCatchRegionAction.setChecked(True)
+        elif region_name.startswith("Providencecatch"):
+            self.ui.providenceCatchRegionAction.setChecked(True)
+        elif region_name.startswith("Catch"):
+            self.ui.catchRegionAction.setChecked(True)
+        elif region_name.startswith("Providence"):
+            self.ui.providenceRegionAction.setChecked(True)
+        elif region_name.startswith("Wicked"):
+            self.ui.wickedcreekScaldingpassRegionAction.setChecked(True)
+        elif region_name.startswith("Tack"):
+            self.ui.wickedcreekScaldingpassRegionAction.setChecked(True)
+        elif region_name.startswith("Querious"):
+            self.ui.queriousRegionAction.setChecked(True)
         else:
-            self.chooseRegionAction.setChecked(False)
+            self.ui.chooseRegionAction.setChecked(False)
 
         def openDotlan(checked):
             sys = self.trayIcon.contextMenu().currentSystem
@@ -627,10 +644,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon.contextMenu().avoidSystem.triggered.connect(avoidSystem)
 
         def clearAll(checked):
-            charName = evegate.esiCharName()
+            char_name = evegate.esiCharName()
             for system in self.systems.values():
-                if charName in system.getLocatedCharacters():
-                    evegate.esiAutopilotWaypoint(charName, system.systemId)
+                if char_name in system.getLocatedCharacters():
+                    evegate.esiAutopilotWaypoint(char_name, system.systemId)
                     return
             return
         self.trayIcon.contextMenu().clearAll.triggered.connect(clearAll)
@@ -660,8 +677,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.dotlan = dotlan.Map(
                 region=region_name,
                 svgFile=svg,
-                setJumpMapsVisible=self.jumpbridgesButton.isChecked(),
-                setSatisticsVisible=self.statisticsButton.isChecked(),
+                setJumpMapsVisible=self.ui.jumpbridgesButton.isChecked(),
+                setSatisticsVisible=self.ui.statisticsButton.isChecked(),
                 setSystemStatistic=self.mapStatisticCache)
 
             self.dotlan.setJumpbridges(cache.getJumpGates())
@@ -712,7 +729,6 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("Intel ReScan done")
         self.updateMapView()
 
-
     def startClipboardTimer(self):
         """
             Start a timer to check the keyboard for changes and kos check them,
@@ -753,30 +769,30 @@ class MainWindow(QtWidgets.QMainWindow):
         # Program state to cache (to read it on next startup)
         settings = ((None, "restoreGeometry", str(self.saveGeometry()), True),
                     (None, "restoreState", str(self.saveState()), True),
-                    ("splitter", "restoreGeometry", str(self.splitter.saveGeometry()), True),
-                    ("splitter", "restoreState", str(self.splitter.saveState()), True),
-                    ("mapView", "setZoomFactor", self.mapView.zoomFactor()),
+                    ("ui.splitter", "restoreGeometry", str(self.ui.splitter.saveGeometry()), True),
+                    ("ui.splitter", "restoreState", str(self.ui.splitter.saveState()), True),
+                    ("ui.mapView", "setZoomFactor", self.ui.mapView.zoomFactor()),
                     (None, "changeChatFontSize", ChatEntryWidget.TEXT_SIZE),
                     (None, "setOpacity", self.opacityGroup.checkedAction().opacity),
-                    (None, "changeAlwaysOnTop", self.alwaysOnTopAction.isChecked()),
-                    (None, "changeShowAvatars", self.showChatAvatarsAction.isChecked()),
+                    (None, "changeAlwaysOnTop", self.ui.alwaysOnTopAction.isChecked()),
+                    (None, "changeShowAvatars", self.ui.showChatAvatarsAction.isChecked()),
                     (None, "changeAlarmDistance", self.alarmDistance),
-                    (None, "changeSound", self.activateSoundAction.isChecked()),
-                    (None, "changeChatVisibility", self.showChatAction.isChecked()),
+                    (None, "changeSound", self.ui.activateSoundAction.isChecked()),
+                    (None, "changeChatVisibility", self.ui.showChatAction.isChecked()),
                     (None, "loadInitialMapPositions", self.mapPositionsDict),
                     (None, "setSoundVolume", SoundManager().soundVolume),
-                    (None, "changeFrameless", self.framelessWindowAction.isChecked()),
-                    (None, "changeUseSpokenNotifications", self.useSpokenNotificationsAction.isChecked()),
+                    (None, "changeFrameless", self.ui.framelessWindowAction.isChecked()),
+                    (None, "changeUseSpokenNotifications", self.ui.useSpokenNotificationsAction.isChecked()),
                     (None, "changeAutoScanIntel", self.scanIntelForKosRequestsEnabled),
                     (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled),
                     (None, "changeAutoChangeRegion", self.autoChangeRegion),
                     (None, "wheelDirChanged", self.invertWheel),
-                    (None, "showJumpbridge", self.jumpbridgesButton.isChecked()),
-                    (None, "showStatistic", self.statisticsButton.isChecked()))
+                    (None, "showJumpbridge", self.ui.jumpbridgesButton.isChecked()),
+                    (None, "showStatistic", self.ui.statisticsButton.isChecked()))
 
         Cache().putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
         Cache().putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
-        self.terminateThreads()
+        self._terminateThreads()
         self.trayIcon.hide()
         event.accept()
         QtCore.QCoreApplication.quit()
@@ -786,37 +802,37 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeChatVisibility(self, newValue=None):
         if newValue is None:
-            newValue = self.showChatAction.isChecked()
-        self.showChatAction.setChecked(newValue)
-        self.chatbox.setVisible(newValue)
+            newValue = self.ui.showChatAction.isChecked()
+        self.ui.showChatAction.setChecked(newValue)
+        self.ui.chatbox.setVisible(newValue)
 
     def changeAutoScanIntel(self, newValue=None):
         if newValue is None:
-            newValue = self.autoScanIntelAction.isChecked()
-        self.autoScanIntelAction.setChecked(newValue)
+            newValue = self.ui.autoScanIntelAction.isChecked()
+        self.ui.autoScanIntelAction.setChecked(newValue)
         self.autoRescanIntelEnabled = newValue
 
     def changeAutoChangeRegion(self, newValue=None):
         if newValue is None:
-            newValue = self.actionAuto_switch.isChecked()
-        self.actionAuto_switch.setChecked(newValue)
+            newValue = self.ui.actionAuto_switch.isChecked()
+        self.ui.actionAuto_switch.setChecked(newValue)
         self.autoChangeRegion = newValue
 
     def changeAutoRescanIntel(self, newValue=None):
         if newValue is None:
-            newValue = self.autoRescanAction.isChecked()
-        self.autoRescanAction.setChecked(newValue)
+            newValue = self.ui.autoRescanAction.isChecked()
+        self.ui.autoRescanAction.setChecked(newValue)
         self.autoRescanIntelEnabled = newValue
 
     def changeUseSpokenNotifications(self, newValue=None):
         if SoundManager().platformSupportsSpeech():
             if newValue is None:
-                newValue = self.useSpokenNotificationsAction.isChecked()
-            self.useSpokenNotificationsAction.setChecked(newValue)
+                newValue = self.ui.useSpokenNotificationsAction.isChecked()
+            self.ui.useSpokenNotificationsAction.setChecked(newValue)
             SoundManager().setUseSpokenNotifications(newValue)
         else:
-            self.useSpokenNotificationsAction.setChecked(False)
-            self.useSpokenNotificationsAction.setEnabled(False)
+            self.ui.useSpokenNotificationsAction.setChecked(False)
+            self.ui.useSpokenNotificationsAction.setEnabled(False)
 
 
     def changeIntelTime(self):
@@ -869,15 +885,15 @@ class MainWindow(QtWidgets.QMainWindow):
                                 QMessageBox.Ok)
         else:
             if newValue is None:
-                newValue = self.activateSoundAction.isChecked()
-            self.activateSoundAction.setChecked(newValue)
+                newValue = self.ui.activateSoundAction.isChecked()
+            self.ui.activateSoundAction.setChecked(newValue)
             SoundManager().soundActive = newValue
 
     def changeAlwaysOnTop(self, newValue=None):
         if newValue is None:
-            newValue = self.alwaysOnTopAction.isChecked()
+            newValue = self.ui.alwaysOnTopAction.isChecked()
         self.hide()
-        self.alwaysOnTopAction.setChecked(newValue)
+        self.ui.alwaysOnTopAction.setChecked(newValue)
         if newValue:
             self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
         else:
@@ -886,16 +902,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeFrameless(self, newValue=None):
         if newValue is None:
-            newValue = not self.frameButton.isVisible()
+            newValue = not self.ui.frameButton.isVisible()
         self.hide()
         if newValue:
             self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
             self.changeAlwaysOnTop(True)
         else:
             self.setWindowFlags(self.windowFlags() & (~QtCore.Qt.FramelessWindowHint))
-        self.menubar.setVisible(not newValue)
-        self.frameButton.setVisible(newValue)
-        self.framelessWindowAction.setChecked(newValue)
+        self.ui.menubar.setVisible(not newValue)
+        self.ui.frameButton.setVisible(newValue)
+        self.ui.framelessWindowAction.setChecked(newValue)
 
         for cm in TrayContextMenu.instances:
             cm.framelessCheck.setChecked(newValue)
@@ -903,8 +919,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeShowAvatars(self, newValue=None):
         if newValue is None:
-            newValue = self.showChatAvatarsAction.isChecked()
-        self.showChatAvatarsAction.setChecked(newValue)
+            newValue = self.ui.showChatAvatarsAction.isChecked()
+        self.ui.showChatAvatarsAction.setChecked(newValue)
         ChatEntryWidget.SHOW_AVATAR = newValue
         for entry in self.chatEntries:
             entry.avatarLabel.setVisible(newValue)
@@ -940,7 +956,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dotlan.changeStatisticsVisibility(val)
         if val:
             self.statisticsThread.requestStatistics()
-
 
     def AppendJumpGate(self, src_system, dst_system):
         cache = Cache()
@@ -1120,7 +1135,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if self.currContent != self.dotlan.svg:
                 self.mapTimer.stop()
-                if self.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html"):
+                if self.ui.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html"):
                     self.currContent = self.dotlan.svg
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSECS)
         except Exception as e:
@@ -1144,15 +1159,15 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
 
     def fixupScrollBars(self):
-        fac = self.mapView.zoomFactor()
-        pos = self.mapView.scrollPosition()
-        size = self.mapView.imgSize
-        self.mapHorzScrollBar.setPageStep(size.width())
-        self.mapVertScrollBar.setPageStep(size.height())
-        self.mapHorzScrollBar.setRange(int(min(pos.x(), 0)), int(size.width()*fac))
-        self.mapVertScrollBar.setRange(int(min(pos.y(), 0)), int(size.height()*fac))
-        self.mapHorzScrollBar.setValue(int(pos.x()))
-        self.mapVertScrollBar.setValue(int(pos.y()))
+        fac = self.ui.mapView.zoomFactor()
+        pos = self.ui.mapView.scrollPosition()
+        size = self.ui.mapView.imgSize
+        self.ui.mapHorzScrollBar.setPageStep(size.width())
+        self.ui.mapVertScrollBar.setPageStep(size.height())
+        self.ui.mapHorzScrollBar.setRange(int(min(pos.x(), 0)), int(size.width()*fac))
+        self.ui.mapVertScrollBar.setRange(int(min(pos.y(), 0)), int(size.height()*fac))
+        self.ui.mapHorzScrollBar.setValue(int(pos.x()))
+        self.ui.mapVertScrollBar.setValue(int(pos.y()))
 
     def showChatroomChooser(self):
         chooser = ChatroomsChooser(self)
@@ -1169,10 +1184,10 @@ class MainWindow(QtWidgets.QMainWindow):
         SoundManager().setSoundVolume(value)
 
     def showStatistic(self, value):
-        self.statisticsButton.setChecked(value)
+        self.ui.statisticsButton.setChecked(value)
 
     def showJumpbridge(self, value):
-        self.jumpbridgesButton.setChecked(value)
+        self.ui.jumpbridgesButton.setChecked(value)
 
 
     def setJumpbridges(self, url):
@@ -1209,13 +1224,13 @@ class MainWindow(QtWidgets.QMainWindow):
             QMessageBox.warning(None, "Loading jumpbridges failed!", "Error: {0}".format(str(e)), QMessageBox.Ok)
 
     def handleRegionMenuItemSelected(self, menuAction=None):
-        self.catchRegionAction.setChecked(False)
-        self.providenceRegionAction.setChecked(False)
-        self.queriousRegionAction.setChecked(False)
-        self.wickedcreekScaldingpassRegionAction.setChecked(False)
-        self.providenceCatchRegionAction.setChecked(False)
-        self.providenceCatchCompactRegionAction.setChecked(False)
-        self.chooseRegionAction.setChecked(False)
+        self.ui.catchRegionAction.setChecked(False)
+        self.ui.providenceRegionAction.setChecked(False)
+        self.ui.queriousRegionAction.setChecked(False)
+        self.ui.wickedcreekScaldingpassRegionAction.setChecked(False)
+        self.ui.providenceCatchRegionAction.setChecked(False)
+        self.ui.providenceCatchCompactRegionAction.setChecked(False)
+        self.ui.chooseRegionAction.setChecked(False)
         if menuAction:
             menuAction.setChecked(True)
             region_name = str(menuAction.property("regionName"))
@@ -1226,40 +1241,40 @@ class MainWindow(QtWidgets.QMainWindow):
     def showRegionChooser(self):
         def handleRegionChosen():
             self.handleRegionMenuItemSelected(None)
-            self.chooseRegionAction.setChecked(False)
+            self.ui.chooseRegionAction.setChecked(False)
             self.setupMap()
 
-        self.chooseRegionAction.setChecked(False)
+        self.ui.chooseRegionAction.setChecked(False)
         chooser = RegionChooser(self)
         chooser.finished.connect(handleRegionChosen)
         chooser.show()
 
     def addMessageToIntelChat(self, message):
         scrollToBottom = False
-        if (self.chatListWidget.verticalScrollBar().value() == self.chatListWidget.verticalScrollBar().maximum()):
+        if (self.ui.chatListWidget.verticalScrollBar().value() == self.ui.chatListWidget.verticalScrollBar().maximum()):
             scrollToBottom = True
         chatEntryWidget = ChatEntryWidget(message)
-        listWidgetItem = QtWidgets.QListWidgetItem(self.chatListWidget)
+        listWidgetItem = QtWidgets.QListWidgetItem(self.ui.chatListWidget)
         listWidgetItem.setSizeHint(chatEntryWidget.sizeHint())
-        self.chatListWidget.addItem(listWidgetItem)
-        self.chatListWidget.setItemWidget(listWidgetItem, chatEntryWidget)
+        self.ui.chatListWidget.addItem(listWidgetItem)
+        self.ui.chatListWidget.setItemWidget(listWidgetItem, chatEntryWidget)
         self.avatarFindThread.addChatEntry(chatEntryWidget)
         self.chatEntries.append(chatEntryWidget)
         chatEntryWidget.mark_system.connect(self.markSystemOnMap)
         self.chat_message_added.emit(chatEntryWidget, message.timestamp)
         self.pruneMessages()
         if scrollToBottom:
-            self.chatListWidget.scrollToBottom()
+            self.ui.chatListWidget.scrollToBottom()
 
     def clearIntelChat(self):
         logging.info("Clearing Intel")
         self.setupMap()
         try:
-            for row in range(self.chatListWidget.count()):
-                item = self.chatListWidget.item(0)
-                entry = self.chatListWidget.itemWidget(item)
+            for row in range(self.ui.chatListWidget.count()):
+                item = self.ui.chatListWidget.item(0)
+                entry = self.ui.chatListWidget.itemWidget(item)
                 self.chatEntries.remove(entry)
-                self.chatListWidget.takeItem(0)
+                self.ui.chatListWidget.takeItem(0)
         except Exception as e:
             logging.error(e)
 
@@ -1268,9 +1283,9 @@ class MainWindow(QtWidgets.QMainWindow):
             now = time.mktime(evegate.currentEveTime().timetuple())
             now_to = time.time()
             delta_time = now_to - now
-            for row in range(self.chatListWidget.count()):
-                chatListWidgetItem = self.chatListWidget.item(0)
-                chatEntryWidget = self.chatListWidget.itemWidget(chatListWidgetItem)
+            for row in range(self.ui.chatListWidget.count()):
+                chatListWidgetItem = self.ui.chatListWidget.item(0)
+                chatEntryWidget = self.ui.chatListWidget.itemWidget(chatListWidgetItem)
                 message = chatEntryWidget.message
                 if now - time.mktime(message.timestamp.timetuple()) > (60 * self.chatparser.intelTime):
                     self.chatEntries.remove(chatEntryWidget)
@@ -1308,7 +1323,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def showSoundSetup(self):
         dialog = QtWidgets.QDialog(self)
         uic.loadUi(resourcePath(os.path.join("vi", "ui", "SoundSetup.ui")), dialog)
-        dialog.volumeSlider.setValue(SoundManager().soundVolume)
+        dialog.volumeSlider.setValue( int(SoundManager().soundVolume))
         dialog.volumeSlider.valueChanged[int].connect(SoundManager().setSoundVolume)
         dialog.testSoundButton.clicked.connect(lambda: SoundManager().playSound(name="alarm", abbreviatedMessage="Testing the playback sound system!"))
         dialog.palyAlarm_1.clicked.connect(lambda: SoundManager().playSound(name="alarm_1", abbreviatedMessage="Alarm distance 1"))
@@ -1347,7 +1362,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.avatar_loaded.emit(chatEntry.message.user, avatarData)
 
     def updateStatisticsOnMap(self, data):
-        if not self.statisticsButton.isChecked():
+        if not self.ui.statisticsButton.isChecked():
             return
         if data["result"] == "ok":
             self.mapStatisticCache = data["statistics"]
@@ -1358,10 +1373,10 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
     def zoomMapIn(self):
-        self.mapView.zoomIn()
+        self.ui.mapView.zoomIn()
 
     def zoomMapOut(self):
-        self.mapView.zoomOut()
+        self.ui.mapView.zoomOut()
 
     def logFileChanged(self, path, rescan=False):
         locale_to_set = dict()
@@ -1407,7 +1422,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return system
         return None
 
-    def regionNameFromSystemID(self,selected_sys):
+    def regionNameFromSystemID(self, selected_sys):
         selected_system = evegate.esiUniverseSystems(selected_sys[1].systemId)
         selected_constellation = evegate.esiUniverseConstellations(selected_system["constellation_id"])
         selected_region = selected_constellation["region_id"]
@@ -1418,7 +1433,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """ checks if there is a system below the mouse position, if the systems region differs from the current
             region, the menu item to change the current region is added.
         """
-        selected_sys = self.systemUnderMouse(self.mapView.mapPosFromPoint(event))
+        selected_sys = self.systemUnderMouse(self.ui.mapView.mapPosFromPoint(event))
         if selected_sys:
             concurrent_region_name = Cache().getFromCache("region_name")
             selected_region_name = self.regionNameFromSystemID(selected_sys)

@@ -61,7 +61,7 @@ backGroundColor = "#c6d9ec"
 class Application(QApplication):
     def __init__(self, args):
         super(Application, self).__init__(args)
-        QtWebEngine.initialize()
+        # QtWebEngine.initialize()
         splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png")))
         splash.show()
         if version.SNAPSHOT:
