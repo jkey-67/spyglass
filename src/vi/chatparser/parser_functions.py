@@ -41,10 +41,30 @@ from bs4 import BeautifulSoup
 from bs4.element import NavigableString
 from vi import states
 
-CHARS_TO_IGNORE = ("*", "?", ",", "!", ".")
+
+class CTX:
+    EVE_SYSTEM = ("EVE-System", "EVE System", "Système EVE", "Система EVE")
+    CHARS_TO_IGNORE = ("*", "?", ",", "!", ".")
+    WORDS_TO_IGNORE = ("IN", "IS", "AS")
+    FORMAT_URL = u"""<a style="color:#28a5ed;font-weight:bold" href="link/{0}">{0}</a>"""
+    FORMAT_SHIP = u"""<a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/{0}">{0}</a>"""
+    FORMAT_SYSTEM = u"""<a style="color:#CC8800;font-weight:bold" href="mark_system/{0}">{1}</a>"""
+
+    STATUS_CLEAR = {"CLEAR", "CLR"}
+    STATUS_STATUS = {"STAT", "STATUS"}
+    STATUS_BLUE = {"BLUE", "BLUES ONLY", "ONLY BLUE" "STILL BLUE", "ALL BLUES"}
 
 
 def textReplace(element, newText):
+    """
+
+    Args:
+        element(NavigableString):
+        newText:
+
+    Returns:
+
+    """
     newText = "<t>" + newText + "</t>"
     newElements = []
     for newPart in BeautifulSoup(newText, 'html.parser').select("t")[0].contents:
@@ -52,68 +72,102 @@ def textReplace(element, newText):
     for newElement in newElements:
         element.insert_before(newElement)
     element.replace_with("")
+    # todo: try element.replaceWith(newElement)
 
 
 def parseStatus(rtext):
+    """
+
+    Args:
+        rtext: NavigableString
+
+    Returns:
+
+    """
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
-        upperText = text.strip().upper()
-        originalText = upperText
-        for char in CHARS_TO_IGNORE:
-            upperText = upperText.replace(char, "")
-        upperWords = upperText.split()
-        if (("CLEAR" in upperWords or "CLR" in upperWords) and not originalText.endswith("?")):
+        upper_text = text.strip().upper()
+        original_text = upper_text
+        for char in CTX.CHARS_TO_IGNORE:
+            upper_text = upper_text.replace(char, "")
+        upper_words = set(upper_text.split())
+        if (len(upper_words & CTX.STATUS_CLEAR) > 0) and not original_text.endswith("?"):
             return states.CLEAR
-        elif ("STAT" in upperWords or "STATUS" in upperWords):
+        elif len(upper_words & CTX.STATUS_STATUS) > 0:
             return states.REQUEST
-        elif ("?" in originalText):
+        elif "?" in original_text:
             return states.REQUEST
-        elif (text.strip().upper() in ("BLUE", "BLUES ONLY", "ONLY BLUE" "STILL BLUE", "ALL BLUES")):
+        elif text.strip().upper() in CTX.STATUS_BLUE:
             return states.CLEAR
 
 
-def parseShips(rtext):
+def parseShips(rtext) -> bool:
+    """
+
+    Args:
+        rtext:
+
+    Returns:
+
+    """
     def formatShipName(text, word):
-        newText = u"""<span style="color:#d95911;font-weight:bold"> {0}</span>"""
-        text = text.replace(word, newText.format(word))
-        return text
+        return text.replace(word, CTX.FORMAT_SHIP.format(word))
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
-        upperText = text.upper()
+        upper_text = text.upper()
         for shipName in evegate.SHIPNAMES:
-            if shipName in upperText:
+            if shipName in upper_text:
                 hit = True
-                start = upperText.find(shipName)
+                start = upper_text.find(shipName)
                 end = start + len(shipName)
-                if ((start > 0 and upperText[start - 1] not in (" ", "X")) or (
-                                end < len(upperText) - 1 and upperText[end] not in ("S", " "))):
+                if ((start > 0 and upper_text[start - 1] not in (" ", "X")) or (
+                                end < len(upper_text) - 1 and upper_text[end] not in ("S", " "))):
                     hit = False
                 if hit:
-                    shipInText = text[start:end]
-                    formatted = formatShipName(text, shipInText)
+                    ship_in_text = text[start:end]
+                    formatted = formatShipName(text, ship_in_text)
                     textReplace(text, formatted)
                     return True
 
-def isCharName( name ):
+
+def isCharName(name) -> bool:
+    """
+
+    Args:
+        name(str):character name to be checked
+
+    Returns:
+        bool:True if the name is 100% match a character name
+
+    """
+    # todo:implement me
     return False
 
-def parseSystems(systems, rtext, foundSystems):
-    systemNames = systems.keys()
 
-    # words to ignore on the system parser. use UPPER CASE
-    WORDS_TO_IGNORE = ("IN", "IS", "AS")
+def parseSystems(systems, rtext, systems_found):
+    """
+    Parse a message for system names
+    Args:
+        systems: systems to be monitored
+        rtext(str): message to be parsed
+        systems_found(set): systems found
+
+    Returns:
+        bool:
+    """
+    # todo:parese systems may run in a loop
+
+    system_names = systems.keys()
 
     def formatSystem(text, word, system):
-        newText = u"""<a style="color:#CC8800;font-weight:bold" href="mark_system/{0}">{1}</a>"""
-        text = text.replace(word, newText.format(system, word))
-        return text
+        return text.replace(word, CTX.FORMAT_SYSTEM.format(system, word))
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString) and len(t)]
     for wtIdx, text in enumerate(texts):
         worktext = text
-        for char in CHARS_TO_IGNORE:
-            worktext = worktext.replace(char, "")
+        for char in CTX.CHARS_TO_IGNORE:
+            worktext = worktext.replace(char, " ")
 
         # Drop redundant whitespace so as to not throw off word index
         worktext = ' '.join(worktext.split())
@@ -137,36 +191,36 @@ def parseSystems(systems, rtext, foundSystems):
                     if (isCharName( words[idx ]+ " "+words[idx + 1])):
                         continue
             upperWord = word.upper()
-            if upperWord != word and upperWord in WORDS_TO_IGNORE: continue
-            if upperWord in systemNames:  # - direct hit on name
-                foundSystems.add(systems[upperWord])  # of the system?
+            if upperWord != word and upperWord in CTX.WORDS_TO_IGNORE: continue
+            if upperWord in system_names:  # - direct hit on name
+                systems_found.add(systems[upperWord])  # of the system?
                 formattedText = formatSystem(text, word, upperWord)
                 textReplace(text, formattedText)
                 return True
             elif 1 < len(upperWord) < 5:  # - upperWord < 4 chars.
-                for system in systemNames:  # system begins with?
+                for system in system_names:  # system begins with?
                     if system.startswith(upperWord):
-                        foundSystems.add(systems[system])
+                        systems_found.add(systems[system])
                         formattedText = formatSystem(text, word, system)
                         textReplace(text, formattedText)
                         return True
             elif "-" in upperWord and len(upperWord) > 2:  # - short with - (minus)
                 upperWordParts = upperWord.split("-")  # (I-I will match I43-IF3)
-                for system in systemNames:
+                for system in system_names:
                     systemParts = system.split("-")
                     if (len(upperWordParts) == 2 and len(systemParts) == 2 and len(upperWordParts[0]) > 1 and len(
                             upperWordParts[1]) > 1 and len(systemParts[0]) > 1 and len(systemParts[1]) > 1 and len(
                             upperWordParts) == len(systemParts) and upperWordParts[0][0] == systemParts[0][0] and
                                 upperWordParts[1][0] == systemParts[1][0]):
-                        foundSystems.add(systems[system])
+                        systems_found.add(systems[system])
                         formattedText = formatSystem(text, word, system)
                         textReplace(text, formattedText)
                         return True
             elif len(upperWord) > 1:  # what if F-YH58 is named FY?
-                for system in systemNames:
+                for system in system_names:
                     clearedSystem = system.replace("-", "")
                     if clearedSystem.startswith(upperWord):
-                        foundSystems.add(systems[system])
+                        systems_found.add(systems[system])
                         formattedText = formatSystem(text, word, system)
                         textReplace(text, formattedText)
                         return True
@@ -176,6 +230,13 @@ def parseSystems(systems, rtext, foundSystems):
 
 
 def parseUrls(rtext):
+    """Patch text format into an existing  http/https link found in a message.
+    Args:
+        rtext(str): The text to be patched
+
+    Returns:
+        str:The resulting patched text
+    """
     def findUrls(s):
         # yes, this is faster than regex and less complex to read
         urls = []
@@ -193,9 +254,7 @@ def parseUrls(rtext):
         return urls
 
     def formatUrl(text, url):
-        newText = u"""<a style="color:#28a5ed;font-weight:bold" href="link/{0}">{0}</a>"""
-        text = text.replace(url, newText.format(url))
-        return text
+        return text.replace(url, CTX.FORMAT_URL.format(url))
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
