@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>SystemChat</class>
+ <widget class="QDialog" name="SystemChat">
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
@@ -129,6 +129,19 @@
              <widget class="QPushButton" name="locationButton">
               <property name="text">
                <string>Set Char Location</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="openzKillboard">
+              <property name="text">
+               <string>Open zKillboard</string>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>17</width>
+                <height>16</height>
+               </size>
               </property>
              </widget>
             </item>

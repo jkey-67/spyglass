@@ -19,14 +19,16 @@
 
 import os
 import logging
-
-from PyQt5.QtCore import QThread, QLocale
+from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QThread, QLocale, QUrl, QCoreApplication
 from .resources import resourcePath
 from vi.singleton import Singleton
-from PyQt5.QtMultimedia import QSoundEffect
-from PyQt5.QtTextToSpeech import QTextToSpeech
-from PyQt5.QtWidgets import qApp
-from PyQt5.QtCore import *
+from PySide6.QtMultimedia import QSoundEffect
+try:
+    from espeakng import Speaker
+except:
+    pass
+
 from vi.cache.cache import Cache
 
 global gPygletAvailable
@@ -65,10 +67,16 @@ class SoundManager(metaclass=Singleton):
     soundVolume = 25  # Must be an integer between 0 and 100
     soundAvailable = True
     useSpokenNotifications = False
+
     def __init__(self):
         self.sounds = {}
         self.worker = QThread()
-        self.speach_engine = QTextToSpeech()
+        try:
+            self.speach_engine = Speaker()
+        except Exception as ex:
+            self.speach_engine = None
+            logging.error(ex)
+
         cache = Cache()
         self.setSoundFile("alarm_1", cache.getFromCache("soundsetting.alarm_1"))
         self.setSoundFile("alarm_2", cache.getFromCache("soundsetting.alarm_2"))
@@ -92,8 +100,9 @@ class SoundManager(metaclass=Singleton):
                 filename = SoundManager.DEF_SND_FILE
             self.SOUNDS[mask] = filename
             self.sounds[mask] = QSoundEffect()
-            url = QUrl.fromLocalFile(self.SOUNDS[mask])
-            self.sounds[mask].setSource(url)
+            if self.SOUNDS[mask]:
+                url = QUrl.fromLocalFile(self.SOUNDS[mask])
+                self.sounds[mask].setSource(url)
             Cache().putIntoCache("soundsetting.{}".format(mask), filename)
             self.loadSoundFiles()
 
@@ -114,16 +123,20 @@ class SoundManager(metaclass=Singleton):
         return True
 
     def platformSupportsSpeech(self):
-        avail_engines = self.speach_engine.availableEngines()
-        if len(avail_engines):
-            for eng_name in avail_engines:
-                logging.info("Available sound engine \'{}\'".format(eng_name))
-            self.speach_engine.setLocale(QLocale(QLocale.English))
-            return True
-        else:
-            self.useSpokenNotifications = False
-            logging.critical(" There is no text to speak engine available, all text to speak function disabled.")
-            return False
+        if self.speach_engine:
+            if isinstance(self.speach_engine, Speaker):
+                self.speach_engine.voice = 'en'
+                return True
+
+            avail_engines = self.speach_engine.getProperty('voices')
+            if len(avail_engines):
+                for eng_name in avail_engines:
+                    logging.info("Available sound engine \'{}\'".format(eng_name))
+                self.speach_engine.setLocale(QLocale(QLocale.English))
+                return True
+        self.useSpokenNotifications = False
+        logging.critical(" There is no text to speak engine available, all text to speak function disabled.")
+        return False
 
     def setUseSpokenNotifications(self, new_value):
         self.useSpokenNotifications = new_value
@@ -137,8 +150,12 @@ class SoundManager(metaclass=Singleton):
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage != "":
-                self.speach_engine.setVolume(self.soundVolume/100.0)
-                self.speach_engine.say(abbreviatedMessage)
+                if isinstance(self.speach_engine, Speaker):
+                    self.speach_engine.amplitude = self.soundVolume
+                    self.speach_engine.say(abbreviatedMessage)
+                else:
+                    self.speach_engine.setProperty('volume',self.soundVolume/100.0)
+                    self.speach_engine.say(abbreviatedMessage)
             elif name in self.sounds.keys():
                 self.sounds[name].setVolume(self.soundVolume / 100 * self.SNDVOL[name])
                 self.sounds[name].setMuted(False)
@@ -149,11 +166,11 @@ class SoundManager(metaclass=Singleton):
                 self.sounds["alarm"].setMuted(False)
                 self.sounds["alarm"].play()
                 self.sounds["alarm"].status()
-        qApp.processEvents()
+        QApplication.processEvents()
 
     def quit(self):
-        qApp.processEvents()
+        QApplication.processEvents()
 
     def wait(self):
-        qApp.processEvents()
+        QApplication.processEvents()
 

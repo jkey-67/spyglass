@@ -1,20 +1,20 @@
 ###########################################################################
-#  Spyglass - Visual Intel Chat Analyzer								  #
-#  Copyright (C) 2017 Crypta Eve (crypta@crypta.tech)                     #
-#																		  #
-#  This program is free software: you can redistribute it and/or modify	  #
-#  it under the terms of the GNU General Public License as published by	  #
-#  the Free Software Foundation, either version 3 of the License, or	  #
-#  (at your option) any later version.									  #
-#																		  #
-#  This program is distributed in the hope that it will be useful,		  #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
-#  GNU General Public License for more details.							  #
-#																		  #
-#																		  #
-#  You should have received a copy of the GNU General Public License	  #
-#  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
+#  EVE-Spyglass - Visual Intel Chat Analyzer                              #
+#  Copyright (C) 2022 Nele McCool (nele.mccool @ gmx.net)                 #
+#                                                                         #
+#  This program is free software: you can redistribute it and/or modify   #
+#  it under the terms of the GNU General Public License as published by   #
+#  the Free Software Foundation, either version 3 of the License, or      #
+#  (at your option) any later version.                                    #
+#                                                                         #
+#  This program is distributed in the hope that it will be useful,        #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of         #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the           #
+#  GNU General Public License for more details.                           #
+#                                                                         #
+#                                                                         #
+#  You should have received a copy of the GNU General Public License      #
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
 
 import datetime
@@ -22,8 +22,10 @@ import json
 import time
 import parse
 
-from PyQt5.QtCore import QThread, pyqtSignal, QUrl
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QThread, QUrl
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from packaging import version
 
@@ -643,7 +645,7 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
     parent.api_thread = api_server_thread()
     parent.api_thread.client_param = client_param
     parent.api_thread.elem = None
-    parent.api_thread.elem = QWebEngineView()
+    parent.api_thread.elem = QWebEngineView(None)
     parent.api_thread.start()
     if parent.api_thread.elem:
         parent.api_thread.elem.destroyed.connect(parent.api_thread.quit)
@@ -653,7 +655,9 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
     else:
         webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
 
-    parent.api_thread.wait()
+    while parent.api_thread.isRunning():
+        QApplication.processEvents()
+    parent.api_thread.isRunning().wait()
     if parent.api_thread.auth_code:
         logging.info("Registration completed.")
     else:

@@ -27,17 +27,16 @@ from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
 
 from PyInstaller.building import splash
-from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtWebEngine import QtWebEngine
-from PyQt5.QtSql import QSqlDatabase
+from PySide6 import QtGui, QtWidgets, QtCore
 from vi import version, PanningWebView
 from vi.ui import viui, systemtray
 from vi.cache import cache
 from vi.ui.styles import Styles
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
-from PyQt5.QtWidgets import QApplication, QMessageBox
-
+from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtSql import QSqlDatabase
+import PySide6.QtWebEngineCore
 
 
 def exceptHook(exceptionType, exceptionValue, tracebackObject):
@@ -60,8 +59,9 @@ backGroundColor = "#c6d9ec"
 
 class Application(QApplication):
     def __init__(self, args):
+        
         super(Application, self).__init__(args)
-        # QtWebEngine.initialize()
+
         splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png")))
         splash.show()
         if version.SNAPSHOT:
@@ -153,7 +153,7 @@ class Application(QApplication):
         def change_splash_text( txt ):
             if len(txt):
                 splash.showMessage("    {} ...".format(txt), QtCore.Qt.AlignLeft, QtGui.QColor(0x808000))
-
+        QApplication.processEvents()
         self.mainWindow = viui.MainWindow(chatLogDirectory, tray_icon, change_splash_text)
         self.mainWindow.show()
         self.mainWindow.raise_()
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     res = 0
     try:
         app = Application(sys.argv)
-        res = app.exec_()
+        res = app.exec()
         del app
     except Exception as e:
         logging.critical("Spyglass terminated abnormal %s.", e.__str__())

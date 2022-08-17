@@ -216,32 +216,33 @@ class Map(object):
         self.updateStatisticsVisibility()
 
     def _prepareGradients(self, soup):
-
-        grad_located = soup.new_tag("radialGradient", id="grad_located")
+        use_radialgradient = "radialGradient"
+        #use_radialgradient = "linearGradient"
+        grad_located = soup.new_tag(use_radialgradient, id="grad_located", r="0.5")
         stop = soup.new_tag("stop")
         stop["offset"] = "50%"
         stop["stop-color"] = "#8b008d"
-        stop["stop-opacity"] = "1"
+        stop["stop-opacity"] = "1.0"
         grad_located.append(stop)
         stop = soup.new_tag("stop")
         stop["offset"] = "100%"
         stop["stop-color"] = "#8b008d"
-        stop["stop-opacity"] = "0"
+        stop["stop-opacity"] = "0.0"
         grad_located.append(stop)
 
-        grad_watch = soup.new_tag("radialGradient", id="grad_watch")
+        grad_watch = soup.new_tag(use_radialgradient, id="grad_watch", r="0.5")
         stop = soup.new_tag("stop")
         stop["offset"] = "50%"
         stop["stop-color"] = "#909090"
-        stop["stop-opacity"] = "1"
+        stop["stop-opacity"] = "1.0"
         grad_watch.append(stop)
         stop = soup.new_tag("stop")
         stop["offset"] = "100%"
         stop["stop-color"] = "#909090"
-        stop["stop-opacity"] = "0"
+        stop["stop-opacity"] = "0.0"
         grad_watch.append(stop)
 
-        grad_cam_bg = soup.new_tag("radialGradient", id="camBg")
+        grad_cam_bg = soup.new_tag(use_radialgradient, id="camBg", r="0.5")
         stop = soup.new_tag("stop")
         stop["offset"] = "50%"
         stop["stop-color"] = "#FF8800"
@@ -253,7 +254,7 @@ class Map(object):
         stop["stop-opacity"] = "0"
         grad_cam_bg.append(stop)
 
-        grad_cam_active_bg = soup.new_tag("radialGradient", id="camActiveBg")
+        grad_cam_active_bg = soup.new_tag(use_radialgradient, id="camActiveBg", r="0.5")
         stop = soup.new_tag("stop")
         stop["offset"] = "50%"
         stop["stop-color"] = "#ff0000"
@@ -265,38 +266,62 @@ class Map(object):
         stop2["stop-opacity"] = "0.0"
         grad_cam_active_bg.append(stop2)
 
-        grad_inc_bg = soup.new_tag("radialGradient", id="incBg")
+        grad_inc_bg = soup.new_tag(use_radialgradient, id="incBg", r="0.5")
         stop = soup.new_tag("stop")
         stop["offset"] = "50%"
         stop["stop-color"] = "#FFC800"
-        stop["stop-opacity"] = "1"
+        stop["stop-opacity"] = 1
         grad_inc_bg.append(stop)
         stop = soup.new_tag("stop")
         stop["offset"] = "100%"
         stop["stop-color"] = "#FFC800"
-        stop["stop-opacity"] = "0"
+        stop["stop-opacity"] = 0
+        grad_inc_bg.append(stop)
+        stop = soup.new_tag("stop")
+        stop["offset"] = "100%"
+        stop["stop-color"] = "#FFC800"
+        stop["stop-opacity"] = 0
         grad_inc_bg.append(stop)
 
-        grad_inc_st_bg = soup.new_tag("radialGradient", id="incStBg")
+        grad_inc_st_bg = soup.new_tag(use_radialgradient, id="incStBg", r="0.5")
         stop = soup.new_tag("stop")
         stop["offset"] = "50%"
         stop["stop-color"] = "#FFC800"
-        stop["stop-opacity"] = "1"
+        stop["stop-opacity"] = "1.0"
         grad_inc_st_bg.append(stop)
         stop = soup.new_tag("stop")
         stop["offset"] = "100%"
         stop["stop-color"] = "#FF0000"
-        stop["stop-opacity"] = "0"
+        stop["stop-opacity"] = "0.0"
         grad_inc_st_bg.append(stop)
+
+        grad_con_bg = soup.new_tag(use_radialgradient, id="conBg", r="0.5")
+        stop = soup.new_tag("stop")
+        stop["offset"] = "50%"
+        stop["stop-color"] = "#FFA0FF"
+        grad_con_bg.append(stop)
+        stop = soup.new_tag("stop")
+        stop["offset"] = "95%"
+        stop["stop-color"] = "#FFA0FF"
+        stop["stop-opacity"] = "0"
+        grad_con_bg.append(stop)
+
         svg = soup.select("svg")[0]
 
+        for grad in svg.findAll("radialGradient"):
+            grad.extract()
+
+        for grad in svg.findAll("radialgradient"):
+            grad.extract()
+
         for defs in svg.select("defs"):
-            defs.append(grad_located)
-            defs.append(grad_watch)
-            defs.append(grad_cam_bg)
-            defs.append(grad_cam_active_bg)
-            defs.append(grad_inc_bg)
-            defs.append(grad_inc_st_bg)
+            defs.insert(0, grad_located)
+            defs.insert(0, grad_watch)
+            defs.insert(0, grad_cam_bg)
+            defs.insert(0, grad_cam_active_bg)
+            defs.insert(0, grad_inc_bg)
+            defs.insert(0, grad_inc_st_bg)
+            defs.insert(0, grad_con_bg)
 
     def _prepareSvg(self, soup, systems):
         svg = soup.select("svg")[0]
@@ -474,7 +499,7 @@ class Map(object):
     def debugWriteSoup(self):
         svg_data = self.soup.prettify("utf-8")
         try:
-            with open("/home/michael/Desktop/output.svg", "wb") as svgFile:
+            with open("/home/jkeymer/projects/spyglass/src/output.svg", "wb") as svgFile:
                 svgFile.write(svg_data)
                 svgFile.close()
         except Exception as e:

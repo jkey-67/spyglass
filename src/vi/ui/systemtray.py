@@ -1,30 +1,32 @@
 ###########################################################################
-#  Spyglass - Visual Intel Chat Analyzer								  #
+#  Spyglass - Visual Intel Chat Analyzer                                  #
 #  Copyright (C) 2017 Crypta Eve (crypta@crypta.tech)                     #
-# 																		  #
+#                                                                         #
 #  This program is free software: you can redistribute it and/or modify	  #
 #  it under the terms of the GNU General Public License as published by	  #
 #  the Free Software Foundation, either version 3 of the License, or	  #
-#  (at your option) any later version.									  #
-#    																	  #
-#  This program is distributed in the hope that it will be useful,		  #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
-#  GNU General Public License for more details.							  #
-#  																		  #
-#  																		  #
+#  (at your option) any later version.                                    #
+#                                                                         #
+#  This program is distributed in the hope that it will be useful,        #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of         #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the          #
+#  GNU General Public License for more details.                           #
+#                                                                         #
+#                                                                         #
 #  You should have received a copy of the GNU General Public License	  #
-#  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 
 import time
 import os
 
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QAction, QActionGroup
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QSystemTrayIcon
+from PySide6 import QtWidgets
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QAction, QActionGroup
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QSystemTrayIcon
+from PySide6.QtCore import Signal as pyqtSignal
+
 from vi.resources import resourcePath
 from vi import states
 from vi.soundmanager import SoundManager
@@ -73,7 +75,7 @@ class TrayContextMenu(QtWidgets.QMenu):
             self.changeRegion.setEnabled(False)
 
     def _buildMenu(self):
-        self.framelessCheck = QtWidgets.QAction("Frameless Window", self, checkable=True)
+        self.framelessCheck = QAction("Frameless Window", self, checkable=True)
         self.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
         self.addAction(self.framelessCheck)
         self.addSeparator()
@@ -100,11 +102,11 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.changeRegion = QAction("Change Region", None, checkable=False)
         self.addAction(self.changeRegion)
         self.addSeparator()
-        self.requestCheck = QtWidgets.QAction("Show status request notifications", self, checkable=True)
+        self.requestCheck = QAction("Show status request notifications", self, checkable=True)
         self.requestCheck.setChecked(True)
         self.addAction(self.requestCheck)
         self.requestCheck.triggered.connect(self.trayIcon.switchRequest)
-        self.alarmCheck = QtWidgets.QAction("Show alarm notifications", self, checkable=True)
+        self.alarmCheck = QAction("Show alarm notifications", self, checkable=True)
         self.alarmCheck.setChecked(True)
         self.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
         self.addAction(self.alarmCheck)

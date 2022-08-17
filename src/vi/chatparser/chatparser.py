@@ -24,7 +24,7 @@ import logging
 
 from bs4 import BeautifulSoup
 from vi import states
-from PyQt5.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 
 from .parser_functions import parseStatus, CTX
 from .parser_functions import parseUrls, parseShips, parseSystems

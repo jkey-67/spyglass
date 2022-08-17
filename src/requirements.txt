@@ -1,15 +1,12 @@
 altgraph
 beautifulsoup4
 future
-PyQt5
-PyQtWebEngine
-#PyQt5-sip
-#PyQt5-stubs
+pyside6
 PyYAML
-#requests
+requests
 urllib3
 pyinstaller
-#jose
 packaging
 parse
+pyttsx3
 

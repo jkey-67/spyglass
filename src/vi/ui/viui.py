@@ -23,38 +23,42 @@ import sys
 import time
 import requests
 import webbrowser
-
+from parse import parse
 import vi.version
 import logging
-from parse import parse
-from PyQt5.QtGui import *
-from PyQt5 import QtGui, QtCore, QtWidgets, uic
+from PySide6.QtGui import *
+from PySide6 import QtGui, QtCore, QtWidgets
+from PySide6.QtUiTools import QUiLoader
 
-from PyQt5.QtCore import QPoint, QPointF, QByteArray, pyqtSignal, QSortFilterProxyModel
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, QStyledItemDelegate, QMenu
-from PyQt5.QtSql import  QSqlQueryModel
+from PySide6.QtCore import QPoint, QPointF, QByteArray, QSortFilterProxyModel
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, QStyledItemDelegate
+
 from vi import evegate
 from vi import dotlan, filewatcher
 from vi import states
+from vi.ui import JumpbridgeChooser, ChatroomsChooser, RegionChooser, SystemChat, ChatEntryWidget
+
 from vi.cache.cache import Cache
 from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu, POIContextMenu
 from vi.ui.styles import Styles
-from vi.chatparser.chatparser import ChatParser, Message
-from PyQt5.QtWidgets import QAction
-from PyQt5.QtWidgets import QActionGroup
+from vi.chatparser.chatparser import ChatParser
+import PySide6.QtGui
+from PySide6.QtGui import QActionGroup
+from PySide6.QtSql import QSqlQueryModel
 
-from vi.ui.ui_MainWindow import Ui_MainWindow
+from vi.ui import Ui_MainWindow, Ui_Info, Ui_SoundSetup
+
+
 
 
 # Timer intervals
 MAP_UPDATE_INTERVAL_MSECS = 1000
 CLIPBOARD_CHECK_INTERVAL_MSECS = 4 * 1000
-
-DEFAULT_ROOM_MANES =[u"Scald Intel",u"FI.RE Intel"]
 
 
 class StyledItemDelegatePOI(QStyledItemDelegate):
@@ -62,6 +66,7 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
         super(StyledItemDelegatePOI, self).__init__(parent)
 
     def paint(self, painter, option, index):
+        painter.save()
         if index.column() == 0:
             type_id = index.data()
             type_data = evegate.getTypesIcon(type_id)
@@ -70,18 +75,19 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
             painter.drawImage(option.rect.topLeft(), img)
         else:
             super(StyledItemDelegatePOI, self).paint(painter, option, index)
-            return
-            # polygon_triangle = QtGui.QPolygon(3)
-            # polygon_triangle.setPoint(0, QtCore.QPoint(option.rect.x() + 5, option.rect.y()))
-            # polygon_triangle.setPoint(1, QtCore.QPoint(option.rect.x(), option.rect.y()))
-            # polygon_triangle.setPoint(2, QtCore.QPoint(option.rect.x(), option.rect.y() + 5))
 
-            # painter.save()
-            # painter.setRenderHint(painter.Antialiasing)
-            # painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
-            # painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
-            # painter.drawPolygon(polygon_triangle)
-            #painter.restore()
+            polygon_triangle = QtGui.QPolygon(
+                [
+                    QtCore.QPoint(option.rect.x() + 5, option.rect.y()),
+                    QtCore.QPoint(option.rect.x(), option.rect.y()),
+                    QtCore.QPoint(option.rect.x(), option.rect.y() + 5)
+                ])
+
+            painter.setRenderHint(painter.Antialiasing)
+            painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
+            painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
+            painter.drawPolygon(polygon_triangle)
+        painter.restore()
 
     def sizeHint(self, option, index):
         return QtCore.QSize(64, 64)
@@ -105,13 +111,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 update_splash(string)
 
         QtWidgets.QMainWindow.__init__(self)
+        self.uiLoader = QUiLoader()
         #if backGroundColor:
         #    self.setStyleSheet("QWidget { background-color: %s; }" % backGroundColor)
-        if 0:
-            self.ui = uic.loadUi(resourcePath(os.path.join("vi", "ui", "MainWindow.ui")), baseinstance=self)
-        else:
-            self.ui = Ui_MainWindow()
-            self.ui.setupUi(self)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
 
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "eve-sso-login-black-small.png"))),
@@ -923,7 +927,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.showChatAvatarsAction.setChecked(newValue)
         ChatEntryWidget.SHOW_AVATAR = newValue
         for entry in self.chatEntries:
-            entry.avatarLabel.setVisible(newValue)
+            entry.ui.avatarLabel.setVisible(newValue)
 
     def changeChatFontSize(self, newSize):
         if newSize:
@@ -1125,8 +1129,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.systems[system_name].addLocatedCharacter(char)
             if evegate.esiCheckCharacterToken(char):
                 self.focusMapOnSystem(self.systems[str(system_name)].systemId)
-            else:
-                self.updateMapView()
+
+        self.updateMapView()
 
     def updateMapView(self):
         try:
@@ -1253,6 +1257,15 @@ class MainWindow(QtWidgets.QMainWindow):
         scrollToBottom = False
         if (self.ui.chatListWidget.verticalScrollBar().value() == self.ui.chatListWidget.verticalScrollBar().maximum()):
             scrollToBottom = True
+
+        if self.ui.useSpokenNotificationsAction.isChecked():
+            SoundManager().playSound(
+                name="alarm_1",
+                abbreviatedMessage="Massage from {},  {}, The status is now {}".format(
+                    message.user,
+                    message.plainText,
+                    message.status));
+
         chatEntryWidget = ChatEntryWidget(message)
         listWidgetItem = QtWidgets.QListWidgetItem(self.ui.chatListWidget)
         listWidgetItem.setSizeHint(chatEntryWidget.sizeHint())
@@ -1289,7 +1302,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 message = chatEntryWidget.message
                 if now - time.mktime(message.timestamp.timetuple()) > (60 * self.chatparser.intelTime):
                     self.chatEntries.remove(chatEntryWidget)
-                    self.chatListWidget.takeItem(0)
+                    self.ui.chatListWidget.takeItem(0)
                 else:
                     break
         except Exception as e:
@@ -1301,10 +1314,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showInfo(self):
         infoDialog = QtWidgets.QDialog(self)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "Info.ui")), infoDialog)
-        infoDialog.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        infoDialog.logoLabel.setPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "denci.png"))))
-        infoDialog.closeButton.clicked.connect(infoDialog.accept)
+        infoDialog.ui = Ui_Info()
+        infoDialog.ui.setupUi(infoDialog)
+        infoDialog.ui.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
+        infoDialog.ui.logoLabel.setPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "denci.png"))))
+        infoDialog.ui.closeButton.clicked.connect(infoDialog.accept)
         infoDialog.show()
 
     def selectSoundFile(self,mask,dialog):
@@ -1322,26 +1336,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showSoundSetup(self):
         dialog = QtWidgets.QDialog(self)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "SoundSetup.ui")), dialog)
-        dialog.volumeSlider.setValue( int(SoundManager().soundVolume))
-        dialog.volumeSlider.valueChanged[int].connect(SoundManager().setSoundVolume)
-        dialog.testSoundButton.clicked.connect(lambda: SoundManager().playSound(name="alarm", abbreviatedMessage="Testing the playback sound system!"))
-        dialog.palyAlarm_1.clicked.connect(lambda: SoundManager().playSound(name="alarm_1", abbreviatedMessage="Alarm distance 1"))
-        dialog.palyAlarm_2.clicked.connect(lambda: SoundManager().playSound(name="alarm_2", abbreviatedMessage="Alarm distance 2"))
-        dialog.palyAlarm_3.clicked.connect(lambda: SoundManager().playSound(name="alarm_3", abbreviatedMessage="Alarm distance 3"))
-        dialog.palyAlarm_4.clicked.connect(lambda: SoundManager().playSound(name="alarm_4", abbreviatedMessage="Alarm distance 4"))
-        dialog.palyAlarm_5.clicked.connect(lambda: SoundManager().playSound(name="alarm_5", abbreviatedMessage="Alarm distance 5"))
-        dialog.selectAlarm_1.clicked.connect(lambda: self.selectSoundFile("alarm_1", dialog))
-        dialog.selectAlarm_2.clicked.connect(lambda: self.selectSoundFile("alarm_2", dialog))
-        dialog.selectAlarm_3.clicked.connect(lambda: self.selectSoundFile("alarm_3", dialog))
-        dialog.selectAlarm_4.clicked.connect(lambda: self.selectSoundFile("alarm_4", dialog))
-        dialog.selectAlarm_5.clicked.connect(lambda: self.selectSoundFile("alarm_5", dialog))
-        dialog.soundAlarm_1.setText(SoundManager().soundFile("alarm_1"))
-        dialog.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
-        dialog.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
-        dialog.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
-        dialog.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
-        dialog.closeButton.clicked.connect(dialog.accept)
+        dialog.ui = Ui_SoundSetup()
+        dialog.ui.setupUi(dialog)
+        dialog.ui.volumeSlider.setValue( int(SoundManager().soundVolume))
+        dialog.ui.volumeSlider.valueChanged[int].connect(SoundManager().setSoundVolume)
+        dialog.ui.testSoundButton.clicked.connect(lambda: SoundManager().playSound(name="alarm", abbreviatedMessage="Testing the playback sound system!"))
+        dialog.ui.palyAlarm_1.clicked.connect(lambda: SoundManager().playSound(name="alarm_1", abbreviatedMessage="Alarm distance 1"))
+        dialog.ui.palyAlarm_2.clicked.connect(lambda: SoundManager().playSound(name="alarm_2", abbreviatedMessage="Alarm distance 2"))
+        dialog.ui.palyAlarm_3.clicked.connect(lambda: SoundManager().playSound(name="alarm_3", abbreviatedMessage="Alarm distance 3"))
+        dialog.ui.palyAlarm_4.clicked.connect(lambda: SoundManager().playSound(name="alarm_4", abbreviatedMessage="Alarm distance 4"))
+        dialog.ui.palyAlarm_5.clicked.connect(lambda: SoundManager().playSound(name="alarm_5", abbreviatedMessage="Alarm distance 5"))
+        dialog.ui.selectAlarm_1.clicked.connect(lambda: self.selectSoundFile("alarm_1", dialog))
+        dialog.ui.selectAlarm_2.clicked.connect(lambda: self.selectSoundFile("alarm_2", dialog))
+        dialog.ui.selectAlarm_3.clicked.connect(lambda: self.selectSoundFile("alarm_3", dialog))
+        dialog.ui.selectAlarm_4.clicked.connect(lambda: self.selectSoundFile("alarm_4", dialog))
+        dialog.ui.selectAlarm_5.clicked.connect(lambda: self.selectSoundFile("alarm_5", dialog))
+        dialog.ui.soundAlarm_1.setText(SoundManager().soundFile("alarm_1"))
+        dialog.ui.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
+        dialog.ui.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
+        dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
+        dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
+        dialog.ui.closeButton.clicked.connect(dialog.accept)
         dialog.show()
 
     def systemTrayActivated(self, reason):
@@ -1445,256 +1460,4 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
 
 
-class ChatroomsChooser(QtWidgets.QDialog):
-    rooms_changed = pyqtSignal(list)
 
-    def __init__(self, parent):
-        QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatroomsChooser.ui")), self)
-        self.defaultButton.clicked.connect(self.setDefaults)
-        self.cancelButton.clicked.connect(self.accept)
-        self.saveButton.clicked.connect(self.saveClicked)
-        room_names = Cache().getFromCache("room_names")
-        if not room_names:
-            room_names = u','.join(DEFAULT_ROOM_MANES)
-        self.roomnamesField.setPlainText(room_names)
-
-    def saveClicked(self):
-        text = str(self.roomnamesField.toPlainText())
-        rooms = [str(name.strip()) for name in text.split(",")]
-        self.accept()
-        self.rooms_changed.emit(rooms)
-
-    def setDefaults(self):
-        self.roomnamesField.setPlainText(u','.join(DEFAULT_ROOM_MANES))
-
-
-class RegionChooser(QtWidgets.QDialog):
-    new_region_chosen = pyqtSignal()
-
-    def __init__(self, parent):
-        QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "RegionChooser.ui")), self)
-        self.strList = QtWidgets.QCompleter(["{}".format(name) for key, name in evegate.esiUniverseNames(evegate.esiUniverseGetAllRegions()).items()], parent=self)
-        self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.regionNameField.setCompleter(self.strList)
-        self.cancelButton.clicked.connect(self.accept)
-        self.saveButton.clicked.connect(self.saveClicked)
-        cache = Cache()
-        regionName = cache.getFromCache("region_name")
-        if not regionName:
-            regionName = u"Providence"
-        self.regionNameField.setText(regionName)
-
-    def saveClicked(self):
-        text = str(self.regionNameField.text())
-        text = dotlan.convertRegionName(text)
-        self.regionNameField.setText(text)
-        correct = False
-        try:
-            url = dotlan.Map.DOTLAN_BASIC_URL.format(text)
-            content = requests.get(url).text
-            if u"not found" in content:
-                try:
-                    correct = resourcePathExists(os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(text)))
-                except Exception as e:
-                    logging.error(e)
-                    correct = False
-                if not correct:
-                    QMessageBox.warning(self, u"No such region!", u"I can't find a region called '{0}'".format(text))
-            else:
-                correct = True
-        except Exception as e:
-            QMessageBox.critical(self, u"Something went wrong!", u"Error while testing existing '{0}'".format(str(e)))
-            logging.error(e)
-            correct = False
-        if correct:
-            Cache().putIntoCache("region_name", text, 60 * 60 * 24 * 365)
-            self.accept()
-            self.new_region_chosen.emit()
-
-
-class SystemChat(QtWidgets.QDialog):
-    SYSTEM = 0
-    location_set = QtCore.pyqtSignal(str,str)
-    repaint_needed = QtCore.pyqtSignal()
-    def __init__(self, parent, chatType, selector, chatEntries, knownPlayerNames):
-        QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "SystemChat.ui")), self)
-        self.chatType = 0
-        self.selector = selector
-        self.chatEntries = []
-        for entry in chatEntries:
-            self.addChatEntry(entry)
-        titleName = ""
-        if self.chatType == SystemChat.SYSTEM:
-            titleName = self.selector.name
-            self.system = selector
-        for name in knownPlayerNames:
-            self.playerNamesBox.addItem(name)
-        self.setWindowTitle("Chat for {0}".format(titleName))
-        self.closeButton.clicked.connect(self.closeDialog)
-        self.alarmButton.clicked.connect(self.setSystemAlarm)
-        self.clearButton.clicked.connect(self.setSystemClear)
-        self.locationButton.clicked.connect(self.locationSet)
-        self.dotlanButton.clicked.connect(self.openDotlan)
-
-    def _addMessageToChat(self, message, avatarPixmap):
-        scrollToBottom = False
-        if (self.chat.verticalScrollBar().value() == self.chat.verticalScrollBar().maximum()):
-            scrollToBottom = True
-        entry = ChatEntryWidget(message)
-        entry.avatarLabel.setPixmap(avatarPixmap)
-        listWidgetItem = QtWidgets.QListWidgetItem(self.chat)
-        listWidgetItem.setSizeHint(entry.sizeHint())
-        self.chat.addItem(listWidgetItem)
-        self.chat.setItemWidget(listWidgetItem, entry)
-        self.chatEntries.append(entry)
-        #entry.mark_system.connect(super(MainWindow,self.parent()).markSystemOnMap)
-        if scrollToBottom:
-            self.chat.scrollToBottom()
-
-    def addChatEntry(self, entry):
-        if self.chatType == SystemChat.SYSTEM:
-            message = entry.message
-            avatarPixmap = entry.avatarLabel.pixmap()
-            if self.selector in message.systems:
-                self._addMessageToChat(message, avatarPixmap)
-
-    def openDotlan(self):
-        try:
-            url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
-            webbrowser.open_new_tab(url)
-        except webbrowser.Error as e:
-            logging.critical("Unable to open browser {0}".format(e))
-            return
-
-
-    def locationSet(self):
-        char = str(self.playerNamesBox.currentText())
-        self.location_set.emit(char, self.system.name)
-
-    def newAvatarAvailable(self, charname, avatarData):
-        for entry in self.chatEntries:
-            if entry.message.user == charname:
-                entry.updateAvatar(avatarData)
-
-    def setSystemAlarm(self):
-        self.system.setStatus(states.ALARM,datetime.datetime.utcnow())
-        self.repaint_needed.emit()
-
-    def setSystemClear(self):
-        self.system.setStatus(states.CLEAR,datetime.datetime.utcnow())
-        self.repaint_needed.emit()
-
-    def closeDialog(self):
-        self.accept()
-
-
-class ChatEntryWidget(QtWidgets.QWidget):
-    TEXT_SIZE = 11
-    DIM_IMG = 64
-    SHOW_AVATAR = True
-    questionMarkPixmap = None
-
-    mark_system = pyqtSignal(str)
-
-    def __init__(self, message):
-        QtWidgets.QWidget.__init__(self)
-        if not self.questionMarkPixmap:
-            self.questionMarkPixmap = QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "qmark.png"))).scaledToHeight(self.DIM_IMG)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "ChatEntry.ui")), self)
-        self.avatarLabel.setPixmap(self.questionMarkPixmap)
-        self.message = message
-        self.updateText()
-        self.textLabel.linkActivated['QString'].connect(self.linkClicked)
-        self.changeFontSize(self.TEXT_SIZE)
-        if not ChatEntryWidget.SHOW_AVATAR:
-            self.avatarLabel.setVisible(False)
-
-    def __del__(self):
-        logging.debug("ChatEntryWidget __del__ for message {}".format(self.message.message))
-
-    def linkClicked(self, link):
-        link = str(link)
-        function, parameter = link.split("/", 1)
-        if function == "mark_system":
-            self.mark_system.emit(parameter)
-        elif function == "link":
-            webbrowser.open_new_tab(parameter)
-
-    def updateText(self):
-        time = datetime.datetime.strftime(self.message.timestamp, "%H:%M:%S")
-        text = u"<small>{time} - <b>{user}</b> - <i>{room}</i></small><br>{text}".format(user=self.message.user,
-                                                                                         room=self.message.room,
-                                                                                         time=time,
-                                                                                         text=self.message.message.rstrip(" \r\n").lstrip(" \r\n"))
-        self.textLabel.setText(text)
-
-    def updateAvatar(self, avatar_data):
-        image = QImage.fromData(avatar_data)
-        pixmap = QPixmap.fromImage(image)
-        if pixmap.isNull():
-            return False
-        scaledAvatar = pixmap.scaled(self.DIM_IMG, self.DIM_IMG)
-        try:
-            if self.avatarLabel:
-                self.avatarLabel.setPixmap(scaledAvatar)
-        except Exception as ex:
-            logging.warning("Updating a deleted chat item")
-            self.avatarLabel = None
-            self = None
-        return True
-
-    def changeFontSize(self, newSize):
-        font = self.textLabel.font()
-        font.setPointSize(newSize)
-        self.textLabel.setFont(font)
-
-class JumpbridgeChooser(QtWidgets.QDialog):
-    set_jumpbridge_url = pyqtSignal(str)
-    def __init__(self, parent, url):
-        QtWidgets.QDialog.__init__(self, parent)
-        uic.loadUi(resourcePath(os.path.join("vi", "ui", "JumpbridgeChooser.ui")), self)
-        self.saveButton.clicked.connect(self.savePath)
-        self.cancelButton.clicked.connect(self.cancelGenerateJumpBridge)
-        self.fileChooser.clicked.connect(self.choosePath)
-        self.generateJumpBridgeButton.clicked.connect(self.generateJumpBridge)
-        self.urlField.setText(url)
-        # loading format explanation from textfile
-        with open(resourcePath(os.path.join("docs", "jumpbridgeformat.txt"))) as f:
-            self.formatInfoField.setPlainText(f.read())
-        self.generateJumpBridgeProgress.hide()
-        self.run_jb_generation = True
-
-    def processUpdate(self, total, pos) -> bool:
-        self.generateJumpBridgeProgress.setMaximum(total)
-        self.generateJumpBridgeProgress.setValue(pos)
-        QtWidgets.QApplication.processEvents()
-        return self.run_jb_generation
-
-    def generateJumpBridge(self):
-        self.run_jb_generation = True
-        self.generateJumpBridgeProgress.show()
-        gates = evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
-        evegate.writeGatestToFile(gates, str(self.urlField.text()))
-        self.generateJumpBridgeProgress.hide()
-        self.run_jb_generation = False
-
-    def cancelGenerateJumpBridge(self):
-        if self.run_jb_generation:
-            self.run_jb_generation = False
-        else:
-            self.accept()
-
-    def savePath(self):
-        try:
-            url = str(self.urlField.text())
-            self.set_jumpbridge_url.emit(url)
-            self.accept()
-        except Exception as e:
-            QMessageBox.critical(None, "Finding jump bridge data failed", "Error: {0}".format(str(e)))
-
-    def choosePath(self):
-        path = QFileDialog.getOpenFileName(self, caption="Open JB Text File")[0]
-        self.urlField.setText(str(path))

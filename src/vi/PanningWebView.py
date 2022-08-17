@@ -17,18 +17,18 @@
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 
-from PyQt5.QtWidgets import QApplication, QWidget
-from PyQt5.QtGui import *
-from PyQt5 import QtCore, QtSvg
+from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtGui import *
+from PySide6 import QtCore, QtSvg
 
-from PyQt5.QtCore import QPoint, QPointF
-from PyQt5.QtCore import Qt
+from PySide6.QtCore import QPoint, QPointF
+from PySide6.QtCore import Qt
 import logging
 
 class PanningWebView(QWidget):
     ZOOM_WHEEL = 0.4
-    webViewScrolled = QtCore.pyqtSignal(bool)
-    webViewResized = QtCore.pyqtSignal()
+    webViewScrolled = QtCore.Signal(bool)
+    webViewResized = QtCore.Signal()
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__()
         self.zoom = 1.0
@@ -161,8 +161,8 @@ class PanningWebView(QWidget):
     def mapPosFromPos(self, pos: QPointF) -> QPointF:
         return (pos + self.scrollPos) / self.zoom
 
-    def mapPosFromPoint(self, mouseEvent: QPoint) -> QPoint:
-        return (mouseEvent + self.scrollPos) / self.zoom
+    def mapPosFromPoint(self, mouseEvent: QPoint) -> QPointF:
+        return (QPointF(mouseEvent) + self.scrollPos) / self.zoom
 
     def mapPosFromEvent(self, mouseEvent:QMouseEvent) -> QPointF:
         return (QPointF(mouseEvent.pos()) + self.scrollPos) / self.zoom
