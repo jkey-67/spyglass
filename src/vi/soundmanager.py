@@ -26,7 +26,15 @@ from vi.singleton import Singleton
 from PySide6.QtMultimedia import QSoundEffect
 try:
     from espeakng import Speaker
+    ESPEAKNG_ENABLED = True
 except:
+    ESPEAKNG_ENABLED = False
+    pass
+try:
+    from PySide6.QtTextToSpeech import QTextToSpeech
+    QTEXTTOSPEECH_ENABLE = True
+except:
+    QTEXTTOSPEECH_ENABLE = False
     pass
 
 from vi.cache.cache import Cache
@@ -72,7 +80,12 @@ class SoundManager(metaclass=Singleton):
         self.sounds = {}
         self.worker = QThread()
         try:
-            self.speach_engine = Speaker()
+            if QTEXTTOSPEECH_ENABLE:
+                self.speach_engine = QTextToSpeech()
+            elif ESPEAKNG_ENABLED:
+                self.speach_engine = Speaker()
+            else:
+                self.speach_engine = None
         except Exception as ex:
             self.speach_engine = None
             logging.error(ex)
@@ -123,20 +136,22 @@ class SoundManager(metaclass=Singleton):
         return True
 
     def platformSupportsSpeech(self):
+        self.useSpokenNotifications = False
         if self.speach_engine:
             if isinstance(self.speach_engine, Speaker):
                 self.speach_engine.voice = 'en'
-                return True
-
-            avail_engines = self.speach_engine.getProperty('voices')
-            if len(avail_engines):
-                for eng_name in avail_engines:
-                    logging.info("Available sound engine \'{}\'".format(eng_name))
-                self.speach_engine.setLocale(QLocale(QLocale.English))
-                return True
-        self.useSpokenNotifications = False
-        logging.critical(" There is no text to speak engine available, all text to speak function disabled.")
-        return False
+                self.useSpokenNotifications = True
+            elif isinstance(self.speach_engine, QTextToSpeech):
+                avail_engines = self.speach_engine.getProperty('voices')
+                if len(avail_engines):
+                    for eng_name in avail_engines:
+                        logging.info("Available sound engine \'{}\'".format(eng_name))
+                    self.speach_engine.setLocale(QLocale(QLocale.English))
+                    self.useSpokenNotifications = True
+                    return self.useSpokenNotifications
+        if not self.useSpokenNotifications:
+            logging.info(" There is no text to speak engine available, all text to speak function disabled.")
+        return self.useSpokenNotifications
 
     def setUseSpokenNotifications(self, new_value):
         self.useSpokenNotifications = new_value
@@ -154,7 +169,7 @@ class SoundManager(metaclass=Singleton):
                     self.speach_engine.amplitude = self.soundVolume
                     self.speach_engine.say(abbreviatedMessage)
                 else:
-                    self.speach_engine.setProperty('volume',self.soundVolume/100.0)
+                    self.speach_engine.setProperty('volume', self.soundVolume/100.0)
                     self.speach_engine.say(abbreviatedMessage)
             elif name in self.sounds.keys():
                 self.sounds[name].setVolume(self.soundVolume / 100 * self.SNDVOL[name])
