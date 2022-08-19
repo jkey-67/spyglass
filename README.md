@@ -6,7 +6,7 @@
 
 Spyglass is an intel visualisation and alarm system for [EVE Online](http://www.eveonline.com). This too gathers information from in game chat channels and presents the data on a [dotlan](http://evemaps.dotlan.net/map/Catch#npc24) generated map. The map is highlighted in real time as players report intel in monitored chat channels.
 
-Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface and audio playback, BeautifulSoup4 for SVG parsing.
+Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interface and audio playback, BeautifulSoup4 for SVG parsing.
 
 ## Screenshot
 
@@ -43,6 +43,12 @@ Spyglass 1.6 is written with Python 3.9, using PyQt5 for the graphical interface
  - now you can manage the Ansiblex Jump Gates from inside Spyglass
  - the registered chars can be switched from Spyglass
  - fixing ESI search changes
+ 
+ ### 1.6.3
+ - using QT6 with PySide6 now
+ - preset of statistic and jump connections now work
+ - using pyside6-uic for ui files
+ - copy structure names in game now worl with Photon UI enabled
 
 ## Features with API registration
 Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
@@ -70,6 +76,12 @@ Please remember to manage your access to all [third-party-applications](https://
  - THIS IS VERY SLOW! looking over existing logs can be incredibly time-consuming so if you use it, please be patient. This is especially the case for more characters/chat channels you have.
  - If you want to use thi feature, but find it to be too slow, clear out your chat logs regularly.
 
+## POIs
+- If you are docked on station, copy the name of the structure to fill the POI list.
+
+## JDs
+- If you are docked on station, copy the name of the structure from inside the Solar System: Information Structure Tab
+- In space, right click on the structure inside the Overwie and copy then
 
 ## Running Spyglass from Source
 
@@ -78,14 +90,19 @@ To run or build from the source you need the following packages installed on you
 The packages required are:
 - Python 3.9
 https://www.python.org/downloads/release/python-390/
-- PyQt5
-https://pypi.org/project/PyQt5/
+- PySide6
+https://pypi.org/project/PySide6/
 - BeautifulSoup 4
 https://pypi.org/project/beautifulsoup4/
-- PyQtWebEngine
-https://pypi.org/project/PyQtWebEngine/
 - Requests
 https://pypi.org/project/requests/
+- parse
+https://pypi.org/project/parse/ 
+- espeakng
+https://pypi.org/project/espeakng/
+
+Optional use the windows installer https://github.com/espeak-ng/espeak-ng/releases
+
 Please look to the file requirements.txt for the list off dependencies.
 
 You need an installed and configured python with pip and git installed.  
