@@ -51,7 +51,6 @@ class AvatarFindThread(QThread):
             logging.error("Error in AvatarFindThread: %s", e)
 
     def run(self):
-        cache = Cache()
         lastCall = 0
         wait = 500  # time between 2 requests in ms
         while True:
@@ -67,7 +66,7 @@ class AvatarFindThread(QThread):
                     with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
                 if avatar is None:
-                    avatar = cache.getImageFromCache(charname)
+                    avatar = Cache().getImageFromCache(charname)
                     if avatar:
                         logging.debug("AvatarFindThread found cached avatar for %s" % charname)
                 if avatar is None:
@@ -77,9 +76,9 @@ class AvatarFindThread(QThread):
                     avatar = evegate.esiCharactersPortrait(charname)
                     lastCall = time.time()
                     if avatar is None:
-                        cache.removeAvatar(charname)
+                        Cache().removeAvatar(charname)
                     else:
-                        cache.putImageToCache(charname, avatar)
+                        Cache().putImageToCache(charname, avatar)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % charname)
                     self.avatar_update.emit(chatEntry, avatar)

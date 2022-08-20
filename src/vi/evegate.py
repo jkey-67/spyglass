@@ -102,7 +102,7 @@ def esiUniverseIds(names, use_outdated=False):
     """ Uses the EVE API to convert a list of names to ids_to_names
 
     Args:
-        names(str): names list of names
+        names(list(str)): names list of names
         use_outdated(bool): if True the cache timestamp will be ignored
 
     Returns:
@@ -736,6 +736,7 @@ class ApiKey(object):
         for k, v in dictionary.items():
             setattr(self, k, v)
 
+LIST_CHARS = list()
 
 def getTokenOfChar(char_name) -> ApiKey:
     """gets the api key for char_name, or id from the cache, Result is the last ApiKey, or None
@@ -749,7 +750,9 @@ def getTokenOfChar(char_name) -> ApiKey:
     if char_data:
         return ApiKey(eval(char_data))
     else:
-        logging.info("The character '{}' is currently not registered ESI.".format(char_name))
+        if char_name not in LIST_CHARS:
+            logging.debug("The character '{}' is not registered with ESI.".format(char_name))
+            LIST_CHARS.append(char_name)
         return None
 
 

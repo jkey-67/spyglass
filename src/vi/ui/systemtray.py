@@ -50,13 +50,13 @@ class TrayContextMenu(QtWidgets.QMenu):
 
     def updateMenu(self, sys_name=None, rgn_name=None):
         if sys_name:
-            self.gameMenu.setTitle("EVE-Online {}".format(sys_name[0]))
+            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
             self.setDestination.setEnabled(True)
             self.addWaypoint.setEnabled(True)
             self.openDotlan.setEnabled(True)
             self.openZKillboard.setEnabled(True)
             self.avoidSystem.setEnabled(True)
-            self.clearJumpGate.setEnabled(self.hasJumpGate(sys_name[0]))
+            self.clearJumpGate.setEnabled(self.hasJumpGate(sys_name.name))
             self.currentSystem = sys_name
         else:
             self.gameMenu.setTitle("EVE-Online")
@@ -224,9 +224,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
                                                                                              0) < time.time() - self.MIN_WAIT_NOTIFICATION):
             title = "ALARM!"
             icon = 2
-            speechText = (u"{0} alarmed in {1}, {2} jumps from {3}".format(system, room, distance, char))
-            text = speechText + (u"\nText: %s" % text)
-            SoundManager().playSound("alarm_{}".format(distance), text, speechText)
+            speech_text = (u"System {0} Alarm distance {1} in Room {2}, {3} jumps away from {4}".format( system,distance, room, distance, char))
+            text = speech_text + (u"\nText: %s" % text)
+            SoundManager().playSound("alarm_{}".format(distance), text, speech_text)
             self.lastNotifications[states.ALARM] = time.time()
         elif (message.status == states.REQUEST and self.showRequest and self.lastNotifications.get(states.REQUEST,
                                                                                                    0) < time.time() - self.MIN_WAIT_NOTIFICATION):

@@ -24,12 +24,14 @@ from PySide6.QtCore import QThread, QLocale, QUrl, QCoreApplication
 from .resources import resourcePath
 from vi.singleton import Singleton
 from PySide6.QtMultimedia import QSoundEffect
+
 try:
     from espeakng import Speaker
     ESPEAKNG_ENABLED = True
 except:
     ESPEAKNG_ENABLED = False
     pass
+
 try:
     from PySide6.QtTextToSpeech import QTextToSpeech
     QTEXTTOSPEECH_ENABLE = True
@@ -122,18 +124,14 @@ class SoundManager(metaclass=Singleton):
     def loadSoundFiles(self):
         for itm in self.SOUNDS:
             self.sounds[itm] = QSoundEffect()
-            if self.SOUNDS[itm]!=None and os.path.exists(self.SOUNDS[itm]):
+            if self.SOUNDS[itm] != None and os.path.exists(self.SOUNDS[itm]):
                 url = QUrl.fromLocalFile(self.SOUNDS[itm])
-            elif self.SOUNDS[itm]!=None:
+            elif self.SOUNDS[itm] != None:
                 url = QUrl.fromLocalFile(resourcePath(os.path.join("vi", "ui", "res", "{0}".format(self.SOUNDS[itm]))))
             else:
                 url = None
-            if url!=None:
+            if url != None:
                 self.sounds[itm].setSource(url)
-
-
-    def platformSupportsAudio(self):
-        return True
 
     def platformSupportsSpeech(self):
         self.useSpokenNotifications = False
