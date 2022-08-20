@@ -102,7 +102,7 @@ def esiUniverseIds(names, use_outdated=False):
     """ Uses the EVE API to convert a list of names to ids_to_names
 
     Args:
-        names(str): names list of names
+        names(list(str)): names list of names
         use_outdated(bool): if True the cache timestamp will be ignored
 
     Returns:
@@ -657,7 +657,7 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
 
     while parent.api_thread.isRunning():
         QApplication.processEvents()
-    parent.api_thread.isRunning().wait()
+
     if parent.api_thread.auth_code:
         logging.info("Registration completed.")
     else:
@@ -736,6 +736,7 @@ class ApiKey(object):
         for k, v in dictionary.items():
             setattr(self, k, v)
 
+LIST_CHARS = list()
 
 def getTokenOfChar(char_name) -> ApiKey:
     """gets the api key for char_name, or id from the cache, Result is the last ApiKey, or None
@@ -749,7 +750,9 @@ def getTokenOfChar(char_name) -> ApiKey:
     if char_data:
         return ApiKey(eval(char_data))
     else:
-        logging.info("The character '{}' is currently not registered ESI.".format(char_name))
+        if char_name not in LIST_CHARS:
+            logging.debug("The character '{}' is not registered with ESI.".format(char_name))
+            LIST_CHARS.append(char_name)
         return None
 
 
@@ -827,7 +830,7 @@ def esiAutopilotWaypoint(nameChar:str, idSystem:int, beginning=True, clear_all=T
         }
         req = "https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
         response = requests.post(req)
-        if response.status_code != 200:
+        if response.status_code != 204:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
 

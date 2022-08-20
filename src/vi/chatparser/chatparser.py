@@ -71,8 +71,6 @@ class ChatParser(object):
         return no_time_str[:no_time_str.rindex("_")]
           
     def addFile(self, path):
-        lines = None
-        content = ""
         filename = os.path.basename(path)
         roomname = self.roomNameFromFileName(filename)
         try:
@@ -81,8 +79,7 @@ class ChatParser(object):
             logging.debug("Add room " + roomname + " to list.")
         except Exception as e:
             self.ignoredPaths.append(path)
-            QMessageBox.warning(None, "Read a log file failed!",
-                                "File: {0} - problem: {1}".format(path, str(e)), QMessageBox.Ok)
+            logging.warning("Read a log file failed: File: {0} - problem: {1}".format(path, str(e)))
             return None
 
         lines = content.split("\n")
