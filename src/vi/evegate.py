@@ -915,7 +915,6 @@ def getCampaignsStructureIds(use_outdated=False):
         curr_campaigns.append(system["structure_id"])
     return curr_campaigns
 
-
 def getAllStructures(typeid=None):
     req = "https://esi.evetech.net/latest/universe/structures/?datasource=tranquility"
     response = requests.get(req)
@@ -1452,6 +1451,7 @@ def getSpyglassUpdateLink(ver=VERSION):
 # The main application for testing
 if __name__ == "__main__":
     #openWithEveonline()
+    id_structures = getCampaignsStructureIds()
     CHARS_TO_IGNORE = ("*", "?", ",", "!", ".")
     upperText = "TESTTE*12"
     for char in CHARS_TO_IGNORE:

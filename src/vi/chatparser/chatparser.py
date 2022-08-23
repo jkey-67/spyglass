@@ -24,12 +24,12 @@ import logging
 
 from bs4 import BeautifulSoup
 from vi import states
-from PySide6.QtWidgets import QMessageBox
 
 from .parser_functions import parseStatus, CTX
 from .parser_functions import parseUrls, parseShips, parseSystems
 
-# Names the local chatlogs could start with (depends on l10n of the client)
+# Names the local chat logs could start with (depends on l10n of the client)
+
 LOCAL_NAMES = ("Local", "Lokal", str("\u041B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439"))
 
 
@@ -61,7 +61,8 @@ class ChatParser(object):
             if current_time - file_time < max_diff:
                 self.addFile(full_path)
 
-    def roomNameFromFileName(self, filename):
+    @staticmethod
+    def roomNameFromFileName(filename):
         # Checking if we must do anything with the changed file.
         # We only need those which name is in the rooms-list
         # EvE names the file like room_20210210_223941_1350114619.txt, so we don't need
@@ -87,18 +88,18 @@ class ChatParser(object):
             self.fileData[path] = {}
             if roomname in LOCAL_NAMES:
                 charname = None
-                sessionStart = None
+                session_start = None
                 # for local-chats we need more infos
                 for line in lines:
                     if "Listener:" in line:
                         charname = line[line.find(":") + 1:].strip()
                     elif "Session started:" in line:
-                        sessionStr = line[line.find(":") + 1:].strip()
-                        sessionStart = datetime.datetime.strptime(sessionStr, "%Y.%m.%d %H:%M:%S")
+                        session_str = line[line.find(":") + 1:].strip()
+                        session_start = datetime.datetime.strptime(session_str, "%Y.%m.%d %H:%M:%S")
 
-                    if charname and sessionStart:
+                    if charname and session_start:
                         self.fileData[path]["charname"] = charname
-                        self.fileData[path]["sessionstart"] = sessionStart
+                        self.fileData[path]["sessionstart"] = session_start
                         break
         self.fileData[path]["lines"] = len(lines)
         return lines
@@ -109,11 +110,11 @@ class ChatParser(object):
             return None
 
         # finding the timestamp
-        timeStart = line.find("[") + 1
-        timeEnds = line.find("]")
-        timeStr = line[timeStart:timeEnds].strip()
+        time_start = line.find("[") + 1
+        time_ends = line.find("]")
+        time_str = line[time_start:time_ends].strip()
         try:
-            timestamp = datetime.datetime.strptime(timeStr, "%Y.%m.%d %H:%M:%S")
+            timestamp = datetime.datetime.strptime(time_str, "%Y.%m.%d %H:%M:%S")
         except ValueError:
             return None
 
@@ -122,18 +123,17 @@ class ChatParser(object):
             return None
 
         # finding the username of the poster
-        userEnds = line.find(">")
-        username = line[timeEnds + 1:userEnds].strip()
+        user_ends = line.find(">")
+        username = line[time_ends + 1:user_ends].strip()
         # finding the pure message
-        text = line[userEnds + 1:].strip()  # text will the text to work an
-        originalText = text
-        formatedText = u"<rtext>{0}</rtext>".format(text)
-        soup = BeautifulSoup(formatedText, 'html.parser')
+        text = line[user_ends + 1:].strip()  # text will the text to work an
+        original_text = text
+        formatted_text = u"<rtext>{0}</rtext>".format(text)
+        soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         systems = set()
-        upperText = text.upper()
 
-        message = Message(roomname, "", timestamp, username, systems, text, originalText)
+        message = Message(roomname, "", timestamp, username, systems, text, original_text)
         # May happen if someone plays > 1 account
         if message in self.knownMessages:
             message.status = states.IGNORE
@@ -141,23 +141,25 @@ class ChatParser(object):
 
         while parseShips(rtext):
             continue
+
         while parseUrls(rtext):
             continue
+
         while parseSystems(self.systems, rtext, systems):
             continue
-        parsedStatus = parseStatus(rtext)
-        status = parsedStatus if parsedStatus is not None else states.ALARM
+        parsed_status = parseStatus(rtext)
+        status = parsed_status if parsed_status is not None else states.ALARM
 
         # If message says clear and no system? Maybe an answer to a request?
         if status == states.CLEAR and not systems:
-            maxSearch = 2  # we search only max_search messages in the room
+            max_search = 2  # we search only max_search messages in the room
             for count, oldMessage in enumerate(
                     oldMessage for oldMessage in self.knownMessages[-1::-1] if oldMessage.room == roomname):
                 if oldMessage.systems and (oldMessage.status == states.REQUEST or oldMessage.status == states.ALARM):
                     for system in oldMessage.systems:
                         systems.add(system)
                     break
-                if count > maxSearch:
+                if count > max_search:
                     break
         message.message = str(rtext)
         message.status = status
@@ -176,18 +178,18 @@ class ChatParser(object):
             self.locations[charname] = {"system": "?", "timestamp": datetime.datetime(1970, 1, 1, 0, 0, 0, 0)}
 
         # Finding the timestamp
-        timeStart = line.find("[") + 1
-        timeEnds = line.find("]")
-        timeStr = line[timeStart:timeEnds].strip()
-        timestamp = datetime.datetime.strptime(timeStr, "%Y.%m.%d %H:%M:%S")
+        time_start = line.find("[") + 1
+        time_ends = line.find("]")
+        time_str = line[time_start:time_ends].strip()
+        timestamp = datetime.datetime.strptime(time_str, "%Y.%m.%d %H:%M:%S")
 
         # Finding the username of the poster
-        userEnds = line.find(">")
-        username = line[timeEnds + 1:userEnds].strip()
+        user_ends = line.find(">")
+        username = line[time_ends + 1:user_ends].strip()
 
         # Finding the pure message
-        text = line[userEnds + 1:].strip()  # text will the text to work an
-        #todo: other lanuagas here
+        text = line[user_ends + 1:].strip()  # text will the text to work an
+
         if username in CTX.EVE_SYSTEM:
             if ":" in text:
                 system = text.split(":")[1].strip().replace("*", "").upper()
@@ -222,7 +224,7 @@ class ChatParser(object):
                 if roomname in LOCAL_NAMES:
                     message = self._parseLocal(path, line)
                 else:
-                    message = self._lineToMessage(line, roomname )
+                    message = self._lineToMessage(line, roomname)
                 if message:
                     messages.append(message)
         return messages
@@ -247,8 +249,8 @@ class Message(object):
     def __key(self):
         return self.room, self.plainText, self.timestamp, self.user
 
-    def __eq__(x, y):
-        return x.__key() == y.__key()
+    def __eq__(self, other):
+        return self.__key() == other.__key()
 
     def __hash__(self):
         return hash(self.__key())        

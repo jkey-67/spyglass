@@ -150,7 +150,7 @@ def parseSystems(systems, rtext, systems_found):
     Parse a message for system names
     Args:
         systems: systems to be monitored
-        rtext(str): message to be parsed
+        rtext: message to be parsed
         systems_found(set): systems found
 
     Returns:
@@ -165,13 +165,13 @@ def parseSystems(systems, rtext, systems_found):
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString) and len(t)]
     for wtIdx, text in enumerate(texts):
-        worktext = text
+        work_text = text
         for char in CTX.CHARS_TO_IGNORE:
-            worktext = worktext.replace(char, " ")
+            work_text = work_text.replace(char, " ")
 
         # Drop redundant whitespace so as to not throw off word index
-        worktext = ' '.join(worktext.split())
-        words = worktext.split(" ")
+        work_text = ' '.join(work_text.split())
+        words = work_text.split(" ")
 
         for idx, word in enumerate(words):
 
@@ -187,52 +187,54 @@ def parseSystems(systems, rtext, systems_found):
                         # '_____ GATE' mentioned in message, which is not what we're
                         # interested in, so go to checking next word.
                         continue
-                if (words[idx + 1].upper() == 'CLR') or (words[idx + 1].upper() == 'CLEAR'):
-                    if (isCharName( words[idx ]+ " "+words[idx + 1])):
+                if words[idx + 1].upper() == 'CLR' or words[idx + 1].upper() == 'CLEAR':
+                    if isCharName(words[idx] + " "+words[idx + 1]):
                         continue
-            upperWord = word.upper()
-            if upperWord != word and upperWord in CTX.WORDS_TO_IGNORE: continue
-            if upperWord in system_names:  # - direct hit on name
-                systems_found.add(systems[upperWord])  # of the system?
-                formattedText = formatSystem(text, word, upperWord)
-                textReplace(text, formattedText)
+            upper_word = word.upper()
+            if upper_word != word and upper_word in CTX.WORDS_TO_IGNORE:
+                continue
+            if upper_word in system_names:  # - direct hit on name
+                systems_found.add(systems[upper_word])  # of the system?
+                formatted_text = formatSystem(text, word, upper_word)
+                textReplace(text, formatted_text)
                 return True
-            elif 1 < len(upperWord) < 5:  # - upperWord < 4 chars.
+            elif 1 < len(upper_word) < 5:  # - upperWord < 4 chars.
                 for system in system_names:  # system begins with?
-                    if system.startswith(upperWord):
+                    if system.startswith(upper_word):
                         systems_found.add(systems[system])
-                        formattedText = formatSystem(text, word, system)
-                        textReplace(text, formattedText)
+                        formatted_text = formatSystem(text, word, system)
+                        textReplace(text, formatted_text)
                         return True
-            elif "-" in upperWord and len(upperWord) > 2:  # - short with - (minus)
-                upperWordParts = upperWord.split("-")  # (I-I will match I43-IF3)
+            elif "-" in upper_word and len(upper_word) > 2:  # - short with - (minus)
+                upper_word_parts = upper_word.split("-")  # (I-I will match I43-IF3)
                 for system in system_names:
-                    systemParts = system.split("-")
-                    if (len(upperWordParts) == 2 and len(systemParts) == 2 and len(upperWordParts[0]) > 1 and len(
-                            upperWordParts[1]) > 1 and len(systemParts[0]) > 1 and len(systemParts[1]) > 1 and len(
-                            upperWordParts) == len(systemParts) and upperWordParts[0][0] == systemParts[0][0] and
-                                upperWordParts[1][0] == systemParts[1][0]):
+                    system_parts = system.split("-")
+                    if (len(upper_word_parts) == 2 and len(system_parts) == 2 and len(upper_word_parts[0]) > 1 and len(
+                            upper_word_parts[1]) > 1 and len(system_parts[0]) > 1 and len(system_parts[1]) > 1 and len(
+                            upper_word_parts) == len(system_parts) and upper_word_parts[0][0] == system_parts[0][0] and
+                            upper_word_parts[1][0] == system_parts[1][0]):
                         systems_found.add(systems[system])
-                        formattedText = formatSystem(text, word, system)
-                        textReplace(text, formattedText)
+                        formatted_text = formatSystem(text, word, system)
+                        textReplace(text, formatted_text)
                         return True
-            elif len(upperWord) > 1:  # what if F-YH58 is named FY?
+            elif len(upper_word) > 1:  # what if F-YH58 is named FY?
                 for system in system_names:
-                    clearedSystem = system.replace("-", "")
-                    if clearedSystem.startswith(upperWord):
+                    cleared_system = system.replace("-", "")
+                    if cleared_system.startswith(upper_word):
                         systems_found.add(systems[system])
-                        formattedText = formatSystem(text, word, system)
-                        textReplace(text, formattedText)
+                        formatted_text = formatSystem(text, word, system)
+                        textReplace(text, formatted_text)
                         return True
-    #if ( len(foundSystems) > 1):
-    #todo check for sytemname clear/clr here
+
+    # if ( len(foundSystems) > 1):
+    # todo check for sytemname clear/clr here
     return False
 
 
 def parseUrls(rtext):
     """Patch text format into an existing  http/https link found in a message.
     Args:
-        rtext(str): The text to be patched
+        rtext: The text to be patched
 
     Returns:
         str:The resulting patched text

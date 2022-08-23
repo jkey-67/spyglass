@@ -71,22 +71,28 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
             painter.drawImage(option.rect.topLeft(), img)
         else:
             super(StyledItemDelegatePOI, self).paint(painter, option, index)
-
             polygon_triangle = QtGui.QPolygon(
                 [
                     QtCore.QPoint(option.rect.x() + 5, option.rect.y()),
                     QtCore.QPoint(option.rect.x(), option.rect.y()),
                     QtCore.QPoint(option.rect.x(), option.rect.y() + 5)
                 ])
-
             painter.setRenderHint(painter.Antialiasing)
-            painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
-            painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
+            if self.isReinfored(()):
+                painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.red)))
+                painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.red)))
+            else:
+                painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
+                painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
+
             painter.drawPolygon(polygon_triangle)
         painter.restore()
 
     def sizeHint(self, option, index):
         return QtCore.QSize(64, 64)
+
+    def isReinfored(self, lst):
+        return False
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -142,7 +148,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapStatisticCache = {}
         self.invertWheel = False
         self.autoRescanIntelEnabled = Cache().getFromCache("changeAutoRescanIntel")
+        self.hide()
         update_splash_window_info("Preset application")
+
+        # Set up Theme menu - fill in list of themes and add connections
+        update_splash_window_info("Set up Theme menu - fill in list of themes and add connections")
+        self.themeGroup = QActionGroup(self.ui.menu)
+        styles = Styles()
+        for theme in styles.getStyles():
+            action = QAction(theme, None)
+            action.setCheckable(True)
+            action.theme = theme
+            if action.theme == "default":
+                action.setChecked(True)
+            logging.info("Adding theme {}".format(theme))
+            action.triggered.connect(self.changeTheme)
+            self.themeGroup.addAction(action)
+            self.ui.menuTheme.addAction(action)
+        styles = None
+
         # Load user's toon names
         self.knownPlayerNames = Cache().getFromCache("known_player_names")
         if self.knownPlayerNames:
@@ -213,22 +237,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.actionAuto_switch.triggered.connect(self.changeAutoRegion)
 
-        # Set up Theme menu - fill in list of themes and add connections
-        update_splash_window_info("Set up Theme menu - fill in list of themes and add connections")
-        self.themeGroup = QActionGroup(self.ui.menu)
-        styles = Styles()
-        for theme in styles.getStyles():
-            action = QAction(theme, None)
-            action.setCheckable(True)
-            action.theme = theme
-            if action.theme == "default":
-                action.setChecked(True)
-            logging.info("Adding theme {}".format(theme))
-            action.triggered.connect(self.changeTheme)
-            self.themeGroup.addAction(action)
-            self.ui.menuTheme.addAction(action)
-        styles = None
-
         #
         # Platform specific UI resizing - we size items in the resource files to look correct on the mac,
         # then resize other platforms as needed
@@ -245,7 +253,7 @@ class MainWindow(QtWidgets.QMainWindow):
         update_splash_window_info("Update chat parser")
         self.chatparser = ChatParser()
         self._wireUpUIConnections()
-        self.recallCachedSettings()
+        self._recallCachedSettings()
         self._setupThreads()
         self.startStatisticTimer()
         self._wireUpDatabaseViews()
@@ -273,7 +281,11 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.info(update_avail[1])
             update_splash_window_info(update_avail[1])
             self.ui.updateAvail.hide()
+        self.show()
         update_splash_window_info("Initialisation succeeded.")
+
+    def show(self):
+        QtWidgets.QMainWindow.show(self)
 
     def _addPlayerMenu(self):
         self.playerGroup = QActionGroup(self.ui.menu)
@@ -320,7 +332,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.style().drawPrimitive(QStyle.PE_Widget, opt, painter, self)
         painter.end()
 
-    def recallCachedSettings(self):
+    def _recallCachedSettings(self):
         try:
             Cache().recallAndApplySettings(self, "settings")
         except Exception as e:
@@ -921,18 +933,23 @@ class MainWindow(QtWidgets.QMainWindow):
     def changeAlwaysOnTop(self, value=None):
         if value is None:
             value = self.ui.alwaysOnTopAction.isChecked()
-        self.hide()
+        do_show = self.isVisible()
+        if do_show:
+            self.hide()
         self.ui.alwaysOnTopAction.setChecked(value)
         if value:
             self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
         else:
             self.setWindowFlags(self.windowFlags() & (~QtCore.Qt.WindowStaysOnTopHint))
-        self.show()
+        if do_show:
+            self.show()
 
     def changeFrameless(self, value=None):
         if value is None:
             value = not self.ui.frameButton.isVisible()
-        self.hide()
+        do_show = self.isVisible()
+        if do_show:
+            self.hide()
         if value:
             self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
             self.changeAlwaysOnTop(True)
@@ -944,7 +961,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         for cm in TrayContextMenu.instances:
             cm.framelessCheck.setChecked(value)
-        self.show()
+
+        if do_show:
+            self.show()
 
     def changeShowAvatars(self, value=None):
         if value is None:
