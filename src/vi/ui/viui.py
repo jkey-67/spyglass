@@ -1430,7 +1430,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for message in messages:
             # If players location has changed
             if message.status == states.LOCATION:
-                locale_to_set[message.user] = message.systems[0]
+                locale_to_set[message.user] = message.systems
             elif message.canProcess():
                 self.addMessageToIntelChat(message)
                 """
@@ -1458,9 +1458,12 @@ class MainWindow(QtWidgets.QMainWindow):
                                             ", ".join(chars),
                                             data["distance"])
 
-        for name, system in locale_to_set.items():
-            self.knownPlayerNames.add(name)
-            self.setLocation(name, system)
+        for name, systems in locale_to_set.items():
+            for sys_name in systems:
+                self.knownPlayerNames.add(sys_name)
+                self.setLocation(name, sys_name)
+                logging.info("Locale of '{}' changed to system '{}'".format(name, sys_name))
+
         if not rescan:
             self.updateMapView()
 
