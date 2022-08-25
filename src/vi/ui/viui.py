@@ -31,7 +31,7 @@ from PySide6 import QtGui, QtCore, QtWidgets
 from PySide6.QtCore import QPoint, QPointF, QByteArray, QSortFilterProxyModel, QTimer
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, QStyledItemDelegate
+from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, QStyledItemDelegate, QApplication, QAbstractItemView
 
 from vi import evegate
 from vi import dotlan, filewatcher
@@ -53,7 +53,7 @@ from vi.ui import Ui_MainWindow, Ui_Info, Ui_SoundSetup
 """
  Timer intervals
 """
-MAP_UPDATE_INTERVAL_MSEC = 1000
+MAP_UPDATE_INTERVAL_MSEC = 750
 CLIPBOARD_CHECK_INTERVAL_MSEC = 4 * 1000
 
 
@@ -70,29 +70,39 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
             painter.setClipRect(option.rect)
             painter.drawImage(option.rect.topLeft(), img)
         else:
-            super(StyledItemDelegatePOI, self).paint(painter, option, index)
-            polygon_triangle = QtGui.QPolygon(
-                [
-                    QtCore.QPoint(option.rect.x() + 5, option.rect.y()),
-                    QtCore.QPoint(option.rect.x(), option.rect.y()),
-                    QtCore.QPoint(option.rect.x(), option.rect.y() + 5)
-                ])
-            painter.setRenderHint(painter.Antialiasing)
-            if self.isReinfored(()):
-                painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.red)))
-                painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.red)))
+            if True:
+                super(StyledItemDelegatePOI, self).paint(painter, option, index)
             else:
-                painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
-                painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
+                json_item = eval(index.data())
+                style = QApplication.style()
+                text_rect = style.subElementRect(QStyle.SE_ItemViewItemText, option)
+                style.drawPrimitive(QStyle.PE_PanelItemViewItem, option, painter, option.widget)
+                style.drawItemText(painter, text_rect, option.displayAlignment, option.palette, True, json_item["name"])
+                # super(StyledItemDelegatePOI, self).paint(painter, option, index)
 
-            painter.drawPolygon(polygon_triangle)
+                polygon_triangle = QtGui.QPolygon(
+                    [
+                        QtCore.QPoint(option.rect.x() + 5, option.rect.y()),
+                        QtCore.QPoint(option.rect.x(), option.rect.y()),
+                        QtCore.QPoint(option.rect.x(), option.rect.y() + 5)
+                    ])
+                painter.setRenderHint(painter.Antialiasing)
+                if "structure_id" in  json_item and self.isReinfored(json_item["structure_id"]):
+                    painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.red)))
+                    painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.red)))
+                else:
+                    painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
+                    painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
+
+                painter.drawPolygon(polygon_triangle)
         painter.restore()
 
     def sizeHint(self, option, index):
         return QtCore.QSize(64, 64)
 
-    def isReinfored(self, lst):
-        return False
+    @staticmethod
+    def isReinfored(struct_id):
+        return struct_id in evegate.getCampaignsSystemsIds()
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -148,7 +158,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapStatisticCache = {}
         self.invertWheel = False
         self.autoRescanIntelEnabled = Cache().getFromCache("changeAutoRescanIntel")
-        self.hide()
+
         update_splash_window_info("Preset application")
 
         # Set up Theme menu - fill in list of themes and add connections
@@ -168,18 +178,21 @@ class MainWindow(QtWidgets.QMainWindow):
         styles = None
 
         # Load user's toon names
-        self.knownPlayerNames = Cache().getFromCache("known_player_names")
-        if self.knownPlayerNames:
-            self.knownPlayerNames = set(self.knownPlayerNames.split(","))
-        else:
-            self.knownPlayerNames = set()
+        self.playerUsed = Cache().getFromCache("used_player_names")
+
+        self.knownPlayerNames = set(Cache().getFromCache("known_player_names").split(','))
+        for api_char_names in Cache().getAPICharNames():
+            if evegate.esiCharactersOnline(api_char_names):
+                self._updateKnownPlayers(api_char_names)
+
+        if len(self.knownPlayerNames) == 0:
             diag_text = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\n"\
                         "Some features (clipboard KOS checking, alarms, etc.) may not work until your character(s)" "" \
                         "have been registered. Change systems, with each character you want to monitor, while " \
                         "Spyglass is running to remedy this."
-            QMessageBox.warning(parent=None, title="Known Characters not Found", text=diag_text, button0=QMessageBox.Ok)
+            QMessageBox.warning(self, "Known Characters not Found", diag_text)
         update_splash_window_info("Update player names")
-        self.playerUsed = Cache().getFromCache("used_player_names")
+
         if self.playerUsed:
             self.playerUsed = set(self.playerUsed.split(","))
         elif evegate.esiCharName():
@@ -281,11 +294,21 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.info(update_avail[1])
             update_splash_window_info(update_avail[1])
             self.ui.updateAvail.hide()
-        self.show()
         update_splash_window_info("Initialisation succeeded.")
 
     def show(self):
         QtWidgets.QMainWindow.show(self)
+
+    def _updateKnownPlayers(self, names):
+        if isinstance(names, list):
+            for name in names:
+                if name not in self.knownPlayerNames:
+                    self.knownPlayerNames.add(name)
+                    self._addPlayerMenu()
+        else:
+            self.knownPlayerNames.add(names)
+            self._addPlayerMenu()
+
 
     def _addPlayerMenu(self):
         self.playerGroup = QActionGroup(self.ui.menu)
@@ -451,6 +474,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableViewPOIs.setItemDelegate(self.tableViewPOIsDelegate)
         self.ui.tableViewPOIs.resizeColumnsToContents()
         self.ui.tableViewPOIs.resizeRowsToContents()
+        # self.ui.tableViewPOIs.setEditTriggers(QAbstractItemView.AllEditTriggers)
+
         callOnUpdate()
         self.poi_changed.connect(callOnUpdate)
         self.ui.tableViewPOIs.show()
@@ -557,6 +582,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread = MapStatisticsThread()
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
         self.statisticsThread.start()
+        self.apiThread = None
         logging.info("Set up threads and their connections done.")
 
     def _terminateThreads(self):
@@ -571,6 +597,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.statisticsThread.quit()
             self.statisticsThread.wait()
             self.mapTimer.stop()
+            if self.apiThread:
+                self.apiThread.quit()
+                self.apiThread.wait()
             logging.info("Stop the threads done.")
         except Exception as ex:
             logging.critical(ex)
@@ -804,7 +833,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Known player names
         if self.knownPlayerNames:
             value = ",".join(self.knownPlayerNames)
-            Cache().putIntoCache("known_player_names", value, 60 * 60 * 24 * 30)
+            Cache().putIntoCache("known_player_names", value, 60 * 60 * 24 * 2)
 
         if self.playerUsed:
             value = ",".join(self.playerUsed)
@@ -1184,7 +1213,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if self.currContent != self.dotlan.svg:
                 self.mapTimer.stop()
-                if self.ui.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8')), "text/html"):
+                if self.ui.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8'))):
                     self.currContent = self.dotlan.svg
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
         except Exception as e:
@@ -1478,8 +1507,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                             data["distance"])
 
         for name, systems in locale_to_set.items():
+            self._updateKnownPlayers(name)
             for sys_name in systems:
-                self.knownPlayerNames.add(sys_name)
                 self.setLocation(name, sys_name)
                 logging.info("Locale of '{}' changed to system '{}'".format(name, sys_name))
 

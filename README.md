@@ -48,7 +48,7 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - using QT6 with PySide6 now
  - preset of statistic and jump connections now work
  - using pyside6-uic for ui files
- - copy structure names in game now work also with the new Photon UI enabled
+ - copy structure names in game now works also with the new Photon UI enabled
 
 ## Features with API registration
 Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
@@ -171,7 +171,7 @@ Examples:
 
 **Spyglass does not start! What can I do?**
 
-Please try to delete Spyglass's Cache. It is located in the EVE-directory where the chatlogs are in. If your chatlogs are in \Documents\EVE\logs\chatlogs Spyglass writes the cache to \Documents\EVE\spyglass
+Please try to delete Spyglass's Cache. It is located in the EVE-directory where the chat logs are in. If your chat logs are in \Documents\EVE\logs\chatlogs Spyglass writes the cache to \Documents\EVE\spyglass
 
 **Spyglass takes many seconds to start up; what are some causes and what can I do about it?**
 

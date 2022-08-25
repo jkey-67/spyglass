@@ -54,7 +54,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.run_jb_generation = True
         self.ui.generateJumpBridgeProgress.show()
         gates = evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
-        evegate.writeGatestToFile(gates, str(self.ui.urlField.text()))
+        evegate.writeGatesToFile(gates, str(self.ui.urlField.text()))
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
 

@@ -21,6 +21,7 @@ import datetime
 import json
 import time
 import parse
+import threading
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QThread, QUrl
@@ -243,7 +244,7 @@ class evetech_image:
     corporations = ["corporations", "logo"]
 
 
-def esiImageEvetechNet(id:int, req_type:evetech_image,image_size=64):
+def esiImageEvetechNet(character_id: int, req_type: evetech_image, image_size=64):
     """Downloading the avatar for a player/character
        - https://docs.esi.evetech.net/docs/image_server.html
     Args:
@@ -256,9 +257,9 @@ def esiImageEvetechNet(id:int, req_type:evetech_image,image_size=64):
     """
 
     avatar = None
-    if id:
+    if character_id:
         image_url = "https://images.evetech.net/{type}/{id}/{info}?tenant=tranquility&size={size}"
-        response = requests.get(image_url.format(id=id, size=image_size, type=req_type[0],info=req_type[1]))
+        response = requests.get(image_url.format(id=character_id, size=image_size, type=req_type[0], info=req_type[1]))
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %60s", response.status_code, response.reason, response.url)
             avatar = None
@@ -267,7 +268,7 @@ def esiImageEvetechNet(id:int, req_type:evetech_image,image_size=64):
     return avatar
 
 
-def getTypesIcon(type_id:int,size_image=64):
+def getTypesIcon(type_id: int,size_image=64):
     """Get icon from a given type_id or character_id
 
     Args:
@@ -374,8 +375,10 @@ def esiCharacters(char_id, use_outdated=False):
                 logging.error("Exception during getCharInfoForCharId: %s", str(e))
     return char_info
 
+
 def esiCheckCharacterToken(char_name:str)->bool:
     return checkTokenTimeLine(getTokenOfChar(char_name)) is not None
+
 
 def esiCharactersOnline(char_name:str)->bool:
     """ Returns the online state of the char with name char_name.
@@ -405,7 +408,7 @@ def esiCharactersOnline(char_name:str)->bool:
     return False
 
 
-def esiCharactersLocation(char_name:int)->int:
+def esiCharactersLocation(char_name: str) -> int:
     """Gets the current solar system id of the char with id char_id, or None
 
     Args:
@@ -419,7 +422,9 @@ def esiCharactersLocation(char_name:int)->int:
     """
     token = checkTokenTimeLine(getTokenOfChar(char_name))
     if token:
-        url = "https://esi.evetech.net/latest/characters/{}/location/?datasource=tranquility&token={}".format(esiCharNameToId(char_name), token.access_token)
+        url = "https://esi.evetech.net/latest/characters/{}/location/?datasource=tranquility&token={}".format(
+            esiCharNameToId(char_name),
+            token.access_token)
         response = requests.get(url)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
@@ -430,7 +435,7 @@ def esiCharactersLocation(char_name:int)->int:
     return None
 
 
-def esiCharactersCorporationhistory(char_id, use_outdated=True):
+def esiCharactersCorporationHistory(char_id, use_outdated=True):
     """ Returns a list with the ids if the corporation history of a charId
         returns a list of only the corp ids
         @param char_id id the char
@@ -578,36 +583,73 @@ class MyApiServer(http.server.BaseHTTPRequestHandler):
         logging.error("Http request not read, api registration canceled.")
 
 
-class api_server_thread(QThread):
+class APIServerThread(QThread):
     new_serve_aki_key = pyqtSignal(str)
-
-    def __init__(self):
+    LIST_CHARS = list()
+    WEB_SERVER_LOCK = threading.Lock()
+    def __init__(self, params,browser=None):
         QThread.__init__(self)
+        self.client_param = params
         self.queue = queue.Queue()
         self.active = True
         self.auth_code = None
+        self.browser = browser
+        self.webserver = None
 
     def run(self):
         while self.active:
             try:
-                webserver = http.server.HTTPServer(("localhost", 8182), MyApiServer)
-                webserver.timeout = 120
-                webserver.api_code = None
-                webserver.close_connection = True
-                webserver.handle_request()
-                self.auth_code = webserver.api_code
-                del webserver
-                if self.auth_code != None:
+                with APIServerThread.WEB_SERVER_LOCK:
+                    self.webserver = http.server.HTTPServer(("localhost", 8182), MyApiServer)
+                    self.webserver.timeout = 120
+                    self.webserver.api_code = None
+                    self.webserver.close_connection = True
+                self.webserver.handle_request()
+                self.auth_code = self.webserver.api_code
+                with APIServerThread.WEB_SERVER_LOCK:
+                    self.webserver = None
+                if self.auth_code is not None:
                     esiOauthToken(self.client_param, self.auth_code)
             except Exception as e:
-                logging.error("Error in api_server_thread.run: %s", e)
+                logging.error("Error in APIServerThread.run: %s", e)
                 #continue
-            self.elem = None
+            self.browser = None
             self.active = False
+
+    def createBrowserWindow(self, string_params, parent=None):
+        """
+            create the browser widget to login
+        Args:
+            string_params: param string to pass to web
+            parent:None for system browser or a QObject with api_thread
+
+        Returns:
+
+        """
+        if self.browser and parent:
+            self.browser.destroyed.connect(self.quit)
+            self.browser.load(QUrl("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params)))
+            self.browser.resize(600, 800)
+            self.browser.show()
+        else:
+            webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
+
+        logging.info("Awaiting registration during the next 120 seconds to be completed.")
+        while self.isRunning():
+            QApplication.processEvents()
+
+        if self.auth_code:
+            logging.info("Registration completed.")
+        else:
+            logging.error("Registration not succeeded.")
 
     def quit(self):
         self.active = False
-        self.queue.put((None, None, None))
+        if self.browser:
+            self.browser.close()
+        with APIServerThread.WEB_SERVER_LOCK:
+            if self.webserver:
+                response = requests.get("http://localhost:8182/oauth-callback")
         QThread.quit(self)
 
 
@@ -631,37 +673,21 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
         "code_challenge_method": "S256"
     }
     string_params = urllib.parse.urlencode(params)
-    #todo:use qwebview here
+
     if parent:
         if hasattr(parent, 'api_thread'):
-            parent.api_thread.quit()
+            parent.apiThread.quit()
     else:
         class Object(object):
             pass
 
         parent = Object()
-        parent.api_thread = None
+        parent.apiThread = None
 
-    parent.api_thread = api_server_thread()
-    parent.api_thread.client_param = client_param
-    parent.api_thread.elem = None
-    parent.api_thread.elem = QWebEngineView(None)
-    parent.api_thread.start()
-    if parent.api_thread.elem:
-        parent.api_thread.elem.destroyed.connect(parent.api_thread.quit)
-        parent.api_thread.elem.load(QUrl("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params)))
-        parent.api_thread.elem.resize(600, 800)
-        parent.api_thread.elem.show()
-    else:
-        webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
+    parent.apiThread = APIServerThread(client_param, QWebEngineView(None))
+    parent.apiThread.start()
+    parent.apiThread.createBrowserWindow(string_params, parent)
 
-    while parent.api_thread.isRunning():
-        QApplication.processEvents()
-
-    if parent.api_thread.auth_code:
-        logging.info("Registration completed.")
-    else:
-        logging.error("Registration not succeeded.")
 
 
 def esiOauthToken(client_param, auth_code:str, add_headers={}) -> str:
@@ -725,8 +751,8 @@ def openWithEveonline(parent=None):
 class ApiKey(object):
     def __init__(self, dictionary):
         self.__dict__ = dictionary
-        #self.CharacterID = None
-        #self.CharacterName = None
+        if not hasattr(self, 'valid_until'):
+            self.access_token = None
         if not hasattr(self, 'valid_until'):
             self.valid_until = None
         if not hasattr(self, 'expires_in'):
@@ -736,7 +762,7 @@ class ApiKey(object):
         for k, v in dictionary.items():
             setattr(self, k, v)
 
-LIST_CHARS = list()
+
 
 def getTokenOfChar(char_name) -> ApiKey:
     """gets the api key for char_name, or id from the cache, Result is the last ApiKey, or None
@@ -750,9 +776,9 @@ def getTokenOfChar(char_name) -> ApiKey:
     if char_data:
         return ApiKey(eval(char_data))
     else:
-        if char_name not in LIST_CHARS:
+        if char_name not in APIServerThread.LIST_CHARS:
             logging.debug("The character '{}' is not registered with ESI.".format(char_name))
-            LIST_CHARS.append(char_name)
+            APIServerThread.LIST_CHARS.append(char_name)
         return None
 
 
@@ -788,7 +814,6 @@ def checkTokenTimeLine(param:ApiKey)->ApiKey:
     """ double check the api timestamp, if expired the parm set will be updated
     """
     if param == None:
-
         return None
     if param.valid_until != None and param.valid_until > time.time():
         return param
@@ -871,6 +896,7 @@ def esiIncursions(use_outdated=False):
         incursion_list = response.json()
     return incursion_list
 
+
 def getIncursionSystemsIds(use_outdated=False):
     res = list()
     incursion_list = esiIncursions(use_outdated)
@@ -907,6 +933,7 @@ def getCampaignsSystemsIds(use_outdated=False):
         curr_campaigns.append(system["solar_system_id"])
     return curr_campaigns
 
+
 def getCampaignsStructureIds(use_outdated=False):
     """builds a list of system ids being part of campaigns for hubs and tcus dicts cached 60s
     """
@@ -914,6 +941,7 @@ def getCampaignsStructureIds(use_outdated=False):
     for system in esiSovereigntyCampaigns(use_outdated):
         curr_campaigns.append(system["structure_id"])
     return curr_campaigns
+
 
 def getAllStructures(typeid=None):
     req = "https://esi.evetech.net/latest/universe/structures/?datasource=tranquility"
@@ -1022,6 +1050,7 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
 
         cache.putIntoCache(cache_key, json.dumps(player_sov), 3600)
         return player_sov
+
 
 class JumpBridge(object):
     def __init__(self, name:str, structureId:int, systemId:int, ownerId:int):
@@ -1182,7 +1211,7 @@ def getAllJumpGates(nameChar:str,systemName="",systemNameDst="", callback=None, 
     return gates
 
 
-def writeGatestToFile(gates, filename="jb.txt"):
+def writeGatesToFile(gates, filename="jb.txt"):
     gates_list = list()
     with open(filename, "w")as gf:
         for gate in gates:
@@ -1192,6 +1221,7 @@ def writeGatestToFile(gates, filename="jb.txt"):
                 gf.write("{} {} {} {} ({} {})\n".format(s_t_d, gate.systemId, gate.structureId, gate.ownerId, gate.links,gate.paired))
                 gates_list.append(s_t_d)
         gf.close()
+
 
 def esiUniverseStargates(starget_id, use_outdated=False):
     """gets the solar system info from system id
@@ -1210,6 +1240,7 @@ def esiUniverseStargates(starget_id, use_outdated=False):
         cache.putIntoCache(cache_key, response.text)
         return response.json()
 
+
 def esiUniverseStations(station_id, use_outdated=False):
     """gets the solar system info from system id
     """
@@ -1227,6 +1258,7 @@ def esiUniverseStations(station_id, use_outdated=False):
         else:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             return None
+
 
 def esiUniverseSystems(system_id, use_outdated=False):
     """gets the solar system info from system id
@@ -1247,7 +1279,6 @@ def esiUniverseSystems(system_id, use_outdated=False):
             return None
 
 
-
 def esiAlliances(alliance_id, use_outdated=True):
     """gets the alliance from allicance id
     """
@@ -1264,6 +1295,7 @@ def esiAlliances(alliance_id, use_outdated=True):
             response.raise_for_status()
         cache.putIntoCache(cache_key, response.text, 3600)
         return response.json()
+
 
 def esiUniverseRegions(region_id:int, use_outdated=False):
     cache_key = "_".join(("universe", "regions", str(region_id)))
@@ -1413,6 +1445,7 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
              u'Senate', u"Mordu's Legion", u'State Protectorate', u'Jove Navy', u'X-Sense', u'Corporate Police Force',
              u'Minmatar Mining Corporation', u'Supreme Court')
 
+
 def checkSpyglassVersionUpdate(current_version=VERSION):
     """check github for a new latest release
     """
@@ -1420,8 +1453,7 @@ def checkSpyglassVersionUpdate(current_version=VERSION):
     req = "https://github.com/jkey-67/spyglass/releases/latest"
     response = requests.get(req)
     if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-        response.raise_for_status()
+        return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
     page_ver_found = response.text.find(".exe")
     if page_ver_found:
         page_ver_found_start = response.text.rfind('-',page_ver_found-32,page_ver_found)+1
@@ -1438,6 +1470,7 @@ def checkSpyglassVersionUpdate(current_version=VERSION):
         return [False,
                 "You are running the actual Spyglass Version {}.".format(current_version)]
 
+
 def getSpyglassUpdateLink(ver=VERSION):
     req = "https://github.com/jkey-67/spyglass/releases/latest"
     response = requests.get(req)
@@ -1452,152 +1485,3 @@ def getSpyglassUpdateLink(ver=VERSION):
 if __name__ == "__main__":
     #openWithEveonline()
     id_structures = getCampaignsStructureIds()
-    CHARS_TO_IGNORE = ("*", "?", ",", "!", ".")
-    upperText = "TESTTE*12"
-    for char in CHARS_TO_IGNORE:
-        upperText = upperText.replace(char, "")
-
-    Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
-    alliances_img = esiImageEvetechNet(434243723, evetech_image.alliances)
-    corporations_img = esiImageEvetechNet(1109299958, evetech_image.corporations)
-    corporations_img = esiImageEvetechNet(109299958, evetech_image.corporations)
-    character_img = esiImageEvetechNet(1338057886, evetech_image.characters)
-    types_img = esiImageEvetechNet(587, evetech_image.types_icon)
-    types_img = esiImageEvetechNet(587, evetech_image.types_render)
-    types_img = esiImageEvetechNet(587, evetech_image.types_bp)
-    types_img = esiImageEvetechNet(3082, evetech_image.types_bpc)
-
-    Cache().removeFromCache("_".join(("name", "id", "nele McCool")))
-    char_id = esiCharNameToId("nele McCool", False)
-    char_id = esiCharNameToId("nele McCool", False)
-    type_png = getTypesIcon(52678)
-    char_png = esiCharactersPortrait("nele McCool",32)
-    char_png = esiCharactersPortrait("nele McCool", 64)
-    char_png = esiCharactersPortrait("nele McCool", 128)
-    char_png = esiCharactersPortrait("nele McCool", 256)
-    char_png = esiCharactersPortrait("nele McCool", 512)
-    list_regions = esiUniverseGetAllRegions()
-    list_of_shipnames = esiUniverseNames(SHIPIDS)
-    char_online = esiCharactersOnline("Nele McCool")
-    char_online = esiCharactersOnline("Rovengard Ogaster")
-    char_loc = esiCharactersLocation("nele McCool")
-    all_regions = esiUniverseGetAllRegions()
-    all_regions_dict = dict()
-    for rgn in all_regions:
-        rgn_info = esiUniverseRegions(rgn)
-        if rgn_info:
-            all_regions_dict[rgn] = rgn_info
-    location = esiUniverseSystems(30000731)
-    structures = esiUniverseStructure(esi_char_name="nele McCool",structure_id=1037567353379)
-    Cache().removeFromCache("_".join(("ids", "dict", "Rovengard Ogaster")))
-    nase = esiUniverseIds(["nele McCool", "G-M4GK", "Rovengard Ogaster"], False)
-    id = esiCharNameToId("nele McCool", False)
-    info = esiSearch(esi_char_name="nele McCool", search_text="Cemetry and memorial to fallen capsuleers",
-                        search_category=category.structure)
-    info = esiSearch(esi_char_name="nele McCool", search_text="Jita IV - Moon 4 - Caldari Navy Assembly Plant",search_category=category.station)
-    cache = Cache()
-    camp = esiSovereigntyCampaigns()
-    camp_structs = getCampaignsStructureIds()
-    poi = cache.getPOIAtIndex(0)
-    poi = cache.getPOIAtIndex(999)
-
-
-    cache.removeAvatar(str(52678))
-    cache.removeAvatar(str(35833))
-    cache.removeAvatar(str(35832))
-
-    image_1 = getTypesIcon(52678)
-    image_2 = getTypesIcon(52678)
-    image_3 = getTypesIcon(35832)
-    image_4 = getTypesIcon(35833)
-    image_5 = getTypesIcon(35833)
-    image_fail = getTypesIcon(12335833)
-
-    station_info = esiUniverseStations(info["station"][0])
-
-    cache.putPOI(station_info)
-    structure_info = esiSearch(esi_char_name="nele McCool", search_text="OX-S7P - House of Pain", search_category=category.structure)
-    structure_info = esiUniverseStructure(esi_char_name="nele McCool", structure_id=structure_info["structure"][0])
-    cache.putPOI(structure_info)
-
-
-    info = esiSearch(esi_char_name="nele McCool", search_text="46DP-O", search_category=category.structure)
-    info = esiSearch(esi_char_name="nele McCool", search_text="Cemetry and memorial to fallen capsuleers",
-                        search_category=category.station)
-    info = esiSearch(esi_char_name="nele McCool", search_text=" » ",
-                        search_category=category.structure)
-    all_jbs = list()
-    for struct_id in info["structure"]:
-        all_jbs.append(esiUniverseStructure(esi_char_name="nele McCool", structure_id=struct_id))
-
-
-    has_key = cache.hasAPIKey(1350114619)
-    has_key = cache.hasAPIKey("nele McCool")
-    has_key = cache.hasAPIKey(1350114618)
-    has_key = cache.hasAPIKey("Nele McCool")
-    used_key = cache.getAPIKey(1350114619)
-    used_key = cache.getAPIKey("nele McCool")
-    exit(1)
-    online = esiCharactersOnline("nele McCool")
-    online = esiCharactersOnline("Rovengard")
-    location = esiUniverseSystems(esiCharactersLocation("nele McCool"))
-    location = esiUniverseSystems(esiCharactersLocation("Rovengard"))
-    exit(1)
-
-    camp_systems = getCampaignsSystemsIds()
-    inc_systems =getIncursionSystemsIds()
-    res = checkSpyglassVersionUpdate()
-    res = getSpyglassUpdateLink()
-    webbrowser.open_new(res)
-    player_sov1 = getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=False)
-    player_sov2 = getPlayerSovereignty(True)
-    sov_systems = esiLatestSovereigntyMap()
-
-
-    tgnA = esiUniverseRegions(10000006, False)
-    tgnB = esiUniverseRegions(10000006, True)
-
-    incursionsA = esiIncursions(False)
-    incursionsB = esiIncursions(True)
-    shipnames = esiUniverseNames(SHIPIDS)
-    res =sorted( {value for key, value in shipnames.items()} )
-    with open("/home/jkeymer/projects/spyglass/src/ships.txt", "wt") as file:
-        file.write("SHIPNAMES = (")
-        line_len = 13;
-        for sname in res:
-            line_len = line_len + 2 + len(sname.upper());
-            if line_len > 80:
-                file.write("\r\n            ")
-                line_len = 12
-            file.write("u'{}',".format(sname.upper()))
-        file.write(")")
-        file.close()
-    pass
-
-    self = currentEveTime()
-
-    itms = ["{}".format(itm) for key, itm in nase.items()]
-    esan = esiUniverseNames(itms, False)
-    structs = getAllStructures()
-    sysnames = esiUniverseNames(esiUniverseGetAllRegions())
-    some = ["{}".format(itm) for key,itm in sysnames.items()]
-    id = esiCharNameToId("nele McCool", False)
-    corp = getCurrentCorpForCharId(1350114619, False)
-    res = esiCharactersCorporationhistory(esiCharNameToId("nele McCool"))
-    res = esiCharacters(esiCharNameToId("nele McCool"))
-    gates = getAllJumpGates("nele McCool", "G-M4GK")
-    esiAutopilotWaypoint("nele McCool", 1035408540831)  # ansiblex
-    esiAutopilotWaypoint("nele McCool", 1034969570497)  # ansiblex
-    esiAutopilotWaypoint("nele McCool", 1034954775591)  # ansiblex
-    jumpGates = [[30004935, 30004961]]
-    src = 30004935
-    dst = 30004961
-    route = getRouteFromEveOnline( jumpGates, src,dst)
-    applyRouteToEveOnline( "nele McCool",route)
-    esiAutopilotWaypoint("nele McCool", 0, True, True)
-
-    #ansiblex
-    esiAutopilotWaypoint("nele McCool", 1035408540831)
-    esiAutopilotWaypoint("nele McCool", 30003770)
-    res = getTokenOfChar("MrX")
-    exit(1)
