@@ -52,17 +52,34 @@ EXISTS = 1
 """
 
 
-def esiCharName() -> str:
+def setEsiCharName(name):
     """
-    Gets the name of the current active api char from the sqlite cache.
+    Sets the name of the current active api char to sqlite cache.
 
     Args:
-        None:
+        name(str):name of the acktive esi character
 
     Returns:
         str: Name of the current char from cache as string, or None
     """
-    return Cache().getFromCache("api_char_name", True)
+    if name and name != "":
+        Cache().putIntoCache("api_char_name", name)
+
+
+def esiCharName() -> str:
+    """
+    Gets the name of the current active api char from the sqlite cache.
+
+    Args: None
+
+    Returns:
+        str: Name of the current char from cache as string, or None
+    """
+    res = Cache().getFromCache("api_char_name", True)
+    if res == "":
+        return None
+    else:
+        return res
 
 
 def esiCharNameToId(char_name:str, use_outdated=False):
@@ -675,7 +692,7 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
     string_params = urllib.parse.urlencode(params)
 
     if parent:
-        if hasattr(parent, 'api_thread'):
+        if hasattr(parent, 'apiThread') and parent.apiThread:
             parent.apiThread.quit()
     else:
         class Object(object):
