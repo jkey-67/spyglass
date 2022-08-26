@@ -250,19 +250,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.actionAuto_switch.triggered.connect(self.changeAutoRegion)
 
-        #
-        # Platform specific UI resizing - we size items in the resource files to look correct on the mac,
-        # then resize other platforms as needed
-        #
-        if sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
-            # todo:why changing font size 8, should be managed also by css
-            # font = self.statisticsButton.font()
-            # font.setPointSize(8)
-            # self.statisticsButton.setFont(font)
-            # self.jumpbridgesButton.setFont(font)
-            pass
-        elif sys.platform.startswith("linux"):
-            pass
         update_splash_window_info("Update chat parser")
         self.chatparser = ChatParser()
         self._wireUpUIConnections()
@@ -300,7 +287,9 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.show(self)
 
     def _updateKnownPlayers(self, names):
-        if isinstance(names, list):
+        if names is None:
+            self._addPlayerMenu()
+        elif isinstance(names, list):
             for name in names:
                 if name not in self.knownPlayerNames:
                     self.knownPlayerNames.add(name)
@@ -417,7 +406,9 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
         self.ui.mapView.webViewScrolled.connect(mapviewScrolled)
-        self.ui.connectToEveOnline.clicked.connect(lambda: evegate.openWithEveonline(parent=self))
+        self.ui.connectToEveOnline.clicked.connect(
+            lambda:
+                self._updateKnownPlayers(evegate.openWithEveonline(parent=self)))
 
         def updateX(x):
             pos = self.ui.mapView.scrollPosition()
@@ -520,8 +511,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableViewJBs.show()
 
         def callOnSelChanged(name):
-            Cache().putIntoCache("api_char_name", name)
+            evegate.setEsiCharName(name)
 
+        self.ui.currentESICharacter.clear()
         self.ui.currentESICharacter.addItems(Cache().getAPICharNames())
         self.ui.currentESICharacter.setCurrentText(evegate.esiCharName())
         self.ui.currentESICharacter.currentTextChanged.connect(callOnSelChanged)
@@ -535,6 +527,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
             if ret == QMessageBox.Yes:
                 Cache().removeAPIKey(evegate.esiCharName())
+                self.ui.currentESICharacter.clear()
                 self.ui.currentESICharacter.addItems(Cache().getAPICharNames())
 
         self.ui.removeChar.clicked.connect(callOnRemoveChar)
@@ -604,10 +597,6 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as ex:
             logging.critical(ex)
             pass
-
-    @staticmethod
-    def usedPlayerNames() -> str:
-        return Cache().getFromCache("used_player_names")
 
     def changeRegionFromCtxMenu(self, checked):
         selected_system = self.trayIcon.contextMenu().currentSystem
