@@ -135,12 +135,14 @@ class Map(object):
         self.marker = self.soup.select("#select_marker")[0]
 
     def setIncursionSystems(self, lst_system_ids):
-        for sys_id, sys in self.systemsById.items():
-            sys.setIncursion(sys_id in lst_system_ids)
+        if lst_system_ids is not None:
+            for sys_id, sys in self.systemsById.items():
+                sys.setIncursion(sys_id in lst_system_ids)
 
     def setCampaignsSystems(self, lst_system_ids):
-        for sys_id, sys in self.systemsById.items():
-            sys.setCampaigns(sys_id in lst_system_ids)
+        if lst_system_ids is not None:
+            for sys_id, sys in self.systemsById.items():
+                sys.setCampaigns(sys_id in lst_system_ids)
 
     def _extractSizeFromSoup(self, soup):
         svg = soup.select("svg")[0]

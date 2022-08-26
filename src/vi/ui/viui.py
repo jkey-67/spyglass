@@ -789,6 +789,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.logFileChanged(file_path, rescan=True)
 
         logging.info("Intel ReScan done")
+        self.statisticsThread.requestLocations()
         self.updateMapView()
 
     def startClipboardTimer(self):
@@ -807,8 +808,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def startStatisticTimer(self):
         self.statisticTimer.timeout.connect(self.statisticsThread.requestStatistics)
+        self.statisticsThread.requestLocations()
         self.statisticsThread.requestStatistics()
-        self.statisticTimer.start(60000)
+        self.statisticTimer.start(30*1000)
 
     def stopStatisticTimer(self):
         if self.statisticTimer:
@@ -1159,7 +1161,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.updateMapView()
             self.focusMapOnSystem(self.systems[str(system_name)].systemId)
 
-    def setLocation(self, char, system_name:str):
+    def setLocation(self, char, system_name: str):
         for system in self.systems.values():
             system.removeLocatedCharacter(char)
 
@@ -1447,12 +1449,26 @@ class MainWindow(QtWidgets.QMainWindow):
     def updateStatisticsOnMap(self, data):
         if not self.ui.statisticsButton.isChecked():
             return
+
         if data["result"] == "ok":
-            self.mapStatisticCache = data["statistics"]
-            self.dotlan.addSystemStatistics(self.mapStatisticCache)
+            if "statistics" in data:
+                self.mapStatisticCache = data["statistics"]
+                self.dotlan.addSystemStatistics(data['statistics'])
+
+            if 'incursions' in data:
+                self.dotlan.setIncursionSystems(data['incursions'])
+
+            if 'campaigns' in data:
+                self.dotlan.setCampaignsSystems(data['campaigns'])
+
+            if "registered-chars" in data:
+                for itm in data["registered-chars"]:
+                    if itm["online"]:
+                        self.setLocation(itm["name"], itm["system"]["name"])
+            logging.debug("Map statistic update  succeeded.")
         elif data["result"] == "error":
             text = data["text"]
-            self.trayIcon.showMessage("Loading statstics failed", text, 3)
+            self.trayIcon.showMessage("Loading statistics failed", text, 3)
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
     def zoomMapIn(self):

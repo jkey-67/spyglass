@@ -397,6 +397,18 @@ def esiCheckCharacterToken(char_name:str)->bool:
     return checkTokenTimeLine(getTokenOfChar(char_name)) is not None
 
 
+def esiGetCharsOnlineStatus():
+    res =list()
+    for char in Cache().getAPICharNames():
+        itm = {
+            "name": char,
+            "online": esiCharactersOnline(char),
+            "system":  esiUniverseSystems(esiCharactersLocation(char))
+        }
+        res.append(itm)
+    return res
+
+
 def esiCharactersOnline(char_name:str)->bool:
     """ Returns the online state of the char with name char_name.
 
