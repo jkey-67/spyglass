@@ -37,7 +37,13 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.ui.cancelButton.clicked.connect(self.cancelGenerateJumpBridge)
         self.ui.fileChooser.clicked.connect(self.choosePath)
         self.ui.generateJumpBridgeButton.clicked.connect(self.generateJumpBridge)
+        self.ui.generateJumpBridgeButton.setEnabled(evegate.esiCharName() is not None)
         self.ui.urlField.setText(url)
+        self.ui.saveButton.setEnabled(url != "")
+        self.ui.urlField.editingFinished.connect(
+            lambda:
+                self.ui.saveButton.setEnabled(self.ui.urlField.text() != "")
+        )
         # loading format explanation from textfile
         with open(resourcePath(os.path.join("docs", "jumpbridgeformat.txt"))) as f:
             self.ui.formatInfoField.setPlainText(f.read())
@@ -54,7 +60,9 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.run_jb_generation = True
         self.ui.generateJumpBridgeProgress.show()
         gates = evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
-        evegate.writeGatesToFile(gates, str(self.ui.urlField.text()))
+        filename = str(self.ui.urlField.text())
+        if gates is not None and filename is not "":
+            evegate.writeGatesToFile(gates, filename)
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
 
