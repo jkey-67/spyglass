@@ -23,7 +23,7 @@ from PySide6.QtCore import Signal as pyqtSignal
 from vi.ui import Ui_ChatroomsChooser
 
 
-class ChatroomsChooser(QtWidgets.QDialog):
+class ChatroomChooser(QtWidgets.QDialog):
     rooms_changed = pyqtSignal(list)
     DEFAULT_ROOM_MANES = [u"Scald Intel", u"FI.RE Intel"]
 
@@ -36,7 +36,7 @@ class ChatroomsChooser(QtWidgets.QDialog):
         self.ui.saveButton.clicked.connect(self.saveClicked)
         room_names = Cache().getFromCache("room_names")
         if not room_names:
-            room_names = u','.join(ChatroomsChooser.DEFAULT_ROOM_MANES)
+            room_names = u','.join(ChatroomChooser.DEFAULT_ROOM_MANES)
         self.ui.roomnamesField.setPlainText(room_names)
 
     def saveClicked(self):
@@ -46,7 +46,7 @@ class ChatroomsChooser(QtWidgets.QDialog):
         self.rooms_changed.emit(rooms)
 
     def setDefaults(self):
-        self.ui.roomnamesField.setPlainText(u','.join(ChatroomsChooser.DEFAULT_ROOM_MANES))
+        self.ui.roomnamesField.setPlainText(u','.join(ChatroomChooser.DEFAULT_ROOM_MANES))
 
 
 

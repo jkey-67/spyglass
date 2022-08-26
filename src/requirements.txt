@@ -9,4 +9,4 @@ pyinstaller
 packaging
 parse
 pyttsx3
-
+espeakng

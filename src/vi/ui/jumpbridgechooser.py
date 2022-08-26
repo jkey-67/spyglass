@@ -42,7 +42,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         with open(resourcePath(os.path.join("docs", "jumpbridgeformat.txt"))) as f:
             self.ui.formatInfoField.setPlainText(f.read())
         self.ui.generateJumpBridgeProgress.hide()
-        self.run_jb_generation = True
+        self.run_jb_generation = False
 
     def processUpdate(self, total, pos) -> bool:
         self.ui.generateJumpBridgeProgress.setMaximum(total)

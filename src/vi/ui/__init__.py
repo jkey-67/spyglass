@@ -8,7 +8,7 @@ from .generated.ui_ChatEntry import Ui_ChatEntry
 from .generated.ui_SoundSetup import Ui_SoundSetup
 
 from .jumpbridgechooser import JumpbridgeChooser
-from .chartoomchooser import ChatroomsChooser
+from .chartoomchooser import ChatroomChooser
 from .regionchooser import RegionChooser
 from .systemchat import SystemChat
 from .chatentrywidget import ChatEntryWidget

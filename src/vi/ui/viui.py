@@ -36,7 +36,7 @@ from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, QS
 from vi import evegate
 from vi import dotlan, filewatcher
 from vi import states
-from vi.ui import JumpbridgeChooser, ChatroomsChooser, RegionChooser, SystemChat, ChatEntryWidget
+from vi.ui import JumpbridgeChooser, ChatroomChooser, RegionChooser, SystemChat, ChatEntryWidget
 
 from vi.cache.cache import Cache
 from vi.resources import resourcePath, resourcePathExists
@@ -53,7 +53,7 @@ from vi.ui import Ui_MainWindow, Ui_Info, Ui_SoundSetup
 """
  Timer intervals
 """
-MAP_UPDATE_INTERVAL_MSEC = 750
+MAP_UPDATE_INTERVAL_MSEC = 1000
 CLIPBOARD_CHECK_INTERVAL_MSEC = 4 * 1000
 
 
@@ -213,7 +213,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if cached_room_name:
             cached_room_name = cached_room_name.split(",")
         else:
-            cached_room_name = ChatroomsChooser.DEFAULT_ROOM_MANES
+            cached_room_name = ChatroomChooser.DEFAULT_ROOM_MANES
             Cache().putIntoCache("room_names", u",".join(cached_room_name), 60 * 60 * 24 * 365 * 5)
         self.room_names = cached_room_name
 
@@ -1248,7 +1248,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.mapVertScrollBar.setValue(int(pos.y()))
 
     def showChatroomChooser(self):
-        chooser = ChatroomsChooser(self)
+        chooser = ChatroomChooser(self)
         chooser.rooms_changed.connect(self.changedRoomNames)
         chooser.show()
 
