@@ -1,18 +1,18 @@
 ###########################################################################
 #  Vintel - Visual Intel Chat Analyzer									  #
 #  Copyright (C) 2014-15 Sebastian Meyer (sparrow.242.de+eve@gmail.com )  #
-#																		  #
+#                                                                         #
 #  This program is free software: you can redistribute it and/or modify	  #
 #  it under the terms of the GNU General Public License as published by	  #
 #  the Free Software Foundation, either version 3 of the License, or	  #
 #  (at your option) any later version.									  #
-#																		  #
+#                                                                         #
 #  This program is distributed in the hope that it will be useful,		  #
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
 #  GNU General Public License for more details.							  #
-#																		  #
-#																		  #
+#                                                                         #
+#                                                                         #
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
@@ -50,26 +50,26 @@ class CTX:
     FORMAT_SHIP = u"""<a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/{0}">{0}</a>"""
     FORMAT_SYSTEM = u"""<a style="color:#CC8800;font-weight:bold" href="mark_system/{0}">{1}</a>"""
 
-    STATUS_CLEAR = {"CLEAR", "CLR"}
+    STATUS_CLEAR = {"CLEAR", "CLR", "CRL"}
     STATUS_STATUS = {"STAT", "STATUS"}
     STATUS_BLUE = {"BLUE", "BLUES ONLY", "ONLY BLUE" "STILL BLUE", "ALL BLUES"}
 
 
-def textReplace(element, newText):
+def textReplace(element, new_text):
     """
 
     Args:
         element(NavigableString):
-        newText:
+        new_text:
 
     Returns:
 
     """
-    newText = "<t>" + newText + "</t>"
-    newElements = []
-    for newPart in BeautifulSoup(newText, 'html.parser').select("t")[0].contents:
-        newElements.append(newPart)
-    for newElement in newElements:
+    new_text = "<t>" + new_text + "</t>"
+    new_elements = []
+    for newPart in BeautifulSoup(new_text, 'html.parser').select("t")[0].contents:
+        new_elements.append(newPart)
+    for newElement in new_elements:
         element.insert_before(newElement)
     element.replace_with("")
     # todo: try element.replaceWith(newElement)
@@ -103,15 +103,15 @@ def parseStatus(rtext):
 
 def parseShips(rtext) -> bool:
     """
-
+        parse all known ship name
     Args:
-        rtext:
+        rtext: test to parse
 
     Returns:
 
     """
-    def formatShipName(text, word):
-        return text.replace(word, CTX.FORMAT_SHIP.format(word))
+    def formatShipName(in_text, in_word):
+        return in_text.replace(in_word, CTX.FORMAT_SHIP.format(in_word))
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
@@ -142,6 +142,7 @@ def isCharName(name) -> bool:
 
     """
     # todo:implement me
+    name = name
     return False
 
 
@@ -160,8 +161,8 @@ def parseSystems(systems, rtext, systems_found):
 
     system_names = systems.keys()
 
-    def formatSystem(text, word, system):
-        return text.replace(word, CTX.FORMAT_SYSTEM.format(system, word))
+    def formatSystem(in_text, in_word, in_system):
+        return in_text.replace(in_word, CTX.FORMAT_SYSTEM.format(in_system, in_word))
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString) and len(t)]
     for wtIdx, text in enumerate(texts):
@@ -227,7 +228,7 @@ def parseSystems(systems, rtext, systems_found):
                         return True
 
     # if ( len(foundSystems) > 1):
-    # todo check for sytemname clear/clr here
+    # todo check for system name clear/clr here
     return False
 
 
@@ -241,7 +242,7 @@ def parseUrls(rtext):
     """
     def findUrls(s):
         # yes, this is faster than regex and less complex to read
-        urls = []
+        urls_found = []
         prefixes = ("http://", "https://")
         for prefix in prefixes:
             start = 0
@@ -251,12 +252,12 @@ def parseUrls(rtext):
                     stop = s.find(" ", start)
                     if stop < 0:
                         stop = len(s)
-                    urls.append(s[start:stop])
+                    urls_found.append(s[start:stop])
                     start += 1
-        return urls
+        return urls_found
 
-    def formatUrl(text, url):
-        return text.replace(url, CTX.FORMAT_URL.format(url))
+    def formatUrl(in_text, in_url):
+        return in_text.replace(in_url, CTX.FORMAT_URL.format(in_url))
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:

@@ -128,7 +128,9 @@ class MapStatisticsThread(QThread):
                 logging.debug("MapStatisticsThread fetching  statistic succeeded.")
             except Exception as e:
                 logging.error("Error in MapStatisticsThread: %s", e)
-                statistics_data = {"result": "error", "text": str(e)}
+                statistics_data["result"] = "error"
+                statistics_data["text"] = str(e)
+
             self.statistic_data_update.emit(statistics_data)
 
     def quit(self):

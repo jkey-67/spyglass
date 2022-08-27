@@ -743,9 +743,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 svgFile=svg,
                 setJumpMapsVisible=self.ui.jumpbridgesButton.isChecked(),
                 setSatisticsVisible=self.ui.statisticsButton.isChecked(),
-                setSystemStatistic=self.mapStatisticCache)
-
-            self.dotlan.setJumpbridges(cache.getJumpGates())
+                setSystemStatistic=self.mapStatisticCache,
+                setCampaignsSystems=evegate.getCampaignsSystemsIds(),
+                setIncursionSystems=evegate.getIncursionSystemsIds(),
+                setJumpBridges=cache.getJumpGates()
+            )
             logging.info("Using dotlan map {}".format(region_name))
         except dotlan.DotlanException as e:
             logging.critical(e)
@@ -1447,9 +1449,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.avatar_loaded.emit(entry.message.user, data)
 
     def updateStatisticsOnMap(self, data):
-        if not self.ui.statisticsButton.isChecked():
-            return
-
         if data["result"] == "ok":
             if "statistics" in data:
                 self.mapStatisticCache = data["statistics"]

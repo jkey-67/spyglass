@@ -21,7 +21,6 @@ import time
 import os
 
 from PySide6 import QtWidgets
-from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon
@@ -102,10 +101,6 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.changeRegion = QAction("Change Region", None, checkable=False)
         self.addAction(self.changeRegion)
         self.addSeparator()
-        self.requestCheck = QAction("Show status request notifications", self, checkable=True)
-        self.requestCheck.setChecked(True)
-        self.addAction(self.requestCheck)
-        self.requestCheck.triggered.connect(self.trayIcon.switchRequest)
         self.alarmCheck = QAction("Show alarm notifications", self, checkable=True)
         self.alarmCheck.setChecked(True)
         self.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
@@ -200,16 +195,10 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.quit_signal.emit()
 
     def switchAlarm(self):
-        newValue = not self.showAlarm
+        new_value = not self.showAlarm
         for cm in TrayContextMenu.instances:
-            cm.alarmCheck.setChecked(newValue)
-        self.showAlarm = newValue
-
-    def switchRequest(self):
-        newValue = not self.showRequest
-        for cm in TrayContextMenu.instances:
-            cm.requestCheck.setChecked(newValue)
-        self.showRequest = newValue
+            cm.alarmCheck.setChecked(new_value)
+        self.showAlarm = new_value
 
     def showNotification(self, message, system, char, distance):
         if message is None:
