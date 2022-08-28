@@ -1538,6 +1538,9 @@ def getSpyglassUpdateLink(ver=VERSION):
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
+    res =Cache().getOutdatedJumpGates()
+    for itm in res:
+        getAllJumpGates( "nele McCool",itm[0],itm[1] )
     #openWithEveonline()
     ret = esiCorporationsStructures("nele McCool", 98059534)
     Cache().clearOutdatedJumpGates()

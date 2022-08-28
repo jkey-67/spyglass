@@ -116,6 +116,14 @@ class Cache(object):
         else:
             return founds[0][1]
 
+    def clearOutdatedCache(self):
+        """ Delete all outdated jumpbridges from database
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "DELETE FROM cache WHERE datetime(modified+maxage,'unixepoch') < datetime()"
+            self.con.execute(query)
+            self.con.commit()
+
     def putImageToCache(self, name, data):
         """ Put the picture of a player or other item into the avatars table
 
@@ -151,6 +159,21 @@ class Cache(object):
             # dats is buffer, we convert it back to str
             data = from_blob(founds[0][0])
             return data
+
+    def clearOutdatedImages(self, months: int = 12):
+        """
+        Clears all images older than 6 months
+
+        Returns:
+            None
+
+        """
+
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "DELETE FROM avatars WHERE datetime(modified+60*60*24*30*{},'unixepoch') < datetime()".\
+                format(months)
+            self.con.execute(query)
+            self.con.commit()
 
     def removeAvatar(self, name):
         """ Removing an avatar from the cache
@@ -226,11 +249,18 @@ class Cache(object):
             self.con.execute(query, (src, src))
             self.con.commit()
 
+    def getOutdatedJumpGates(self):
+        """ Delete all outdated jumpbridges from database
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT * FROM jumpbridge WHERE datetime(modified+maxage,'unixepoch') < datetime()"
+            return self.con.execute(query).fetchall()
+
     def clearOutdatedJumpGates(self):
         """ Delete all outdated jumpbridges from database
         """
         with Cache.SQLITE_WRITE_LOCK:
-            query = "DELETE FROM jumpbridge WHERE modified < datetime('unixepoch')-maxage"
+            query = "DELETE FROM jumpbridge WHERE datetime(modified+maxage,'unixepoch') < datetime()"
             self.con.execute(query)
             self.con.commit()
 

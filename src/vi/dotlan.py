@@ -572,8 +572,8 @@ class Map(object):
 
                 x1 = system_one_coords["center_x"] + system_one_offset_point[0]
                 y1 = system_one_coords["center_y"] + system_one_offset_point[1]
-                x2 = system_two_coords["center_x"] + system_two_offset_point[0] + 20
-                y2 = system_two_coords["center_y"] + system_two_offset_point[1] - 20
+                x2 = system_two_coords["center_x"] + system_two_offset_point[0] + 30
+                y2 = system_two_coords["center_y"] + system_two_offset_point[1] - 15
                 dx = (x2 - x1) / 2.0
                 dy = (y2 - y1) / 2.0
                 offset = 0.4 * math.sqrt(dx*dx+dy*dy)
@@ -599,7 +599,7 @@ class Map(object):
                 text["alignment-baseline"] = "ideographic"
                 text["fill-opacity"] = "0.8"
                 text["font-size"] = "6px"
-                text["transform"] = "translate({},{}) rotate(30)".format(x2, y2)
+                text["transform"] = "translate({},{}) rotate(40)".format(x2, y2)
                 jumps.append(text)
 
             line["class"] = "jumpbridge"

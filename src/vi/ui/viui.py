@@ -506,7 +506,7 @@ class MainWindow(QtWidgets.QMainWindow):
         model = QSqlQueryModel()
 
         def callOnUpdate():
-            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch')as 'last update', ( case used when 2 then 'okay' else 'probably okay' END ) 'Paired' FROM jumpbridge")
+            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch','localtime')as 'last update', ( case used when 2 then 'okay' else 'probably okay' END ) 'Paired' FROM jumpbridge")
         callOnUpdate()
 
         self.jbs_changed.connect(callOnUpdate)

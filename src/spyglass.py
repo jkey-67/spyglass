@@ -117,6 +117,8 @@ class Application(QApplication):
         self.con = QSqlDatabase.addDatabase("QSQLITE")
         self.con.setDatabaseName(cache.Cache.PATH_TO_CACHE)
         self.con.open()
+        cache.Cache().clearOutdatedCache()
+        cache.Cache().clearOutdatedImages(3)
 
         spyglass_log_directory = os.path.join(spyglass_dir, "logs")
         if not os.path.exists(spyglass_log_directory):
