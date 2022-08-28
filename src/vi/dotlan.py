@@ -558,16 +558,17 @@ class Map(object):
                                         fill="none",
                                         style="stroke:#{0}".format(jbColor))
                 line["stroke-width"] = 2
+                line["opacity"] = "0.8"
             else:
-                used_sys = self.systems[sys1] if sys1 in self.systems else self.systems[sys2] if sys2 in self.systems else None
-                name_sys2 = sys2 if sys1 in self.systems else sys1
-                if used_sys is None:
+                source_system = self.systems[sys1] if sys1 in self.systems else self.systems[sys2] if sys2 in self.systems else None
+                destination_name = sys2 if sys1 in self.systems else sys1
+                if source_system is None:
                     continue
-                system_one_coords = used_sys.mapCoordinates
-                system_two_coords = used_sys.mapCoordinates
+                system_one_coords = source_system.mapCoordinates
+                system_two_coords = source_system.mapCoordinates
 
-                system_one_offset_point = used_sys.getTransformOffsetPoint()
-                system_two_offset_point = used_sys.getTransformOffsetPoint()
+                system_one_offset_point = source_system.getTransformOffsetPoint()
+                system_two_offset_point = source_system.getTransformOffsetPoint()
 
                 x1 = system_one_coords["center_x"] + system_one_offset_point[0]
                 y1 = system_one_coords["center_y"] + system_one_offset_point[1]
@@ -586,15 +587,17 @@ class Map(object):
                                         text="",
                                         style="stroke:#{0}".format(jbColor))
                 line["stroke-width"] = 1
+                line["opacity"] = "0.8"
 
                 text = soup.new_tag("text")
                 text["class"] = "ansitext"
                 text["x"] = "{}".format(0)
                 text["y"] = "{}".format(0)
                 text["fill"] = "#{0}".format(jbColor)
-                text.string = name_sys2
+                text.string = destination_name
                 text["text-anchor"] = "middle"
                 text["alignment-baseline"] = "ideographic"
+                text["fill-opacity"] = "0.8"
                 text["font-size"] = "6px"
                 text["transform"] = "translate({},{}) rotate(30)".format(x2, y2)
                 jumps.append(text)

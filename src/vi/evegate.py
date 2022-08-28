@@ -176,7 +176,7 @@ def esiUniverseIds(names, use_outdated=False):
     return data
 
 
-def esiUniverseGetAllRegions(use_outdated=False)->list:
+def esiUniverseGetAllRegions(use_outdated=False) -> list:
     """ Uses the EVE API to get the list of all region ids
 
     Returns:
@@ -184,7 +184,7 @@ def esiUniverseGetAllRegions(use_outdated=False)->list:
     """
     cache = Cache()
     all_systems = cache.getFromCache("universe_all_regions", use_outdated)
-    if  all_systems is not None:
+    if all_systems is not None:
         return eval(all_systems)
     else:
         url = "https://esi.evetech.net/latest/universe/regions/?datasource=tranquility"
@@ -1015,6 +1015,31 @@ def esiUniverseStructure(esi_char_name:str, structure_id:int, use_outdated=False
                 logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
     return res_value
 
+def esiCorporationsStructures(esi_char_name:str, corporations_id:int, use_outdated=False):
+    """"Calls https://esi.evetech.net/ui/#/Universe/get_universe_structures
+    """
+    res_value = None
+    if esi_char_name == None:
+        logging.error("esiUniverseStructure needs the eve-online api account.")
+        return res_value
+    cache_key = "_".join(("corporations", "structures", "id", str(corporations_id)))
+    cache = Cache()
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
+        res_value = eval(cached_id)
+    else:
+        token = checkTokenTimeLine(getTokenOfChar(esi_char_name))
+        if token:
+            req = "https://esi.evetech.net/latest/corporations/{}/structures/?datasource=tranquility&token={}"\
+                .format(corporations_id, token.access_token)
+            response = requests.get(req)
+            if response.status_code == 200:
+                cache.putIntoCache(cache_key, response.text, 3600)
+                res_value = eval(response.text)
+            else:
+                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+    return res_value
+
 
 def esiLatestSovereigntyMap(use_outdated=False, fore_refresh=False):
     """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
@@ -1512,5 +1537,8 @@ def getSpyglassUpdateLink(ver=VERSION):
 
 # The main application for testing
 if __name__ == "__main__":
+    Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
     #openWithEveonline()
+    ret = esiCorporationsStructures("nele McCool", 98059534)
+    Cache().clearOutdatedJumpGates()
     id_structures = getCampaignsStructureIds()

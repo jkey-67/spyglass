@@ -230,7 +230,7 @@ class Cache(object):
         """ Delete all outdated jumpbridges from database
         """
         with Cache.SQLITE_WRITE_LOCK:
-            query = "DELETE FROM jumpbridge WHERE modified < unixepoch()-maxage"
+            query = "DELETE FROM jumpbridge WHERE modified < datetime('unixepoch')-maxage"
             self.con.execute(query)
             self.con.commit()
 

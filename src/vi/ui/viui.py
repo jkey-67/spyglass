@@ -180,7 +180,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # Load user's toon names
         self.playerUsed = Cache().getFromCache("used_player_names")
 
-        self.knownPlayerNames = set(Cache().getFromCache("known_player_names").split(','))
+        self.knownPlayerNames = Cache().getFromCache("known_player_names")
+        if self.knownPlayerNames is None:
+            self.knownPlayerNames = set()
+        else:
+            self.knownPlayerNames = set(self.knownPlayerNames.split(','))
+
         for api_char_names in Cache().getAPICharNames():
             if evegate.esiCharactersOnline(api_char_names):
                 self._updateKnownPlayers(api_char_names)
