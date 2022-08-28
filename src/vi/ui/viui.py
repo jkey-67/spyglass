@@ -140,8 +140,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.currContent = None
         self.mapTimer = QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
-        self.statisticTimer = QTimer(self)
-        self.clipboardTimer = QTimer(self)
         self.oldClipboardContent = ""
         self.trayIcon = tray_icon
         self.trayIcon.activated.connect(self.systemTrayActivated)
@@ -179,6 +177,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Load user's toon names
         self.playerUsed = Cache().getFromCache("used_player_names")
+        if self.playerUsed is None:
+            self.playerUsed = set()
 
         self.knownPlayerNames = Cache().getFromCache("known_player_names")
         if self.knownPlayerNames is None:
@@ -260,7 +260,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wireUpUIConnections()
         self._recallCachedSettings()
         self._setupThreads()
-        self.startStatisticTimer()
+        self._startStatisticTimer()
         self._wireUpDatabaseViews()
 
         update_splash_window_info("Apply theme.")
@@ -268,7 +268,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if initial_theme:
             self.changeTheme(initial_theme)
         else:
-            self.setupMap(True)
+            self.setupMap()
         update_splash_window_info("Double check for updates on github...")
         update_avail = evegate.checkSpyglassVersionUpdate()
         if update_avail[0]:
@@ -799,27 +799,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.requestLocations()
         self.updateMapView()
 
-    def startClipboardTimer(self):
-        """
-            Start a timer to check the keyboard for changes and kos check them,
-            first initializing the content so we dont kos check from random content
-        """
-        self.oldClipboardContent = tuple(str(self.clipboard.text()))
-        self.clipboardTimer.timeout.connect(self.clipboardChanged)
-        self.clipboardTimer.start(CLIPBOARD_CHECK_INTERVAL_MSEC)
-
-    def stopClipboardTimer(self):
-        if self.clipboardTimer:
-            self.clipboardTimer.disconnect()
-            self.clipboardTimer.stop()
-
-    def startStatisticTimer(self):
+    def _startStatisticTimer(self):
+        self.statisticTimer = QTimer(self)
         self.statisticTimer.timeout.connect(self.statisticsThread.requestStatistics)
-        self.statisticsThread.requestLocations()
-        self.statisticsThread.requestStatistics()
         self.statisticTimer.start(30*1000)
 
-    def stopStatisticTimer(self):
+    def _stopStatisticTimer(self):
         if self.statisticTimer:
             self.statisticTimer.disconnect()
             self.statisticTimer.stop()

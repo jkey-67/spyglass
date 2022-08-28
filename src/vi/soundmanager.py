@@ -110,7 +110,7 @@ class SoundManager(metaclass=Singleton):
             return ""
 
     def setSoundFile(self, mask, filename):
-        if mask in self.SOUNDS.keys():
+        if mask in self.SOUNDS.keys() and filename:
             if filename == "":
                 filename = SoundManager.DEF_SND_FILE
             self.SOUNDS[mask] = filename
@@ -120,17 +120,19 @@ class SoundManager(metaclass=Singleton):
                 self.sounds[mask].setSource(url)
             Cache().putIntoCache("soundsetting.{}".format(mask), filename)
             self.loadSoundFiles()
+        else:
+            filename = SoundManager.DEF_SND_FILE
 
     def loadSoundFiles(self):
         for itm in self.SOUNDS:
             self.sounds[itm] = QSoundEffect()
-            if self.SOUNDS[itm] != None and os.path.exists(self.SOUNDS[itm]):
+            if self.SOUNDS[itm] and os.path.exists(self.SOUNDS[itm]):
                 url = QUrl.fromLocalFile(self.SOUNDS[itm])
-            elif self.SOUNDS[itm] != None:
+            elif self.SOUNDS[itm]:
                 url = QUrl.fromLocalFile(resourcePath(os.path.join("vi", "ui", "res", "{0}".format(self.SOUNDS[itm]))))
             else:
                 url = None
-            if url != None:
+            if url:
                 self.sounds[itm].setSource(url)
 
     def platformSupportsSpeech(self):
@@ -169,7 +171,7 @@ class SoundManager(metaclass=Singleton):
                 else:
                     self.speach_engine.setProperty('volume', self.soundVolume/100.0)
                     self.speach_engine.say(abbreviatedMessage)
-            elif name in self.sounds.keys():
+            elif name in self.sounds.keys() and self.sounds[name] is not None:
                 self.sounds[name].setVolume(self.soundVolume / 100 * self.SNDVOL[name])
                 self.sounds[name].setMuted(False)
                 self.sounds[name].play()

@@ -61,7 +61,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.ui.generateJumpBridgeProgress.show()
         gates = evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
         filename = str(self.ui.urlField.text())
-        if gates is not None and filename is not "":
+        if gates is not None and filename != "":
             evegate.writeGatesToFile(gates, filename)
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
@@ -83,4 +83,4 @@ class JumpbridgeChooser(QtWidgets.QDialog):
     def choosePath(self):
         path = QFileDialog.getOpenFileName(self, caption="Open JB Text File")[0]
         if os.path.exists(path):
-            self.ui.rlField.setText(str(path))
+            self.ui.urlField.setText(str(path))

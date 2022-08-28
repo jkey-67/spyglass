@@ -511,6 +511,10 @@ class Map(object):
         soup = self.soup
         for bridge in soup.select(".jumpbridge"):
             bridge.decompose()
+
+        for bridge in soup.select(".ansitext"):
+            bridge.decomposed()
+
         jumps = soup.select("#jumps")
         if jumps is not None:
             jumps = soup.select("#jumps")[0]

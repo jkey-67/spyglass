@@ -186,6 +186,15 @@ if __name__ == "__main__":
         res = app.exec()
         del app
     except Exception as e:
-        logging.critical("Spyglass terminated abnormal %s.", e.__str__())
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+
+        info = "Traceback\n"
+        while exc_tb:
+            filename = exc_tb.tb_frame.f_code.co_filename
+            line = exc_tb.tb_lineno
+            info = "{}   File \"{}\", line {}\n".format(info, filename, line)
+            exc_tb = exc_tb.tb_next
+
+        logging.critical("Spyglass terminated abnormal : %s\n%s. ", e.__str__(), info)
         logging.info("================================================================================================")
     sys.exit(res)

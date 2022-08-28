@@ -280,8 +280,12 @@ class Cache(object):
             res = self.con.execute(query, (src, src)).fetchall()
         return len(res) > 0
 
-    def getPlayerSovereignty(self):
-        return eval(self.getFromCache("player_sovereignty", True))
+    def getPlayerSovereignty(self) -> dict:
+        sovereignty = self.getFromCache("player_sovereignty", True)
+        if sovereignty:
+            return eval(sovereignty)
+        else:
+            return dict()
 
     def getJumpGates(self):
         """Get a list of all jumpbridges
