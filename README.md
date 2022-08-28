@@ -40,15 +40,18 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
 
  ### 1.6.2
  - list of POI added, you can use the list items to set the destination
- - now you can manage the Ansiblex Jump Gates from inside Spyglass
+ - now you can refresh and delete the Ansiblex jump gates from inside Spyglass
  - the registered chars can be switched from Spyglass
  - fixing ESI search changes
  
  ### 1.6.3
- - using QT6 with PySide6 now
+ - using QT6 with PySide6 now (QtTextToSpeech is still missing)
  - preset of statistic and jump connections now work
  - using pyside6-uic for ui files
  - copy structure names in game now works also with the new Photon UI enabled
+ - Ansiblex jump connections out of the current region are now also displayed
+ - automatically flush the solar system for unregistered chars after two days
+ - use online state and position for registered characters on startup and intel rescan 
 
 ## Features with API registration
 Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
@@ -65,6 +68,8 @@ The following access rights will be use
 
  - the right button context menu to set waypoints and destinations in game directly form inside spyglass.
  - filling the jump bridge data from online structures  
+ - using the POI Table to set destination in game
+ - monitoring login state and current solar system for registered characters
 
 ### API access monitoring and removal
 Please remember to manage your access to all [third-party-applications](https://community.eveonline.com/support/third-party-applications)  
@@ -77,19 +82,19 @@ Please remember to manage your access to all [third-party-applications](https://
  - If you want to use thi feature, but find it to be too slow, clear out your chat logs regularly.
 
 ## POIs
-- If you are docked on station, copy the name of the structure to fill the POI list.
+- If you are docked on station, copy the name of the structure to the clipboard to fill the POI list.
 
 ## JDs
 - If you are docked on station, copy the name of the structure from inside the Solar System: Information Structure Tab
-- In space, right click on the structure inside the Overwie and copy then
+- In space, use the right mouse button to click on the structure inside the overview and copy then
 
 ## Running Spyglass from Source
 
 To run or build from the source you need the following packages installed on your machine. Most, if not all, can be installed from the command line using package management software such as "pip". Mac and Linux both come with pip installed, Windows users may need to install [cygwin](https://www.cygwin.com) or use the powershell to use pip. Of course all the requirements also have download links.
 
 The packages required are:
-- Python 3.9
-https://www.python.org/downloads/release/python-390/
+- Python 3.10
+https://www.python.org/downloads/
 - PySide6
 https://pypi.org/project/PySide6/
 - BeautifulSoup 4
@@ -98,10 +103,10 @@ https://pypi.org/project/beautifulsoup4/
 https://pypi.org/project/requests/
 - parse
 https://pypi.org/project/parse/ 
-- espeakng
+- espeakng (awaiting QtTextToSpeech)
 https://pypi.org/project/espeakng/
 
-Optional use the windows installer https://github.com/espeak-ng/espeak-ng/releases
+Optional use the Windows installer https://github.com/espeak-ng/espeak-ng/releases
 
 Please look to the file requirements.txt for the list off dependencies.
 
@@ -125,7 +130,7 @@ Currently, users with Windows may want to choose Qt 5.15.2 inside requirements.t
 
 ## The background of Spyglass
 
-DENCI-Spyglass is forked out from qt5 branch of [Crypta-Eve/spyglass](https://github.com/Crypta-Eve/spyglass) 
+EVE-Spyglass is forked out from qt5 branch of [Crypta-Eve/spyglass](https://github.com/Crypta-Eve/spyglass) 
 
 Spyglass is a project aimed at the continuation to the work done on the Vintel tool by [Xanthos](https://github.com/Xanthos-Eve) which can be found [Xanthos-Eve/vintel](https://github.com/Xanthos-Eve/vintel).
 
