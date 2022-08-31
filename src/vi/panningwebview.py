@@ -101,21 +101,21 @@ class PanningWebView(QWidget):
 
     def zoomIn(self, pos=None):
         if pos is None:
-            self.setZoomFactor(self.zoomFactor() * (1.0+self.ZOOM_WHEEL))
-        else:
-            elem_ori = self.mapPosFromPos(pos)
-            self.setZoomFactor(self.zoom * (1.0+self.ZOOM_WHEEL))
-            elem_delta = elem_ori-self.mapPosFromPos(pos)
-            self.scrollPos = self.scrollPos+elem_delta*self.zoom
+            pos = QtCore.QPointF(self.size().width()/2.0,self.size().height()/2.0)
+
+        elem_ori = self.mapPosFromPos(pos)
+        self.setZoomFactor(self.zoom * (1.0+self.ZOOM_WHEEL))
+        elem_delta = elem_ori-self.mapPosFromPos(pos)
+        self.scrollPos = self.scrollPos+elem_delta*self.zoom
 
     def zoomOut(self, pos=None):
         if pos is None:
-            self.setZoomFactor(self.zoom*(1.0-self.ZOOM_WHEEL))
-        else:
-            elem_ori = self.mapPosFromPos(pos)
-            self.setZoomFactor(self.zoom*(1.0-self.ZOOM_WHEEL))
-            elem_delta = elem_ori - self.mapPosFromPos(pos)
-            self.scrollPos = self.scrollPos+elem_delta*self.zoom
+            pos = QtCore.QPointF(self.size().width()/2.0, self.size().height()/2.0)
+
+        elem_ori = self.mapPosFromPos(pos)
+        self.setZoomFactor(self.zoom*(1.0-self.ZOOM_WHEEL))
+        elem_delta = elem_ori - self.mapPosFromPos(pos)
+        self.scrollPos = self.scrollPos+elem_delta*self.zoom
 
     def wheelEvent(self, event: QWheelEvent):
         if (self.wheel_dir * event.angleDelta().y()) < 0:
