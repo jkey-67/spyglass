@@ -188,15 +188,14 @@ class Cache(object):
 
     def recallAndApplySettings(self, responder, settings_identifier):
 
-        def getattrlist(responder, attr):
+        def applyAttributeList(respond, attr):
             if len(attr) == 1:
-                return getattr(responder, attr[0])
+                return getattr(respond, attr[0])
             else:
-                for itms in attr:
-                    if isinstance(itms, str) :
-                        responder= getattr(responder, itms)
-                return responder
-
+                for items in attr:
+                    if isinstance(items, str):
+                        respond = getattr(respond, items)
+                return respond
 
         version = self.getFromCache("version")
         restore_gui = version == vi.version.VERSION
@@ -204,7 +203,7 @@ class Cache(object):
         if settings:
             settings = eval(settings)
             for setting in settings:
-                obj = responder if not setting[0] else getattrlist(responder, setting[0].split('.'))
+                obj = responder if not setting[0] else applyAttributeList(responder, setting[0].split('.'))
                 # logging.debug("{0} | {1} | {2}".format(str(obj), setting[1], setting[2]))
                 try:
                     if restore_gui and setting[1] == "restoreGeometry":
@@ -226,9 +225,25 @@ class Cache(object):
     def putJumpGate(self, src, dst, src_id=None, dst_id=None,
                     json_src=None, json_dst=None, used=None, max_age=60 * 60 * 24 * 14):
         """
+        Updates a Ansiblex jump bride struct inside the database
+        Args:
+            src: Source system
+            dst: Destination system
+            src_id: Source system id
+            dst_id: Destination system id
+            json_src: Source system esi response
+            json_dst: Destination system esi response
+            used: not used yet, system should recognize a jump automatically
+            max_age: purge time
+
+        Returns:
+
         """
         with Cache.SQLITE_WRITE_LOCK:
-            # data is a blob, so we have to change it to buffer
+            query = "UPDATE jumpbridge SET modified = ? WHERE (src IS ? AND dst IS ?) OR (dst IS ? and src IS ?)"
+            if self.con.execute(query, (time.time(), src, dst, src, dst)).rowcount == 1:
+                self.con.commit()
+                return
             query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ? or src LIKE ? or dst LIKE ?"
             self.con.execute(query, (src, src, dst, dst))
             query = "INSERT INTO jumpbridge (src, dst, used, id_src, id_dst, json_src, json_dst, modified, maxage) "\
@@ -238,7 +253,7 @@ class Cache(object):
             self.con.commit()
 
     def clearJumpGate(self, src) -> None:
-        """ Removes all items from the jumpbridge table where FROM  or TO match str
+        """ Removes all items from the jumpbridge table where FROM or TO match str
 
         Args:
             src(str):Name of the system which can be FROM or TO
