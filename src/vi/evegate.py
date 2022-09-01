@@ -1269,9 +1269,9 @@ def writeGatesToFile(gates, filename="jb.txt"):
     gates_list = list()
     with open(filename, "w")as gf:
         for gate in gates:
-            s_t_d = "{} <-> {}".format(gate.src_system_name, gate.dst_system_name)
-            d_t_s = "{} <-> {}".format(gate.dst_system_name, gate.src_system_name)
-            if (not s_t_d in gates_list) and (not d_t_s in gates_list):
+            s_t_d = "{} » {}".format(gate.src_system_name, gate.dst_system_name)
+            d_t_s = "{} » {}".format(gate.dst_system_name, gate.src_system_name)
+            if s_t_d not in gates_list and d_t_s not in gates_list:
                 gf.write("{} {} {} {} ({} {})\n".format(s_t_d, gate.systemId, gate.structureId, gate.ownerId, gate.links,gate.paired))
                 gates_list.append(s_t_d)
         gf.close()
@@ -1503,26 +1503,31 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
 def checkSpyglassVersionUpdate(current_version=VERSION):
     """check github for a new latest release
     """
-    new_version = None
-    req = "https://github.com/jkey-67/spyglass/releases/latest"
-    response = requests.get(req)
-    if response.status_code != 200:
-        return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
-    page_ver_found = response.text.find(".exe")
-    if page_ver_found:
-        page_ver_found_start = response.text.rfind('-',page_ver_found-32,page_ver_found)+1
-        if page_ver_found_start:
-            new_version = response.text[page_ver_found_start:page_ver_found]
-    if new_version is None:
-        return [False, "Unable to read version from github."]
-
-    if version.parse(new_version) > version.parse(current_version):
-        return [True,
+    checked = Cache().getFromCache("version_check")
+    if checked is None:
+        new_version = None
+        req = "https://github.com/jkey-67/spyglass/releases/latest"
+        response = requests.get(req)
+        if response.status_code != 200:
+            return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
+        page_ver_found = response.text.find(".exe")
+        if page_ver_found:
+            page_ver_found_start = response.text.rfind('-',page_ver_found-32,page_ver_found)+1
+            if page_ver_found_start:
+                new_version = response.text[page_ver_found_start:page_ver_found]
+        if new_version is None:
+            return [False, "Unable to read version from github."]
+        Cache().putIntoCache("version_check", new_version, 60 * 60 * 24)
+        if version.parse(new_version) > version.parse(current_version):
+            return [True,
                 "An newer Spyglass Version {} is available, you are currently running Version {}.".format(
                     new_version, current_version)]
+        else:
+            return [False,
+                    "You are running the actual Spyglass Version {}.".format(current_version)]
     else:
         return [False,
-                "You are running the actual Spyglass Version {}.".format(current_version)]
+                "Pending version check, current version is {}.".format(checked)]
 
 
 def getSpyglassUpdateLink(ver=VERSION):

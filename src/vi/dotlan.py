@@ -513,7 +513,7 @@ class Map(object):
             bridge.decompose()
 
         for bridge in soup.select(".ansitext"):
-            bridge.decomposed()
+            bridge.decompose()
 
         jumps = soup.select("#jumps")
         if jumps is not None:
@@ -534,7 +534,7 @@ class Map(object):
 
             if color_count > len(JB_COLORS) - 1:
                 color_count = 0
-            jbColor = JB_COLORS[color_count]
+            jb_color = JB_COLORS[color_count]
             color_count += 1
             # Construct the line, color it and add it to the jumps
             if both_systems_on_map:
@@ -560,7 +560,7 @@ class Map(object):
                 line = soup.new_tag("path", d="M{} {} Q {} {} {} {}".format(x1, y1, mx, my, x2, y2),
                                         visibility="hidden",
                                         fill="none",
-                                        style="stroke:#{0}".format(jbColor))
+                                        style="stroke:#{0}".format(jb_color))
                 line["stroke-width"] = 2
                 line["opacity"] = "0.8"
             else:
@@ -589,7 +589,7 @@ class Map(object):
                                         visibility="hidden",
                                         fill="none",
                                         text="",
-                                        style="stroke:#{0}".format(jbColor))
+                                        style="stroke:#{0}".format(jb_color))
                 line["stroke-width"] = 1
                 line["opacity"] = "0.8"
 
@@ -597,7 +597,7 @@ class Map(object):
                 text["class"] = "ansitext"
                 text["x"] = "{}".format(0)
                 text["y"] = "{}".format(0)
-                text["fill"] = "#{0}".format(jbColor)
+                text["fill"] = "#{0}".format(jb_color)
                 text.string = destination_name
                 text["text-anchor"] = "middle"
                 text["alignment-baseline"] = "ideographic"
