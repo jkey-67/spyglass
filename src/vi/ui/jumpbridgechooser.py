@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License      #
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
-
+import logging
 import os
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox, QFileDialog
@@ -24,6 +24,7 @@ from PySide6.QtCore import Signal as pyqtSignal
 from vi.resources import resourcePath
 from vi.ui import Ui_JumpbridgeChooser
 from vi import evegate
+from vi.cache import Cache
 
 
 class JumpbridgeChooser(QtWidgets.QDialog):
@@ -35,7 +36,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.ui.setupUi(self)
         self.ui.saveButton.clicked.connect(self.savePath)
         self.ui.cancelButton.clicked.connect(self.cancelGenerateJumpBridge)
-        self.ui.fileChooser.clicked.connect(self.choosePath)
+        self.ui.fileChooser.clicked.connect(self.choosePathSave)
         self.ui.generateJumpBridgeButton.clicked.connect(self.generateJumpBridge)
         self.ui.generateJumpBridgeButton.setEnabled(evegate.esiCharName() is not None)
         self.ui.urlField.setText(url)
@@ -44,9 +45,6 @@ class JumpbridgeChooser(QtWidgets.QDialog):
             lambda:
                 self.ui.saveButton.setEnabled(self.ui.urlField.text() != "")
         )
-        # loading format explanation from textfile
-        with open(resourcePath(os.path.join("docs", "jumpbridgeformat.txt"))) as f:
-            self.ui.formatInfoField.setPlainText(f.read())
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
 
@@ -59,28 +57,46 @@ class JumpbridgeChooser(QtWidgets.QDialog):
     def generateJumpBridge(self):
         self.run_jb_generation = True
         self.ui.generateJumpBridgeProgress.show()
-        gates = evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
-        filename = str(self.ui.urlField.text())
-        if gates is not None and filename != "":
-            evegate.writeGatesToFile(gates, filename)
+        evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
+
+    def signalURLChange(self):
+        url = str(self.ui.urlField.text())
+        self.set_jumpbridge_url.emit(url)
 
     def cancelGenerateJumpBridge(self):
         if self.run_jb_generation:
             self.run_jb_generation = False
         else:
+            self.signalURLChange()
             self.accept()
 
     def savePath(self):
-        try:
-            url = str(self.ui.urlField.text())
-            self.set_jumpbridge_url.emit(url)
-            self.accept()
-        except Exception as e:
-            QMessageBox.critical(None, "Finding jump bridge data failed", "Error: {0}".format(str(e)))
+        save_path = QFileDialog.getSaveFileName(self,
+                                           caption="Select JB Text File to export",
+                                           dir=os.path.join(os.path.expanduser("~")))[0]
+        if save_path == "":
+            return
 
-    def choosePath(self):
-        path = QFileDialog.getOpenFileName(self, caption="Open JB Text File")[0]
-        if os.path.exists(path):
+        query = "SELECT src, dst FROM jumpbridge"
+        gates = Cache().con.execute(query, ()).fetchall()
+
+        if gates is not None:
+            try:
+                with open(save_path, "w") as gf:
+                    for gate in gates:
+                        gf.write("{} » {}".format(gate[0], gate[1])+"\n")
+                    gf.close()
+                logging.info("Export of all jumpbridge to file '{}' succeeded.".format(save_path))
+            except Exception as e:
+                logging.error(e)
+                QMessageBox.critical(None, "Export  jump bridge data failed", "Error: {0}".format(str(e)))
+
+    def choosePathSave(self):
+        path = QFileDialog.getSaveFileName(self,
+                                           caption="Select JB Text File to export",
+                                           dir=os.path.join(os.path.expanduser("~")))[0]
+        if str(path) != "":
             self.ui.urlField.setText(str(path))
+            self.ui.saveButton.setEnabled(self.ui.urlField.text() != "")

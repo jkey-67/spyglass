@@ -1148,7 +1148,7 @@
   <customwidget>
    <class>PanningWebView</class>
    <extends>QWidget</extends>
-   <header>vi/PanningWebView</header>
+   <header>vi/panningwebview</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -177,7 +177,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Load user's toon names
         self.playerUsed = Cache().getFromCache("used_player_names")
-        if self.playerUsed is None:
+        if self.playerUsed:
+            self.playerUsed = set(self.playerUsed.split(","))
+        elif evegate.esiCharName():
+            self.playerUsed = {evegate.esiCharName()}
+        else:
             self.playerUsed = set()
 
         self.knownPlayerNames = Cache().getFromCache("known_player_names")
@@ -197,13 +201,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         "Spyglass is running to remedy this."
             QMessageBox.warning(self, "Known Characters not Found", diag_text)
         update_splash_window_info("Update player names")
-
-        if self.playerUsed:
-            self.playerUsed = set(self.playerUsed.split(","))
-        elif evegate.esiCharName():
-            self.playerUsed = {evegate.esiCharName()}
-        else:
-            self.playerUsed = set()
 
         if self.invertWheel is None:
             self.invertWheel = False
@@ -264,11 +261,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wireUpDatabaseViews()
 
         update_splash_window_info("Apply theme.")
+
         initial_theme = Cache().getFromCache("theme")
         if initial_theme:
             self.changeTheme(initial_theme)
         else:
             self.setupMap()
+
         update_splash_window_info("Double check for updates on github...")
         update_avail = evegate.checkSpyglassVersionUpdate()
         if update_avail[0]:
@@ -302,7 +301,6 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.knownPlayerNames.add(names)
             self._addPlayerMenu()
-
 
     def _addPlayerMenu(self):
         self.playerGroup = QActionGroup(self.ui.menu)
@@ -1017,39 +1015,57 @@ class MainWindow(QtWidgets.QMainWindow):
         if val:
             self.statisticsThread.requestStatistics()
 
-    def AppendJumpGate(self, src_system, dst_system):
-        cache = Cache()
-        structure = evegate.esiSearch(
-            esi_char_name=evegate.esiCharName(),
-            search_text="{} » {}".format(src_system, dst_system),
-            search_category=evegate.category.structure)
+    def AppendJumpGate(self, src_system, dst_system, sanity_check: bool = True):
+        """
 
-        if structure is None or "structure" not in structure.keys() or len(structure["structure"]) < 2:
-            cache.clearJumpGate(dst_system)
-            cache.clearJumpGate(src_system)
+        Args:
+            src_system:
+            dst_system:
+            sanity_check:
+
+        Returns:
+
+        """
+        cache = Cache()
+        if sanity_check:
+            structure = evegate.esiSearch(
+                esi_char_name=evegate.esiCharName(),
+                search_text="{} » {}".format(src_system, dst_system),
+                search_category=evegate.category.structure)
+
+            if structure is None or "structure" not in structure.keys() or len(structure["structure"]) < 2:
+                cache.clearJumpGate(dst_system)
+                cache.clearJumpGate(src_system)
+            else:
+                cnt_structures = len(structure["structure"])
+                inx_src = 0
+                inx_dst = cnt_structures - 1
+                json_src = evegate.esiUniverseStructure(
+                    esi_char_name=evegate.esiCharName(),
+                    structure_id=structure["structure"][inx_src])
+                json_dst = evegate.esiUniverseStructure(
+                    esi_char_name=evegate.esiCharName(),
+                    structure_id=structure["structure"][inx_dst])
+                cnt_structures = None if structure is None else len(structure["structure"])
+                cache.putJumpGate(
+                    src=src_system,
+                    dst=dst_system,
+                    src_id=structure["structure"][inx_src] if cnt_structures > 1 else None,
+                    dst_id=structure["structure"][inx_dst] if cnt_structures > 1 else None,
+                    json_src=json_src,
+                    json_dst=json_dst,
+                    used=cnt_structures
+                )
         else:
-            cnt_structures = len(structure["structure"])
-            inx_src = 0
-            inx_dst = cnt_structures-1
-            json_src = evegate.esiUniverseStructure(
-                esi_char_name=evegate.esiCharName(),
-                structure_id=structure["structure"][inx_src])
-            json_dst = evegate.esiUniverseStructure(
-                esi_char_name=evegate.esiCharName(),
-                structure_id=structure["structure"][inx_dst])
-            cnt_structures = None if structure is None else len(structure["structure"])
             cache.putJumpGate(
                 src=src_system,
-                dst=dst_system,
-                src_id=structure["structure"][inx_src] if cnt_structures > 1 else None,
-                dst_id=structure["structure"][inx_dst] if cnt_structures > 1 else None,
-                json_src=json_src,
-                json_dst=json_dst,
-                used=cnt_structures
+                dst=dst_system
             )
-            cache.clearOutdatedJumpGates()
-            self.dotlan.setJumpbridges(Cache().getJumpGates())
-            self.jbs_changed.emit()
+
+        cache.clearOutdatedJumpGates()
+        self.dotlan.setJumpbridges(Cache().getJumpGates())
+        self.jbs_changed.emit()
+        self.updateMapView()
 
     def clipboardChanged(self, mode=0):
         """ the content of the clip board is used to set jump bridge and poi
@@ -1108,7 +1124,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if simple_text is None:
                     simple_text = parse('{src} » {dst} - {info}', content)
                     if simple_text and len(simple_text.named) == 3:
-                        self.AppendJumpGate(simple_text.named["src"], simple_text.named["dst"])
+                        self.AppendJumpGate(simple_text.named["src"], simple_text.named["dst"],
+                                            sanity_check=False)
                         return
                     else:
                         simple_text = None
@@ -1136,7 +1153,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             self.poi_changed.emit()
                             return
 
-    def mapLinkClicked(self, url:QtCore.QUrl):
+    def mapLinkClicked(self, url: QtCore.QUrl):
         system_name = str(url.path().split("/")[-1]).upper()
         if system_name in self.systems:
             system = self.systems[str(system_name)]
@@ -1147,21 +1164,32 @@ class MainWindow(QtWidgets.QMainWindow):
             sc.repaint_needed.connect(self.updateMapView)
             sc.show()
 
-    def markSystemOnMap(self, system_name:str):
+    def markSystemOnMap(self, system_name: str):
         if system_name in self.systems.keys():
             self.dotlan.systems[str(system_name)].mark()
             self.updateMapView()
             self.focusMapOnSystem(self.systems[str(system_name)].systemId)
 
-    def setLocation(self, char, system_name: str):
-        for system in self.systems.values():
-            system.removeLocatedCharacter(char)
+    def setLocation(self, char_name, system_name: str, change_region: bool = False):
+        """
+        Change the location of the char to the given system inside the current map, if required the region may be changed.
 
-        if evegate.esiCheckCharacterToken(char) and not evegate.esiCharactersOnline(char):
+        Args:
+            char_name: name of the character
+            system_name: system name
+            change_region: allow change of the region
+
+        Returns:
+
+        """
+        for system in self.systems.values():
+            system.removeLocatedCharacter(char_name)
+
+        if evegate.esiCheckCharacterToken(char_name) and not evegate.esiCharactersOnline(char_name):
             return
-        logging.info("The location of character '{}' changed to system '{}'".format(char, system_name))
+        logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
         if system_name not in self.systems.keys():
-            if self.autoChangeRegion: # and evegate.getTokenOfChar(char):
+            if change_region and char_name in self.playerUsed:  # and evegate.getTokenOfChar(char):
                 try:
                     for test in evegate.esiUniverseIds([system_name])["systems"]:
                         name = test["name"]
@@ -1183,17 +1211,14 @@ class MainWindow(QtWidgets.QMainWindow):
                     pass
 
         if not system_name == "?" and system_name in self.systems.keys():
-            self.systems[system_name].addLocatedCharacter(char)
-            if evegate.esiCheckCharacterToken(char):
+            self.systems[system_name].addLocatedCharacter(char_name)
+            if evegate.esiCheckCharacterToken(char_name):
                 self.focusMapOnSystem(self.systems[str(system_name)].systemId)
 
         self.updateMapView()
 
     def updateMapView(self):
         try:
-            self.dotlan.setIncursionSystems(evegate.getIncursionSystemsIds())
-            self.dotlan.setCampaignsSystems(evegate.getCampaignsSystemsIds())
-
             if self.currContent != self.dotlan.svg:
                 self.mapTimer.stop()
                 if self.ui.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8'))):
@@ -1238,7 +1263,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def showJumpbridgeChooser(self):
         url = Cache().getFromCache("jumpbridge_url")
         chooser = JumpbridgeChooser(self, url)
-        chooser.set_jumpbridge_url.connect(self.setJumpbridges)
+        chooser.set_jumpbridge_url.connect(self.updateJumpbridgesFromFile)
         chooser.show()
 
     @staticmethod
@@ -1251,7 +1276,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def showJumpbridge(self, value):
         self.ui.jumpbridgesButton.setChecked(value)
 
-    def setJumpbridges(self, url):
+    def updateJumpbridgesFromFile(self, url):
+        """ Updates the jumpbridge cache from url or local a local file, following
+            the file format as described:
+
+            src » dst [id_src id_dst json_src_struct json_dst_struct]
+
+        Args:
+            url: url or path
+
+        Returns:
+
+        """
         if url is None:
             url = ""
         try:
@@ -1262,10 +1298,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     resp = requests.get(url)
                     for line in resp.iter_lines(decode_unicode=True):
                         parts = line.strip().split()
-                        if len(parts) == 3:
+                        if len(parts) > 2:
                             data.append(parts)
-                else:
-                    content = None
+                elif os.path.exists(url):
+                    content = []
                     with open(url, 'r') as f:
                         content = f.readlines()
                     cache.clearOutdatedJumpGates()
@@ -1274,12 +1310,12 @@ class MainWindow(QtWidgets.QMainWindow):
                         # src <-> dst system_id jump_bridge_id
                         if len(parts) > 2:
                             data.append(parts)
-                            cache.putJumpGate(src=parts[0], dst=parts[2])
-            else:
-                # data = amazon_s3.getJumpbridgeData(self.dotlan.region.lower())
-                data = None
-            self.dotlan.setJumpbridges(cache.getJumpGates())
-            cache.putIntoCache("jumpbridge_url", url, 60 * 60 * 24 * 365 * 8)
+                for parts in data:
+                    cache.putJumpGate(src=parts[0], dst=parts[2])
+                self.dotlan.setJumpbridges(cache.getJumpGates())
+                self.jbs_changed.emit()
+            Cache().putIntoCache("jumpbridge_url", url)
+
         except Exception as e:
             logging.error("Error setJumpbridges failed: {0}".format(str(e)))
             QMessageBox.warning(self, "Loading jumpbridges failed!", "Error: {0}".format(str(e)), QMessageBox.Ok)
@@ -1451,9 +1487,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.dotlan.setCampaignsSystems(data['campaigns'])
 
             if "registered-chars" in data:
+                first_one = True
                 for itm in data["registered-chars"]:
-                    if itm["online"]:
-                        self.setLocation(itm["name"], itm["system"]["name"])
+                    if itm["online"] and itm["name"] == evegate.esiCharName():
+                        self.setLocation(itm["name"], itm["system"]["name"],
+                                         first_one and itm["name"] == evegate.esiCharName())
+                        first_one = False
+                if first_one:
+                    for itm in data["registered-chars"]:
+                        if itm["online"] and itm["name"] == evegate.esiCharName():
+                            self.setLocation(itm["name"], itm["system"]["name"],
+                                             first_one)
+                            first_one = False
+
             logging.debug("Map statistic update  succeeded.")
         elif data["result"] == "error":
             text = data["text"]
@@ -1503,7 +1549,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for name, systems in locale_to_set.items():
             self._updateKnownPlayers(name)
             for sys_name in systems:
-                self.setLocation(name, sys_name)
+                self.setLocation(name, sys_name, self.autoChangeRegion)
                 logging.info("Locale of '{}' changed to system '{}'".format(name, sys_name))
 
         if not rescan:
