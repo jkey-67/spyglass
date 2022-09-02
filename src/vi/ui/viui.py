@@ -24,6 +24,7 @@ import time
 import requests
 import webbrowser
 from parse import parse
+from typing import Union
 import vi.version
 import logging
 from PySide6.QtGui import *
@@ -57,9 +58,22 @@ MAP_UPDATE_INTERVAL_MSEC = 1000
 CLIPBOARD_CHECK_INTERVAL_MSEC = 4 * 1000
 
 
+class POITableModell(QSqlQueryModel):
+    def __init__(self, parent=None):
+        super(POITableModell, self).__init__(parent)
+
+    def flags(self, index) -> QtCore.Qt.ItemFlags:
+        if index.column() == 1:
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+        else:
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+
+
 class StyledItemDelegatePOI(QStyledItemDelegate):
+    poi_changed = pyqtSignal()
     def __init__(self, parent=None):
         super(StyledItemDelegatePOI, self).__init__(parent)
+        self.cache = Cache()
 
     def paint(self, painter, option, index):
         painter.save()
@@ -98,7 +112,35 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
         painter.restore()
 
     def sizeHint(self, option, index):
-        return QtCore.QSize(64, 64)
+        if index.column() == 0:
+            return QtCore.QSize(64, 64)
+        else:
+            return super(StyledItemDelegatePOI, self).sizeHint(option, index)
+
+    def createEditor(self, parent: QtWidgets.QWidget, option: QtWidgets.QStyleOptionViewItem,
+                     index: Union[
+                         QtCore.QModelIndex, QtCore.QPersistentModelIndex]) -> QtWidgets.QWidget:
+        if index.column() == 1:
+            return QtWidgets.QTextEdit(parent)
+        else:
+            return super(StyledItemDelegatePOI, self).createEditor(parent, option, index)
+
+    def setEditorData(self, editor, index) -> None:
+        if index.column() == 1:
+            editor.setText(index.data())
+        else:
+            super(StyledItemDelegatePOI, self).setEditorData(editor, index)
+
+    def setModelData(self, editor, model, index) -> None:
+        src_index = model.mapToSource(index)
+        data = self.cache.getPOIAtIndex(src_index.row()+1)
+        if data and editor.toPlainText() != index.data():
+            self.cache.setPOIItemInfoText(data["destination_id"], editor.toPlainText())
+            super(StyledItemDelegatePOI, self).setModelData(editor, model, index)
+            self.poi_changed.emit()
+        else:
+            super(StyledItemDelegatePOI, self).setModelData(editor, model, index)
+
 
     @staticmethod
     def isReinfored(struct_id):
@@ -453,22 +495,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wireUpDatabaseViewPOI()
 
     def _wireUpDatabaseViewPOI(self):
-        model = QSqlQueryModel()
+        model = POITableModell()
 
         def callOnUpdate():
             model.setQuery("SELECT type as Type, name as Name FROM pointofinterest")
             self.ui.tableViewPOIs.resizeColumnsToContents()
             self.ui.tableViewPOIs.resizeRowsToContents()
 
+
         callOnUpdate()
         sort = QSortFilterProxyModel()
         sort.setSourceModel(model)
         self.tableViewPOIsDelegate = StyledItemDelegatePOI(self)
+        self.tableViewPOIsDelegate.poi_changed.connect(callOnUpdate)
         self.ui.tableViewPOIs.setModel(sort)
         self.ui.tableViewPOIs.setItemDelegate(self.tableViewPOIsDelegate)
+        self.ui.tableViewPOIs.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.tableViewPOIs.resizeColumnsToContents()
         self.ui.tableViewPOIs.resizeRowsToContents()
-        # self.ui.tableViewPOIs.setEditTriggers(QAbstractItemView.AllEditTriggers)
 
         callOnUpdate()
         self.poi_changed.connect(callOnUpdate)

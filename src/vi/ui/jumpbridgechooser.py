@@ -21,7 +21,6 @@ import os
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox, QFileDialog
 from PySide6.QtCore import Signal as pyqtSignal
-from vi.resources import resourcePath
 from vi.ui import Ui_JumpbridgeChooser
 from vi import evegate
 from vi.cache import Cache
@@ -49,6 +48,16 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.run_jb_generation = False
 
     def processUpdate(self, total, pos) -> bool:
+        """
+        progress indicator for the jumpbridge update
+        Args:
+            total: total count
+            pos:  current
+
+        Returns:
+            true to continue, false to break
+
+        """
         self.ui.generateJumpBridgeProgress.setMaximum(total)
         self.ui.generateJumpBridgeProgress.setValue(pos)
         QtWidgets.QApplication.processEvents()

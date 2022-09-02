@@ -350,11 +350,17 @@ class Cache(object):
                 self.con.execute(query, (data["structure_id"], data["type_id"], data["name"], json.dumps(data)))
             self.con.commit()
 
+    def setPOIItemInfoText(self, id_poi, info_poi):
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "UPDATE pointofinterest SET name = ? WHERE id is ?"
+            self.con.execute(query, (info_poi, id_poi))
+            self.con.commit()
+
     def getPOIAtIndex(self, inx: int):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
-            query = "select json from pointofinterest  LIMIT 1 OFFSET ?"
+            query = "select json from ( SELECT row_number() OVER( ORDER BY NULL ) rownum, json from pointofinterest) where rownum = ?"
             founds = self.con.execute(query, (inx,)).fetchall()
             if len(founds) == 0:
                 return None
