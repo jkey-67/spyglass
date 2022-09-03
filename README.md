@@ -2,9 +2,9 @@
   <img align="middle" src="https://raw.githubusercontent.com/jkey-67/spyglass/master/src/vi/ui/res/logo_splash.png">
 </p>
 
-# Welcome To Spyglass 1.6
+# Welcome To EVE Spyglass 1.6
 
-Spyglass is an intel visualisation and alarm system for [EVE Online](http://www.eveonline.com). This too gathers information from in game chat channels and presents the data on a [dotlan](http://evemaps.dotlan.net/map/Catch#npc24) generated map. The map is highlighted in real time as players report intel in monitored chat channels.
+EVE Spyglass is an intel visualisation and alarm system for [EVE Online](http://www.eveonline.com). This too gathers information from in game chat channels and presents the data on a [dotlan](http://evemaps.dotlan.net/map/Catch#npc24) generated map. The map is highlighted in real time as players report intel in monitored chat channels.
 
 Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interface and audio playback, BeautifulSoup4 for SVG parsing.
 
@@ -14,7 +14,7 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
 
 ## Features
 ### 1.6.0
- - Platforms supported: Executable for Windows, Linux and Mac runs directly from python source.
+ - Platforms supported: Executable for Windows, Linux and Mac runs directly with python 3 from source.
  - Monitored intel chat channels are merged to one chat stream. You can add or remove channels via a menu option.
  - These chat channels can be rescanned on startup to allow for existing intel to be displayed
  - An interactive map of Providence / Catch is provided. Systems on the map display real-time intel data as reported through intel channels.
@@ -52,9 +52,10 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - Ansiblex jump connections out of the current region are now also displayed
  - automatically flush the solar system for unregistered chars after two days
  - use online state and position for registered characters on startup and intel rescan 
+ - The text in the POI List can be edited now
 
 ## Features with API registration
-Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
+EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
 The following access rights will be use
  - esi-ui.write_waypoint.v1 
@@ -66,7 +67,7 @@ The following access rights will be use
 
 ### API access enables 
 
- - the right button context menu to set waypoints and destinations in game directly form inside spyglass.
+ - the right button context menu to set waypoints and destinations in game directly form inside EVE Syglass.
  - filling the jump bridge data from online structures  
  - using the POI Table to set destination in game
  - monitoring login state and current solar system for registered characters
@@ -88,7 +89,7 @@ Please remember to manage your access to all [third-party-applications](https://
 - If you are docked on station, copy the name of the structure from inside the Solar System: Information Structure Tab
 - In space, use the right mouse button to click on the structure inside the overview and copy then
 
-## Running Spyglass from Source
+## Running EVE Spyglass from Source
 
 To run or build from the source you need the following packages installed on your machine. Most, if not all, can be installed from the command line using package management software such as "pip". Mac and Linux both come with pip installed, Windows users may need to install [cygwin](https://www.cygwin.com) or use the powershell to use pip. Of course all the requirements also have download links.
 
@@ -111,7 +112,7 @@ Optional use the Windows installer https://github.com/espeak-ng/espeak-ng/releas
 Please look to the file requirements.txt for the list off dependencies.
 
 You need an installed and configured python with pip and git installed.  
-To start spyglass, open a console checkout sources and dependencies and start it.    
+To start EVE Spyglass, open a console checkout sources and dependencies and start it.    
 `win> git clone https://github.com/jkey-67/spyglass.git`
 
 `win> cd spyglass\src`
@@ -138,7 +139,7 @@ Spyglass is a project aimed at the continuation to the work done on the Vintel t
 
 **License?**
 
-Spyglass is licensed under the [GPLv3](http://www.gnu.org/licenses/gpl-3.0.html).
+Spyglass is licensed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
 
 **A little too big for such a little tool.**
 
