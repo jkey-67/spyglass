@@ -99,8 +99,11 @@ class MapStatisticsThread(QThread):
 
     def __init__(self):
         QThread.__init__(self)
-        self.queue = queue.Queue(maxsize=1)
+        self.queue = queue.Queue(maxsize=10)
         self.active = True
+
+    def requestSovereignty(self):
+        self.queue.put(["sovereignty"])
 
     def requestStatistics(self):
         self.queue.put(["statistics"])
@@ -109,25 +112,28 @@ class MapStatisticsThread(QThread):
         self.queue.put(["location"])
 
     def run(self):
-        evegate.getPlayerSovereignty(fore_refresh=False, show_npc=False)
-        evegate.getIncursionSystemsIds(False)
-        evegate.getCampaignsSystemsIds(False)
-        evegate.esiUniverseSystem_jumps()
         while True:
             tsk = self.queue.get()
             if not self.active:
                 return
             try:
-                statistics_data = dict({"result": "ok"})
+                statistics_data = dict({"result": "pending"})
+                logging.debug("MapStatisticsThread fetching  statistic .")
+                if "sovereignty" in tsk:
+                    statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=False, show_npc=False)
+
                 if "statistics" in tsk:
                     statistics_data["statistics"] = evegate.esiUniverseSystem_jumps()
                     statistics_data["incursions"] = evegate.getIncursionSystemsIds(False)
                     statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(False)
+
                 if "location" in tsk:
                     statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
+
                 logging.debug("MapStatisticsThread fetching  statistic succeeded.")
+                statistics_data["result"] = "ok"
             except Exception as e:
-                logging.error("Error in MapStatisticsThread: %s", e)
+                logging.error("Error in MapStatisticsThread: %s %s %s", e, str(statistics_data), str(tsk))
                 statistics_data["result"] = "error"
                 statistics_data["text"] = str(e)
 

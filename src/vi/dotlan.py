@@ -74,7 +74,8 @@ class Map(object):
                  setSystemStatistic=None,
                  setJumpBridges=None,
                  setCampaignsSystems=None,
-                 setIncursionSystems=None):
+                 setIncursionSystems=None,
+                 setPlayerSovereignty=None):
         self.region = region
         self.width = 1024   # default size
         self.height = 768   # default size
@@ -143,15 +144,18 @@ class Map(object):
         self._prepareSvg(self.soup)
         self._connectNeighbours()
         self.jumpBridges = cache.getJumpGates()
-        self._applySystemSovereignty(cache.getPlayerSovereignty())
-        self.addSystemStatistics(setSystemStatistic)
         self.marker = self.soup.select("#select_marker")[0]
+
+        if setSystemStatistic:
+            self.addSystemStatistics(setSystemStatistic)
         if setJumpBridges:
             self.setJumpbridges(setJumpBridges)
         if setCampaignsSystems:
             self.setCampaignsSystems(setCampaignsSystems)
         if setIncursionSystems:
             self.setIncursionSystems(setIncursionSystems)
+        if setPlayerSovereignty:
+            self.setSystemSovereignty(setPlayerSovereignty)
 
         if False:
             self.debugWriteSoup()
@@ -269,14 +273,12 @@ class Map(object):
 
         return systems
 
-    def _applySystemSovereignty(self, systems_stats):
+    def setSystemSovereignty(self, systems_stats):
         for sys_id, sys in self.systemsById.items():
             sid = str(sys_id)
             if sid in systems_stats:
                 if "ticker" in systems_stats[sid]:
                     sys.ticker = systems_stats[sid]["ticker"]
-                    sys.setStatus(states.UNKNOWN)
-        self.updateStatisticsVisibility()
 
     @staticmethod
     def _prepareGradients(soup: BeautifulSoup):
@@ -409,6 +411,8 @@ class Map(object):
         # Current system marker ellipse
         group = soup.new_tag("g", id="select_marker", opacity="0", activated="0", transform="translate(0, 0)")
         ellipse = soup.new_tag("ellipse", cx="0", cy="0", rx="56", ry="28", style="fill:#462CFF")
+        # animate = soup.new_tag("animate", attributeName="opacity", values="1;0",dur="10s",repeatCount="1")
+        # ellipse.append(animate)
         group.append(ellipse)
 
         self._prepareGradients(soup)
@@ -423,7 +427,7 @@ class Map(object):
 
         for defs in svg.select("defs"):
             for tag in defs.select("a"):
-                tag.attrs = {key: value for key, value in tag.attrs.items() if key not in ["target","xlink:href"]}
+                tag.attrs = {key: value for key, value in tag.attrs.items() if key not in ["target", "xlink:href"]}
                 tag.name = "a"
 
         for defs in svg.select("defs"):
@@ -724,7 +728,7 @@ class System(object):
         tag["class"] = ["jumpbridge", ]
         jumps = self.mapSoup.select("#jumps")[0]
         jumps.insert(0, tag)
-
+    """
     def mark(self):
         marker = self.mapSoup.select("#select_marker")[0]
         offset_point = self.getTransformOffsetPoint()
@@ -733,7 +737,6 @@ class System(object):
         marker["transform"] = "translate({x},{y})".format(x=x, y=y)
         marker["opacity"] = 1.0
         marker["activated"] = datetime.datetime.utcnow().timestamp()
-    """
 
     def addLocatedCharacter(self, char_name):
         id_name = self.name + u"_loc"
@@ -859,8 +862,7 @@ class System(object):
                 self.secondLine["class"].append("stopwatch")
             self.setBackgroundColor(self.ALARM_COLOR)
             self.firstLine["style"] = self.SYSTEM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
-            self.secondLine["style"] = self.ALARM_STYLE.format(
-            self.textInv.getTextColourFromBackground(self.backgroundColor))
+            self.secondLine["style"] = self.ALARM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
         elif newStatus == states.CLEAR:
             self.lastAlarmTimestamp = alarm_time.timestamp()
             self.setBackgroundColor(self.CLEAR_COLOR)
@@ -868,11 +870,9 @@ class System(object):
                 self.secondLine["class"].append("stopwatch")
             self.firstLine["style"] = self.SYSTEM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
             self.secondLine["style"] = self.ALARM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
-            self.secondLine.string = "clear"
         elif newStatus == states.UNKNOWN:
             self.setBackgroundColor(self.UNKNOWN_COLOR)
             # second line in the rects is reserved for the clock
-            self.secondLine.string = self.ticker
             self.secondLineFlash = False
             self.firstLine["style"] = self.SYSTEM_STYLE.format(
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
@@ -889,11 +889,6 @@ class System(object):
                 self.svgtext.string = "j-{jumps} f-{factionkills} s-{shipkills} p-{podkills}".format(**statistics)
 
     def update(self):
-        # state changed?
-        # print (self.secondLine)
-        # self.firstLine["style"] = "fill: #FFFFFF" #System name
-        # self.secondLine["style"] = "fill: #FFFFFF" #Timer / ?
-
         last_cycle = True
         if self.currentStyle is not self.styles.currentStyle:
             self.currentStyle = self.styles.currentStyle
@@ -938,7 +933,8 @@ class System(object):
             else:
                 self.secondLine.string = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
             self.secondLineFlash = not self.secondLineFlash
-            # print self.backgroundColor, self.name, self.status
+        else:
+            self.secondLine.string = self.ticker
 
     def updateLineColour(self):
         lineColour = self.textInv.getTextColourFromBackground(self.backgroundColor)

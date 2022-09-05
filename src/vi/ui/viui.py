@@ -70,7 +70,8 @@ class POITableModell(QSqlQueryModel):
 
 
 class StyledItemDelegatePOI(QStyledItemDelegate):
-    poi_changed = pyqtSignal()
+    poi_edit_changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super(StyledItemDelegatePOI, self).__init__(parent)
         self.cache = Cache()
@@ -84,31 +85,7 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
             painter.setClipRect(option.rect)
             painter.drawImage(option.rect.topLeft(), img)
         else:
-            if True:
-                super(StyledItemDelegatePOI, self).paint(painter, option, index)
-            else:
-                json_item = eval(index.data())
-                style = QApplication.style()
-                text_rect = style.subElementRect(QStyle.SE_ItemViewItemText, option)
-                style.drawPrimitive(QStyle.PE_PanelItemViewItem, option, painter, option.widget)
-                style.drawItemText(painter, text_rect, option.displayAlignment, option.palette, True, json_item["name"])
-                # super(StyledItemDelegatePOI, self).paint(painter, option, index)
-
-                polygon_triangle = QtGui.QPolygon(
-                    [
-                        QtCore.QPoint(option.rect.x() + 5, option.rect.y()),
-                        QtCore.QPoint(option.rect.x(), option.rect.y()),
-                        QtCore.QPoint(option.rect.x(), option.rect.y() + 5)
-                    ])
-                painter.setRenderHint(painter.Antialiasing)
-                if "structure_id" in  json_item and self.isReinfored(json_item["structure_id"]):
-                    painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.red)))
-                    painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.red)))
-                else:
-                    painter.setBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkGray)))
-                    painter.setPen(QtGui.QPen(QtGui.QColor(QtCore.Qt.darkGray)))
-
-                painter.drawPolygon(polygon_triangle)
+            super(StyledItemDelegatePOI, self).paint(painter, option, index)
         painter.restore()
 
     def sizeHint(self, option, index):
@@ -133,18 +110,13 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
 
     def setModelData(self, editor, model, index) -> None:
         src_index = model.mapToSource(index)
-        data = self.cache.getPOIAtIndex(src_index.row()+1)
+        data = self.cache.getPOIAtIndex(src_index.row())
         if data and editor.toPlainText() != index.data():
             self.cache.setPOIItemInfoText(data["destination_id"], editor.toPlainText())
             super(StyledItemDelegatePOI, self).setModelData(editor, model, index)
-            self.poi_changed.emit()
+            self.poi_edit_changed.emit()
         else:
             super(StyledItemDelegatePOI, self).setModelData(editor, model, index)
-
-
-    @staticmethod
-    def isReinfored(struct_id):
-        return struct_id in evegate.getCampaignsSystemsIds()
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -195,7 +167,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialMapPosition = None
         self.autoChangeRegion = False
         self.mapPositionsDict = {}
-        self.mapStatisticCache = {}
+        self.mapStatisticCache = evegate.esiUniverseSystem_jumps(use_outdated=True)
+        self.mapSovereignty = evegate.getPlayerSovereignty(use_outdated=True, fore_refresh=False, show_npc=False)
         self.invertWheel = False
         self.autoRescanIntelEnabled = Cache().getFromCache("changeAutoRescanIntel")
 
@@ -218,23 +191,11 @@ class MainWindow(QtWidgets.QMainWindow):
         styles = None
 
         # Load user's toon names
-        self.playerUsed = Cache().getFromCache("used_player_names")
-        if self.playerUsed:
-            self.playerUsed = set(self.playerUsed.split(","))
-        elif evegate.esiCharName():
-            self.playerUsed = {evegate.esiCharName()}
-        else:
-            self.playerUsed = set()
-
-        self.knownPlayerNames = Cache().getFromCache("known_player_names")
-        if self.knownPlayerNames is None:
-            self.knownPlayerNames = set()
-        else:
-            self.knownPlayerNames = set(self.knownPlayerNames.split(','))
-
+        self.monitoredPlayerNames = Cache().getUsedPlayerNames()
+        self.knownPlayerNames = Cache().getKnownPlayerNames()
         for api_char_names in Cache().getAPICharNames():
             if evegate.esiCharactersOnline(api_char_names):
-                self._updateKnownPlayers(api_char_names)
+                self._updateKnownPlayerAndMenu(api_char_names)
 
         if len(self.knownPlayerNames) == 0:
             diag_text = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\n"\
@@ -332,17 +293,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def show(self):
         QtWidgets.QMainWindow.show(self)
 
-    def _updateKnownPlayers(self, names):
+    def _updateKnownPlayerAndMenu(self, names=None):
         if names is None:
             self._addPlayerMenu()
-        elif isinstance(names, list):
+        elif isinstance(names, str):
+            if names not in self.knownPlayerNames:
+                self.knownPlayerNames.add(names)
+                self._addPlayerMenu()
+        else:
             for name in names:
                 if name not in self.knownPlayerNames:
                     self.knownPlayerNames.add(name)
                     self._addPlayerMenu()
-        else:
-            self.knownPlayerNames.add(names)
-            self._addPlayerMenu()
 
     def _addPlayerMenu(self):
         self.playerGroup = QActionGroup(self.ui.menu)
@@ -357,21 +319,29 @@ class MainWindow(QtWidgets.QMainWindow):
             action = QAction(icon, "{0}".format(name))
             action.setCheckable(True)
             action.playerName = name
-            action.triggered.connect(self.changePlayerIntel)
-            action.playerUse = name in self.playerUsed
+            action.triggered.connect(self.changeMonitoredPlayerNamesFromMenu)
+            action.playerUse = name in self.monitoredPlayerNames
             action.setChecked(action.playerUse)
             action.setIconVisibleInMenu(action.playerUse)
-            action.triggered.connect(self.changePlayerIntel)
+            action.triggered.connect(self.changeMonitoredPlayerNamesFromMenu)
             self.playerGroup.addAction(action)
             self.ui.menuChars.addAction(action)
 
-    def changePlayerIntel(self, use):
+    def changeMonitoredPlayerNamesFromMenu(self, use):
+        """
+            Updates the monitoredPlayerNames set from the menu
+        Args:
+            use:
+
+        Returns:
+            None
+        """
         player_used = set()
         for action in self.playerGroup.actions():
             action.setIconVisibleInMenu(action.isChecked())
             if action.isChecked():
                 player_used.add(action.playerName)
-        self.playerUsed = player_used
+        self.monitoredPlayerNames = player_used
 
     def wheelDirChanged(self, checked):
         self.invertWheel = checked
@@ -443,7 +413,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.clearIntelAction.triggered.connect(self.clearIntelChat)
         self.ui.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
         self.ui.mapView.webViewResized.connect(self.fixupScrollBars)
-        self.ui.mapView.customContextMenuRequested.connect(self.showContextMenu)
+        self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
 
         def mapviewScrolled(scrolled):
             if scrolled:
@@ -453,7 +423,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.mapView.webViewScrolled.connect(mapviewScrolled)
         self.ui.connectToEveOnline.clicked.connect(
             lambda:
-                self._updateKnownPlayers(evegate.openWithEveonline(parent=self)))
+                self._updateKnownPlayerAndMenu(evegate.openWithEveonline(parent=self)))
 
         def updateX(x):
             pos = self.ui.mapView.scrollPosition()
@@ -497,17 +467,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def _wireUpDatabaseViewPOI(self):
         model = POITableModell()
 
-        def callOnUpdate():
+        def callPOIUpdate():
             model.setQuery("SELECT type as Type, name as Name FROM pointofinterest")
             self.ui.tableViewPOIs.resizeColumnsToContents()
             self.ui.tableViewPOIs.resizeRowsToContents()
 
-
-        callOnUpdate()
+        # callPOIUpdate()
         sort = QSortFilterProxyModel()
         sort.setSourceModel(model)
         self.tableViewPOIsDelegate = StyledItemDelegatePOI(self)
-        self.tableViewPOIsDelegate.poi_changed.connect(callOnUpdate)
+        self.tableViewPOIsDelegate.poi_edit_changed.connect(callPOIUpdate)
         self.ui.tableViewPOIs.setModel(sort)
         self.ui.tableViewPOIs.setItemDelegate(self.tableViewPOIsDelegate)
         self.ui.tableViewPOIs.setEditTriggers(QAbstractItemView.DoubleClicked)
@@ -515,11 +484,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableViewPOIs.resizeColumnsToContents()
         self.ui.tableViewPOIs.resizeRowsToContents()
 
-        callOnUpdate()
-        self.poi_changed.connect(callOnUpdate)
+        self.poi_changed.connect(callPOIUpdate)
         self.ui.tableViewPOIs.show()
+        callPOIUpdate()
 
-        def showContextMenu(pos):
+        def showPOIContextMenu(pos):
             cache = Cache()
             index = self.ui.tableViewPOIs.model().mapToSource(self.ui.tableViewPOIs.indexAt(pos)).row()
             item = cache.getPOIAtIndex(index)
@@ -543,7 +512,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
 
         self.ui.tableViewPOIs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.ui.tableViewPOIs.customContextMenuRequested.connect(showContextMenu)
+        self.ui.tableViewPOIs.customContextMenuRequested.connect(showPOIContextMenu)
 
     def _wireUpDatabaseViewsJB(self):
         model = QSqlQueryModel()
@@ -580,7 +549,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.removeChar.clicked.connect(callOnRemoveChar)
 
-        def showContextMenu(pos):
+        def showJBContextMenu(pos):
             cache = Cache()
             index = self.ui.tableViewJBs.model().mapToSource(self.ui.tableViewJBs.indexAt(pos)).row()
             item = cache.getJumpGatesAtIndex(index)
@@ -607,7 +576,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
 
         self.ui.tableViewJBs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.ui.tableViewJBs.customContextMenuRequested.connect(showContextMenu)
+        self.ui.tableViewJBs.customContextMenuRequested.connect(showJBContextMenu)
         return
 
     def _setupThreads(self):
@@ -794,6 +763,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 setSystemStatistic=self.mapStatisticCache,
                 setCampaignsSystems=evegate.getCampaignsSystemsIds(),
                 setIncursionSystems=evegate.getIncursionSystemsIds(),
+                setPlayerSovereignty=self.mapSovereignty,
                 setJumpBridges=cache.getJumpGates()
             )
             logging.info("Using dotlan map {}".format(region_name))
@@ -845,6 +815,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def _startStatisticTimer(self):
         self.statisticTimer = QTimer(self)
         self.statisticTimer.timeout.connect(self.statisticsThread.requestStatistics)
+        self.statisticsThread.requestLocations()
+        self.statisticsThread.requestStatistics()
+        self.statisticsThread.requestSovereignty()
         self.statisticTimer.start(30*1000)
 
     def _stopStatisticTimer(self):
@@ -858,12 +831,10 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         # Known player names
         if self.knownPlayerNames:
-            value = ",".join(self.knownPlayerNames)
-            Cache().putIntoCache("known_player_names", value, 60 * 60 * 24 * 2)
+            Cache().setKnownPlayerNames(self.knownPlayerNames)
 
-        if self.playerUsed:
-            value = ",".join(self.playerUsed)
-            Cache().putIntoCache("used_player_names", value, 60 * 60 * 24 * 30)
+        if self.monitoredPlayerNames:
+            Cache().setUsedPlayerNames(self.monitoredPlayerNames)
 
         # Program state to cache (to read it on next startup)
         settings = ((None, "restoreGeometry", str(self.saveGeometry()), True),
@@ -1234,7 +1205,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
         if system_name not in self.systems.keys():
-            if change_region and char_name in self.playerUsed:  # and evegate.getTokenOfChar(char):
+            if change_region and char_name in self.monitoredPlayerNames:  # and evegate.getTokenOfChar(char):
                 try:
                     for test in evegate.esiUniverseIds([system_name])["systems"]:
                         name = test["name"]
@@ -1525,6 +1496,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.mapStatisticCache = data["statistics"]
                 self.dotlan.addSystemStatistics(data['statistics'])
 
+            if "sovereignty" in data:
+                self.mapSovereignty = data['sovereignty']
+                self.dotlan.setSystemSovereignty(data['sovereignty'])
+
             if 'incursions' in data:
                 self.dotlan.setIncursionSystems(data['incursions'])
 
@@ -1584,7 +1559,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                     continue
                                 chars = nSystem.getLocatedCharacters()
                                 if len(chars) > 0:
-                                    if len(self.playerUsed.intersection(set(chars))) > 0 and message.user not in chars:
+                                    if len(self.monitoredPlayerNames.intersection(set(chars))) > 0 and message.user not in chars:
                                         self.trayIcon.showNotification(
                                             message,
                                             system.name,
@@ -1592,10 +1567,9 @@ class MainWindow(QtWidgets.QMainWindow):
                                             data["distance"])
 
         for name, systems in locale_to_set.items():
-            self._updateKnownPlayers(name)
+            self._updateKnownPlayerAndMenu(name)
             for sys_name in systems:
                 self.setLocation(name, sys_name, self.autoChangeRegion)
-                logging.info("Locale of '{}' changed to system '{}'".format(name, sys_name))
 
         if not rescan:
             self.updateMapView()
@@ -1618,7 +1592,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_region_name = evegate.esiUniverseNames([selected_region])[selected_region]
         return selected_region_name
 
-    def showContextMenu(self, event):
+    def showMapContextMenu(self, event):
         """ checks if there is a system below the mouse position, if the systems region differs from the current
             region, the menu item to change the current region is added.
         """

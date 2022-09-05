@@ -39,11 +39,6 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.ui.generateJumpBridgeButton.clicked.connect(self.generateJumpBridge)
         self.ui.generateJumpBridgeButton.setEnabled(evegate.esiCharName() is not None)
         self.ui.urlField.setText(url)
-        self.ui.saveButton.setEnabled(url != "")
-        self.ui.urlField.editingFinished.connect(
-            lambda:
-                self.ui.saveButton.setEnabled(self.ui.urlField.text() != "")
-        )
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
 
@@ -108,4 +103,3 @@ class JumpbridgeChooser(QtWidgets.QDialog):
                                            dir=os.path.join(os.path.expanduser("~")))[0]
         if str(path) != "":
             self.ui.urlField.setText(str(path))
-            self.ui.saveButton.setEnabled(self.ui.urlField.text() != "")

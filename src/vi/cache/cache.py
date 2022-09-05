@@ -23,6 +23,8 @@ import time
 import logging
 import vi.version
 import json
+import datetime
+
 from .dbstructure import updateDatabase
 
 
@@ -32,6 +34,26 @@ def to_blob(x):
 
 def from_blob(x):
     return x
+
+
+def currentEveTime():
+    """ Gets the current eve time utc now
+
+    Returns:
+        datetime.datetime: The current eve-time as a datetime.datetime
+    """
+    return datetime.datetime.utcnow()
+
+
+def secondsTillDowntime():
+    """ Return the seconds till the next downtime"""
+    now = currentEveTime()
+    target = now
+    if now.hour > 11:
+        target = target + datetime.timedelta(1)
+    target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
+    delta = target - now
+    return delta.seconds
 
 
 class Cache(object):
@@ -170,8 +192,8 @@ class Cache(object):
         """
 
         with Cache.SQLITE_WRITE_LOCK:
-            query = "DELETE FROM avatars WHERE datetime(modified+60*60*24*30*{},'unixepoch') < datetime()".\
-                format(months)
+            query = "DELETE FROM avatars WHERE datetime(modified+{},'unixepoch') < datetime()".\
+                format(60*60*24*30*months)
             self.con.execute(query)
             self.con.commit()
 
@@ -223,7 +245,7 @@ class Cache(object):
                                   .format(str(obj), setting[1], setting[2], e))
 
     def putJumpGate(self, src, dst, src_id=None, dst_id=None,
-                    json_src=None, json_dst=None, used=None, max_age=60 * 60 * 24 * 14):
+                    json_src=None, json_dst=None, used=None, max_age=60*60*24*14):
         """
         Updates a Ansiblex jump bride struct inside the database
         Args:
@@ -360,7 +382,7 @@ class Cache(object):
         """
         """
         with Cache.SQLITE_WRITE_LOCK:
-            query = "select json from ( SELECT row_number() OVER( ORDER BY NULL ) rownum, json from pointofinterest) where rownum = ?"
+            query = "select json from pointofinterest LIMIT 1 OFFSET ?"
             founds = self.con.execute(query, (inx,)).fetchall()
             if len(founds) == 0:
                 return None
@@ -378,11 +400,17 @@ class Cache(object):
             founds = self.con.execute(query, (destination_id,)).fetchall()
             self.con.commit()
 
-    def clearAPIKey(self, char) -> None:
+    def clearAPIKey(self, param) -> None:
         with Cache.SQLITE_WRITE_LOCK:
+            if isinstance(param, str):
+                query = "DELETE FROM players WHERE id IS ? or name IS ?"
+                self.con.execute(query, (param, param))
+            else:
+                query = "DELETE FROM players WHERE id IN (?) OR name IN (?)"
+                param_str = ', '.join([str(v) for v in param])
+                self.con.execute(query, (param_str, param_str))
             # data is a blob, so we have to change it to buffer
-            query = "DELETE FROM players WHERE id IS ? or name IS ?"
-            self.con.execute(query, (char, char))
+
             self.con.commit()
 
     def hasAPIKey(self, char) -> bool:
@@ -403,17 +431,67 @@ class Cache(object):
     def putAPIKey(self, key, max_age=60 * 60 * 24 * 90):
         self.clearAPIKey(key["CharacterName"])
         with Cache.SQLITE_WRITE_LOCK:
-            query = "INSERT INTO players (id, name, key, active, max_age) VALUES (?, ?, ?, ?, ?)"
-            self.con.execute(query, (key["CharacterID"], key["CharacterName"], json.dumps(key), 1, max_age))
+            query = "INSERT INTO players (id, name, key, active, modified, max_age) VALUES (?, ?, ?, ?, ?, ?)"
+            self.con.execute(query,
+                             (key["CharacterID"], key["CharacterName"], json.dumps(key), 0, time.time(), max_age))
             self.con.commit()
 
     def removeAPIKey(self, char_name):
         self.clearAPIKey(char_name)
 
     def getAPICharNames(self):
-        query = "SELECT name FROM players;"
-        res = self.con.execute(query).fetchall()
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT name FROM players WHERE key NOT NULL"
+            res = self.con.execute(query).fetchall()
         lst = list()
         for i in res:
             lst.append(i[0])
         return lst
+
+    def getKnownPlayerNames(self) -> set:
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT name FROM players"
+            res = {elem[0] for elem in self.con.execute(query).fetchall()}
+        return res
+
+    def setKnownPlayerNames(self, values: set):
+        current_players = self.getKnownPlayerNames()
+        with Cache.SQLITE_WRITE_LOCK:
+            for player_name in values:
+                if player_name not in current_players:
+                    query = "INSERT INTO players (name, modified, max_age) VALUES (?, ?)"
+                    self.con.execute(query, (player_name, time.time(), secondsTillDowntime()))
+            self.con.commit()
+
+    def getUsedPlayerNames(self) -> set:
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT name FROM players WHERE active=1"
+            res = {elem[0] for elem in self.con.execute(query).fetchall()}
+        return res
+
+    def setUsedPlayerNames(self, values: set):
+        current_players = self.getKnownPlayerNames()
+        with Cache.SQLITE_WRITE_LOCK:
+            for player_name in current_players | values:
+                if player_name not in current_players:
+                    query = "INSERT INTO players (active,name, max_age) VALUES (?, ?, {})".format(secondsTillDowntime())
+                else:
+                    query = "UPDATE  players set active = ?  WHERE name = ?"
+                self.con.execute(query, (player_name in values, player_name))
+            query = "UPDATE  players set modified = ?  WHERE active=1"
+            self.con.execute(query, (time.time(),))
+            self.con.commit()
+
+    def clearOutdatedPlayerNames(self):
+        """
+        Clears all Outdated player names
+
+        Returns:
+            None
+
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "DELETE FROM players WHERE datetime(modified+max_age,'unixepoch') < datetime() and key is null"
+            self.con.execute(query)
+            self.con.commit()
+

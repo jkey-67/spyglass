@@ -117,6 +117,8 @@ class Application(QApplication):
         self.con = QSqlDatabase.addDatabase("QSQLITE")
         self.con.setDatabaseName(cache.Cache.PATH_TO_CACHE)
         self.con.open()
+
+        cache.Cache().clearOutdatedPlayerNames()
         cache.Cache().clearOutdatedCache()
         cache.Cache().clearOutdatedImages(3)
 

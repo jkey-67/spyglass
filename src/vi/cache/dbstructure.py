@@ -61,10 +61,10 @@ def updateDatabase(oldVersion, con):
 
     if False:
         if oldVersion < 8:
-            queries += ["CREATE TABLE constellation (constellation_id INT PRIMARY KEY, name VARCHAR, position VARCHAR, region_id INT, systems VARCHAR )",
-                        "CREATE TABLE systems  (system_id INT PRIMARY KEY, name VARCHAR, constellation_id INT, VARCHAR, region_id INT, constellation_id INT, stargates VARCHAR )",
+            queries += ["ALTER TABLE players add COLUMN follow",
+                        "ALTER TABLE players add COLUMN system_id",
+                        "ALTER TABLE players add COLUMN intel_range",
                         "UPDATE version SET version = 8"]
-
 
     for query in queries:
         con.execute(query)

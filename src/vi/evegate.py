@@ -39,11 +39,13 @@ import webbrowser
 import base64
 import hashlib
 import secrets
+
 """ eve_api_key.py defines the secret api key CLIENTS_API_KEY = "1234...4321" 
 """
 import eve_api_key
-from vi.cache.cache import Cache
+from vi.cache.cache import Cache, currentEveTime, secondsTillDowntime
 from vi.version import VERSION
+
 ERROR = -1
 NOT_EXISTS = 0
 EXISTS = 1
@@ -361,15 +363,6 @@ def checkPlayerName(char_name):
     return ERROR
 
 
-def currentEveTime():
-    """ Gets the current eve time utc now
-
-    Returns:
-        datetime.datetime: The current eve-time as a datetime.datetime
-    """
-    return datetime.datetime.utcnow()
-
-
 def esiCharacters(char_id, use_outdated=False):
     cache_key = u"_".join(("playerinfo_id_", str(char_id)))
     used_cache = Cache()
@@ -397,16 +390,16 @@ def esiCheckCharacterToken(char_name:str)->bool:
     return checkTokenTimeLine(getTokenOfChar(char_name)) is not None
 
 
-def esiGetCharsOnlineStatus():
-    res =list()
+def esiGetCharsOnlineStatus() -> list:
+    result = list()
     for char in Cache().getAPICharNames():
-        itm = {
+        api_char = {
             "name": char,
             "online": esiCharactersOnline(char),
             "system":  esiUniverseSystems(esiCharactersLocation(char))
         }
-        res.append(itm)
-    return res
+        result.append(api_char)
+    return result
 
 
 def esiCharactersOnline(char_name:str)->bool:
@@ -428,7 +421,7 @@ def esiCharactersOnline(char_name:str)->bool:
         response = requests.get(url)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-            response.raise_for_status()
+            return False
         char_online = response.json()
         if "online" in char_online.keys():
             return char_online["online"]
@@ -506,7 +499,7 @@ def getCurrentCorpForCharId(char_id, use_outdated=True):
         return None
 
 
-def esiUniverseSystem_jumps():
+def esiUniverseSystem_jumps(use_outdated=False):
     """ Reads the informations for all solarsystems from the EVE API
         Reads a dict like:
             systemid: "jumps", "shipkills", "factionkills", "podkills"
@@ -516,7 +509,7 @@ def esiUniverseSystem_jumps():
     cache = Cache()
     # first the data for the jumps
     cache_key = "jumpstatistic"
-    jump_data = cache.getFromCache(cache_key)
+    jump_data = cache.getFromCache(cache_key, use_outdated)
 
     try:
         if jump_data is None:
@@ -536,7 +529,7 @@ def esiUniverseSystem_jumps():
 
         # now the further data
         cache_key = "systemstatistic"
-        system_data = cache.getFromCache(cache_key)
+        system_data = cache.getFromCache(cache_key,use_outdated)
 
         if system_data is None:
             system_data = {}
@@ -580,7 +573,7 @@ def secondsTillDowntime():
     target = now
     if now.hour > 11:
         target = target + datetime.timedelta(1)
-    target = datetime.datetime(target.year, target.month, target.day, 11, 0, 0, 0)
+    target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
     delta = target - now
     return delta.seconds
 
@@ -616,6 +609,7 @@ class APIServerThread(QThread):
     new_serve_aki_key = pyqtSignal(str)
     LIST_CHARS = list()
     WEB_SERVER_LOCK = threading.Lock()
+
     def __init__(self, params,browser=None):
         QThread.__init__(self)
         self.client_param = params
@@ -718,7 +712,6 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
     parent.apiThread.createBrowserWindow(string_params, parent)
 
 
-
 def esiOauthToken(client_param, auth_code:str, add_headers={}) -> str:
     """ gets the access token from the application logging
         fills the cache wit valid login data
@@ -792,7 +785,6 @@ class ApiKey(object):
             setattr(self, k, v)
 
 
-
 def getTokenOfChar(char_name) -> ApiKey:
     """gets the api key for char_name, or id from the cache, Result is the last ApiKey, or None
 
@@ -839,7 +831,7 @@ def refreshToken(params:ApiKey)->ApiKey:
         return params
 
 
-def checkTokenTimeLine(param:ApiKey)->ApiKey:
+def checkTokenTimeLine(param: ApiKey) -> ApiKey:
     """ double check the api timestamp, if expired the parm set will be updated
     """
     if param == None:
@@ -1326,7 +1318,7 @@ def esiUniverseSystems(system_id, use_outdated=False):
         req = "https://esi.evetech.net/latest/universe/systems/{}/?datasource=tranquility&language=en".format(system_id)
         response = requests.get(req)
         if response.status_code == 200:
-            cache.putIntoCache(cache_key, response.text)
+            cache.putIntoCache(cache_key, response.text, secondsTillDowntime())
             return response.json()
         else:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
@@ -1530,6 +1522,15 @@ def checkSpyglassVersionUpdate(current_version=VERSION):
                 "Pending version check, current version is {}.".format(checked)]
 
 
+def checkTheraConnections(system_name="Jita"):
+    req = "https://www.eve-scout.com/api/wormholes?systemSearch={}".format(system_name)
+    response = requests.get(req)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+
 def getSpyglassUpdateLink(ver=VERSION):
     req = "https://github.com/jkey-67/spyglass/releases/latest"
     response = requests.get(req)
@@ -1540,13 +1541,13 @@ def getSpyglassUpdateLink(ver=VERSION):
     pos_exe = response.text.find(".exe")
     return "https://github.com/{}.exe".format(response.text[pos_start:pos_exe])
 
+
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
-    res =Cache().getOutdatedJumpGates()
-    for itm in res:
-        getAllJumpGates( "nele McCool",itm[0],itm[1] )
-    #openWithEveonline()
-    ret = esiCorporationsStructures("nele McCool", 98059534)
-    Cache().clearOutdatedJumpGates()
-    id_structures = getCampaignsStructureIds()
+    res = esiUniverseSystems(30000732)
+    res = currentEveTime()
+    res = secondsTillDowntime()
+    res = time.time()
+    res = checkTheraConnections()
+
