@@ -529,6 +529,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def callOnSelChanged(name):
             evegate.setEsiCharName(name)
+            self.rescanIntel()
 
         self.ui.currentESICharacter.clear()
         self.ui.currentESICharacter.addItems(Cache().getAPICharNames())

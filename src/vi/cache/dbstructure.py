@@ -17,6 +17,8 @@
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 
+import time
+
 """
 you can add external databaseupdates to database updates.
 they should be a tuple like (query, condition)
@@ -59,12 +61,13 @@ def updateDatabase(oldVersion, con):
                     "ALTER TABLE jumpbridge add COLUMN json_dst",
                     "UPDATE version SET version = 7"]
 
-    if False:
-        if oldVersion < 8:
-            queries += ["ALTER TABLE players add COLUMN follow",
-                        "ALTER TABLE players add COLUMN system_id",
-                        "ALTER TABLE players add COLUMN intel_range",
-                        "UPDATE version SET version = 8"]
+    if oldVersion < 8:
+        queries += ["ALTER TABLE players add COLUMN modified INT;",
+                    "ALTER TABLE players add COLUMN system_id INT;",
+                    "ALTER TABLE players add COLUMN intel_range INT;",
+                    "DROP TABLE playernames;",
+                    "UPDATE players SET modified = {};".format(time.time()),
+                    "UPDATE version SET version = 8"]
 
     for query in queries:
         con.execute(query)
