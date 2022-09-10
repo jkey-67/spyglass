@@ -32,7 +32,8 @@ from PySide6 import QtGui, QtCore, QtWidgets
 from PySide6.QtCore import QPoint, QPointF, QByteArray, QSortFilterProxyModel, QTimer
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, QStyledItemDelegate, QApplication, QAbstractItemView
+from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, \
+    QStyledItemDelegate, QApplication, QAbstractItemView
 
 from vi import evegate
 from vi import dotlan, filewatcher
@@ -46,6 +47,7 @@ from vi.threads import AvatarFindThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu, POIContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser
+from vi.clipboard import evaluateClipboardData
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtSql import QSqlQueryModel
 
@@ -132,10 +134,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if update_splash:
                 update_splash(string)
 
+        update_splash_window_info("Init GUI application")
+
         QtWidgets.QMainWindow.__init__(self)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        update_splash_window_info("Init GUI application")
+
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "eve-sso-login-black-small.png"))),
                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -143,7 +147,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.connectToEveOnline.setIcon(icon)
         self.ui.connectToEveOnline.setIconSize(QtCore.QSize(163, 38))
         self.ui.connectToEveOnline.setFlat(False)
-
+        self.systems = []
+        self.dotlan = None
         self.setWindowTitle(
             "DENCI-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
         self.taskbarIconQuiescent = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
@@ -157,18 +162,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.oldClipboardContent = ""
         self.trayIcon = tray_icon
         self.trayIcon.activated.connect(self.systemTrayActivated)
-        self.clipboard = QtWidgets.QApplication.clipboard()
+        self.clipboard = QApplication.clipboard()
         self.clipboard.clear(mode=self.clipboard.Clipboard)
         self.alarmDistance = 0
         self.lastStatisticsUpdate = 0
         self.chatEntries = []
         self.ui.frameButton.setVisible(False)
-        self.scanIntelForKosRequestsEnabled = False
         self.initialMapPosition = None
         self.autoChangeRegion = False
         self.mapPositionsDict = {}
         self.mapStatisticCache = evegate.esiUniverseSystem_jumps(use_outdated=True)
         self.mapSovereignty = evegate.getPlayerSovereignty(use_outdated=True, fore_refresh=False, show_npc=False)
+        self.mapIncursions = evegate.esiIncursions(use_outdated=True)
+        self.mapCampaigns = evegate.esiSovereigntyCampaigns(use_outdated=True)
+        self.mapJumpGates = Cache().getJumpGates()
         self.invertWheel = False
         self.autoRescanIntelEnabled = Cache().getFromCache("changeAutoRescanIntel")
 
@@ -518,7 +525,11 @@ class MainWindow(QtWidgets.QMainWindow):
         model = QSqlQueryModel()
 
         def callOnUpdate():
+            self.mapJumpGates = Cache().getJumpGates()
+            if self.dotlan:
+                self.dotlan.setJumpbridges(self.mapJumpGates)
             model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch','localtime')as 'last update', ( case used when 2 then 'okay' else 'probably okay' END ) 'Paired' FROM jumpbridge")
+
         callOnUpdate()
 
         self.jbs_changed.connect(callOnUpdate)
@@ -659,7 +670,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Add a contextual menu to the mapView
         def mapContextMenuEvent(event):
-            # if QApplication.activeWindow() or QApplication.focusWidget():
             self.trayIcon.contextMenu().updateMenu(None)
             self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
 
@@ -709,8 +719,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def clearJumpGate():
             Cache().clearJumpGate(self.trayIcon.contextMenu().currentSystem.name)
-            self.dotlan.setJumpbridges(Cache().getJumpGates())
             self.jbs_changed.emit()
+
         self.trayIcon.contextMenu().clearJumpGate.triggered.connect(clearJumpGate)
 
         def addWaypoint(checked):
@@ -757,16 +767,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         try:
             self.dotlan = dotlan.Map(
-                region=region_name,
-                svgFile=svg,
-                setJumpMapsVisible=self.ui.jumpbridgesButton.isChecked(),
-                setSatisticsVisible=self.ui.statisticsButton.isChecked(),
-                setSystemStatistic=self.mapStatisticCache,
-                setCampaignsSystems=evegate.getCampaignsSystemsIds(),
-                setIncursionSystems=evegate.getIncursionSystemsIds(),
-                setPlayerSovereignty=self.mapSovereignty,
-                setJumpBridges=cache.getJumpGates()
-            )
+                    region=region_name,
+                    svgFile=svg,
+                    setJumpMapsVisible=self.ui.jumpbridgesButton.isChecked(),
+                    setSatisticsVisible=self.ui.statisticsButton.isChecked(),
+                    setSystemStatistic=self.mapStatisticCache,
+                    setCampaignsSystems=self.mapCampaigns,
+                    setIncursionSystems=self.mapIncursions,
+                    setPlayerSovereignty=self.mapSovereignty,
+                    setJumpBridges=self.mapJumpGates)
+
+            self.systems = self.dotlan.systems
+
             logging.info("Using dotlan map {}".format(region_name))
         except dotlan.DotlanException as e:
             logging.critical(e)
@@ -780,8 +792,8 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.warning(diag_text)
             QMessageBox.warning(self, "Using map from cache", diag_text, QMessageBox.Ok)
 
-        self.systems = self.dotlan.systems
         logging.debug("Creating chat parser for the current map")
+
         self.chatparser = ChatParser(self.pathToLogs, self.room_names, self.systems, self.intelTimeGroup.intelTime)
 
         # Update the new map view, then clear old statistics from the map and request new
@@ -854,7 +866,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "setSoundVolume", SoundManager().soundVolume),
                     (None, "changeFrameless", self.ui.framelessWindowAction.isChecked()),
                     (None, "changeUseSpokenNotifications", self.ui.useSpokenNotificationsAction.isChecked()),
-                    (None, "changeAutoScanIntel", self.scanIntelForKosRequestsEnabled),
                     (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled),
                     (None, "changeAutoChangeRegion", self.autoChangeRegion),
                     (None, "wheelDirChanged", self.invertWheel),
@@ -1080,7 +1091,6 @@ class MainWindow(QtWidgets.QMainWindow):
             )
 
         cache.clearOutdatedJumpGates()
-        self.dotlan.setJumpbridges(Cache().getJumpGates())
         self.jbs_changed.emit()
         self.updateMapView()
 
@@ -1089,86 +1099,23 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         content = str(self.clipboard.text())
         if content != self.oldClipboardContent:
-            self.oldClipboardContent = content
-            simple_text = parse("{info}<br>{}", content)
-            jump_bridge_text = parse("{src} » {dst} - {info}<br>{}", content)
-            if jump_bridge_text is None:
-                jump_bridge_text = parse("{src} » {dst} - {info}\n{}", content)
-            if jump_bridge_text and len(jump_bridge_text.named)==3:
-                cache = Cache()
-                structure = evegate.esiSearch(
-                    esi_char_name=evegate.esiCharName(),
-                    search_text="{} » {}".format(jump_bridge_text["src"], jump_bridge_text["dst"]),
-                    search_category=evegate.category.structure)
-                if "structure" not in structure.keys():
-                    cache.clearJumpGate(jump_bridge_text["dst"])
-                    cache.clearJumpGate(jump_bridge_text["src"])
-                else:
-                    json_src = evegate.esiUniverseStructure(
-                        esi_char_name=evegate.esiCharName(),
-                        structure_id=structure["structure"][0])
-                    json_dst = evegate.esiUniverseStructure(
-                        esi_char_name=evegate.esiCharName(),
-                        structure_id=structure["structure"][1])
-
-                    cache.putJumpGate(
-                        src=jump_bridge_text.named["src"],
-                        dst=jump_bridge_text.named["dst"],
-                        src_id=structure["structure"][0] if structure and len(structure["structure"]) == 2 else None,
-                        dst_id=structure["structure"][1] if structure and len(structure["structure"]) == 2 else None,
-                        json_src=json_src,
-                        json_dst=json_dst
-                    )
-                    cache.clearOutdatedJumpGates()
-                    self.dotlan.setJumpbridges(Cache().getJumpGates())
-                    self.jbs_changed.emit()
-
-            else:
-                if simple_text is None:
-                    simple_text = parse("<url=showinfo:{type_id}//{structure_id} {}>{info}</url>", content)
-                    if simple_text and len(simple_text.named) != 3:
-                        simple_text = None
-
-                if simple_text is None:
-                    simple_text = parse('<a href="showinfo:{type_id}//{structure_id}">{src} » {dst} - {info}</a>{}',
-                                        content)
-                    if simple_text and len(simple_text.named) == 5:
-                        self.AppendJumpGate(simple_text.named["src"], simple_text.named["dst"])
-                        return
-                    else:
-                        simple_text = None
-
-                if simple_text is None:
-                    simple_text = parse('{src} » {dst} - {info}', content)
-                    if simple_text and len(simple_text.named) == 3:
-                        self.AppendJumpGate(simple_text.named["src"], simple_text.named["dst"],
-                                            sanity_check=False)
-                        return
-                    else:
-                        simple_text = None
-
-                if simple_text is None:
-                    simple_text = parse('{sys} - {info}', content)
-                    if simple_text and len(simple_text.named) != 2:
-                        simple_text = None
-
-                if simple_text:
-                    cache = Cache()
-                    info = simple_text.named
-                    if "structure_id" in info.keys():
-                        station_info = evegate.esiUniverseStations(info["structure_id"])
-                        if station_info:
-                            cache.putPOI(station_info)
-                            self.poi_changed.emit()
-                            return
-
-                        structure_info = evegate.esiUniverseStructure(
-                            esi_char_name=evegate.esiCharName(),
-                            structure_id=info["structure_id"])
-                        if structure_info:
-                            cache.putPOI(structure_info)
-                            self.poi_changed.emit()
-                            return
+            cache = Cache()
+            content = str(self.clipboard.text())
+            cb_type, cb_data = evaluateClipboardData(content)
+            if cb_type == "poi":
+                if cache.putPOI(cb_data):
+                    self.poi_changed.emit()
+            elif cb_type == "jumpbridge":
+                cache.putJumpGate(
+                    src=cb_data["src"],
+                    dst=cb_data["dst"],
+                    src_id=cb_data["id_src"],
+                    dst_id=cb_data["id_dst"],
+                    json_src=cb_data["json_src"],
+                    json_dst=cb_data["json_dst"]
+                )
+                cache.clearOutdatedJumpGates()
+                self.jbs_changed.emit()
 
     def mapLinkClicked(self, url: QtCore.QUrl):
         system_name = str(url.path().split("/")[-1]).upper()
@@ -1329,7 +1276,6 @@ class MainWindow(QtWidgets.QMainWindow):
                             data.append(parts)
                 for parts in data:
                     cache.putJumpGate(src=parts[0], dst=parts[2])
-                self.dotlan.setJumpbridges(cache.getJumpGates())
                 self.jbs_changed.emit()
             Cache().putIntoCache("jumpbridge_url", url)
 
@@ -1485,27 +1431,42 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.showMinimized()
 
     def updateAvatarOnChatEntry(self, entry, data):
-        updated = entry.updateAvatar(data)
-        if not updated:
-            self.avatarFindThread.addChatEntry(entry, clearCache=True)
-        else:
+        """
+        Assigns the blob data as pixmap to the entry, if a pixmap coud be loaded directly,m otherwise
+        the blob will be loaded wia avatar thread
+        Args:
+            entry: new message
+            data: blob of image
+
+        Returns:
+            None: emits avatar_loaded
+        """
+        if entry.updateAvatar(data):
             self.avatar_loaded.emit(entry.message.user, data)
+        else:
+            self.avatarFindThread.addChatEntry(entry, clearCache=True)
 
     def updateStatisticsOnMap(self, data):
         if data["result"] == "ok":
             if "statistics" in data:
                 self.mapStatisticCache = data["statistics"]
-                self.dotlan.addSystemStatistics(data['statistics'])
+                if self.dotlan:
+                    self.dotlan.addSystemStatistics(data['statistics'])
 
             if "sovereignty" in data:
                 self.mapSovereignty = data['sovereignty']
-                self.dotlan.setSystemSovereignty(data['sovereignty'])
+                if self.dotlan:
+                    self.dotlan.setSystemSovereignty(data['sovereignty'])
 
             if 'incursions' in data:
-                self.dotlan.setIncursionSystems(data['incursions'])
+                self.mapIncursions = data['incursions']
+                if self.dotlan:
+                    self.dotlan.setIncursionSystems(data['incursions'])
 
             if 'campaigns' in data:
-                self.dotlan.setCampaignsSystems(data['campaigns'])
+                self.mapCampaigns = data['campaigns']
+                if self.dotlan:
+                    self.dotlan.setCampaignsSystems(data['campaigns'])
 
             if "registered-chars" in data:
                 first_one = True

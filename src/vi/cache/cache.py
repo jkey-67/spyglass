@@ -353,12 +353,26 @@ class Cache(object):
                     "json_src": eval(founds[0][3])if founds[0][3] != "null" else None
                 }
 
-    def putPOI(self, data):
+    def putPOI(self, data) -> bool:
         """ data can be structure or station dict
+
+        Returns:
+            bool:True if item added
         """
         if data is None:
-            return
+            return False
         with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT name FROM pointofinterest WHERE id = ?"
+            if "station_id" in data:
+                founds = self.con.execute(query, (data["station_id"],)).fetchall()
+            elif "structure_id" in data:
+                founds = self.con.execute(query, (data["structure_id"],)).fetchall()
+            else:
+                return False
+
+            if len(founds) != 0:
+                return False
+
             # data is a blob, so we have to change it to buffer
             if "station_id" in data.keys():
                 query = "DELETE FROM pointofinterest WHERE id IS ?"
@@ -371,6 +385,7 @@ class Cache(object):
                 query = "INSERT INTO pointofinterest (id,type,name,json) VALUES (?, ?, ?, ?)"
                 self.con.execute(query, (data["structure_id"], data["type_id"], data["name"], json.dumps(data)))
             self.con.commit()
+            return True
 
     def setPOIItemInfoText(self, id_poi, info_poi):
         with Cache.SQLITE_WRITE_LOCK:
@@ -459,7 +474,7 @@ class Cache(object):
         with Cache.SQLITE_WRITE_LOCK:
             for player_name in values:
                 if player_name not in current_players:
-                    query = "INSERT INTO players (name, modified, max_age) VALUES (?, ?)"
+                    query = "INSERT INTO players (name, modified, max_age) VALUES (?, ?, ?)"
                     self.con.execute(query, (player_name, time.time(), secondsTillDowntime()))
             self.con.commit()
 
