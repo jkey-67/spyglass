@@ -112,22 +112,24 @@ class MapStatisticsThread(QThread):
         self.queue.put(["location"])
 
     def run(self):
-        while True:
+        while self.active:
             tsk = self.queue.get()
             if not self.active:
                 return
             try:
                 statistics_data = dict({"result": "pending"})
-                logging.debug("MapStatisticsThread fetching  statistic .")
                 if "sovereignty" in tsk:
+                    logging.info("MapStatisticsThread fetching  sovereignty.")
                     statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=False, show_npc=False)
 
                 if "statistics" in tsk:
+                    logging.info("MapStatisticsThread fetching  statistic.")
                     statistics_data["statistics"] = evegate.esiUniverseSystem_jumps()
                     statistics_data["incursions"] = evegate.getIncursionSystemsIds(False)
                     statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(False)
 
                 if "location" in tsk:
+                    logging.info("MapStatisticsThread fetching  location.")
                     statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
 
                 logging.debug("MapStatisticsThread fetching  statistic succeeded.")
