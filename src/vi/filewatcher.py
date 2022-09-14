@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-
+import logging
 import os
 import stat
 import time
+import datetime
+import threading
 
 from PySide6 import QtCore
 from PySide6.QtCore import Signal as pyqtSignal
@@ -36,60 +38,70 @@ We use here also a QFileWatcher, only to the directory. It will notify it
 if a new file was created. We watch only the newest (last 24h), not all!
 """
 
-DEFAULT_MAX_AGE = 60 * 60 * 24
-
 
 class FileWatcher(QtCore.QThread):
 
-    file_change = pyqtSignal(object,object)
-
-    def __init__(self, path, maxAge=DEFAULT_MAX_AGE):
+    file_change = pyqtSignal(str, bool)
+    FILE_LOCK = threading.Lock()
+    def __init__(self, path):
         QtCore.QThread.__init__(self)
         self.path = path
-        self.maxAge = maxAge
         self.files = {}
         self.updateWatchedFiles()
         self.fileWatcher = QtCore.QFileSystemWatcher()
         self.fileWatcher.directoryChanged.connect(self.directoryChanged)
         self.fileWatcher.addPath(path)
-        self.paused = True
         self.active = True
 
     def directoryChanged(self, path_name):
-        self.updateWatchedFiles()
+        with FileWatcher.FILE_LOCK:
+            self.updateWatchedFiles()
 
     def run(self):
-        while True:
-            time.sleep(0.5)
-            if not self.active:
-                return
-            if self.paused:
-                continue
-            for path, modified in self.files.items():
-                path_stat = os.stat(path)
-                if not stat.S_ISREG(path_stat.st_mode):
-                    continue
-                if modified < path_stat.st_size:
-                    self.file_change.emit(path, False)
-                self.files[path] = path_stat.st_size
+        while self.active:
+            try:
+                time.sleep(0.5)
+                if not self.active:
+                    return
+                with FileWatcher.FILE_LOCK:
+                    for path, size_file in self.files.items():
+                        path_stat = os.stat(path)
+                        if not stat.S_ISREG(path_stat.st_mode):
+                            continue
+                        if size_file < path_stat.st_size:
+                            logging.info("Update file {}".format(path))
+                            self.file_change.emit(path, False)
+                        self.files[path] = path_stat.st_size
+            except Exception as e:
+                logging.critical(e)
 
     def quit(self):
         self.active = False
         QtCore.QThread.quit(self)
 
+    def lastDowntime(self):
+        """ Return the timestamp from the last downtime
+        """
+        target = datetime.datetime.utcnow()
+        if target.hour < 11 and target.minute < 5:
+            target = target - datetime.timedelta(1)
+        target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
+        return target.timestamp()
+
     def updateWatchedFiles(self):
         now = time.time()
         path = self.path
         files_in_dir = {}
+        last_downtime = self.lastDowntime()
         for f in os.listdir(path):
             try:
                 full_path = os.path.join(path, f)
                 path_stat = os.stat(full_path)
                 if not stat.S_ISREG(path_stat.st_mode):
                     continue
-                if self.maxAge and ((now - path_stat.st_mtime) > self.maxAge):
+                if path_stat.st_mtime < last_downtime:
                     continue
                 files_in_dir[full_path] = self.files.get(full_path, 0)
-            except :
-                pass
+            except Exception as e:
+                logging.error(e)
         self.files = files_in_dir
