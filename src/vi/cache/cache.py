@@ -245,7 +245,7 @@ class Cache(object):
                                   .format(str(obj), setting[1], setting[2], e))
 
     def putJumpGate(self, src, dst, src_id=None, dst_id=None,
-                    json_src=None, json_dst=None, used=None, max_age=60*60*24*14):
+                    json_src=None, json_dst=None, used=None, max_age=60*60*24*14) -> bool:
         """
         Updates a Ansiblex jump bride struct inside the database
         Args:
@@ -259,13 +259,13 @@ class Cache(object):
             max_age: purge time
 
         Returns:
-
+            bool; true if added false,  if a duplicate
         """
         with Cache.SQLITE_WRITE_LOCK:
             query = "UPDATE jumpbridge SET modified = ? WHERE (src IS ? AND dst IS ?) OR (dst IS ? and src IS ?)"
             if self.con.execute(query, (time.time(), src, dst, src, dst)).rowcount == 1:
                 self.con.commit()
-                return
+                return False
             query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ? or src LIKE ? or dst LIKE ?"
             self.con.execute(query, (src, src, dst, dst))
             query = "INSERT INTO jumpbridge (src, dst, used, id_src, id_dst, json_src, json_dst, modified, maxage) "\
@@ -273,6 +273,7 @@ class Cache(object):
             self.con.execute(query, (src, dst, used, src_id, dst_id,
                                      json.dumps(json_src), json.dumps(json_dst), time.time(), max_age))
             self.con.commit()
+            return True
 
     def clearJumpGate(self, src) -> None:
         """ Removes all items from the jumpbridge table where FROM or TO match str
@@ -320,7 +321,7 @@ class Cache(object):
     def getPlayerSovereignty(self) -> dict:
         sovereignty = self.getFromCache("player_sovereignty", True)
         if sovereignty:
-            return eval(sovereignty)
+            return json.loads(sovereignty)
         else:
             return dict()
 
@@ -350,7 +351,7 @@ class Cache(object):
                     "src": founds[0][0],
                     "dst": founds[0][1],
                     "id_src": founds[0][2],
-                    "json_src": eval(founds[0][3])if founds[0][3] != "null" else None
+                    "json_src": json.loads(founds[0][3])if founds[0][3] != "null" else None
                 }
 
     def putPOI(self, data) -> bool:
@@ -402,7 +403,7 @@ class Cache(object):
             if len(founds) == 0:
                 return None
             else:
-                ret_val = eval(founds[0][0])
+                ret_val = json.loads(founds[0][0])
                 if "station_id" in ret_val.keys():
                     ret_val["destination_id"] = ret_val["station_id"]
                 if "structure_id" in ret_val.keys():
