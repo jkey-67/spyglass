@@ -53,6 +53,7 @@ sys.excepthook = exceptHook
 backGroundColor = "#c6d9ec"
 
 
+
 class Application(QApplication):
     def __init__(self, args):
         super(Application, self).__init__(args)
@@ -70,24 +71,35 @@ class Application(QApplication):
             painter.drawText(200, 0, "Snapshot Version")
             painter.restore()
             painter.end()
-        splash = QtWidgets.QSplashScreen(pixmap)
-        splash.show()
+        self.splash = QtWidgets.QSplashScreen(pixmap)
+        self.splash.show()
         QApplication.processEvents()
+
+        def change_splash_text(txt):
+            logging.info(txt)
+            if self.splash and len(txt):
+                self.splash.showMessage("   {}".format(txt),
+                               QtCore.Qt.AlignLeft,
+                               QtGui.QColor(0x808000))
+
         # Set up paths
         chat_log_directory = ""
         if len(sys.argv) > 1:
             chat_log_directory = sys.argv[1]
-
+        change_splash_text("fetch path and os")
         if not os.path.exists(chat_log_directory):
             if sys.platform.startswith("darwin"):
+                change_splash_text("fetch path anf os, darwin detected")
                 chat_log_directory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
                 if not os.path.exists(chat_log_directory):
                     chat_log_directory = os.path.join(os.path.expanduser("~"), "Library", "Application Support",
                                                     "Eve Online",
                                                     "p_drive", "User", "My Documents", "EVE", "logs", "Chatlogs")
             elif sys.platform.startswith("linux"):
+                change_splash_text("fetch path anf os, linux detected")
                 chat_log_directory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
             elif sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
+                change_splash_text("fetch path anf os, windows detected")
                 import ctypes.wintypes
                 buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
                 ctypes.windll.shell32.SHGetFolderPathW(0, 0x05, 0, 0, buf)
@@ -109,7 +121,8 @@ class Application(QApplication):
             QMessageBox.critical(self, "No path to Logs", "No logs found at: " + chat_log_directory, QMessageBox.Close)
             sys.exit(1)
 
-        # Setting local directory for cache and logging
+        change_splash_text("setting local directory for cache and logging")
+
         spyglass_dir = os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)), "spyglass")
         if not os.path.exists(spyglass_dir):
             os.mkdir(spyglass_dir)
@@ -118,6 +131,7 @@ class Application(QApplication):
         self.con.setDatabaseName(cache.Cache.PATH_TO_CACHE)
         self.con.open()
 
+        change_splash_text("cleaning up outdated cache")
         cache.Cache().clearOutdatedPlayerNames()
         cache.Cache().clearOutdatedCache()
         cache.Cache().clearOutdatedImages(3)
@@ -162,16 +176,15 @@ class Application(QApplication):
         tray_icon = systemtray.TrayIcon(self)
         tray_icon.show()
 
-        def change_splash_text(txt):
-            if len(txt):
-                splash.showMessage("   {}".format(txt),
-                                   QtCore.Qt.AlignLeft,
-                                   QtGui.QColor(0x808000))
+        change_splash_text("init main windows")
         QApplication.processEvents()
         self.mainWindow = viui.MainWindow(chat_log_directory, tray_icon, change_splash_text)
+        self.splash.finish(self.mainWindow)
         self.mainWindow.show()
         self.mainWindow.raise_()
         logging.info("Initialisation completed =======================================================================")
+
+
 
     def __del__(self):
         logging.info("Spyglass terminated normal =====================================================================")

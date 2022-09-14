@@ -71,7 +71,15 @@ class ChatEntryWidget(QtWidgets.QWidget):
                                                                                          text=self.message.message.rstrip(" \r\n").lstrip(" \r\n"))
         self.ui.textLabel.setText(text)
 
-    def updateAvatar(self, avatar_data):
+    def updateAvatar(self, avatar_data) -> bool:
+        """
+            Updates the label image of the chat-entry widget
+        Args:
+            avatar_data: blob of the image
+
+        Returns:
+            False: if no image voud be loaded from the blob
+        """
         image = QImage.fromData(avatar_data)
         pixmap = QPixmap.fromImage(image)
         if pixmap.isNull():

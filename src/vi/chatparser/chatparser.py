@@ -37,12 +37,11 @@ class ChatParser(object):
     """ ChatParser will analyze every new line that was found inside the Chatlogs.
     """
 
-    def __init__(self, path=None, rooms=None, systems=None, inteltime=20):
+    def __init__(self, path=None, rooms=None, inteltime=20):
         """ path = the path with the logs
             rooms = the rooms to parse"""
         self.path = path  # the path with the chatlog
         self.rooms = rooms  # the rooms to watch (excl. local)
-        self.systems = systems  # the known systems as dict name: system
         self.intelTime = inteltime  # 20 min intel time as default
         self.fileData = {}  # information about the files in the directory
         self.knownMessages = []  # message we already analyzed
@@ -52,13 +51,22 @@ class ChatParser(object):
         if path is not None:
             self._collectInitFileData(path)
 
+    def lastDowntime(self):
+        """ Return the timestamp from the last downtime
+        """
+        target = datetime.datetime.utcnow()
+        if target.hour < 11 and target.minute < 5:
+            target = target - datetime.timedelta(1)
+        target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
+        return target.timestamp()
+
     def _collectInitFileData(self, path):
         current_time = time.time()
-        max_diff = 60 * 60 * 24  # what is 1 day in seconds
+        last_downtime = self.lastDowntime()  # 60 * 60 * 24  # what is 1 day in seconds
         for filename in os.listdir(path):
             full_path = os.path.join(path, filename)
             file_time = os.path.getmtime(full_path)
-            if current_time - file_time < max_diff:
+            if file_time > last_downtime:
                 self.addFile(full_path)
 
     @staticmethod
@@ -104,7 +112,7 @@ class ChatParser(object):
         self.fileData[path]["lines"] = len(lines)
         return lines
 
-    def _lineToMessage(self, line, roomname):
+    def _lineToMessage(self, line, roomname, systems_on_map):
 
         if roomname not in self.rooms:
             return None
@@ -145,7 +153,7 @@ class ChatParser(object):
         while parseUrls(rtext):
             continue
 
-        while parseSystems(self.systems, rtext, systems):
+        while parseSystems(systems_on_map, rtext, systems):
             continue
         parsed_status = parseStatus(rtext)
         status = parsed_status if parsed_status is not None else states.ALARM
@@ -204,12 +212,16 @@ class ChatParser(object):
                 message = Message("", "", timestamp, charname, [system, ], "", "", status)
         return message
 
-    def fileModified(self, path, rescan=False):
+    def fileModified(self, path, systems_on_map, rescan=False):
         messages = []
         if path in self.ignoredPaths:
             return []
-        filename = os.path.basename(path)
-        roomname = self.roomNameFromFileName(filename)
+
+        if rescan:
+            self.knownMessages.clear()
+
+        file_name = os.path.basename(path)
+        room_name = self.roomNameFromFileName(file_name)
         if path not in self.fileData or rescan:
             # seems eve created a new file. New Files have 12 lines header
             self.fileData[path] = {"lines": 13}
@@ -221,10 +233,10 @@ class ChatParser(object):
         for line in lines[old_length - 1:]:
             line = line.strip()
             if len(line) > 2:
-                if roomname in LOCAL_NAMES:
+                if room_name in LOCAL_NAMES:
                     message = self._parseLocal(path, line)
                 else:
-                    message = self._lineToMessage(line, roomname)
+                    message = self._lineToMessage(line, room_name, systems_on_map)
                 if message:
                     messages.append(message)
         return messages

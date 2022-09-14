@@ -38,6 +38,7 @@ from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, \
 from vi import evegate
 from vi import dotlan, filewatcher
 from vi import states
+from vi.filewatcher import FileWatcher
 from vi.ui import JumpbridgeChooser, ChatroomChooser, RegionChooser, SystemChat, ChatEntryWidget
 
 from vi.cache.cache import Cache
@@ -147,7 +148,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.connectToEveOnline.setIcon(icon)
         self.ui.connectToEveOnline.setIconSize(QtCore.QSize(163, 38))
         self.ui.connectToEveOnline.setFlat(False)
-        self.systems = []
         self.dotlan = None
         self.setWindowTitle(
             "DENCI-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
@@ -176,6 +176,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapIncursions = evegate.esiIncursions(use_outdated=True)
         self.mapCampaigns = evegate.esiSovereigntyCampaigns(use_outdated=True)
         self.mapJumpGates = Cache().getJumpGates()
+        self.setupMap()
         self.invertWheel = False
         self.autoRescanIntelEnabled = Cache().getFromCache("changeAutoRescanIntel")
 
@@ -263,7 +264,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionAuto_switch.triggered.connect(self.changeAutoRegion)
 
         update_splash_window_info("Update chat parser")
-        self.chatparser = ChatParser()
+        self.chatparser = ChatParser(self.pathToLogs, self.room_names, self.intelTimeGroup.intelTime)
         self._wireUpUIConnections()
         self._recallCachedSettings()
         self._setupThreads()
@@ -275,8 +276,6 @@ class MainWindow(QtWidgets.QMainWindow):
         initial_theme = Cache().getFromCache("theme")
         if initial_theme:
             self.changeTheme(initial_theme)
-        else:
-            self.setupMap()
 
         update_splash_window_info("Double check for updates on github...")
         update_avail = evegate.checkSpyglassVersionUpdate()
@@ -295,7 +294,17 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.info(update_avail[1])
             update_splash_window_info(update_avail[1])
             self.ui.updateAvail.hide()
+        update_splash_window_info("Rescan the intel files.")
+        self.rescanIntel()
         update_splash_window_info("Initialisation succeeded.")
+
+    @property
+    def systems(self):
+        return self.dotlan.systems
+
+    @property
+    def systemsById(self):
+        return self.dotlan.systemsById
 
     def show(self):
         QtWidgets.QMainWindow.show(self)
@@ -447,7 +456,7 @@ class MainWindow(QtWidgets.QMainWindow):
         def hoveCheck(pos: QPoint) -> bool:
             """returns true if the mouse is above a system, else false
             """
-            for name, system in self.dotlan.systems.items():
+            for name, system in self.systems.items():
                 val = system.mapCoordinates
                 rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
                 if rc.contains(pos):
@@ -456,7 +465,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.mapView.hoveCheck = hoveCheck
 
         def doubleClicked(pos: QPoint):
-            for name, system in self.dotlan.systems.items():
+            for name, system in self.systems.items():
                 val = system.mapCoordinates
                 rc = QtCore.QRectF(val["x"],
                                    val["y"],
@@ -635,15 +644,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def focusMapOnSystem(self, system_id):
         """sets the system defined by the id to the focus of the map
-         """
+        """
         if system_id is None:
             return
-        system_name = evegate.esiUniverseNames([str(system_id)])[system_id]
-        if system_name in self.systems.keys():
+        if system_id in self.systemsById:
+            selected_system = self.systemsById[system_id]
             view_center = self.ui.mapView.size() / 2
-            pt_system = QPointF(self.systems[system_name].mapCoordinates["center_x"]
+            pt_system = QPointF(selected_system.mapCoordinates["center_x"]
                                 * self.ui.mapView.zoom-view_center.width(),
-                                self.systems[system_name].mapCoordinates["center_y"]
+                                selected_system.mapCoordinates["center_y"]
                                 * self.ui.mapView.zoom-view_center.height())
             self.ui.mapView.setScrollPosition(pt_system)
 
@@ -748,7 +757,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def setupMap(self):
         logging.debug("setupMap started...")
         cache = Cache()
-        self.filewatcherThread.paused = True
         region_name = cache.getFromCache("region_name")
 
         if not region_name:
@@ -777,8 +785,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     setPlayerSovereignty=self.mapSovereignty,
                     setJumpBridges=self.mapJumpGates)
 
-            self.systems = self.dotlan.systems
-
             logging.info("Using dotlan map {}".format(region_name))
         except dotlan.DotlanException as e:
             logging.critical(e)
@@ -794,36 +800,37 @@ class MainWindow(QtWidgets.QMainWindow):
 
         logging.debug("Creating chat parser for the current map")
 
-        self.chatparser = ChatParser(self.pathToLogs, self.room_names, self.systems, self.intelTimeGroup.intelTime)
-
         # Update the new map view, then clear old statistics from the map and request new
         logging.debug("Updating the map")
         self.updateMapView()
         self.setInitialMapPositionForRegion(region_name)
         self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
         # Allow the file watcher to run now that all else is set up
-        self.filewatcherThread.paused = False
         logging.debug("setupMap succeeded.")
 
     def rescanIntel(self):
-        logging.info("Intel ReScan begun")
-        self.clearIntelChat()
+        with FileWatcher.FILE_LOCK:
+            try:
+                logging.info("Intel ReScan begun")
+                self.clearIntelChat()
+                now = datetime.datetime.now()
+                for file in os.listdir(self.pathToLogs):
+                    if file.endswith(".txt"):
+                        file_path = self.pathToLogs + str(os.sep) + file
+                        roomname = file[:-31]
+                        mtime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+                        delta = now - mtime
+                        if (delta.total_seconds() < 60 * self.chatparser.intelTime) and (delta.total_seconds() > 0):
+                            if roomname in self.room_names:
+                                logging.info("Reading log {}".format(roomname))
+                                self.logFileChanged(file_path, rescan=True)
 
-        now = datetime.datetime.now()
-        for file in os.listdir(self.pathToLogs):
-            if file.endswith(".txt"):
-                file_path = self.pathToLogs + str(os.sep) + file
-                roomname = file[:-31]
-                mtime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
-                delta = now - mtime
-                if (delta.total_seconds() < 60 * self.chatparser.intelTime) and (delta.total_seconds() > 0):
-                    if roomname in self.room_names:
-                        logging.info("Reading log {}".format(roomname))
-                        self.logFileChanged(file_path, rescan=True)
-
-        logging.info("Intel ReScan done")
-        self.statisticsThread.requestLocations()
-        self.updateMapView()
+                logging.info("Intel ReScan done")
+                self.statisticsThread.requestLocations()
+                self.updateMapView()
+            except Exception as e:
+                logging.error(e)
+            self.filewatcherThread.paused = False
 
     def _startStatisticTimer(self):
         self.statisticTimer = QTimer(self)
@@ -946,10 +953,6 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("Setting new theme: {}".format(action.theme))
         Cache().putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
         self.prepareContextMenu()
-        if self.autoRescanIntelEnabled:
-            self.rescanIntel() # calls setupMap
-        else:
-            self.clearIntelChat()  # calls setupMap
 
     def changeSound(self, value=None, disable=False):
         if disable:
@@ -1043,57 +1046,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if val:
             self.statisticsThread.requestStatistics()
 
-    def AppendJumpGate(self, src_system, dst_system, sanity_check: bool = True):
-        """
-
-        Args:
-            src_system:
-            dst_system:
-            sanity_check:
-
-        Returns:
-
-        """
-        cache = Cache()
-        if sanity_check:
-            structure = evegate.esiSearch(
-                esi_char_name=evegate.esiCharName(),
-                search_text="{} » {}".format(src_system, dst_system),
-                search_category=evegate.category.structure)
-
-            if structure is None or "structure" not in structure.keys() or len(structure["structure"]) < 2:
-                cache.clearJumpGate(dst_system)
-                cache.clearJumpGate(src_system)
-            else:
-                cnt_structures = len(structure["structure"])
-                inx_src = 0
-                inx_dst = cnt_structures - 1
-                json_src = evegate.esiUniverseStructure(
-                    esi_char_name=evegate.esiCharName(),
-                    structure_id=structure["structure"][inx_src])
-                json_dst = evegate.esiUniverseStructure(
-                    esi_char_name=evegate.esiCharName(),
-                    structure_id=structure["structure"][inx_dst])
-                cnt_structures = None if structure is None else len(structure["structure"])
-                cache.putJumpGate(
-                    src=src_system,
-                    dst=dst_system,
-                    src_id=structure["structure"][inx_src] if cnt_structures > 1 else None,
-                    dst_id=structure["structure"][inx_dst] if cnt_structures > 1 else None,
-                    json_src=json_src,
-                    json_dst=json_dst,
-                    used=cnt_structures
-                )
-        else:
-            cache.putJumpGate(
-                src=src_system,
-                dst=dst_system
-            )
-
-        cache.clearOutdatedJumpGates()
-        self.jbs_changed.emit()
-        self.updateMapView()
-
     def clipboardChanged(self, mode=0):
         """ the content of the clip board is used to set jump bridge and poi
         """
@@ -1106,16 +1058,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 if cache.putPOI(cb_data):
                     self.poi_changed.emit()
             elif cb_type == "jumpbridge":
-                cache.putJumpGate(
-                    src=cb_data["src"],
-                    dst=cb_data["dst"],
-                    src_id=cb_data["id_src"],
-                    dst_id=cb_data["id_dst"],
-                    json_src=cb_data["json_src"],
-                    json_dst=cb_data["json_dst"]
-                )
-                cache.clearOutdatedJumpGates()
-                self.jbs_changed.emit()
+                if cache.putJumpGate(
+                        src=cb_data["src"],
+                        dst=cb_data["dst"],
+                        src_id=cb_data["id_src"],
+                        dst_id=cb_data["id_dst"],
+                        json_src=cb_data["json_src"],
+                        json_dst=cb_data["json_dst"]):
+                    self.jbs_changed.emit()
 
     def mapLinkClicked(self, url: QtCore.QUrl):
         system_name = str(url.path().split("/")[-1]).upper()
@@ -1130,9 +1080,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def markSystemOnMap(self, system_name: str):
         if system_name in self.systems.keys():
-            self.dotlan.systems[str(system_name)].mark()
+            curr_sys = self.systems[str(system_name)]
+            curr_sys.mark()
             self.updateMapView()
-            self.focusMapOnSystem(self.systems[str(system_name)].systemId)
+            self.focusMapOnSystem(curr_sys.systemId)
 
     def setLocation(self, char_name, system_name: str, change_region: bool = False):
         """
@@ -1152,7 +1103,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if evegate.esiCheckCharacterToken(char_name) and not evegate.esiCharactersOnline(char_name):
             return
         logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
-        if system_name not in self.systems.keys():
+        if system_name not in self.systems:
             if change_region and char_name in self.monitoredPlayerNames:  # and evegate.getTokenOfChar(char):
                 try:
                     for test in evegate.esiUniverseIds([system_name])["systems"]:
@@ -1174,7 +1125,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     logging.error(e)
                     pass
 
-        if not system_name == "?" and system_name in self.systems.keys():
+        if not system_name == "?" and system_name in self.systems:
             self.systems[system_name].addLocatedCharacter(char_name)
             if evegate.esiCheckCharacterToken(char_name):
                 self.focusMapOnSystem(self.systems[str(system_name)].systemId)
@@ -1496,7 +1447,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def logFileChanged(self, path, rescan=False):
         locale_to_set = dict()
-        messages = self.chatparser.fileModified(path, rescan)
+        messages = self.chatparser.fileModified(path, self.systems, rescan)
         for message in messages:
             # If players location has changed
             if message.status == states.LOCATION:
@@ -1507,7 +1458,7 @@ class MainWindow(QtWidgets.QMainWindow):
                  For each system that was mentioned in the message, check for alarm distance to the current system
                  and alarm if within alarm distance.
                 """
-                systems_on_map = self.dotlan.systems
+                systems_on_map = self.systems
                 if message.systems:
                     for system in message.systems:
                         system_name = system.name
@@ -1539,7 +1490,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def systemUnderMouse(self, pos: QPoint):
         """returns the name of the system under the mouse pointer
         """
-        for name, system in self.dotlan.systems.items():
+        for name, system in self.systems.items():
             val = system.mapCoordinates
             rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
             if rc.contains(pos):

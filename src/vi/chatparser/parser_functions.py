@@ -157,7 +157,7 @@ def parseSystems(systems, rtext, systems_found):
     Returns:
         bool:
     """
-    # todo:parese systems may run in a loop
+    # todo:parse systems may run in a loop
 
     system_names = systems.keys()
 
