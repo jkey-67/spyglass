@@ -54,6 +54,12 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - use online state and position for registered characters on startup and intel rescan 
  - The text in the POI List can be edited now
 
+ ### 1.6.4
+ - filewatcher now use only files changed after downtime
+ - reload of intel now use the lift of files from the filewatcher
+ - processing of chat entries now run separated from the map
+ - using clipboard with Photon UI improved
+
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
@@ -80,7 +86,7 @@ Please remember to manage your access to all [third-party-applications](https://
  - Spyglass can look over all of your previous logs to check for intel. This is useful in two main cases. Firstly when you start up Spyglass but have already had eve running and want to see the intel you have already collected. Secondly, when changing theme the intel in Spyglass is all reset. You can rescan to get it back.
  - By default, automatically rescanning is disabled, this is so people don't complain of speed issues.
  - THIS IS VERY SLOW! looking over existing logs can be incredibly time-consuming so if you use it, please be patient. This is especially the case for more characters/chat channels you have.
- - If you want to use thi feature, but find it to be too slow, clear out your chat logs regularly.
+ - If you want to use the feature, but find it to be too slow, clear out your chat logs regularly.
 
 ## POIs
 - If you are docked on station, copy the name of the structure to the clipboard to fill the POI list.
