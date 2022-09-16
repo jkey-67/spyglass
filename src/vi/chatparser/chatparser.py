@@ -55,7 +55,7 @@ class ChatParser(object):
         """ Return the timestamp from the last downtime
         """
         target = datetime.datetime.utcnow()
-        if target.hour < 11 and target.minute < 5:
+        if target.hour < 11:
             target = target - datetime.timedelta(1)
         target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
         return target.timestamp()

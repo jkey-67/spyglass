@@ -811,18 +811,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def rescanIntel(self):
         with FileWatcher.FILE_LOCK:
             try:
-                logging.info("Intel ReScan begun")
+                logging.info("Intel ReScan using files from watcher.")
                 self.clearIntelChat()
                 now = datetime.datetime.now()
-                for file in os.listdir(self.pathToLogs):
-                    if file.endswith(".txt"):
-                        file_path = self.pathToLogs + str(os.sep) + file
-                        roomname = file[:-31]
-                        mtime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
-                        delta = now - mtime
+                for file_path in self.filewatcherThread.files:
+                    if file_path.endswith(".txt"):
+                        path, file = os.path.split(file_path)
+                        room_name = file[:-31]
+                        modify_time = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+                        delta = now - modify_time
                         if (delta.total_seconds() < 60 * self.chatparser.intelTime) and (delta.total_seconds() > 0):
-                            if roomname in self.room_names:
-                                logging.info("Reading log {}".format(roomname))
+                            if room_name in self.room_names:
+                                logging.info("Reading log {}".format(room_name))
                                 self.logFileChanged(file_path, rescan=True)
 
                 logging.info("Intel ReScan done")
@@ -1014,11 +1014,11 @@ class MainWindow(QtWidgets.QMainWindow):
         for entry in self.chatEntries:
             entry.ui.avatarLabel.setVisible(value)
 
-    def changeChatFontSize(self, fsize):
-        if fsize:
+    def changeChatFontSize(self, font_size):
+        if font_size:
+            ChatEntryWidget.TEXT_SIZE = font_size
             for entry in self.chatEntries:
-                entry.changeFontSize(fsize)
-            ChatEntryWidget.TEXT_SIZE = fsize
+                entry.changeFontSize(font_size)
 
     def chatSmaller(self):
         new_size = ChatEntryWidget.TEXT_SIZE - 1
@@ -1288,9 +1288,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def clearIntelChat(self):
         logging.info("Clearing Intel")
-        self.setupMap()
+        # self.setupMap()
         try:
-            for row in range(self.ui.chatListWidget.count()):
+            while self.ui.chatListWidget.count() > 0:
                 item = self.ui.chatListWidget.item(0)
                 entry = self.ui.chatListWidget.itemWidget(item)
                 self.chatEntries.remove(entry)
