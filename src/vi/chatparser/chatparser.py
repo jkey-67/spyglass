@@ -155,6 +155,7 @@ class ChatParser(object):
 
         while parseSystems(systems_on_map, rtext, systems):
             continue
+
         parsed_status = parseStatus(rtext)
         status = parsed_status if parsed_status is not None else states.ALARM
 

@@ -33,12 +33,13 @@ from packaging import version
 import queue
 import requests
 import logging
-import urllib
+import urllib.parse
 import http.server
 import webbrowser
 import base64
 import hashlib
 import secrets
+from typing import Optional
 
 """ eve_api_key.py defines the secret api key CLIENTS_API_KEY = "1234...4321" 
 """
@@ -60,7 +61,7 @@ def setEsiCharName(name):
     Sets the name of the current active api char to sqlite cache.
 
     Args:
-        name(str):name of the acktive esi character
+        name(str):name of the active esi character
 
     Returns:
         str: Name of the current char from cache as string, or None
@@ -69,7 +70,7 @@ def setEsiCharName(name):
         Cache().putIntoCache("api_char_name", name)
 
 
-def esiCharName() -> str:
+def esiCharName():
     """
     Gets the name of the current active api char from the sqlite cache.
 
@@ -85,13 +86,11 @@ def esiCharName() -> str:
         return res
 
 
-def esiStatus(use_outdated=False):
+def esiStatus() -> dict:
     """
     Request EVE Server status
-    Args:
-        use_outdated:
-
     Returns:
+        dict: status of EVE-Online
 
     """
     req = "https://esi.evetech.net/latest/status/?datasource=tranquility"
@@ -178,16 +177,18 @@ def esiUniverseIds(names, use_outdated=False):
             response = requests.post(url, data="[{}]".format(list_of_name))
             if response.status_code == 200:
                 content = response.json()
-                for key, items in content.items():
-                    for item in items:
-                        cache_data = dict()
-                        cache_data[key] = [item]
-                        cache_key = "_".join(("ids", "dicts", item["name"]))
-                        cache.putIntoCache(cache_key, json.dumps(cache_data))
-                        if key in data.keys():
-                            data[key].append(item)
-                        else:
-                            data[key] = [item]
+                with Cache() as cache:
+                    for key, items in content.items():
+                        for item in items:
+                            cache_data = dict()
+                            cache_data[key] = [item]
+                            cache_key = "_".join(("ids", "dicts", item["name"]))
+                            cache.putIntoCacheNoLock(cache_key, json.dumps(cache_data))
+                            if key in data.keys():
+                                data[key].append(item)
+                            else:
+                                data[key] = [item]
+                    cache.con.commit()
                 return data
             else:
                 logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
@@ -209,7 +210,7 @@ def esiUniverseNames(ids, use_outdated=False):
     data = {}
     if len(ids) == 0:
         return data
-    api_check_ids = set()
+    api_check_ids = list()
     cache = Cache()
 
     # something already in the cache?
@@ -219,13 +220,13 @@ def esiUniverseNames(ids, use_outdated=False):
         if name:
             data[checked_id] = name
         else:
-            api_check_ids.add(checked_id)
+            api_check_ids.append(checked_id)
     if len(api_check_ids) == 0:
         return data
 
     try:
         list_of_ids = ""
-        for checked_id in api_check_ids:
+        for checked_id in list(set(api_check_ids[0:999])):
             if list_of_ids != "":
                 list_of_ids = list_of_ids + ","
             list_of_ids = list_of_ids + str(checked_id)
@@ -239,10 +240,14 @@ def esiUniverseNames(ids, use_outdated=False):
             for elem in content:
                 data[elem["id"]] = elem["name"]
             # and writing into cache
-            for checked_id in api_check_ids:
-                cache_key = u"_".join(("name", "id", str(checked_id)))
-                if checked_id in data.keys():
-                    cache.putIntoCache(cache_key, data[int(checked_id)], 60 * 60 * 24 * 365)
+            with Cache() as cache:
+                for checked_id in api_check_ids:
+                    cache_key = u"_".join(("name", "id", str(checked_id)))
+                    if checked_id in data.keys():
+                        cache.putIntoCacheNoLock(cache_key, data[int(checked_id)], 60 * 60 * 24 * 365)
+                cache.con.commit()
+        if len(api_check_ids) > 1000:
+            return esiUniverseNames(ids, use_outdated)
     except Exception as e:
         logging.error("Exception during idsToNames: %s", e)
     return data
@@ -283,7 +288,7 @@ def esiImageEvetechNet(character_id: int, req_type: evetech_image, image_size=64
     return avatar
 
 
-def getTypesIcon(type_id: int,size_image=64):
+def getTypesIcon(type_id: int, size_image=64):
     """Get icon from a given type_id or character_id
 
     Args:
@@ -426,7 +431,7 @@ def esiCharactersOnline(char_name: str) -> bool:
     return False
 
 
-def esiCharactersLocation(char_name: str) -> int:
+def esiCharactersLocation(char_name: str):
     """Gets the current solar system id of the char with id char_id, or None
 
     Args:
@@ -478,9 +483,9 @@ def esiCharactersCorporationHistory(char_id, use_outdated=True):
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if e.response.status_code != 400:
                 logging.error("Exception during getCharInfoForCharId: %s", str(e))
-    #id_list = list()
-    #for elem in corp_ids:
-    #    id_list.append(elem["corporation_id"])
+    # id_list = list()
+    # for elem in corp_ids:
+    #     id_list.append(elem["corporation_id"])
     return corp_ids
 
 
@@ -496,7 +501,7 @@ def getCurrentCorpForCharId(char_id, use_outdated=True):
 
 
 def esiUniverseSystem_jumps(use_outdated=False):
-    """ Reads the informations for all solarsystems from the EVE API
+    """ Reads the information for all solarsystem from the EVE API
         Reads a dict like:
             systemid: "jumps", "shipkills", "factionkills", "podkills"
     """
@@ -524,7 +529,7 @@ def esiUniverseSystem_jumps(use_outdated=False):
 
         # now the further data
         cache_key = "systemstatistic"
-        system_data = cache.getFromCache(cache_key,use_outdated)
+        system_data = cache.getFromCache(cache_key, use_outdated)
 
         if system_data is None:
             system_data = {}
@@ -560,17 +565,6 @@ def esiUniverseSystem_jumps(use_outdated=False):
         data[i]["podkills"] = v["pod"] if "pod" in v else 0
 
     return data
-
-
-def secondsTillDowntime():
-    """ Return the seconds till the next downtime"""
-    now = currentEveTime()
-    target = now
-    if now.hour > 11:
-        target = target + datetime.timedelta(1)
-    target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
-    delta = target - now
-    return delta.seconds
 
 
 class MyApiServer(http.server.BaseHTTPRequestHandler):
@@ -671,7 +665,7 @@ class APIServerThread(QThread):
         QThread.quit(self)
 
 
-def oauthLoginEveOnline(client_param, parent=None) -> str:
+def oauthLoginEveOnline(client_param, parent=None):
     """ Queries the eve-online api key valid for one eve online account,
         using http://localhost:8182/oauth-callback as application defined
         callback from inside the webb browser
@@ -707,11 +701,11 @@ def oauthLoginEveOnline(client_param, parent=None) -> str:
     parent.apiThread.createBrowserWindow(string_params, parent)
 
 
-def esiOauthToken(client_param, auth_code:str, add_headers={}) -> str:
+def esiOauthToken(client_param, auth_code: str, add_headers: dict = None):
     """ gets the access token from the application logging
         fills the cache wit valid login data
     """
-    form_values={
+    form_values = {
         "grant_type": "authorization_code",
         "client_id": client_param["client_id"],
         "code": auth_code,
@@ -774,13 +768,19 @@ class ApiKey(object):
             self.valid_until = None
         if not hasattr(self, 'expires_in'):
             self.expires_in = None
+        if not hasattr(self, 'refresh_token'):
+            self.refresh_token = None
+        if not hasattr(self, 'CharacterName'):
+            self.CharacterName = None
+        if not hasattr(self, 'CharacterID'):
+            self.CharacterID = None
 
     def update(self, dictionary):
         for k, v in dictionary.items():
             setattr(self, k, v)
 
 
-def getTokenOfChar(char_name) -> ApiKey:
+def getTokenOfChar(char_name) -> Optional[ApiKey]:
     """gets the api key for char_name, or id from the cache, Result is the last ApiKey, or None
 
     Args:
@@ -798,14 +798,17 @@ def getTokenOfChar(char_name) -> ApiKey:
         return None
 
 
-def refreshToken(params: ApiKey) -> ApiKey:
+def refreshToken(params: Optional[ApiKey]) -> Optional[ApiKey]:
     """ refreshes the token using the previously acquired data structure from the cache
         if succeeded with result 200 the cache will be updated too
     """
     if params is None:
         return None
+    if params.refresh_token is None:
+        return None
+
     data = {
-        "grant_type":"refresh_token",
+        "grant_type": "refresh_token",
         "refresh_token": params.refresh_token,
         "client_id": eve_api_key.CLIENTS_API_KEY,
     }
@@ -831,8 +834,15 @@ def refreshToken(params: ApiKey) -> ApiKey:
         return params
 
 
-def checkTokenTimeLine(param: ApiKey) -> ApiKey:
-    """ double check the api timestamp, if expired the parm set will be updated
+def checkTokenTimeLine(param: Optional[ApiKey]) -> Optional[ApiKey]:
+    """
+        double-check the api timestamp, if expired the parm set will be updated
+
+    Args:
+        param: ApiKey to check
+
+    Returns:
+        updated ApiKey or None
     """
     if param is None:
         return None
@@ -842,7 +852,7 @@ def checkTokenTimeLine(param: ApiKey) -> ApiKey:
         return refreshToken(param)
 
 
-def sendTokenRequest(form_values, add_headers={}):
+def sendTokenRequest(form_values, add_headers=None):
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Host": "login.eveonline.com",
@@ -864,14 +874,14 @@ def sendTokenRequest(form_values, add_headers={}):
     return response
 
 
-def esiAutopilotWaypoint(nameChar:str, idSystem:int, beginning=True, clear_all=True):
-    token = checkTokenTimeLine(getTokenOfChar(nameChar))
+def esiAutopilotWaypoint(char_name: str, system_id: int, beginning=True, clear_all=True):
+    token = checkTokenTimeLine(getTokenOfChar(char_name))
     if token:
         route = {
             "add_to_beginning": beginning,
             "clear_other_waypoints": clear_all,
             "datasource": "tranquility",
-            "destination_id": idSystem,
+            "destination_id": system_id,
             "token": token.access_token,
         }
         req = "https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
@@ -881,17 +891,17 @@ def esiAutopilotWaypoint(nameChar:str, idSystem:int, beginning=True, clear_all=T
             response.raise_for_status()
 
 
-def getRouteFromEveOnline(jumpGates, src, dst):
+def getRouteFromEveOnline(jumpgates, src, dst):
     """build rout respecting jump bridges
         returns the list of systems to travel to
     """
-    route_elems = ""
-    for elem in jumpGates:
-        if route_elems != "":
-            route_elems = route_elems + ","
-        route_elems = route_elems + "{}|{}".format(elem[0], elem[1])
+    route_elements = ""
+    for elem in jumpgates:
+        if route_elements != "":
+            route_elements = route_elements + ","
+        route_elements = route_elements + "{}|{}".format(elem[0], elem[1])
 
-    req = "https://esi.evetech.net/v1/route/{}/{}/?connections={}".format(src, dst, route_elems)
+    req = "https://esi.evetech.net/v1/route/{}/{}/?connections={}".format(src, dst, route_elements)
     response = requests.get(req)
     if response.status_code != 200:
         logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
@@ -932,20 +942,68 @@ def esiSovereigntyCampaigns(use_outdated=False):
     """builds a list of reinforced campaigns for IHUB  and TCU dicts cached 60s
     """
     cache = Cache()
-    cache_key = "campaigns"
+    cache_key = "sovereignty_campaigns"
     response = cache.getFromCache(cache_key, use_outdated)
     if response:
-        campaigns_list = json.loads(response)
+        return json.loads(response)
     else:
         req = "https://esi.evetech.net/latest/sovereignty/campaigns/?datasource=tranquility"
         response = requests.get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, 60)#5 seconds from esi
-        campaigns_list = response.json()
-    return campaigns_list
+        cache.putIntoCache(cache_key, response.text, 60)  # 5 seconds from esi
+        return response.json()
 
+
+def esiSovereigntyStructures(use_outdated=False):
+    """
+    Shows sovereignty data for structures.
+
+    Args:
+        use_outdated:
+
+    Returns:
+
+    """
+    cache = Cache()
+    cache_key = "sovereignty_structures"
+    response = cache.getFromCache(cache_key, use_outdated)
+    if response:
+        return json.loads(response)
+    else:
+        req = "https://esi.evetech.net/latest/sovereignty/structures/?datasource=tranquility"
+        response = requests.get(req)
+        if response.status_code != 200:
+            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            response.raise_for_status()
+        cache.putIntoCache(cache_key, response.text, 120)
+        return response.json()
+
+
+def esiSovereigntyMap(use_outdated=False):
+    """
+    Shows sovereignty information for solar systems
+
+    Args:
+        use_outdated:
+
+    Returns:
+
+    """
+    cache = Cache()
+    cache_key = "sovereignty_map"
+    response = cache.getFromCache(cache_key, use_outdated)
+    if response:
+        return json.loads(response)
+    else:
+        req = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
+        response = requests.get(req)
+        if response.status_code != 200:
+            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            response.raise_for_status()
+        cache.putIntoCache(cache_key, response.text, 120)
+        return response.json()
 
 def getCampaignsSystemsIds(use_outdated=False):
     """builds a list of system ids being part of campaigns for hubs and tcus dicts cached 60s
@@ -972,7 +1030,7 @@ def getAllStructures(typeid=None):
         logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
         response.raise_for_status()
     structs_found = response.json()
-    if typeid == None:
+    if typeid is None:
         return structs_found
     types = list()
     for structure in structs_found:
@@ -982,11 +1040,11 @@ def getAllStructures(typeid=None):
     return types
 
 
-def esiUniverseStructure(esi_char_name:str, structure_id:int, use_outdated=False):
+def esiUniverseStructure(esi_char_name: str, structure_id: int, use_outdated=False):
     """"Calls https://esi.evetech.net/ui/#/Universe/get_universe_structures
     """
     res_value = None
-    if esi_char_name == None:
+    if esi_char_name is None:
         logging.error("esiUniverseStructure needs the eve-online api account.")
         return res_value
     cache_key = "_".join(("structure", "id", str(structure_id)))
@@ -998,7 +1056,8 @@ def esiUniverseStructure(esi_char_name:str, structure_id:int, use_outdated=False
     else:
         token = checkTokenTimeLine(getTokenOfChar(esi_char_name))
         if token:
-            req = "https://esi.evetech.net/latest/universe/structures/{}/?datasource=tranquility&token={}".format(structure_id,token.access_token)
+            req = "https://esi.evetech.net/latest/universe/structures/{}/?datasource=tranquility&token={}".format(
+                structure_id, token.access_token)
             response = requests.get(req)
             if response.status_code == 200:
                 cache.putIntoCache(cache_key, response.text, 3600)
@@ -1009,11 +1068,11 @@ def esiUniverseStructure(esi_char_name:str, structure_id:int, use_outdated=False
     return res_value
 
 
-def esiCorporationsStructures(esi_char_name:str, corporations_id:int, use_outdated=False):
+def esiCorporationsStructures(esi_char_name: str, corporations_id: int, use_outdated=False):
     """"Calls https://esi.evetech.net/ui/#/Universe/get_universe_structures
     """
     res_value = None
-    if esi_char_name == None:
+    if esi_char_name is None:
         logging.error("esiUniverseStructure needs the eve-online api account.")
         return res_value
     cache_key = "_".join(("corporations", "structures", "id", str(corporations_id)))
@@ -1057,13 +1116,14 @@ def esiLatestSovereigntyMap(use_outdated=False, fore_refresh=False):
 
 def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None):
     seq = ""
-    def update_callback(seq):
+
+    def update_callback(seq_in):
         if callback:
-            seq = seq + "."
-            callback("updating alliance and system database {}".format(seq))
-            if len(seq) > 40:
-                seq = ""
-        return seq
+            seq_in = seq_in + "."
+            callback("updating alliance and system database {}".format(seq_in))
+            if len(seq_in) > 40:
+                seq_in = ""
+        return seq_in
 
     cache_key = "player_sovereignty"
     cache = Cache()
@@ -1073,12 +1133,12 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
     else:
         player_sov = dict()
         npc_sov = dict()
-        list_of_all_factions = list()
+        list_of_all_factions = set()
         for sov in esiLatestSovereigntyMap(use_outdated, fore_refresh):
             if len(sov) > 2:
                 player_sov[str(sov["system_id"])] = sov
             elif show_npc and len(sov) > 1:
-                list_of_all_factions.append(sov["faction_id"])
+                list_of_all_factions.add(sov["faction_id"])
                 npc_sov[str(sov["system_id"])] = sov
         for sov in player_sov.values():
             if "alliance_id" in sov.keys():
@@ -1093,22 +1153,20 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
                     faction_id = sov["faction_id"]
                     sov["ticker"] = npc_list[faction_id]
                 seq = update_callback(seq)
-
             player_sov.update(npc_sov)
-
         cache.putIntoCache(cache_key, json.dumps(player_sov), 3600)
         return player_sov
 
 
 class JumpBridge(object):
-    def __init__(self, name:str, structureId:int, systemId:int, ownerId:int):
+    def __init__(self, name: str, structure_id: int, system_id: int, owner_id: int):
         tok = name.split(" ")
         self.src_system_name = tok[0]
         self.dst_system_name = tok[2]
         self.name = name
-        self.structureId = structureId
-        self.systemId = systemId
-        self.ownerId = ownerId
+        self.structureId = structure_id
+        self.systemId = system_id
+        self.ownerId = owner_id
         self.paired = False
         self.links = 0
 
@@ -1143,26 +1201,27 @@ class category:
     corporation = "corporation"
     faction = "faction"
     inventory_type = "inventory_type"
-    region ="region"
+    region = "region"
     solar_system = "solar_system"
-    station ="station"
+    station = "station"
     structure = "structure"
 
 
-def esiSearch(esi_char_name: str, search_text, search_category: category, search_strict=False):
+def esiSearch(esi_char_name: str, search_text, search_category: str, search_strict=False):
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
-    if esi_char_name == None:
+    if esi_char_name is None:
         logging.error("esiSearch needs the eve-online api account.")
         return {}
     token = checkTokenTimeLine(getTokenOfChar(esi_char_name))
-    if token == None:
+    if token is None:
         logging.error("esiSearch needs the eve-online api account.")
         return {}
     search_strict = "true" if search_strict else "false"
     req = "https://esi.evetech.net/v3/characters/{character_id}/search/?datasource=tranquility"\
           "&categories={cat}&strict={sstr}&search={sys}&token={tok}".format(
-        character_id=token.CharacterID, tok=token.access_token, sys=search_text, cat=search_category, sstr=search_strict)
+            character_id=token.CharacterID, tok=token.access_token,
+            sys=search_text, cat=search_category, sstr=search_strict)
     res = requests.get(req)
     if res.status_code == 200:
         return res.json()
@@ -1170,14 +1229,14 @@ def esiSearch(esi_char_name: str, search_text, search_category: category, search
         return {}
 
 
-def getAllJumpGates(nameChar:str,systemName="",systemNameDst="", callback=None, use_outdated=False):
+def getAllJumpGates(nameChar: str,systemName="",systemNameDst="", callback=None, use_outdated=False):
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
-    if nameChar == None:
+    if nameChar is None:
         logging.error("getAllJumpGates needs the eve-online api account.")
         return None
     token = checkTokenTimeLine(getTokenOfChar(nameChar))
-    if token == None:
+    if token is None:
         logging.error("getAllJumpGates needs the eve-online api account.")
         return None
 
@@ -1189,6 +1248,7 @@ def getAllJumpGates(nameChar:str,systemName="",systemNameDst="", callback=None, 
                 dst=systemNameDst)
     response = requests.get(req)
     if response.status_code != 200:
+        logging.error(response.reason)
         return None
     structs = response.json()
     gates = list()
@@ -1238,13 +1298,13 @@ def getAllJumpGates(nameChar:str,systemName="",systemNameDst="", callback=None, 
             )
 
             gates.append(
-                JumpBridge(name=json_src["name"], systemId=json_src["solar_system_id"],
-                           structureId=structure["structure"][0],
-                           ownerId=json_src["owner_id"]))
+                JumpBridge(name=json_src["name"], system_id=json_src["solar_system_id"],
+                           structure_id=structure["structure"][0],
+                           owner_id=json_src["owner_id"]))
             gates.append(
-                JumpBridge(name=json_dst["name"], systemId=json_dst["solar_system_id"],
-                           structureId=structure["structure"][cnt_structures-1],
-                           ownerId=json_dst["owner_id"]))
+                JumpBridge(name=json_dst["name"], system_id=json_dst["solar_system_id"],
+                           structure_id=structure["structure"][cnt_structures - 1],
+                           owner_id=json_dst["owner_id"]))
 
             process = process + 1
             if callback and not callback(len(structs["structure"]), process):
@@ -1327,6 +1387,25 @@ def esiUniverseSystems(system_id, use_outdated=False):
             return None
 
 
+def esiUniverseAllSystems( use_outdated=False):
+    """gets the solar system info from system id
+    """
+    cache_key = "_".join(("universe", "all", "systems"))
+    cache = Cache()
+    cached_id = cache.getFromCache(cache_key, use_outdated)
+    if cached_id:
+        return json.loads(cached_id)
+    else:
+        req = "https://esi.evetech.net/latest/universe/systems/?datasource=tranquility&language=en"
+        response = requests.get(req)
+        if response.status_code == 200:
+            cache.putIntoCache(cache_key, response.text, secondsTillDowntime())
+            return response.json()
+        else:
+            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            return None
+
+
 def esiAlliances(alliance_id, use_outdated=True):
     """gets the alliance from allicance id
     """
@@ -1345,7 +1424,7 @@ def esiAlliances(alliance_id, use_outdated=True):
         return response.json()
 
 
-def esiUniverseRegions(region_id:int, use_outdated=False):
+def esiUniverseRegions(region_id: int, use_outdated=False):
     cache_key = "_".join(("universe", "regions", str(region_id)))
     cache = Cache()
     cached_id = cache.getFromCache(cache_key, use_outdated)
@@ -1362,7 +1441,7 @@ def esiUniverseRegions(region_id:int, use_outdated=False):
             return None
 
 
-def esiUniverseGetAllRegions(use_outdated=False) -> list:
+def esiUniverseGetAllRegions(use_outdated=False) -> Optional[list]:
     """ Uses the EVE API to get the list of all region ids
 
     Returns:
@@ -1399,7 +1478,7 @@ def esiUniverseConstellations(constellation_id: int, use_outdated=False):
         return response.json()
 
 
-def esiUniverseAllConstellations( use_outdated=False):
+def esiUniverseAllConstellations(use_outdated=False):
     cache_key = "universe_all_constellations"
     cache = Cache()
     cached_id = cache.getFromCache(cache_key, use_outdated)
@@ -1447,6 +1526,8 @@ def esiUniverseCategories(categorie_id: int, use_outdated=False):
 
 
     Args:
+        categorie_id:
+
         use_outdated:
 
     Returns:
@@ -1586,7 +1667,10 @@ def applyRouteToEveOnline(name_char, jump_list):
             esiAutopilotWaypoint(name_char, id_system, beginning=False, clear_all=False)
 
 
-SHIPIDS = [24692,22448,2836,23919,32872,642,11936,17726,37604,29266,11969,628,23757,11202,28850,643,11938,32305,17922,22466,33468,608,625,29337,11567,648,582,33820,11985,630,1944,17920,37480,632,34328,598,12013,16229,33151,599,12731,11192,42246,45647,17619,672,32788,621,17634,16240,633,11993,33675,20185,11182,42243,23915,33397,48648,11196,22468,16236,583,34317,32876,16238,34496,17476,12729,11176,2161,37453,17926,11184,20125,16231,17720,42242,47269,22474,17928,37457,12023,12017,645,32307,32874,24698,33153,17932,52254,49711,12011,3532,617,37135,44995,12044,22442,655,671,22460,32790,589,634,29344,11957,17841,20189,16227,35781,22464,32207,11129,33816,17715,3756,11940,28710,21097,584,37455,11987,11011,21628,24696,33155,11381,11379,35683,22852,11172,33079,22452,605,651,12034,11961,22544,24702,33157,48636,11387,24690,601,52252,607,615,35779,596,12753,17703,594,590,30842,12042,12005,657,34828,11400,11174,602,49710,37458,11194,45649,28661,654,11971,29986,33513,47271,3764,37606,45645,29990,17738,22548,24694,29248,37483,11186,3516,624,652,12032,44996,12747,609,37456,641,13202,17728,603,656,32811,4363,4388,32209,11132,37605,623,42241,45534,33395,19724,12015,24700,4306,19722,592,11377,650,52250,33472,24483,22470,17736,37607,2998,28846,23913,20187,12745,2006,17709,11989,11995,635,4302,28606,33818,620,29340,44993,28659,22440,17718,12021,19726,11965,33677,37481,42244,47466,2863,586,17480,16233,12733,33697,29988,20183,12735,597,12038,42245,23773,11963,11178,17918,638,17636,26840,588,22428,17812,11393,17478,19720,3514,28844,587,49712,24688,11959,28352,629,22456,12019,37460,11978,640,4005,32309,631,29336,11190,19744,11942,22430,22546,54731,585,22444,622,17713,11198,37482,54732,33470,17924,42685,34562,33081,4308,32878,11200,649,639,17732,26842,29984,52267,37459,23911,627,16242,54733,48635,591,4310,593,644,32311,2834,11999,3518,42132,42126,28665,47270,42124,606,42125,42133,11365,32880,626,17843,12743,45531,34590,3766,37454,17722,17740,33083,45530,22446,33673,22436,11371,17930,653,23917,49713,12003,2078,52907]
+SHIPIDS = [24692, 22448, 2836, 23919, 32872, 642, 11936,17726,37604,29266,11969,628,23757,11202,28850,643,11938,32305,
+           17922,22466,33468,608,625,29337,11567,648,582,33820,11985,630,1944,17920,37480,632,34328,598,12013,16229,
+           33151,599,12731,11192,42246,45647,17619,672,32788,621,17634,16240,633,11993,33675,20185,11182,42243,23915,
+           33397,48648,11196,22468,16236,583,34317,32876,16238,34496,17476,12729,11176,2161,37453,17926,11184,20125,16231,17720,42242,47269,22474,17928,37457,12023,12017,645,32307,32874,24698,33153,17932,52254,49711,12011,3532,617,37135,44995,12044,22442,655,671,22460,32790,589,634,29344,11957,17841,20189,16227,35781,22464,32207,11129,33816,17715,3756,11940,28710,21097,584,37455,11987,11011,21628,24696,33155,11381,11379,35683,22852,11172,33079,22452,605,651,12034,11961,22544,24702,33157,48636,11387,24690,601,52252,607,615,35779,596,12753,17703,594,590,30842,12042,12005,657,34828,11400,11174,602,49710,37458,11194,45649,28661,654,11971,29986,33513,47271,3764,37606,45645,29990,17738,22548,24694,29248,37483,11186,3516,624,652,12032,44996,12747,609,37456,641,13202,17728,603,656,32811,4363,4388,32209,11132,37605,623,42241,45534,33395,19724,12015,24700,4306,19722,592,11377,650,52250,33472,24483,22470,17736,37607,2998,28846,23913,20187,12745,2006,17709,11989,11995,635,4302,28606,33818,620,29340,44993,28659,22440,17718,12021,19726,11965,33677,37481,42244,47466,2863,586,17480,16233,12733,33697,29988,20183,12735,597,12038,42245,23773,11963,11178,17918,638,17636,26840,588,22428,17812,11393,17478,19720,3514,28844,587,49712,24688,11959,28352,629,22456,12019,37460,11978,640,4005,32309,631,29336,11190,19744,11942,22430,22546,54731,585,22444,622,17713,11198,37482,54732,33470,17924,42685,34562,33081,4308,32878,11200,649,639,17732,26842,29984,52267,37459,23911,627,16242,54733,48635,591,4310,593,644,32311,2834,11999,3518,42132,42126,28665,47270,42124,606,42125,42133,11365,32880,626,17843,12743,45531,34590,3766,37454,17722,17740,33083,45530,22446,33673,22436,11371,17930,653,23917,49713,12003,2078,52907]
 
 SHIPNAMES = (u'ABADDON',u'ABSOLUTION',u'ADRESTIA',u'AEON',u'ALGOS',u'APOCALYPSE',
             u'APOCALYPSE IMPERIAL ISSUE',u'APOCALYPSE NAVY ISSUE',u'APOSTLE',u'APOTHEOSIS',u'ARAZU',u'ARBITRATOR',
@@ -1740,9 +1824,19 @@ def getSpyglassUpdateLink(ver=VERSION):
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
-    res = esiUniverseSystems(30000732)
-    res = currentEveTime()
-    res = secondsTillDowntime()
-    res = time.time()
-    res = checkTheraConnections()
+    res = getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None)
+    res = esiSovereigntyStructures()
+    with Cache() as cache:
+        for item in res:
+            key = "{}_{}_{}".format("system", "tmp", str(item["solar_system_id"]))
+            cache.putIntoCacheNoLock(key, str(item))
+        cache.con.commit()
+
+    res = esiSovereigntyMap()
+    res = esiSovereigntyCampaigns()
+    res = esiGetCharsOnlineStatus()
+
+    res = esiGetCharsOnlineStatus()
+    res = checkSpyglassVersionUpdate()
+
 

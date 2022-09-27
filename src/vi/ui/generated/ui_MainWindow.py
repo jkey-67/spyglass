@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.1
+## Created by: Qt User Interface Compiler version 6.3.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -427,7 +427,16 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.removeChar)
 
-        self.verticalSpacer = QSpacerItem(20, 612, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.tableChars = QTableView(self.tab_3)
+        self.tableChars.setObjectName(u"tableChars")
+        self.tableChars.setSortingEnabled(True)
+        self.tableChars.setCornerButtonEnabled(False)
+        self.tableChars.horizontalHeader().setStretchLastSection(True)
+        self.tableChars.verticalHeader().setVisible(False)
+
+        self.verticalLayout_4.addWidget(self.tableChars)
+
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
         self.verticalLayout_4.addItem(self.verticalSpacer)
 
@@ -511,7 +520,6 @@ class Ui_MainWindow(object):
         self.menuIntel.addAction(self.menuChars.menuAction())
         self.menuIntel.addAction(self.menuTime.menuAction())
         self.menuIntel.addAction(self.clearIntelAction)
-        self.menuIntel.addAction(self.autoRescanAction)
         self.menuIntel.addAction(self.rescanNowAction)
         self.menuIntel.addSeparator()
         self.menuTime.addSeparator()
@@ -607,7 +615,7 @@ class Ui_MainWindow(object):
         self.removeChar.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("MainWindow", u"API Chars", None))
         self.updateAvail.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.menu.setTitle(QCoreApplication.translate("MainWindow", u"DENCI Spy", None))
+        self.menu.setTitle(QCoreApplication.translate("MainWindow", u"EVE-Spy", None))
         self.menuChat.setTitle(QCoreApplication.translate("MainWindow", u"Chatrooms", None))
         self.menuSound.setTitle(QCoreApplication.translate("MainWindow", u"Sound", None))
         self.menuRegion.setTitle(QCoreApplication.translate("MainWindow", u"Region", None))

@@ -60,15 +60,20 @@ def evaluateClipboardData(content):
             jb_data["src"] = jump_bridge_text["src"]
             jb_data["dst"] = jump_bridge_text["dst"]
             jb_data["id_src"] = structure["structure"][0]
-            jb_data["id_dst"] = structure["structure"][1]
+            if len(structure["structure"]) > 1:
+                jb_data["id_dst"] = structure["structure"][1]
+            else:
+                jb_data["id_dst"] = None
+
             jb_data["json_src"] = evegate.esiUniverseStructure(
                 esi_char_name=evegate.esiCharName(),
                 structure_id=structure["structure"][0])
-
-            jb_data["json_dst"] = evegate.esiUniverseStructure(
-                esi_char_name=evegate.esiCharName(),
-                structure_id=structure["structure"][1])
-
+            if len(structure["structure"]) > 1:
+                jb_data["json_dst"] = evegate.esiUniverseStructure(
+                    esi_char_name=evegate.esiCharName(),
+                    structure_id=structure["structure"][1])
+            else:
+                jb_data["json_dst"] = None
             return ["jumpbridge", jb_data]
         else:
             return [None, []]

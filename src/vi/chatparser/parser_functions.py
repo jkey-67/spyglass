@@ -37,6 +37,7 @@
 
 
 import vi.evegate as evegate
+from vi.universe import Universe
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString
 from vi import states
@@ -48,8 +49,8 @@ class CTX:
     WORDS_TO_IGNORE = ("IN", "IS", "AS")
     FORMAT_URL = u"""<a style="color:#28a5ed;font-weight:bold" href="link/{0}">{0}</a>"""
     FORMAT_SHIP = u"""<a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/{0}">{0}</a>"""
-    FORMAT_SYSTEM = u"""<a style="color:#CC8800;font-weight:bold" href="mark_system/{0}">{1}</a>"""
-
+    FORMAT_SYSTEM = u"""<a style="color:#888880;font-weight:bold" href="mark_system/{0}">{1}</a>"""
+    FORMAT_SYSTEM_IN_RERION = u"""<a style="color:#CC8800;font-weight:bold" href="mark_system/{0}">{1}</a>"""
     STATUS_CLEAR = {"CLEAR", "CLR", "CRL"}
     STATUS_STATUS = {"STAT", "STATUS"}
     STATUS_BLUE = {"BLUE", "BLUES ONLY", "ONLY BLUE" "STILL BLUE", "ALL BLUES"}
@@ -89,7 +90,7 @@ def parseStatus(rtext):
         upper_text = text.strip().upper()
         original_text = upper_text
         for char in CTX.CHARS_TO_IGNORE:
-            upper_text = upper_text.replace(char, "")
+            upper_text = upper_text.replace(char, " ")
         upper_words = set(upper_text.split())
         if (len(upper_words & CTX.STATUS_CLEAR) > 0) and not original_text.endswith("?"):
             return states.CLEAR
@@ -116,19 +117,17 @@ def parseShips(rtext) -> bool:
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
         upper_text = text.upper()
-        for shipName in evegate.SHIPNAMES:
-            if shipName in upper_text:
-                hit = True
-                start = upper_text.find(shipName)
-                end = start + len(shipName)
-                if ((start > 0 and upper_text[start - 1] not in (" ", "X")) or (
-                                end < len(upper_text) - 1 and upper_text[end] not in ("S", " "))):
-                    hit = False
-                if hit:
-                    ship_in_text = text[start:end]
-                    formatted = formatShipName(text, ship_in_text)
-                    textReplace(text, formatted)
-                    return True
+        for shipName in [shipName for shipName in Universe.shipNames() if shipName in upper_text]:
+            start = upper_text.find(shipName)
+            end = start + len(shipName)
+            if ((start > 0 and upper_text[start - 1] not in (" ", "X")) or (
+                            end < len(upper_text) - 1 and upper_text[end] not in ("S", " ", "*"))):
+                continue
+
+            ship_in_text = text[start:end]
+            formatted = formatShipName(text, ship_in_text)
+            textReplace(text, formatted)
+            return True
 
 
 def isCharName(name) -> bool:
@@ -159,10 +158,13 @@ def parseSystems(systems, rtext, systems_found):
     """
     # todo:parse systems may run in a loop
 
-    system_names = systems.keys()
+    system_names = Universe.systemNames() #  systems.keys()
 
-    def formatSystem(in_text, in_word, in_system):
-        return in_text.replace(in_word, CTX.FORMAT_SYSTEM.format(in_system, in_word))
+    def formatSystem(in_text, in_word, in_system, in_rgn):
+        if in_rgn:
+            return in_text.replace(in_word, CTX.FORMAT_SYSTEM_IN_RERION.format(in_system, in_word))
+        else:
+            return in_text.replace(in_word, CTX.FORMAT_SYSTEM.format(in_system, in_word))
 
     texts = [t for t in rtext.contents if isinstance(t, NavigableString) and len(t)]
     for wtIdx, text in enumerate(texts):
@@ -195,17 +197,24 @@ def parseSystems(systems, rtext, systems_found):
             if upper_word != word and upper_word in CTX.WORDS_TO_IGNORE:
                 continue
             if upper_word in system_names:  # - direct hit on name
-                systems_found.add(systems[upper_word])  # of the system?
-                formatted_text = formatSystem(text, word, upper_word)
+                if upper_word in systems:
+                    systems_found.add(systems[upper_word])  # of the system?
+                    formatted_text = formatSystem(text, word, upper_word, True)
+                else:
+                    formatted_text = formatSystem(text, word, upper_word, False)
                 textReplace(text, formatted_text)
                 return True
-            elif 1 < len(upper_word) < 5:  # - upperWord < 4 chars.
+            elif 2 < len(upper_word) < 5:  # - upperWord < 4 chars.
                 for system in system_names:  # system begins with?
                     if system.startswith(upper_word):
-                        systems_found.add(systems[system])
-                        formatted_text = formatSystem(text, word, system)
+                        if upper_word in systems:
+                            systems_found.add(systems[system])
+                            formatted_text = formatSystem(text, word, upper_word, True)
+                        else:
+                            formatted_text = formatSystem(text, word, system, False)
                         textReplace(text, formatted_text)
                         return True
+            """
             elif "-" in upper_word and len(upper_word) > 2:  # - short with - (minus)
                 upper_word_parts = upper_word.split("-")  # (I-I will match I43-IF3)
                 for system in system_names:
@@ -214,19 +223,21 @@ def parseSystems(systems, rtext, systems_found):
                             upper_word_parts[1]) > 1 and len(system_parts[0]) > 1 and len(system_parts[1]) > 1 and len(
                             upper_word_parts) == len(system_parts) and upper_word_parts[0][0] == system_parts[0][0] and
                             upper_word_parts[1][0] == system_parts[1][0]):
-                        systems_found.add(systems[system])
+                        if system in systems:
+                            systems_found.add(systems[system])
                         formatted_text = formatSystem(text, word, system)
                         textReplace(text, formatted_text)
                         return True
-            elif len(upper_word) > 1:  # what if F-YH58 is named FY?
+            elif len(upper_word) > 2:  # what if F-YH58 is named FY?
                 for system in system_names:
                     cleared_system = system.replace("-", "")
                     if cleared_system.startswith(upper_word):
-                        systems_found.add(systems[system])
+                        if system in systems:
+                            systems_found.add(systems[system])
                         formatted_text = formatSystem(text, word, system)
                         textReplace(text, formatted_text)
                         return True
-
+    """
     # if ( len(foundSystems) > 1):
     # todo check for system name clear/clr here
     return False

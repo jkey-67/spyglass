@@ -53,7 +53,6 @@ sys.excepthook = exceptHook
 backGroundColor = "#c6d9ec"
 
 
-
 class Application(QApplication):
     def __init__(self, args):
         super(Application, self).__init__(args)
@@ -79,8 +78,8 @@ class Application(QApplication):
             logging.info(txt)
             if self.splash and len(txt):
                 self.splash.showMessage("   {}".format(txt),
-                               QtCore.Qt.AlignLeft,
-                               QtGui.QColor(0x808000))
+                                        QtCore.Qt.AlignLeft,
+                                        QtGui.QColor(0x808000))
 
         # Set up paths
         chat_log_directory = ""
@@ -93,8 +92,8 @@ class Application(QApplication):
                 chat_log_directory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
                 if not os.path.exists(chat_log_directory):
                     chat_log_directory = os.path.join(os.path.expanduser("~"), "Library", "Application Support",
-                                                    "Eve Online",
-                                                    "p_drive", "User", "My Documents", "EVE", "logs", "Chatlogs")
+                                                      "Eve Online", "p_drive", "User", "My Documents", "EVE",
+                                                      "logs", "Chatlogs")
             elif sys.platform.startswith("linux"):
                 change_splash_text("fetch path anf os, linux detected")
                 chat_log_directory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
@@ -108,17 +107,17 @@ class Application(QApplication):
                 chat_log_directory = os.path.join(documents_path, "EVE", "logs", "Chatlogs")
                 # Now I need to just make sure... Some old pcs could still be on XP
                 if not os.path.exists(chat_log_directory):
-                    chat_log_directory = os.path.join(os.path.expanduser("~"), "My Documents", "EVE", "logs", "Chatlogs")
+                    chat_log_directory = os.path.join(os.path.expanduser("~"), "My Documents", "EVE",
+                                                      "logs", "Chatlogs")
 
-        # todo show select folder dialog if path is not valid
         if not os.path.exists(chat_log_directory):
             chat_log_directory = QtWidgets.QFileDialog.getExistingDirectory(
                 None,
-                caption="Select EVE Online chat  logfiles directory", directory=chat_log_directory)
+                caption="Select EVE Online chat  logfiles directory", dir=chat_log_directory)
 
         if not os.path.exists(chat_log_directory):
             # None of the paths for logs exist, bailing out
-            QMessageBox.critical(self, "No path to Logs", "No logs found at: " + chat_log_directory, QMessageBox.Close)
+            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chat_log_directory, QMessageBox.Close)
             sys.exit(1)
 
         change_splash_text("setting local directory for cache and logging")
@@ -130,11 +129,6 @@ class Application(QApplication):
         self.con = QSqlDatabase.addDatabase("QSQLITE")
         self.con.setDatabaseName(cache.Cache.PATH_TO_CACHE)
         self.con.open()
-
-        change_splash_text("cleaning up outdated cache")
-        cache.Cache().clearOutdatedPlayerNames()
-        cache.Cache().clearOutdatedCache()
-        cache.Cache().clearOutdatedImages(3)
 
         spyglass_log_directory = os.path.join(spyglass_dir, "logs")
         if not os.path.exists(spyglass_log_directory):
@@ -163,7 +157,8 @@ class Application(QApplication):
 
         log_filename = spyglass_log_directory + "/output.log"
         file_handler = RotatingFileHandler(maxBytes=(1048576 * 5), backupCount=7, filename=log_filename, mode='a')
-        file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)9s [%(filename)s:%(lineno)s] - %(message)s"))
+        file_handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)9s [%(filename)s:%(lineno)s] - %(message)s"))
         root_logger.addHandler(stream_handler)
         root_logger.addHandler(file_handler)
 
@@ -182,9 +177,8 @@ class Application(QApplication):
         self.splash.finish(self.mainWindow)
         self.mainWindow.show()
         self.mainWindow.raise_()
+
         logging.info("Initialisation completed =======================================================================")
-
-
 
     def __del__(self):
         logging.info("Spyglass terminated normal =====================================================================")

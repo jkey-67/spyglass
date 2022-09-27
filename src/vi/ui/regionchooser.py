@@ -32,7 +32,7 @@ from vi.resources import resourcePathExists
 
 
 class RegionChooser(QtWidgets.QDialog):
-    new_region_chosen = pyqtSignal()
+    new_region_chosen = pyqtSignal(str)
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
@@ -78,6 +78,6 @@ class RegionChooser(QtWidgets.QDialog):
         if correct:
             Cache().putIntoCache("region_name", text, 60 * 60 * 24 * 365)
             self.accept()
-            self.new_region_chosen.emit()
+            self.new_region_chosen.emit(text)
 
 

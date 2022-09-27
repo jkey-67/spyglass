@@ -69,6 +69,15 @@ class Cache(object):
     # Cache-Instances in various threads: must handle concurrent writings
     SQLITE_WRITE_LOCK = threading.Lock()
 
+    def __enter__(self):
+        self.SQLITE_WRITE_LOCK.acquire()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if type is not None:
+            self.con.rollback()
+        self.SQLITE_WRITE_LOCK.release()
+
     def __init__(self, path_to_sql_file="cache.sqlite3"):
         """
         Args:
@@ -117,6 +126,37 @@ class Cache(object):
             query = "INSERT INTO cache (key, data, modified, maxAge) VALUES (?, ?, ?, ?)"
             self.con.execute(query, (key, value, time.time(), max_age))
             self.con.commit()
+
+    def putIntoCacheNoLock(self, key, value, max_age=60*60*24*3):
+        """ Putting key value to th database with external lock
+
+        Args:
+            key: the key
+            value: the value
+            max_age: max age in seconds
+
+        Returns:
+            None
+        Raises:
+            Exception: if SQLITE_WRITE_LOCK is not locked
+
+        Example:
+           >>>
+           try:
+                with cache:
+                    cache.putIntoCacheNoLock("Key1","value1")
+                    cache.putIntoCacheNoLock("Key2","value2")
+                    cache.putIntoCacheNoLock("Key3","value3")
+           except:
+                cache.con.rollback()
+
+        """
+        if not self.SQLITE_WRITE_LOCK.locked():
+            raise Exception("SQLITE_WRITE_LOCK not locked")
+        query = "DELETE FROM cache WHERE key = ?;"
+        self.con.execute(query, (key,))
+        query = "INSERT INTO cache (key, data, modified, maxAge) VALUES (?, ?, ?, ?);"
+        self.con.execute(query, (key, value, time.time(), max_age))
 
     def getFromCache(self, key, outdated=False):
         """ Getting something from cache
@@ -487,16 +527,16 @@ class Cache(object):
 
     def setUsedPlayerNames(self, values: set):
         current_players = self.getKnownPlayerNames()
-        with Cache.SQLITE_WRITE_LOCK:
+        with self as cache:
             for player_name in current_players | values:
                 if player_name not in current_players:
-                    query = "INSERT INTO players (active,name, max_age) VALUES (?, ?, {})".format(secondsTillDowntime())
+                    query = "INSERT INTO players (active,name, max_age) VALUES (?, ?, {});".format(secondsTillDowntime())
                 else:
-                    query = "UPDATE  players set active = ?  WHERE name = ?"
-                self.con.execute(query, (player_name in values, player_name))
-            query = "UPDATE  players set modified = ?  WHERE active=1"
-            self.con.execute(query, (time.time(),))
-            self.con.commit()
+                    query = "UPDATE  players set active = ?  WHERE name = ?;"
+                cache.con.execute(query, (player_name in values, player_name))
+            query = "UPDATE  players set modified = ?  WHERE active=1;"
+            cache.con.execute(query, (time.time(),))
+            cache.con.commit()
 
     def clearOutdatedPlayerNames(self):
         """

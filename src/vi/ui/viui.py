@@ -23,9 +23,9 @@ import sys
 import time
 import requests
 import webbrowser
-from parse import parse
 from typing import Union
 import vi.version
+from vi.universe import Universe
 import logging
 from PySide6.QtGui import *
 from PySide6 import QtGui, QtCore, QtWidgets
@@ -127,7 +127,7 @@ class MainWindow(QtWidgets.QMainWindow):
     chat_message_added = pyqtSignal(object, object)
     avatar_loaded = pyqtSignal(object, object)
     jbs_changed = pyqtSignal()
-    users_changed = pyqtSignal()
+    players_changed = pyqtSignal()
     poi_changed = pyqtSignal()
 
     def __init__(self, pat_to_logfile, tray_icon, update_splash=None):
@@ -172,13 +172,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoChangeRegion = False
         self.mapPositionsDict = {}
         self.mapStatisticCache = evegate.esiUniverseSystem_jumps(use_outdated=True)
-        self.mapSovereignty = evegate.getPlayerSovereignty(use_outdated=True, fore_refresh=False, show_npc=False)
+        self.mapSovereignty = evegate.getPlayerSovereignty(use_outdated=True, fore_refresh=False, show_npc=True)
         self.mapIncursions = evegate.esiIncursions(use_outdated=True)
         self.mapCampaigns = evegate.esiSovereigntyCampaigns(use_outdated=True)
         self.mapJumpGates = Cache().getJumpGates()
         self.setupMap()
         self.invertWheel = False
-        self.autoRescanIntelEnabled = Cache().getFromCache("changeAutoRescanIntel")
 
         update_splash_window_info("Preset application")
 
@@ -310,17 +309,22 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.show(self)
 
     def _updateKnownPlayerAndMenu(self, names=None):
+        notify_players_changed = False
         if names is None:
             self._addPlayerMenu()
         elif isinstance(names, str):
             if names not in self.knownPlayerNames:
                 self.knownPlayerNames.add(names)
-                self._addPlayerMenu()
+                notify_players_changed = True
         else:
             for name in names:
                 if name not in self.knownPlayerNames:
                     self.knownPlayerNames.add(name)
-                    self._addPlayerMenu()
+                    notify_players_changed = True
+        if notify_players_changed:
+            Cache().setKnownPlayerNames(self.knownPlayerNames)
+            self._addPlayerMenu()
+            self.players_changed.emit()
 
     def _addPlayerMenu(self):
         self.playerGroup = QActionGroup(self.ui.menu)
@@ -358,6 +362,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if action.isChecked():
                 player_used.add(action.playerName)
         self.monitoredPlayerNames = player_used
+        Cache().setUsedPlayerNames(self.monitoredPlayerNames)
+        self.players_changed.emit()
 
     def wheelDirChanged(self, checked):
         self.invertWheel = checked
@@ -427,7 +433,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.jumpbridgeDataAction.triggered.connect(self.showJumpbridgeChooser)
         self.ui.rescanNowAction.triggered.connect(self.rescanIntel)
         self.ui.clearIntelAction.triggered.connect(self.clearIntelChat)
-        self.ui.autoRescanAction.triggered.connect(self.changeAutoRescanIntel)
         self.ui.mapView.webViewResized.connect(self.fixupScrollBars)
         self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
 
@@ -479,6 +484,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _wireUpDatabaseViews(self):
         self._wireUpDatabaseViewsJB()
         self._wireUpDatabaseViewPOI()
+        self._wireUpDatabaseCharacters()
 
     def _wireUpDatabaseViewPOI(self):
         model = POITableModell()
@@ -516,8 +522,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             elif res == lps_ctx_menu.waypoint:
                 evegate.esiAutopilotWaypoint(
-                    nameChar=evegate.esiCharName(),
-                    idSystem=item["destination_id"],
+                    char_name=evegate.esiCharName(),
+                    system_id=item["destination_id"],
                     clear_all=False,
                     beginning=False
                 )
@@ -547,29 +553,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableViewJBs.setModel(sort)
         self.ui.tableViewJBs.show()
 
-        def callOnSelChanged(name):
-            evegate.setEsiCharName(name)
-            self.rescanIntel()
-
-        self.ui.currentESICharacter.clear()
-        self.ui.currentESICharacter.addItems(Cache().getAPICharNames())
-        self.ui.currentESICharacter.setCurrentText(evegate.esiCharName())
-        self.ui.currentESICharacter.currentTextChanged.connect(callOnSelChanged)
-
-        def callOnRemoveChar():
-            ret = QMessageBox.warning(
-                self,
-                "Remove Character",
-                "Do you really want to remove the ESI registration for the character {}\n\n"
-                "The assess key will be removed from database.".format(evegate.esiCharName()),
-                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
-            if ret == QMessageBox.Yes:
-                Cache().removeAPIKey(evegate.esiCharName())
-                self.ui.currentESICharacter.clear()
-                self.ui.currentESICharacter.addItems(Cache().getAPICharNames())
-
-        self.ui.removeChar.clicked.connect(callOnRemoveChar)
-
         def showJBContextMenu(pos):
             cache = Cache()
             index = self.ui.tableViewJBs.model().mapToSource(self.ui.tableViewJBs.indexAt(pos)).row()
@@ -598,7 +581,46 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.tableViewJBs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.ui.tableViewJBs.customContextMenuRequested.connect(showJBContextMenu)
-        return
+
+    def _wireUpDatabaseCharacters(self):
+        char_model = QSqlQueryModel()
+
+        def callOnCharsUpdate():
+            char_model.setQuery('select name as Name,'\
+                                '(case active WHEN 0 THEN "No" ELSE "Yes" END) AS Monitor,'\
+                                '(CASE WHEN key is NULL THEN "" ELSE "ESI" END ) AS Registered,'\
+                                '(CASE name WHEN (SELECT data FROM cache WHERE key IS "api_char_name")'\
+                                ' THEN "Yes" ELSE "" END) AS Current FROM players')
+        callOnCharsUpdate()
+        sort = QSortFilterProxyModel()
+        sort.setSourceModel(char_model)
+        self.ui.tableChars.setModel(sort)
+        self.ui.tableChars.show()
+        self.players_changed.connect(callOnCharsUpdate)
+
+        def callOnSelChanged(name):
+            evegate.setEsiCharName(name)
+            self.rescanIntel()
+            self.players_changed.emit()
+
+        self.ui.currentESICharacter.clear()
+        self.ui.currentESICharacter.addItems(Cache().getAPICharNames())
+        self.ui.currentESICharacter.setCurrentText(evegate.esiCharName())
+        self.ui.currentESICharacter.currentTextChanged.connect(callOnSelChanged)
+
+        def callOnRemoveChar():
+            ret = QMessageBox.warning(
+                self,
+                "Remove Character",
+                "Do you really want to remove the ESI registration for the character {}\n\n"
+                "The assess key will be removed from database.".format(evegate.esiCharName()),
+                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                Cache().removeAPIKey(evegate.esiCharName())
+                self.ui.currentESICharacter.clear()
+                self.ui.currentESICharacter.addItems(Cache().getAPICharNames())
+
+        self.ui.removeChar.clicked.connect(callOnRemoveChar)
 
     def _setupThreads(self):
         logging.info("Set up threads and their connections...")
@@ -656,6 +678,20 @@ class MainWindow(QtWidgets.QMainWindow):
                                 * self.ui.mapView.zoom-view_center.height())
             self.ui.mapView.setScrollPosition(pt_system)
 
+    def changeRegionByName(self, selected_region_name, system_id=None):
+        Cache().putIntoCache("region_name", selected_region_name)
+        self.setupMap()
+        self.rescanIntel()
+        if system_id is not None:
+            self.focusMapOnSystem(system_id)
+        else:
+            view_center = self.ui.mapView.size() / 2
+            pt_system = QPointF(1027.0/2.0
+                                * self.ui.mapView.zoom - view_center.width(),
+                                768.0/2.0
+                                * self.ui.mapView.zoom - view_center.height())
+            self.ui.mapView.setScrollPosition(pt_system)
+
     def changeRegionBySystemID(self, system_id):
         """ change to the region of the system with the given id, the intel will be rescanned
             and the cache region_name will be updated
@@ -667,10 +703,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_region = selected_constellation["region_id"]
         selected_region_name = evegate.esiUniverseNames([selected_region])[selected_region]
         selected_region_name = dotlan.convertRegionName(selected_region_name)
-        Cache().putIntoCache("region_name", selected_region_name, 60 * 60 * 24 * 365)
-        self.rescanIntel()
-        self.updateMapView()
-        self.focusMapOnSystem(system_id)
+        self.changeRegionByName(selected_region_name, system_id)
 
     def prepareContextMenu(self):
         # Menus - only once
@@ -784,7 +817,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     setIncursionSystems=self.mapIncursions,
                     setPlayerSovereignty=self.mapSovereignty,
                     setJumpBridges=self.mapJumpGates)
-
             logging.info("Using dotlan map {}".format(region_name))
         except dotlan.DotlanException as e:
             logging.critical(e)
@@ -840,11 +872,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.requestSovereignty()
         self.statisticTimer.start(30*1000)
 
-    def _stopStatisticTimer(self):
-        if self.statisticTimer:
-            self.statisticTimer.disconnect()
-            self.statisticTimer.stop()
-
     def closeEvent(self, event):
         """
             Persisting things to the cache before closing the window
@@ -873,7 +900,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "setSoundVolume", SoundManager().soundVolume),
                     (None, "changeFrameless", self.ui.framelessWindowAction.isChecked()),
                     (None, "changeUseSpokenNotifications", self.ui.useSpokenNotificationsAction.isChecked()),
-                    (None, "changeAutoRescanIntel", self.autoRescanIntelEnabled),
                     (None, "changeAutoChangeRegion", self.autoChangeRegion),
                     (None, "wheelDirChanged", self.invertWheel),
                     (None, "showJumpbridge", self.ui.jumpbridgesButton.isChecked()),
@@ -892,23 +918,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.showChatAction.setChecked(value)
         self.ui.chatbox.setVisible(value)
 
-    def changeAutoScanIntel(self, value=None):
-        if value is None:
-            value = self.ui.autoScanIntelAction.isChecked()
-        self.ui.autoScanIntelAction.setChecked(value)
-        self.autoRescanIntelEnabled = value
-
     def changeAutoChangeRegion(self, value=None):
         if value is None:
             value = self.ui.actionAuto_switch.isChecked()
         self.ui.actionAuto_switch.setChecked(value)
         self.autoChangeRegion = value
-
-    def changeAutoRescanIntel(self, value=None):
-        if value is None:
-            value = self.ui.autoRescanAction.isChecked()
-        self.ui.autoRescanAction.setChecked(value)
-        self.autoRescanIntelEnabled = value
 
     def changeUseSpokenNotifications(self, value=None):
         if SoundManager().platformSupportsSpeech():
@@ -1006,6 +1020,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if do_show:
             self.show()
 
+    def clearCache(self):
+        used_cache = Cache()
+        used_cache.clearOutdatedPlayerNames()
+        used_cache.clearOutdatedCache()
+        used_cache.clearOutdatedImages(3)
+        used_cache.clearOutdatedJumpGates()
+
     def changeShowAvatars(self, value=None):
         if value is None:
             value = self.ui.showChatAvatarsAction.isChecked()
@@ -1084,6 +1105,8 @@ class MainWindow(QtWidgets.QMainWindow):
             curr_sys.mark()
             self.updateMapView()
             self.focusMapOnSystem(curr_sys.systemId)
+        else:
+            self.changeRegionBySystemID(Universe.systemIdByName(system_name))
 
     def setLocation(self, char_name, system_name: str, change_region: bool = False):
         """
@@ -1100,11 +1123,12 @@ class MainWindow(QtWidgets.QMainWindow):
         for system in self.systems.values():
             system.removeLocatedCharacter(char_name)
 
-        if evegate.esiCheckCharacterToken(char_name) and not evegate.esiCharactersOnline(char_name):
-            return
+        # if evegate.esiCheckCharacterToken(char_name) and not evegate.esiCharactersOnline(char_name):
+        #    logging.error("Invalid locale change for character with name '{}', character is offline.".format(char_name))
+        #    return
         logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
         if system_name not in self.systems:
-            if change_region and char_name in self.monitoredPlayerNames:  # and evegate.getTokenOfChar(char):
+            if change_region :  # and char_name in self.monitoredPlayerNames:
                 try:
                     for test in evegate.esiUniverseIds([system_name])["systems"]:
                         name = test["name"]
@@ -1119,8 +1143,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                 evegate.esiUniverseNames([selected_region])[selected_region])
                             concurrent_region_name = Cache().getFromCache("region_name")
                             if selected_region_name != concurrent_region_name:
-                                Cache().putIntoCache("region_name", selected_region_name)
-                                self.rescanIntel()
+                                self.changeRegionByName(selected_region_name, system_id)
+
                 except Exception as e:
                     logging.error(e)
                     pass
@@ -1219,7 +1243,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     content = []
                     with open(url, 'r') as f:
                         content = f.readlines()
-                    cache.clearOutdatedJumpGates()
                     for line in content:
                         parts = line.strip().split()
                         # src <-> dst system_id jump_bridge_id
@@ -1244,20 +1267,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.chooseRegionAction.setChecked(False)
         if action:
             action.setChecked(True)
-            region_name = str(action.property("regionName"))
-            region_name = dotlan.convertRegionName(region_name)
-            Cache().putIntoCache("region_name", region_name, 60 * 60 * 24 * 365)
-            self.setupMap()
+            selected_region_name = str(action.property("regionName"))
+            selected_region_name = dotlan.convertRegionName(selected_region_name)
+            self.changeRegionByName(selected_region_name)
 
     def showRegionChooser(self):
-        def handleRegionChosen():
+        def handleRegionChosen(region_name):
             self.handleRegionMenuItemSelected(None)
             self.ui.chooseRegionAction.setChecked(False)
-            self.setupMap()
+            self.changeRegionByName(region_name)
 
         self.ui.chooseRegionAction.setChecked(False)
         chooser = RegionChooser(self)
-        chooser.finished.connect(handleRegionChosen)
+        chooser.new_region_chosen.connect(handleRegionChosen)
         chooser.show()
 
     def addMessageToIntelChat(self, message):
@@ -1497,14 +1519,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 return system
         return None
 
-    @staticmethod
-    def regionNameFromSystemID(selected_system: dotlan.System):
-        selected_system = evegate.esiUniverseSystems(selected_system.systemId)
-        selected_constellation = evegate.esiUniverseConstellations(selected_system["constellation_id"])
-        selected_region = selected_constellation["region_id"]
-        selected_region_name = evegate.esiUniverseNames([selected_region])[selected_region]
-        return selected_region_name
-
     def showMapContextMenu(self, event):
         """ checks if there is a system below the mouse position, if the systems region differs from the current
             region, the menu item to change the current region is added.
@@ -1512,7 +1526,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_sys = self.systemUnderMouse(self.ui.mapView.mapPosFromPoint(event))
         if selected_sys:
             concurrent_region_name = Cache().getFromCache("region_name")
-            selected_region_name = self.regionNameFromSystemID(selected_sys)
+            selected_region_name = Universe.regionNameFromSystemID(selected_sys.systemId)
             if dotlan.convertRegionName(selected_region_name) == concurrent_region_name:
                 selected_region_name = None
             self.trayIcon.contextMenu().updateMenu(selected_sys, selected_region_name)

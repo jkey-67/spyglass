@@ -409,10 +409,8 @@ class Map(object):
             auto_rc.decompose()
 
         # Current system marker ellipse
-        group = soup.new_tag("g", id="select_marker", opacity="0", activated="0", transform="translate(0, 0)")
+        group = soup.new_tag("g", id="select_marker", opacity="1.0", activated="0", transform="translate(0, 0)")
         ellipse = soup.new_tag("ellipse", cx="0", cy="0", rx="56", ry="28", style="fill:#462CFF")
-        # animate = soup.new_tag("animate", attributeName="opacity", values="1;0",dur="10s",repeatCount="1")
-        # ellipse.append(animate)
         group.append(ellipse)
 
         self._prepareGradients(soup)
@@ -445,7 +443,7 @@ class Map(object):
             coords = system.mapCoordinates
             text = "stats n/a"
             style = "text-anchor:middle;font-size:7;font-weight:normal;font-family:Arial;"
-            system.svgtext = soup.new_tag("text", x=coords["center_x"], y=coords["y"] + coords["height"] + 4,
+            system.svgtext = soup.new_tag("text", x=coords["center_x"], y=coords["y"] + coords["height"] + 2,
                                           fill="blue", style=style, visibility="hidden", transform=system.transform)
             system.svgtext["id"] = "stats_" + str(systemId)
             system.svgtext["class"] = "statistics"
@@ -518,6 +516,9 @@ class Map(object):
 
         for bridge in soup.select(".ansitext"):
             bridge.decompose()
+
+        for ice_rect in soup.find_all("rect", {"class": "i"}):
+            ice_rect.decompose()
 
         jumps = soup.select("#jumps")
         if jumps is not None:
@@ -713,29 +714,14 @@ class System(object):
             else:
                 self.cachedOffsetPoint = [0.0, 0.0]
         return self.cachedOffsetPoint
-    """
-    def setJumpbridgeColor(self, color):
-        id_name = self.name + u"_jb_marker"
-        for element in self.mapSoup.select("#" + id_name):
-            element.decompose()
-        coords = self.mapCoordinates
-        offset_point = self.getTransformOffsetPoint()
-        x = coords["x"] - 3 + offset_point[0]
-        y = coords["y"] + offset_point[1]
-        style = "fill:{0};stroke:{0};stroke-width:2;fill-opacity:0.4"
-        tag = self.mapSoup.new_tag("rect", x=x, y=y, width=coords["width"] + 1.5, height=coords["height"], id=id_name,
-                                   style=style.format(color), visibility="hidden")
-        tag["class"] = ["jumpbridge", ]
-        jumps = self.mapSoup.select("#jumps")[0]
-        jumps.insert(0, tag)
-    """
+
     def mark(self):
         marker = self.mapSoup.select("#select_marker")[0]
         offset_point = self.getTransformOffsetPoint()
         x = self.mapCoordinates["center_x"] + offset_point[0]
         y = self.mapCoordinates["center_y"] + offset_point[1]
         marker["transform"] = "translate({x},{y})".format(x=x, y=y)
-        marker["opacity"] = 1.0
+        marker["opacity"] = "1.0"
         marker["activated"] = datetime.datetime.utcnow().timestamp()
 
     def addLocatedCharacter(self, char_name):
@@ -985,3 +971,4 @@ if __name__ == "__main__":
     s = map.systems["I7S-1S"]
     s.setStatus(states.ALARM)
     logging.error(map.svg)
+

@@ -42,7 +42,9 @@ if a new file was created. We watch only the newest (last 24h), not all!
 class FileWatcher(QtCore.QThread):
 
     file_change = pyqtSignal(str, bool)
+    files_to_ignore = ["Fleet", "Alliance"]
     FILE_LOCK = threading.Lock()
+
     def __init__(self, path):
         QtCore.QThread.__init__(self)
         self.path = path
@@ -89,6 +91,13 @@ class FileWatcher(QtCore.QThread):
         return target.timestamp()
 
     def updateWatchedFiles(self):
+        """
+        Updates the list of monitored file, all Fleet and Alliance chats and files with mdate, earlier then the last
+        downtime, will be ignored by default.
+
+        Returns:
+            None: modifies the file member
+        """
         now = time.time()
         path = self.path
         files_in_dir = {}
@@ -100,6 +109,10 @@ class FileWatcher(QtCore.QThread):
                 if not stat.S_ISREG(path_stat.st_mode):
                     continue
                 if path_stat.st_mtime < last_downtime:
+                    logging.info("Ignor file {}, files m-time is outdated.".format(f))
+                    continue
+                if [elem for elem in FileWatcher.files_to_ignore if (elem in f)]:
+                    logging.info("Ignor file {}, found black listed token in filename.".format(f))
                     continue
                 files_in_dir[full_path] = self.files.get(full_path, 0)
             except Exception as e:
