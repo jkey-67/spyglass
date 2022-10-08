@@ -1789,24 +1789,22 @@ NPC_CORPS = (u'Republic Justice Department', u'House of Records', u'24th Imperia
              u'Minmatar Mining Corporation', u'Supreme Court')
 
 
-def checkSpyglassVersionUpdate(current_version=VERSION):
+def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
     """check github for a new latest release
     """
     checked = Cache().getFromCache("version_check")
-    if checked is None:
+    if force_check or checked is None:
         new_version = None
-        req = "https://github.com/jkey-67/spyglass/releases/latest"
+        req = "https://api.github.com/repos/jkey-67/spyglass/releases"
         response = requests.get(req)
         if response.status_code != 200:
             return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
-        page_ver_found = response.text.find(".exe")
-        if page_ver_found:
-            page_ver_found_start = response.text.rfind('-',page_ver_found-32,page_ver_found)+1
-            if page_ver_found_start:
-                new_version = response.text[page_ver_found_start:page_ver_found]
-        if new_version is None:
+        page_json_found = response.json()
+        if len(page_json_found) > 0 and "tag_name" in page_json_found[0].keys():
+            new_version = page_json_found[0]["tag_name"][1:]
+        else:
             return [False, "Unable to read version from github."]
-        Cache().putIntoCache("version_check", new_version, 60 * 60 * 24)
+        Cache().putIntoCache("version_check", new_version, 60 * 60)
         if version.parse(new_version) > version.parse(current_version):
             return [True,
                 "An newer Spyglass Version {} is available, you are currently running Version {}.".format(
@@ -1829,14 +1827,15 @@ def checkTheraConnections(system_name="Jita"):
 
 
 def getSpyglassUpdateLink(ver=VERSION):
-    req = "https://github.com/jkey-67/spyglass/releases/latest"
+    req = "https://api.github.com/repos/jkey-67/spyglass/releases"
     response = requests.get(req)
     if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-        response.raise_for_status()
-    pos_start = response.text.find("jkey-67/spyglass/releases/download/")
-    pos_exe = response.text.find(".exe")
-    return "https://github.com/{}.exe".format(response.text[pos_start:pos_exe])
+        return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
+    page_json_found = response.json()
+    if len(page_json_found) > 0 and "assets" in page_json_found[0].keys():
+        return page_json_found[0]["assets"][0]["browser_download_url"]
+    else:
+        return None
 
 
 # The main application for testing

@@ -71,7 +71,7 @@ class FileWatcher(QtCore.QThread):
                         if not stat.S_ISREG(path_stat.st_mode):
                             continue
                         if size_file < path_stat.st_size:
-                            logging.info("Update file {}".format(path))
+                            logging.debug("Update file {}".format(path))
                             self.file_change.emit(path, False)
                         self.files[path] = path_stat.st_size
             except Exception as e:
@@ -109,10 +109,10 @@ class FileWatcher(QtCore.QThread):
                 if not stat.S_ISREG(path_stat.st_mode):
                     continue
                 if path_stat.st_mtime < last_downtime:
-                    logging.info("Ignor file {}, files m-time is outdated.".format(f))
+                    logging.debug("Ignor file {}, files m-time is outdated.".format(f))
                     continue
                 if [elem for elem in FileWatcher.files_to_ignore if (elem in f)]:
-                    logging.info("Ignor file {}, found black listed token in filename.".format(f))
+                    logging.debug("Ignor file {}, found black listed token in filename.".format(f))
                     continue
                 files_in_dir[full_path] = self.files.get(full_path, 0)
             except Exception as e:
