@@ -15,6 +15,7 @@ class Universe(object):
     REGIONS = _loadJsonFile(resourcePath("vi/universe/everegions.json"))
     SYSTEMS = _loadJsonFile(resourcePath("vi/universe/evesystems.json"))
     SYSTEM_NAMES = [sys["name"] for sys in SYSTEMS]
+    UPPER_SYSTEM_NAMES = [sys["name"].upper() for sys in SYSTEMS]
     SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]
     LOCATED_CHARS = set()
 
@@ -36,6 +37,10 @@ class Universe(object):
     @staticmethod
     def systemNames():
         return Universe.SYSTEM_NAMES
+
+    @staticmethod
+    def systemNamesUpperCase():
+        return Universe.UPPER_SYSTEM_NAMES
 
     @staticmethod
     def systemNameById(system_id):

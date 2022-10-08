@@ -646,6 +646,9 @@
             </item>
             <item>
              <widget class="QTableView" name="tableChars">
+              <property name="editTriggers">
+               <set>QAbstractItemView::CurrentChanged|QAbstractItemView::DoubleClicked|QAbstractItemView::SelectedClicked</set>
+              </property>
               <property name="sortingEnabled">
                <bool>true</bool>
               </property>

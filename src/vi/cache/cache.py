@@ -532,7 +532,7 @@ class Cache(object):
                 if player_name not in current_players:
                     query = "INSERT INTO players (active,name, max_age) VALUES (?, ?, {});".format(secondsTillDowntime())
                 else:
-                    query = "UPDATE  players set active = ?  WHERE name = ?;"
+                    query = "UPDATE  players SET active = ?  WHERE name = ?;"
                 cache.con.execute(query, (player_name in values, player_name))
             query = "UPDATE  players set modified = ?  WHERE active=1;"
             cache.con.execute(query, (time.time(),))

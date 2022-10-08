@@ -19,6 +19,7 @@ def instFiles():
         '--name', 'spyglass-1.6.4',
         '../spyglass.py',
         '--icon=../icon.ico',
+        '--add-data=../vi/universe/*.json;./vi/universe',
         '--add-data=../vi/ui/*.ui;./vi/ui',
         '--add-data=../vi/ui/res/*.*;./vi/ui/res',
         '--add-data=../vi/ui/res/mapdata/*.*;./vi/ui/res/mapdata',

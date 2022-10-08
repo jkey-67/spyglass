@@ -429,6 +429,7 @@ class Ui_MainWindow(object):
 
         self.tableChars = QTableView(self.tab_3)
         self.tableChars.setObjectName(u"tableChars")
+        self.tableChars.setEditTriggers(QAbstractItemView.CurrentChanged|QAbstractItemView.DoubleClicked|QAbstractItemView.SelectedClicked)
         self.tableChars.setSortingEnabled(True)
         self.tableChars.setCornerButtonEnabled(False)
         self.tableChars.horizontalHeader().setStretchLastSection(True)

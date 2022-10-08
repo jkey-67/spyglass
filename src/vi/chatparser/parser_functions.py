@@ -158,7 +158,7 @@ def parseSystems(systems, rtext, systems_found):
     """
     # todo:parse systems may run in a loop
 
-    system_names = Universe.systemNames() #  systems.keys()
+    system_names = Universe.systemNamesUpperCase() #  systems.keys()
 
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:

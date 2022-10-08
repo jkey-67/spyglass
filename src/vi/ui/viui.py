@@ -49,6 +49,7 @@ from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu, POIContextM
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser
 from vi.clipboard import evaluateClipboardData
+from vi.ui.modelplayer import TableModelPlayers, StyledItemDelegatePlayers
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtSql import QSqlQueryModel
 
@@ -198,8 +199,6 @@ class MainWindow(QtWidgets.QMainWindow):
         styles = None
 
         # Load user's toon names
-        self.monitoredPlayerNames = Cache().getUsedPlayerNames()
-        self.knownPlayerNames = Cache().getKnownPlayerNames()
         for api_char_names in Cache().getAPICharNames():
             if evegate.esiCharactersOnline(api_char_names):
                 self._updateKnownPlayerAndMenu(api_char_names)
@@ -217,6 +216,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionInvertMouseWheel.triggered.connect(self.wheelDirChanged)
         self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
         self._addPlayerMenu()
+        self.players_changed.connect(self._addPlayerMenu)
 
         # Set up user's intel rooms
         update_splash_window_info("Set up user's intel rooms")
@@ -305,25 +305,41 @@ class MainWindow(QtWidgets.QMainWindow):
     def systemsById(self):
         return self.dotlan.systemsById
 
+    @property
+    def monitoredPlayerNames(self):
+        return Cache().getUsedPlayerNames()
+
+    @property
+    def knownPlayerNames(self):
+        return Cache().getKnownPlayerNames()
+
     def show(self):
         QtWidgets.QMainWindow.show(self)
 
     def _updateKnownPlayerAndMenu(self, names=None):
-        notify_players_changed = False
+        """
+        Updates the players menu
+        Args:
+            names:
+
+        Returns:
+
+        """
+        known_player_names = self.knownPlayerNames
+
         if names is None:
-            self._addPlayerMenu()
+            self.players_changed.emit()
         elif isinstance(names, str):
-            if names not in self.knownPlayerNames:
-                self.knownPlayerNames.add(names)
-                notify_players_changed = True
+            if names not in known_player_names:
+                known_player_names.add(names)
+
         else:
             for name in names:
-                if name not in self.knownPlayerNames:
-                    self.knownPlayerNames.add(name)
-                    notify_players_changed = True
-        if notify_players_changed:
-            Cache().setKnownPlayerNames(self.knownPlayerNames)
-            self._addPlayerMenu()
+                if name not in known_player_names:
+                    known_player_names.add(name)
+
+        if known_player_names != self.knownPlayerNames:
+            Cache().setKnownPlayerNames(known_player_names)
             self.players_changed.emit()
 
     def _addPlayerMenu(self):
@@ -339,7 +355,6 @@ class MainWindow(QtWidgets.QMainWindow):
             action = QAction(icon, "{0}".format(name))
             action.setCheckable(True)
             action.playerName = name
-            action.triggered.connect(self.changeMonitoredPlayerNamesFromMenu)
             action.playerUse = name in self.monitoredPlayerNames
             action.setChecked(action.playerUse)
             action.setIconVisibleInMenu(action.playerUse)
@@ -361,8 +376,7 @@ class MainWindow(QtWidgets.QMainWindow):
             action.setIconVisibleInMenu(action.isChecked())
             if action.isChecked():
                 player_used.add(action.playerName)
-        self.monitoredPlayerNames = player_used
-        Cache().setUsedPlayerNames(self.monitoredPlayerNames)
+        Cache().setUsedPlayerNames(player_used)
         self.players_changed.emit()
 
     def wheelDirChanged(self, checked):
@@ -583,18 +597,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableViewJBs.customContextMenuRequested.connect(showJBContextMenu)
 
     def _wireUpDatabaseCharacters(self):
-        char_model = QSqlQueryModel()
+        char_model = TableModelPlayers()
 
         def callOnCharsUpdate():
             char_model.setQuery('select name as Name,'\
-                                '(case active WHEN 0 THEN "No" ELSE "Yes" END) AS Monitor,'\
+                                '(CASE active WHEN 0 THEN "No" ELSE "Yes" END) AS Monitor,'\
                                 '(CASE WHEN key is NULL THEN "" ELSE "ESI" END ) AS Registered,'\
                                 '(CASE name WHEN (SELECT data FROM cache WHERE key IS "api_char_name")'\
                                 ' THEN "Yes" ELSE "" END) AS Current FROM players')
+
+        self.tableViewPlayersDelegate = StyledItemDelegatePlayers(self)
+        self.tableViewPlayersDelegate.players_edit_changed = self.players_changed
         callOnCharsUpdate()
         sort = QSortFilterProxyModel()
         sort.setSourceModel(char_model)
         self.ui.tableChars.setModel(sort)
+        self.ui.tableChars.setItemDelegate(self.tableViewPlayersDelegate)
         self.ui.tableChars.show()
         self.players_changed.connect(callOnCharsUpdate)
 
@@ -876,13 +894,6 @@ class MainWindow(QtWidgets.QMainWindow):
         """
             Persisting things to the cache before closing the window
         """
-        # Known player names
-        if self.knownPlayerNames:
-            Cache().setKnownPlayerNames(self.knownPlayerNames)
-
-        if self.monitoredPlayerNames:
-            Cache().setUsedPlayerNames(self.monitoredPlayerNames)
-
         # Program state to cache (to read it on next startup)
         settings = ((None, "restoreGeometry", str(self.saveGeometry()), True),
                     (None, "restoreState", str(self.saveState()), True),
@@ -1128,7 +1139,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #    return
         logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
         if system_name not in self.systems:
-            if change_region :  # and char_name in self.monitoredPlayerNames:
+            if change_region:   # and char_name in self.monitoredPlayerNames:
                 try:
                     for test in evegate.esiUniverseIds([system_name])["systems"]:
                         name = test["name"]
