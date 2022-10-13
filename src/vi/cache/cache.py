@@ -489,7 +489,7 @@ class Cache(object):
         with Cache.SQLITE_WRITE_LOCK:
             query = "INSERT INTO players (id, name, key, active, modified, max_age) VALUES (?, ?, ?, ?, ?, ?)"
             self.con.execute(query,
-                             (key["CharacterID"], key["CharacterName"], json.dumps(key), 0, time.time(), max_age))
+                             (key["CharacterID"], key["CharacterName"], json.dumps(key), 1, time.time(), max_age))
             self.con.commit()
 
     def removeAPIKey(self, char_name):
@@ -512,30 +512,41 @@ class Cache(object):
 
     def setKnownPlayerNames(self, values: set):
         current_players = self.getKnownPlayerNames()
-        with Cache.SQLITE_WRITE_LOCK:
+        with self as cache:
             for player_name in values:
                 if player_name not in current_players:
-                    query = "INSERT INTO players (name, modified, max_age) VALUES (?, ?, ?)"
-                    self.con.execute(query, (player_name, time.time(), secondsTillDowntime()))
-            self.con.commit()
+                    query = "INSERT INTO players (name, modified, active,max_age) VALUES (?, ?, 1, ?)"
+                    cache.con.execute(query, (player_name, time.time(), secondsTillDowntime()))
+            cache.con.commit()
 
-    def getUsedPlayerNames(self) -> set:
+    def getActivePlayerNames(self) -> set:
         with Cache.SQLITE_WRITE_LOCK:
             query = "SELECT name FROM players WHERE active=1"
             res = {elem[0] for elem in self.con.execute(query).fetchall()}
         return res
 
-    def setUsedPlayerNames(self, values: set):
+    def setActivePlayerNames(self, values: set):
         current_players = self.getKnownPlayerNames()
         with self as cache:
             for player_name in current_players | values:
                 if player_name not in current_players:
-                    query = "INSERT INTO players (active,name, max_age) VALUES (?, ?, {});".format(secondsTillDowntime())
+                    query = "INSERT INTO players (active,name,max_age) VALUES (?, ?, {});".format(secondsTillDowntime())
                 else:
                     query = "UPDATE  players SET active = ?  WHERE name = ?;"
                 cache.con.execute(query, (player_name in values, player_name))
             query = "UPDATE  players set modified = ?  WHERE active=1;"
             cache.con.execute(query, (time.time(),))
+            cache.con.commit()
+
+    def setPlayerOnline(self, online_player_names: set):
+        current_players = self.getKnownPlayerNames()
+        with self as cache:
+            for player_name in current_players | online_player_names:
+                if player_name not in current_players:
+                    query = "INSERT INTO players (active,online,name,max_age) VALUES (?,1, ?, {});".format(secondsTillDowntime())
+                    cache.con.execute(query, (player_name in online_player_names, player_name))
+                query = "UPDATE  players set modified = ?  online=1 WHERE name= ? ;"
+                cache.con.execute(query, (time.time(), player_name))
             cache.con.commit()
 
     def clearOutdatedPlayerNames(self):

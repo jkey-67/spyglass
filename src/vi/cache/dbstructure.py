@@ -68,6 +68,9 @@ def updateDatabase(oldVersion, con):
                     "DROP TABLE playernames;",
                     "UPDATE players SET modified = {};".format(time.time()),
                     "UPDATE version SET version = 8"]
+    if oldVersion < 9:
+        queries += ["ALTER TABLE players add COLUMN online INT;",
+                    "UPDATE version SET version = 9"]
 
     for query in queries:
         con.execute(query)

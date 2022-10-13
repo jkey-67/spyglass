@@ -140,7 +140,7 @@ class Application(QApplication):
             log_level = logging.INFO
         if version.SNAPSHOT:
             log_level = logging.DEBUG  # For Testing
-
+        spyglass_cache.clearOutdatedPlayerNames()
         back_ground_color = spyglass_cache.getFromCache("background_color")
 
         if back_ground_color:

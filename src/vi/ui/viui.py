@@ -307,7 +307,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @property
     def monitoredPlayerNames(self):
-        return Cache().getUsedPlayerNames()
+        return Cache().getActivePlayerNames()
 
     @property
     def knownPlayerNames(self):
@@ -376,7 +376,7 @@ class MainWindow(QtWidgets.QMainWindow):
             action.setIconVisibleInMenu(action.isChecked())
             if action.isChecked():
                 player_used.add(action.playerName)
-        Cache().setUsedPlayerNames(player_used)
+        Cache().setActivePlayerNames(player_used)
         self.players_changed.emit()
 
     def wheelDirChanged(self, checked):
@@ -1141,21 +1141,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if system_name not in self.systems:
             if change_region:   # and char_name in self.monitoredPlayerNames:
                 try:
-                    for test in evegate.esiUniverseIds([system_name])["systems"]:
-                        name = test["name"]
-                        system_id = test["id"]
-                        if name.lower() == system_name.lower():
-                            system = evegate.esiUniverseSystems(system_id)
-                            selected_system = evegate.esiUniverseSystems(system["system_id"])
-                            selected_constellation = evegate.esiUniverseConstellations(
-                                selected_system["constellation_id"])
-                            selected_region = selected_constellation["region_id"]
-                            selected_region_name = dotlan.convertRegionName(
-                                evegate.esiUniverseNames([selected_region])[selected_region])
-                            concurrent_region_name = Cache().getFromCache("region_name")
-                            if selected_region_name != concurrent_region_name:
-                                self.changeRegionByName(selected_region_name, system_id)
-
+                    system_id = Universe.systemIdByName(system_name)
+                    selected_region_name = Universe.regionNameFromSystemID(system_id)
+                    selected_region_name = dotlan.convertRegionName(selected_region_name)
+                    concurrent_region_name = Cache().getFromCache("region_name")
+                    if selected_region_name != concurrent_region_name:
+                        self.changeRegionByName(selected_region_name, system_id)
                 except Exception as e:
                     logging.error(e)
                     pass

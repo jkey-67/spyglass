@@ -201,7 +201,7 @@ class ChatParser(object):
 
         if username in CTX.EVE_SYSTEM:
             if ":" in text:
-                system = text.split(":")[1].strip().replace("*", "").upper()
+                system = text.split(":")[1].strip().replace("*", "")
                 status = states.LOCATION
             else:
                 # We could not determine if the message was system-change related
