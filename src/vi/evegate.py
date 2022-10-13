@@ -23,6 +23,7 @@ import json
 import time
 import parse
 import threading
+from vi.universe import Universe
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QThread, QUrl
@@ -49,13 +50,13 @@ import eve_api_key
 from vi.cache.cache import Cache, currentEveTime, secondsTillDowntime
 from vi.version import VERSION
 
+
 ERROR = -1
 NOT_EXISTS = 0
 EXISTS = 1
 
 """ todo: split the cache from esi functionality
 """
-
 
 def setEsiCharName(name):
     """
@@ -1168,8 +1169,7 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
             npc_list = esiUniverseNames(list_of_all_factions)
             for sov in npc_sov.values():
                 if "faction_id" in sov.keys():
-                    faction_id = sov["faction_id"]
-                    sov["ticker"] = npc_list[faction_id]
+                    sov["ticker"] = Universe.npcFactionNames(sov["faction_id"], npc_list)
                 seq = update_callback(seq)
             player_sov.update(npc_sov)
         cache.putIntoCache(cache_key, json.dumps(player_sov), 3600)
@@ -1817,11 +1817,13 @@ def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
                 "Pending version check, current version is {}.".format(checked)]
 
 
-def checkTheraConnections(system_name="Jita"):
+def checkTheraConnections(system_name="1-7HVI"):
     req = "https://www.eve-scout.com/api/wormholes?systemSearch={}".format(system_name)
     response = requests.get(req)
     if response.status_code == 200:
-        return response.json()
+        res = response.json()
+        return res
+
     else:
         return None
 
@@ -1841,7 +1843,7 @@ def getSpyglassUpdateLink(ver=VERSION):
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
-    checkTheraConnections()
+    res = checkTheraConnections()
     res = getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None)
     res = esiSovereigntyStructures()
     with Cache() as cache:

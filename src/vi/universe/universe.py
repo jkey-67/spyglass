@@ -1,6 +1,7 @@
 import json
-from vi.resources import resourcePath
+import os
 from vi.universe.shipnames import SHIPNAMES
+from vi.universe.npcnames import NPCNAMES
 
 
 def _loadJsonFile(name):
@@ -10,13 +11,15 @@ def _loadJsonFile(name):
 
 
 class Universe(object):
-    STARGATES = _loadJsonFile(resourcePath("vi/universe/evestargates.json"))
-    CONSTELLATIONS = _loadJsonFile(resourcePath("vi//universe/eveconstellations.json"))
-    REGIONS = _loadJsonFile(resourcePath("vi/universe/everegions.json"))
-    SYSTEMS = _loadJsonFile(resourcePath("vi/universe/evesystems.json"))
+    curr_path = os.path.dirname(__file__)
+    STARGATES = _loadJsonFile(os.path.join(curr_path, "evestargates.json"))
+    CONSTELLATIONS = _loadJsonFile(os.path.join(curr_path, "eveconstellations.json"))
+    REGIONS = _loadJsonFile(os.path.join(curr_path, "everegions.json"))
+    SYSTEMS = _loadJsonFile(os.path.join(curr_path, "evesystems.json"))
     SYSTEM_NAMES = [sys["name"] for sys in SYSTEMS]
     UPPER_SYSTEM_NAMES = [sys["name"].upper() for sys in SYSTEMS]
     SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]
+    NPC_FACTION_NAMES = NPCNAMES
     LOCATED_CHARS = set()
 
     def __init__(self, path_to_sql_file="cache.sqlite3"):
@@ -33,6 +36,16 @@ class Universe(object):
                         if key not in mon_systems.keys():
                             mon_systems.update(i)
         return mon_systems
+
+    @staticmethod
+    def npcFactionNames(faction_id: int, npc_list=list()):
+        if faction_id in Universe.NPC_FACTION_NAMES:
+            return Universe.NPC_FACTION_NAMES[faction_id]
+        elif faction_id in npc_list:
+            return npc_list[faction_id]
+        else:
+            return "???"
+
 
     @staticmethod
     def systemNames():

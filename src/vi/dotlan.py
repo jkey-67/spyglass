@@ -246,7 +246,7 @@ class Map(object):
             except ValueError as e:
                 continue
             for element in symbol.select(".sys"):
-                name = element.select("text")[0].text.strip().upper()
+                name = element.select("text")[0].text.strip()
                 map_coordinates = {}
                 for keyname in ("x", "y", "width", "height"):
                     try:
