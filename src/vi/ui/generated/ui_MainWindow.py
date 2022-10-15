@@ -18,10 +18,10 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QFrame,
     QGridLayout, QHBoxLayout, QHeaderView, QLabel,
-    QListView, QListWidget, QListWidgetItem, QMainWindow,
-    QMenu, QMenuBar, QPushButton, QScrollBar,
-    QSizePolicy, QSpacerItem, QSplitter, QTabWidget,
-    QTableView, QVBoxLayout, QWidget)
+    QLineEdit, QListView, QListWidget, QListWidgetItem,
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QScrollBar, QSizePolicy, QSpacerItem, QSplitter,
+    QTabWidget, QTableView, QVBoxLayout, QWidget)
 
 from vi.panningwebview import PanningWebView
 
@@ -279,12 +279,12 @@ class Ui_MainWindow(object):
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(1, 0, -1, 0)
-        self.tabWidget = QTabWidget(self.chatbox)
-        self.tabWidget.setObjectName(u"tabWidget")
-        self.tabWidget.setTabPosition(QTabWidget.East)
-        self.tabWidget.setDocumentMode(True)
-        self.tabWidget.setMovable(True)
-        self.tabWidget.setTabBarAutoHide(True)
+        self.tabWidgetThera = QTabWidget(self.chatbox)
+        self.tabWidgetThera.setObjectName(u"tabWidgetThera")
+        self.tabWidgetThera.setTabPosition(QTabWidget.East)
+        self.tabWidgetThera.setDocumentMode(True)
+        self.tabWidgetThera.setMovable(True)
+        self.tabWidgetThera.setTabBarAutoHide(True)
         self.tab = QWidget()
         self.tab.setObjectName(u"tab")
         self.verticalLayout_2 = QVBoxLayout(self.tab)
@@ -333,7 +333,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_2.addWidget(self.chatListWidget)
 
-        self.tabWidget.addTab(self.tab, "")
+        self.tabWidgetThera.addTab(self.tab, "")
         self.POIs = QWidget()
         self.POIs.setObjectName(u"POIs")
         self.verticalLayout_5 = QVBoxLayout(self.POIs)
@@ -354,7 +354,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_5.addWidget(self.tableViewPOIs)
 
-        self.tabWidget.addTab(self.POIs, "")
+        self.tabWidgetThera.addTab(self.POIs, "")
         self.tab_2 = QWidget()
         self.tab_2.setObjectName(u"tab_2")
         self.verticalLayout_3 = QVBoxLayout(self.tab_2)
@@ -381,7 +381,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.tableViewJBs)
 
-        self.tabWidget.addTab(self.tab_2, "")
+        self.tabWidgetThera.addTab(self.tab_2, "")
         self.tab_3 = QWidget()
         self.tab_3.setObjectName(u"tab_3")
         self.verticalLayout_4 = QVBoxLayout(self.tab_3)
@@ -441,9 +441,29 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addItem(self.verticalSpacer)
 
-        self.tabWidget.addTab(self.tab_3, "")
+        self.tabWidgetThera.addTab(self.tab_3, "")
+        self.qThera = QWidget()
+        self.qThera.setObjectName(u"qThera")
+        self.verticalLayout_6 = QVBoxLayout(self.qThera)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.lineEditThera = QLineEdit(self.qThera)
+        self.lineEditThera.setObjectName(u"lineEditThera")
 
-        self.verticalLayout.addWidget(self.tabWidget)
+        self.verticalLayout_6.addWidget(self.lineEditThera)
+
+        self.tableViewThera = QTableView(self.qThera)
+        self.tableViewThera.setObjectName(u"tableViewThera")
+        self.tableViewThera.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableViewThera.setSortingEnabled(True)
+        self.tableViewThera.setCornerButtonEnabled(False)
+        self.tableViewThera.horizontalHeader().setStretchLastSection(True)
+        self.tableViewThera.verticalHeader().setVisible(False)
+
+        self.verticalLayout_6.addWidget(self.tableViewThera)
+
+        self.tabWidgetThera.addTab(self.qThera, "")
+
+        self.verticalLayout.addWidget(self.tabWidgetThera)
 
         self.splitter.addWidget(self.chatbox)
 
@@ -527,7 +547,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidgetThera.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -609,12 +629,13 @@ class Ui_MainWindow(object):
         self.timeInfo.setText(QCoreApplication.translate("MainWindow", u"All Intel (past 20 minutes)", None))
         self.chatLargeButton.setText(QCoreApplication.translate("MainWindow", u"+", None))
         self.chatSmallButton.setText(QCoreApplication.translate("MainWindow", u"-", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Intel", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.POIs), QCoreApplication.translate("MainWindow", u"POIs", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"JBs", None))
+        self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Intel", None))
+        self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.POIs), QCoreApplication.translate("MainWindow", u"POIs", None))
+        self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"JBs", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Current API Char", None))
         self.removeChar.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("MainWindow", u"API Chars", None))
+        self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.tab_3), QCoreApplication.translate("MainWindow", u"API Chars", None))
+        self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.qThera), QCoreApplication.translate("MainWindow", u"Thera", None))
         self.updateAvail.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"EVE-Spy", None))
         self.menuChat.setTitle(QCoreApplication.translate("MainWindow", u"Chatrooms", None))

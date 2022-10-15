@@ -50,6 +50,7 @@ from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser
 from vi.clipboard import evaluateClipboardData
 from vi.ui.modelplayer import TableModelPlayers, StyledItemDelegatePlayers
+from vi.ui.modelthera import TableModelThera
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtSql import QSqlQueryModel
 
@@ -499,6 +500,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wireUpDatabaseViewsJB()
         self._wireUpDatabaseViewPOI()
         self._wireUpDatabaseCharacters()
+        self._wireUpThera()
 
     def _wireUpDatabaseViewPOI(self):
         model = POITableModell()
@@ -549,6 +551,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.tableViewPOIs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.ui.tableViewPOIs.customContextMenuRequested.connect(showPOIContextMenu)
+
+    def _wireUpThera(self):
+        strList = QtWidgets.QCompleter( Universe.systemNames() )
+        strList.setCaseSensitivity(Qt.CaseInsensitive)
+
+        model = TableModelThera()
+        sort = QSortFilterProxyModel()
+        sort.setSourceModel(model)
+        self.ui.lineEditThera.setCompleter(strList)
+        self.ui.tableViewThera.setModel(sort)
 
     def _wireUpDatabaseViewsJB(self):
         model = QSqlQueryModel()
