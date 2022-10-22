@@ -45,7 +45,7 @@ from vi.cache.cache import Cache
 from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
-from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu, POIContextMenu
+from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu, POIContextMenu, TheraContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser
 from vi.clipboard import evaluateClipboardData
@@ -152,7 +152,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.connectToEveOnline.setFlat(False)
         self.dotlan = None
         self.setWindowTitle(
-            "DENCI-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
+            "EVE-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
         self.taskbarIconQuiescent = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
         self.taskbarIconWorking = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
         self.setWindowIcon(self.taskbarIconQuiescent)
@@ -165,7 +165,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon = tray_icon
         self.trayIcon.activated.connect(self.systemTrayActivated)
         self.clipboard = QApplication.clipboard()
-        self.clipboard.clear(mode=self.clipboard.Clipboard)
+        self.clipboard.clear(mode=QClipboard.Mode.Clipboard)
         self.alarmDistance = 0
         self.lastStatisticsUpdate = 0
         self.chatEntries = []
@@ -553,14 +553,73 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableViewPOIs.customContextMenuRequested.connect(showPOIContextMenu)
 
     def _wireUpThera(self):
-        strList = QtWidgets.QCompleter( Universe.systemNames() )
-        strList.setCaseSensitivity(Qt.CaseInsensitive)
+
+        str_list = QtWidgets.QCompleter(Universe.systemNames())
+        str_list.setCaseSensitivity(Qt.CaseInsensitive)
+        str_list.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
 
         model = TableModelThera()
         sort = QSortFilterProxyModel()
         sort.setSourceModel(model)
-        self.ui.lineEditThera.setCompleter(strList)
         self.ui.tableViewThera.setModel(sort)
+        self.ui.tableViewThera.horizontalHeader().setDragEnabled(True)
+        self.ui.tableViewThera.horizontalHeader().setAcceptDrops(True)
+        self.ui.tableViewThera.horizontalHeader().setDragDropMode(QAbstractItemView.DragDrop)
+        self.ui.tableViewThera.horizontalHeader().setDefaultDropAction(Qt.MoveAction)
+        self.ui.tableViewThera.horizontalHeader().setDragDropOverwriteMode(True)
+        self.ui.tableViewThera.horizontalHeader().setDropIndicatorShown(True)
+
+        self.ui.lineEditThera.setCompleter(str_list)
+        system_name = Cache().getFromCache("thera_source_system")
+        if system_name:
+            self.ui.lineEditThera.setText(system_name)
+            self.ui.tableViewThera.model().sourceModel().updateData(system_name)
+
+        def theraSystemChanged():
+            system_name = self.ui.lineEditThera.text()
+            Cache().putIntoCache("thera_source_system", system_name)
+            self.ui.tableViewThera.model().sourceModel().updateData(system_name)
+
+
+
+        self.ui.lineEditThera.editingFinished.connect(theraSystemChanged)
+        self.ui.toolRescanThrea.clicked.connect(theraSystemChanged)
+        def showTheraContextMenu(pos):
+            cache = Cache()
+            index = self.ui.tableViewThera.model().mapToSource(self.ui.tableViewThera.indexAt(pos)).row()
+
+            item = self.ui.tableViewThera.model().sourceModel().thera_data[index]
+            lps_ctx_menu = TheraContextMenu()
+            lps_ctx_menu.setStyleSheet(Styles().getStyle())
+            res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
+            if res == lps_ctx_menu.destination:
+                # evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["sourceWormholeType"]["id"])
+                evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["wormholeDestinationSolarSystemId"])
+                return
+            elif res == lps_ctx_menu.waypoint:
+                evegate.esiAutopilotWaypoint(
+                    char_name=evegate.esiCharName(),
+                    system_id=item["wormholeDestinationSolarSystemId"],
+                    clear_all=False,
+                    beginning=False
+                )
+                return
+            elif res == lps_ctx_menu.setRoute:
+                first = True
+                for way_point in item["jump_route"]:
+                    evegate.esiAutopilotWaypoint(
+                        char_name=evegate.esiCharName(),
+                        system_id=way_point,
+                        clear_all=first,
+                        beginning=first
+                    )
+                    first = False
+            elif res == lps_ctx_menu.updateData:
+                self.ui.tableViewThera.model().sourceModel().updateData()
+                return
+
+        self.ui.tableViewThera.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ui.tableViewThera.customContextMenuRequested.connect(showTheraContextMenu)
 
     def _wireUpDatabaseViewsJB(self):
         model = QSqlQueryModel()
@@ -906,12 +965,14 @@ class MainWindow(QtWidgets.QMainWindow):
         """
             Persisting things to the cache before closing the window
         """
+        self.ui
         # Program state to cache (to read it on next startup)
         settings = ((None, "restoreGeometry", str(self.saveGeometry()), True),
                     (None, "restoreState", str(self.saveState()), True),
                     ("ui.splitter", "restoreGeometry", str(self.ui.splitter.saveGeometry()), True),
                     ("ui.splitter", "restoreState", str(self.ui.splitter.saveState()), True),
                     ("ui.mapView", "setZoomFactor", self.ui.mapView.zoomFactor()),
+                    ("ui.tabWidgetThera", "restoreGeometry", str(self.ui.tabWidgetThera.saveGeometry()), True),
                     (None, "changeChatFontSize", ChatEntryWidget.TEXT_SIZE),
                     (None, "setOpacity", self.opacityGroup.checkedAction().opacity),
                     (None, "changeAlwaysOnTop", self.ui.alwaysOnTopAction.isChecked()),

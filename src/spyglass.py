@@ -35,7 +35,6 @@ from vi.ui.styles import Styles
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
 
-
 def exceptHook(exception_type, exception_value, traceback_object):
     """
         Global function to catch unhandled exceptions.

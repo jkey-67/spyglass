@@ -907,8 +907,13 @@ def esiAutopilotWaypoint(char_name: str, system_id: int, beginning=True, clear_a
         response = requests.post(req)
         if response.status_code != 204:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-            response.raise_for_status()
 
+
+def listOfJumpGatePairs():
+    res = list()
+    for jump_gates in Cache().getJumpGates():
+        res.append([Universe.systemIdByName(jump_gates[0]),Universe.systemIdByName(jump_gates[2])])
+    return res
 
 def getRouteFromEveOnline(jumpgates, src, dst):
     """build rout respecting jump bridges
@@ -923,8 +928,9 @@ def getRouteFromEveOnline(jumpgates, src, dst):
     req = "https://esi.evetech.net/v1/route/{}/{}/?connections={}".format(src, dst, route_elements)
     response = requests.get(req)
     if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-        response.raise_for_status()
+        # logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+        # response.raise_for_status()
+        return []
     return response.json()
 
 
@@ -1817,18 +1823,26 @@ def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
                 "Pending version check, current version is {}.".format(checked)]
 
 
-def checkTheraConnections(system_name="1-7HVI"):
+def checkTheraConnections(system_name="1-7HVI", fetch_jump_route=False):
     req = "https://www.eve-scout.com/api/wormholes?systemSearch={}".format(system_name)
     response = requests.get(req)
     if response.status_code == 200:
-        res = response.json()
-        return res
-
+        thera_connections = response.json()
+        jump_pairs = listOfJumpGatePairs()
+        src_id = Universe.systemIdByName(system_name)
+        for thera_item in thera_connections:
+            dst_id = thera_item["destinationSolarSystem"]["id"]
+            if 31000920 != src_id and 31000920 != dst_id:
+                if fetch_jump_route:
+                    thera_item["jump_route"] = getRouteFromEveOnline(jump_pairs, src_id, dst_id)
+                    thera_item["jumps"] = len(thera_item["jump_route"])
+        return thera_connections
     else:
-        return None
+        return []
 
 
 def getSpyglassUpdateLink(ver=VERSION):
+
     req = "https://api.github.com/repos/jkey-67/spyglass/releases"
     response = requests.get(req)
     if response.status_code != 200:
@@ -1843,6 +1857,8 @@ def getSpyglassUpdateLink(ver=VERSION):
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
+
+    res = listOfJumpGatePairs()
     res = checkTheraConnections()
     res = getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None)
     res = esiSovereigntyStructures()

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.2
+## Created by: Qt User Interface Compiler version 6.4.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -21,15 +21,17 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QFram
     QLineEdit, QListView, QListWidget, QListWidgetItem,
     QMainWindow, QMenu, QMenuBar, QPushButton,
     QScrollBar, QSizePolicy, QSpacerItem, QSplitter,
-    QTabWidget, QTableView, QVBoxLayout, QWidget)
+    QTabWidget, QTableView, QToolButton, QVBoxLayout,
+    QWidget)
 
 from vi.panningwebview import PanningWebView
+import resource_rc
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1082, 758)
+        MainWindow.resize(934, 758)
         MainWindow.setWindowOpacity(1.000000000000000)
         self.infoAction = QAction(MainWindow)
         self.infoAction.setObjectName(u"infoAction")
@@ -180,7 +182,7 @@ class Ui_MainWindow(object):
         self.gridLayout_5.setObjectName(u"gridLayout_5")
         self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setSpacing(0)
+        self.horizontalLayout_2.setSpacing(2)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(-1, -1, -1, 6)
         self.frameButton = QPushButton(self.mapbuttonwidget)
@@ -278,7 +280,7 @@ class Ui_MainWindow(object):
         self.verticalLayout = QVBoxLayout(self.chatbox)
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(1, 0, -1, 0)
+        self.verticalLayout.setContentsMargins(1, 0, 0, 0)
         self.tabWidgetThera = QTabWidget(self.chatbox)
         self.tabWidgetThera.setObjectName(u"tabWidgetThera")
         self.tabWidgetThera.setTabPosition(QTabWidget.East)
@@ -288,33 +290,35 @@ class Ui_MainWindow(object):
         self.tab = QWidget()
         self.tab.setObjectName(u"tab")
         self.verticalLayout_2 = QVBoxLayout(self.tab)
-        self.verticalLayout_2.setSpacing(0)
+        self.verticalLayout_2.setSpacing(3)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setSpacing(2)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.timeInfo = QLabel(self.tab)
         self.timeInfo.setObjectName(u"timeInfo")
-        self.timeInfo.setMinimumSize(QSize(0, 26))
-        self.timeInfo.setMaximumSize(QSize(16777215, 22))
+        self.timeInfo.setMinimumSize(QSize(0, 32))
+        self.timeInfo.setMaximumSize(QSize(16777215, 32))
 
-        self.verticalLayout_2.addWidget(self.timeInfo)
+        self.horizontalLayout.addWidget(self.timeInfo)
 
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.chatLargeButton = QPushButton(self.tab)
+        self.chatLargeButton = QToolButton(self.tab)
         self.chatLargeButton.setObjectName(u"chatLargeButton")
-        self.chatLargeButton.setMinimumSize(QSize(0, 27))
-        self.chatLargeButton.setMaximumSize(QSize(16777215, 22))
+        self.chatLargeButton.setMinimumSize(QSize(32, 32))
+        self.chatLargeButton.setMaximumSize(QSize(16777215, 32))
         self.chatLargeButton.setFocusPolicy(Qt.NoFocus)
-        self.chatLargeButton.setFlat(True)
+        self.chatLargeButton.setIconSize(QSize(24, 24))
+        self.chatLargeButton.setAutoRaise(False)
 
         self.horizontalLayout.addWidget(self.chatLargeButton)
 
-        self.chatSmallButton = QPushButton(self.tab)
+        self.chatSmallButton = QToolButton(self.tab)
         self.chatSmallButton.setObjectName(u"chatSmallButton")
-        self.chatSmallButton.setMinimumSize(QSize(0, 27))
-        self.chatSmallButton.setMaximumSize(QSize(16777215, 22))
+        self.chatSmallButton.setMinimumSize(QSize(32, 32))
+        self.chatSmallButton.setMaximumSize(QSize(16777215, 32))
         self.chatSmallButton.setFocusPolicy(Qt.NoFocus)
-        self.chatSmallButton.setFlat(True)
+        self.chatSmallButton.setIconSize(QSize(24, 24))
 
         self.horizontalLayout.addWidget(self.chatSmallButton)
 
@@ -337,7 +341,7 @@ class Ui_MainWindow(object):
         self.POIs = QWidget()
         self.POIs.setObjectName(u"POIs")
         self.verticalLayout_5 = QVBoxLayout(self.POIs)
-        self.verticalLayout_5.setSpacing(0)
+        self.verticalLayout_5.setSpacing(3)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.verticalLayout_5.setContentsMargins(0, 0, 0, 0)
         self.tableViewPOIs = QTableView(self.POIs)
@@ -358,7 +362,7 @@ class Ui_MainWindow(object):
         self.tab_2 = QWidget()
         self.tab_2.setObjectName(u"tab_2")
         self.verticalLayout_3 = QVBoxLayout(self.tab_2)
-        self.verticalLayout_3.setSpacing(0)
+        self.verticalLayout_3.setSpacing(3)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.tableViewJBs = QTableView(self.tab_2)
@@ -385,7 +389,7 @@ class Ui_MainWindow(object):
         self.tab_3 = QWidget()
         self.tab_3.setObjectName(u"tab_3")
         self.verticalLayout_4 = QVBoxLayout(self.tab_3)
-        self.verticalLayout_4.setSpacing(6)
+        self.verticalLayout_4.setSpacing(3)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
         self.connectToEveOnline = QPushButton(self.tab_3)
@@ -417,15 +421,19 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_3.addWidget(self.currentESICharacter)
 
+        self.removeChar = QToolButton(self.tab_3)
+        self.removeChar.setObjectName(u"removeChar")
+        icon1 = QIcon()
+        icon1.addFile(u":/Icons/res/trash-box.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.removeChar.setIcon(icon1)
+        self.removeChar.setIconSize(QSize(24, 24))
+
+        self.horizontalLayout_3.addWidget(self.removeChar)
+
         self.horizontalLayout_3.setStretch(0, 1)
         self.horizontalLayout_3.setStretch(2, 3)
 
         self.verticalLayout_4.addLayout(self.horizontalLayout_3)
-
-        self.removeChar = QPushButton(self.tab_3)
-        self.removeChar.setObjectName(u"removeChar")
-
-        self.verticalLayout_4.addWidget(self.removeChar)
 
         self.tableChars = QTableView(self.tab_3)
         self.tableChars.setObjectName(u"tableChars")
@@ -445,11 +453,27 @@ class Ui_MainWindow(object):
         self.qThera = QWidget()
         self.qThera.setObjectName(u"qThera")
         self.verticalLayout_6 = QVBoxLayout(self.qThera)
+        self.verticalLayout_6.setSpacing(3)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.lineEditThera = QLineEdit(self.qThera)
         self.lineEditThera.setObjectName(u"lineEditThera")
 
-        self.verticalLayout_6.addWidget(self.lineEditThera)
+        self.horizontalLayout_4.addWidget(self.lineEditThera)
+
+        self.toolRescanThrea = QToolButton(self.qThera)
+        self.toolRescanThrea.setObjectName(u"toolRescanThrea")
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/res/arrows-rotate.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.toolRescanThrea.setIcon(icon2)
+        self.toolRescanThrea.setIconSize(QSize(24, 24))
+        self.toolRescanThrea.setCheckable(False)
+
+        self.horizontalLayout_4.addWidget(self.toolRescanThrea)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_4)
 
         self.tableViewThera = QTableView(self.qThera)
         self.tableViewThera.setObjectName(u"tableViewThera")
@@ -477,7 +501,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1082, 24))
+        self.menubar.setGeometry(QRect(0, 0, 934, 24))
         self.menu = QMenu(self.menubar)
         self.menu.setObjectName(u"menu")
         self.menuChat = QMenu(self.menubar)
@@ -629,12 +653,16 @@ class Ui_MainWindow(object):
         self.timeInfo.setText(QCoreApplication.translate("MainWindow", u"All Intel (past 20 minutes)", None))
         self.chatLargeButton.setText(QCoreApplication.translate("MainWindow", u"+", None))
         self.chatSmallButton.setText(QCoreApplication.translate("MainWindow", u"-", None))
+#if QT_CONFIG(shortcut)
+        self.chatSmallButton.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+S", None))
+#endif // QT_CONFIG(shortcut)
         self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Intel", None))
         self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.POIs), QCoreApplication.translate("MainWindow", u"POIs", None))
         self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"JBs", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Current API Char", None))
         self.removeChar.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.tab_3), QCoreApplication.translate("MainWindow", u"API Chars", None))
+        self.toolRescanThrea.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.tabWidgetThera.setTabText(self.tabWidgetThera.indexOf(self.qThera), QCoreApplication.translate("MainWindow", u"Thera", None))
         self.updateAvail.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"EVE-Spy", None))

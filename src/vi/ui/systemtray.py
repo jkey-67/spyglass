@@ -152,14 +152,30 @@ class JumpBridgeContextMenu(QtWidgets.QMenu):
 class POIContextMenu(QtWidgets.QMenu):
     def __init__(self):
         QtWidgets.QMenu.__init__(self)
-        self.destination = QAction("Set destination")
-        self.waypoint = QAction("Add waypoint")
+        self.destination = QAction("Set Destination")
+        self.waypoint = QAction("Add Waypoint")
         self.delete = QAction("Delete POI")
 
         self.addAction(self.destination)
         self.addAction(self.waypoint)
         self.addSeparator()
         self.addAction(self.delete)
+
+
+class TheraContextMenu(QtWidgets.QMenu):
+    def __init__(self):
+        QtWidgets.QMenu.__init__(self)
+        self.destination = QAction("Set Destination")
+        self.waypoint = QAction("Add Waypoint")
+        self.setRoute = QAction("Set Route")
+
+        self.updateData = QAction("Update Data")
+
+        self.addAction(self.destination)
+        self.addAction(self.waypoint)
+        self.addAction(self.setRoute)
+        self.addSeparator()
+        self.addAction(self.updateData)
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
