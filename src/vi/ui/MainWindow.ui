@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>934</width>
+    <width>1023</width>
     <height>758</height>
    </rect>
   </property>
@@ -26,16 +26,16 @@
       <widget class="QWidget" name="mapwidget" native="true">
        <layout class="QGridLayout" name="gridLayout">
         <property name="leftMargin">
-         <number>0</number>
+         <number>2</number>
         </property>
         <property name="topMargin">
-         <number>0</number>
+         <number>2</number>
         </property>
         <property name="rightMargin">
-         <number>0</number>
+         <number>2</number>
         </property>
         <property name="bottomMargin">
-         <number>1</number>
+         <number>2</number>
         </property>
         <property name="spacing">
          <number>0</number>
@@ -71,25 +71,25 @@
             <number>0</number>
            </property>
            <item row="0" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,3,0,0,0,0">
              <property name="spacing">
               <number>2</number>
              </property>
              <property name="bottomMargin">
-              <number>6</number>
+              <number>0</number>
              </property>
              <item>
-              <widget class="QPushButton" name="frameButton">
+              <widget class="QToolButton" name="frameButton">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>27</height>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>16777215</width>
-                 <height>22</height>
+                 <width>64</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="font">
@@ -100,16 +100,39 @@
                <property name="focusPolicy">
                 <enum>Qt::NoFocus</enum>
                </property>
-               <property name="text">
-                <string>Restore Frame</string>
+               <property name="toolTip">
+                <string>Restore WIndow Frame</string>
                </property>
-               <property name="flat">
-                <bool>true</bool>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/Icons/res/restoreframe.svg</normaloff>:/Icons/res/restoreframe.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="zoomInButton">
+              <spacer name="horizontalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QToolButton" name="zoomInButton">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -118,23 +141,33 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>16777215</width>
-                 <height>22</height>
+                 <width>32</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="focusPolicy">
                 <enum>Qt::NoFocus</enum>
                </property>
-               <property name="text">
-                <string>+</string>
+               <property name="toolTip">
+                <string>Zoom In</string>
                </property>
-               <property name="flat">
-                <bool>true</bool>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/Icons/res/plus.svg</normaloff>:/Icons/res/plus.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="zoomOutButton">
+              <widget class="QToolButton" name="zoomOutButton">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -143,8 +176,8 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>16777215</width>
-                 <height>22</height>
+                 <width>32</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="font">
@@ -157,16 +190,26 @@
                <property name="focusPolicy">
                 <enum>Qt::NoFocus</enum>
                </property>
-               <property name="text">
-                <string>-</string>
+               <property name="toolTip">
+                <string>Zoom out</string>
                </property>
-               <property name="flat">
-                <bool>true</bool>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/Icons/res/minus.svg</normaloff>:/Icons/res/minus.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="jumpbridgesButton">
+              <widget class="QToolButton" name="jumpbridgesButton">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -175,8 +218,8 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>16777215</width>
-                 <height>22</height>
+                 <width>64</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="font">
@@ -187,8 +230,21 @@
                <property name="focusPolicy">
                 <enum>Qt::NoFocus</enum>
                </property>
+               <property name="toolTip">
+                <string>Show Ansiblex on Map</string>
+               </property>
                <property name="text">
-                <string>Jump Bridges</string>
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/Icons/res/jumpbridge.svg</normaloff>:/Icons/res/jumpbridge.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
                </property>
                <property name="checkable">
                 <bool>true</bool>
@@ -196,13 +252,10 @@
                <property name="checked">
                 <bool>true</bool>
                </property>
-               <property name="flat">
-                <bool>true</bool>
-               </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="statisticsButton">
+              <widget class="QToolButton" name="statisticsButton">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -211,8 +264,8 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>16777215</width>
-                 <height>22</height>
+                 <width>64</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="font">
@@ -223,16 +276,26 @@
                <property name="focusPolicy">
                 <enum>Qt::NoFocus</enum>
                </property>
+               <property name="toolTip">
+                <string>Show System Statistic on Map</string>
+               </property>
                <property name="text">
-                <string>Statistics</string>
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/Icons/res/statistic.svg</normaloff>:/Icons/res/statistic.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
                </property>
                <property name="checkable">
                 <bool>true</bool>
                </property>
                <property name="checked">
-                <bool>true</bool>
-               </property>
-               <property name="flat">
                 <bool>true</bool>
                </property>
               </widget>
@@ -242,13 +305,6 @@
           </layout>
          </widget>
         </item>
-        <item row="3" column="0">
-         <widget class="QScrollBar" name="mapHorzScrollBar">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="1" rowspan="3">
          <widget class="QScrollBar" name="mapVertScrollBar">
           <property name="orientation">
@@ -256,7 +312,7 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item row="1" column="0">
          <widget class="PanningWebView" name="mapView" native="true">
           <property name="enabled">
            <bool>true</bool>
@@ -272,6 +328,13 @@
           </property>
           <property name="autoFillBackground">
            <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" rowspan="2">
+         <widget class="QScrollBar" name="mapHorzScrollBar">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
@@ -356,6 +419,19 @@
                </widget>
               </item>
               <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
                <widget class="QToolButton" name="chatLargeButton">
                 <property name="minimumSize">
                  <size>
@@ -372,13 +448,20 @@
                 <property name="focusPolicy">
                  <enum>Qt::NoFocus</enum>
                 </property>
+                <property name="toolTip">
+                 <string>Larger Text</string>
+                </property>
                 <property name="text">
-                 <string>+</string>
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="resource.qrc">
+                  <normaloff>:/Icons/res/plus.svg</normaloff>:/Icons/res/plus.svg</iconset>
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>24</width>
-                  <height>24</height>
+                  <width>40</width>
+                  <height>20</height>
                  </size>
                 </property>
                 <property name="autoRaise">
@@ -403,13 +486,20 @@
                 <property name="focusPolicy">
                  <enum>Qt::NoFocus</enum>
                 </property>
+                <property name="toolTip">
+                 <string>Smaller Text</string>
+                </property>
                 <property name="text">
-                 <string>-</string>
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="resource.qrc">
+                  <normaloff>:/Icons/res/minus.svg</normaloff>:/Icons/res/minus.svg</iconset>
                 </property>
                 <property name="iconSize">
                  <size>
-                  <width>24</width>
-                  <height>24</height>
+                  <width>40</width>
+                  <height>20</height>
                  </size>
                 </property>
                 <property name="shortcut">
@@ -591,41 +681,6 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QPushButton" name="connectToEveOnline">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>27</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>166</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="autoFillBackground">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>res/eve-sso-login-black-small.png</normaloff>res/eve-sso-login-black-small.png</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>163</width>
-                <height>38</height>
-               </size>
-              </property>
-              <property name="flat">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,0,3,0">
               <property name="spacing">
                <number>0</number>
@@ -655,6 +710,9 @@
               </item>
               <item>
                <widget class="QToolButton" name="removeChar">
+                <property name="toolTip">
+                 <string>Remove API Key</string>
+                </property>
                 <property name="text">
                  <string>Remove</string>
                 </property>
@@ -692,6 +750,57 @@
              </widget>
             </item>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <property name="leftMargin">
+               <number>5</number>
+              </property>
+              <property name="topMargin">
+               <number>5</number>
+              </property>
+              <property name="rightMargin">
+               <number>5</number>
+              </property>
+              <property name="bottomMargin">
+               <number>5</number>
+              </property>
+              <item>
+               <widget class="QPushButton" name="connectToEveOnline">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>27</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>166</width>
+                  <height>22</height>
+                 </size>
+                </property>
+                <property name="autoFillBackground">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string notr="true"/>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>res/eve-sso-login-black-small.png</normaloff>res/eve-sso-login-black-small.png</iconset>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>163</width>
+                  <height>38</height>
+                 </size>
+                </property>
+                <property name="flat">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <spacer name="verticalSpacer">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -714,6 +823,18 @@
             <property name="spacing">
              <number>3</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
@@ -721,6 +842,9 @@
               </item>
               <item>
                <widget class="QToolButton" name="toolRescanThrea">
+                <property name="toolTip">
+                 <string>Update Thera Connections</string>
+                </property>
                 <property name="text">
                  <string>...</string>
                 </property>
@@ -770,6 +894,9 @@
     </item>
     <item row="1" column="0">
      <widget class="QPushButton" name="updateAvail">
+      <property name="toolTip">
+       <string>Update Software</string>
+      </property>
       <property name="text">
        <string>PushButton</string>
       </property>
@@ -782,7 +909,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>934</width>
+     <width>1023</width>
      <height>24</height>
     </rect>
    </property>
