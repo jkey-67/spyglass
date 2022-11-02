@@ -29,14 +29,17 @@ import PySide6.QtCore
 
 class TableModelThera(QAbstractTableModel):
     def __init__(self, system_name="V-F6DQ", parent=None):
+        super(TableModelThera, self).__init__(parent)
+        self.system_name = system_name
+        self.thera_data = checkTheraConnections(system_name)
         self.model_display_list = [
             # {"Out ID": ["id"]},
             {"Out Sig": ["signatureId"]},
             {"In ID": ["wormholeDestinationSignatureId"]},
             {"System": ["destinationSolarSystem", "name"]},
             {"Security": ["destinationSolarSystem", "security"]},
-            {"Region": ["destinationSolarSystem", "region", "name"]},
             {"Jumps": ["jumps"]},
+            {"Region": ["destinationSolarSystem", "region", "name"]},
             # {"Status": ["status"]},
             # {"lys": ["lightyears"]},
             # {"Destination Constellation ID": ["destinationSolarSystem", "constellationID"]},
@@ -89,9 +92,6 @@ class TableModelThera(QAbstractTableModel):
             #{"Region": ["destinationSolarSystem", "region", "name"]},
             #{"Security": ["destinationSolarSystem", "security"]}
         ]
-        super(TableModelThera, self).__init__(parent)
-        self.system_name = system_name
-        self.thera_data = checkTheraConnections(system_name)
 
     def updateData(self, system_name=None):
         if system_name:

@@ -24,7 +24,7 @@ import logging
 import vi.version
 import json
 import datetime
-
+from typing import Optional
 from .dbstructure import updateDatabase
 
 
@@ -158,7 +158,7 @@ class Cache(object):
         query = "INSERT INTO cache (key, data, modified, maxAge) VALUES (?, ?, ?, ?);"
         self.con.execute(query, (key, value, time.time(), max_age))
 
-    def getFromCache(self, key, outdated=False):
+    def getFromCache(self, key, outdated=False) -> Optional[any]:
         """ Getting something from cache
         Args:
             key : the key for the value
@@ -204,7 +204,7 @@ class Cache(object):
             self.con.execute(query, (name, data, time.time()))
             self.con.commit()
 
-    def getImageFromCache(self, name):
+    def getImageFromCache(self, name) -> Optional[bytes]:
         """ Getting the avatars_pictures data from the Cache. Returns None if there is no entry in the cache
 
         Args:
@@ -374,7 +374,7 @@ class Cache(object):
         query = "SELECT src, ' ', dst FROM jumpbridge"
         founds = self.con.execute(query, ()).fetchall()
         if len(founds) == 0:
-            return None
+            return list()
         else:
             return founds
 
@@ -385,7 +385,7 @@ class Cache(object):
             query = "select src, dst, id_src, json_src  from jumpbridge  LIMIT 1 OFFSET ?"
             founds = self.con.execute(query, (inx,)).fetchall()
             if len(founds) == 0:
-                return None
+                return dict()
             else:
                 return {
                     "src": founds[0][0],
@@ -434,8 +434,14 @@ class Cache(object):
             self.con.execute(query, (info_poi, id_poi))
             self.con.commit()
 
-    def getPOIAtIndex(self, inx: int):
+    def getPOIAtIndex(self, inx: int) -> Optional[dict]:
         """
+        gets the POI at index position inx
+        Args:
+            inx: model index
+
+        Returns:
+            dict of the POI or None
         """
         with Cache.SQLITE_WRITE_LOCK:
             query = "select json from pointofinterest LIMIT 1 OFFSET ?"
@@ -475,7 +481,7 @@ class Cache(object):
             res = self.con.execute(query, (char, char)).fetchall()
             return len(res) > 0 and res[0] is None
 
-    def getAPIKey(self, char):
+    def getAPIKey(self, char) -> Optional[dict]:
         with Cache.SQLITE_WRITE_LOCK:
             query = "SELECT key FROM players WHERE id IS ? or name IS ?;"
             res = self.con.execute(query, (char, char)).fetchall()
@@ -495,7 +501,7 @@ class Cache(object):
     def removeAPIKey(self, char_name):
         self.clearAPIKey(char_name)
 
-    def getAPICharNames(self):
+    def getAPICharNames(self) -> list:
         with Cache.SQLITE_WRITE_LOCK:
             query = "SELECT name FROM players WHERE key NOT NULL"
             res = self.con.execute(query).fetchall()

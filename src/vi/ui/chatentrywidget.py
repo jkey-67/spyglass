@@ -19,13 +19,12 @@
 
 import os
 import logging
-import webbrowser
 import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal as pyqtSignal
 from vi.resources import resourcePath
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap, QDesktopServices
 from vi.ui import Ui_ChatEntry
 
 
@@ -61,7 +60,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
         if function == "mark_system":
             self.mark_system.emit(parameter)
         elif function == "link":
-            webbrowser.open_new_tab(parameter)
+            QDesktopServices.openUrl(parameter)
 
     def updateText(self):
         time = datetime.datetime.strftime(self.message.timestamp, "%H:%M:%S")

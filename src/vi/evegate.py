@@ -72,7 +72,7 @@ def setEsiCharName(name):
         Cache().putIntoCache("api_char_name", name)
 
 
-def esiCharName():
+def esiCharName() -> Optional[str]:
     """
     Gets the name of the current active api char from the sqlite cache.
 
@@ -120,7 +120,7 @@ def esiStatus() -> dict:
     return response.json()
 
 
-def esiCharNameToId(char_name: str, use_outdated=False):
+def esiCharNameToId(char_name: str, use_outdated=False) -> Optional[int]:
     """ Uses the EVE API to convert a character name to his ID.
 
     Args:
@@ -307,7 +307,7 @@ def esiImageEvetechNet(character_id: int, req_type: evetech_image, image_size=64
     return avatar
 
 
-def getTypesIcon(type_id: int, size_image=64):
+def getTypesIcon(type_id: int, size_image=64) -> Optional[bytearray]:
     """Get icon from a given type_id or character_id
 
     Args:
@@ -450,7 +450,7 @@ def esiCharactersOnline(char_name: str) -> bool:
     return False
 
 
-def esiCharactersLocation(char_name: str):
+def esiCharactersLocation(char_name: str) -> Optional[int]:
     """Gets the current solar system id of the char with id char_id, or None
 
     Args:
@@ -508,7 +508,7 @@ def esiCharactersCorporationHistory(char_id, use_outdated=True):
     return corp_ids
 
 
-def getCurrentCorpForCharId(char_id, use_outdated=True):
+def getCurrentCorpForCharId(char_id, use_outdated=True) -> Optional[int]:
     """ Returns the ID of the players current corporation.
     """
     info = esiCharacters(char_id, use_outdated)
@@ -720,7 +720,7 @@ def oauthLoginEveOnline(client_param, parent=None):
     parent.apiThread.createBrowserWindow(string_params, parent)
 
 
-def esiOauthToken(client_param, auth_code: str, add_headers: dict = None):
+def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Optional[dict]:
     """ gets the access token from the application logging
         fills the cache wit valid login data
     """
@@ -841,7 +841,10 @@ def refreshToken(params: Optional[ApiKey]) -> Optional[ApiKey]:
         params.update(ref_token)
 
         cache = Cache()
-        char_api_key_set = json.loads(cache.getAPIKey(params.CharacterName))
+        cache_api_key = cache.getAPIKey(params.CharacterName)
+        if cache_api_key is None:
+            return params
+        char_api_key_set = json.loads(cache_api_key)
         char_api_key_set["ExpiresOn"] = \
             datetime.datetime.utcfromtimestamp(time.time() + params.expires_in).strftime('%Y-%m-%dT%H:%M:%S')
         char_api_key_set["valid_until"] = \
@@ -1253,7 +1256,7 @@ def esiSearch(esi_char_name: str, search_text, search_category: str, search_stri
         return {}
 
 
-def getAllJumpGates(nameChar: str,systemName="",systemNameDst="", callback=None, use_outdated=False):
+def getAllJumpGates(nameChar:str, systemName="", systemNameDst="", callback=None, use_outdated=False) -> Optional[list]:
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
     if nameChar is None:
@@ -1373,7 +1376,7 @@ def esiUniverseStargates(stargate_id, use_outdated=False):
         return response.json()
 
 
-def esiUniverseStations(station_id, use_outdated=False):
+def esiUniverseStations(station_id, use_outdated=False) -> Optional[dict]:
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "stations", str(station_id)))
@@ -1392,7 +1395,7 @@ def esiUniverseStations(station_id, use_outdated=False):
             return None
 
 
-def esiUniverseSystems(system_id, use_outdated=False):
+def esiUniverseSystems(system_id, use_outdated=False) -> Optional[dict]:
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "systems", str(system_id)))
@@ -1404,7 +1407,7 @@ def esiUniverseSystems(system_id, use_outdated=False):
         req = "https://esi.evetech.net/latest/universe/systems/{}/?datasource=tranquility&language=en".format(system_id)
         response = requests.get(req)
         if response.status_code == 200:
-            cache.putIntoCache(cache_key, response.text,secondUntilExpire(response))
+            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
         else:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)

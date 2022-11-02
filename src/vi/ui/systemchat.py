@@ -19,13 +19,11 @@
 
 import os
 import logging
-import webbrowser
 import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal as pyqtSignal
-from vi.resources import resourcePath
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QDesktopServices
 from vi import states
 from vi.ui import Ui_SystemChat
 from vi.ui.chatentrywidget import ChatEntryWidget
@@ -81,20 +79,12 @@ class SystemChat(QtWidgets.QDialog):
                 self._addMessageToChat(message, avatarPixmap)
 
     def openDotlan(self):
-        try:
-            url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
-            webbrowser.open(url)
-        except webbrowser.Error as e:
-            logging.critical("Unable to open browser {0}".format(e))
-            return
+        url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
+        QDesktopServices.openUrl(url)
 
     def openzKillboard(self):
-        try:
-            url = "https://zkillboard.com/system/{system}/".format(system=self.system.systemId)
-            webbrowser.open(url)
-        except webbrowser.Error as e:
-            logging.critical("Unable to open browser {0}".format(e))
-            return
+        url = "https://zkillboard.com/system/{system}/".format(system=self.system.systemId)
+        QDesktopServices.openUrl(url)
 
     def locationSet(self):
         char = str(self.ui.playerNamesBox.currentText())

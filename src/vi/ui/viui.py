@@ -22,7 +22,6 @@ import datetime
 import sys
 import time
 import requests
-import webbrowser
 from typing import Union
 import vi.version
 from vi.universe import Universe
@@ -31,7 +30,7 @@ from PySide6.QtGui import *
 from PySide6 import QtGui, QtCore, QtWidgets
 from PySide6.QtCore import QPoint, QPointF, QByteArray, QSortFilterProxyModel, QTimer
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap, QDesktopServices
 from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, \
     QStyledItemDelegate, QApplication, QAbstractItemView
 
@@ -45,7 +44,11 @@ from vi.cache.cache import Cache
 from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
-from vi.ui.systemtray import TrayContextMenu, JumpBridgeContextMenu, POIContextMenu, TheraContextMenu
+from vi.ui.systemtray import TrayContextMenu
+from vi.ui.systemtray import JumpBridgeContextMenu
+from vi.ui.systemtray import POIContextMenu
+from vi.ui.systemtray import TheraContextMenu
+from vi.ui.systemtray import PlayerContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser
 from vi.clipboard import evaluateClipboardData
@@ -286,9 +289,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.updateAvail.setText(update_avail[1])
 
             def openDownloadLink():
-                webbrowser.open_new(evegate.getSpyglassUpdateLink())
+                QDesktopServices.openUrl(evegate.getSpyglassUpdateLink())
                 self.ui.updateAvail.hide()
-                self.ui.updateAvail.disconnect()
+                self.ui.updateAvail.disconnect(openDownloadLink)
             self.ui.updateAvail.clicked.connect(openDownloadLink)
         else:
             logging.info(update_avail[1])
@@ -496,6 +499,44 @@ class MainWindow(QtWidgets.QMainWindow):
                     break
         self.ui.mapView.doubleClicked = doubleClicked
 
+    def handleDestinationActions(self, act, destination_id, jump_route=[]) -> bool:
+        if hasattr(act, "eve_action"):
+            player_name = act.eve_action["player_name"]
+            match act.eve_action["action"]:
+                case "destination":
+                    evegate.esiAutopilotWaypoint(
+                        player_name,
+                        destination_id)
+                    return True
+                case "waypoint":
+                    evegate.esiAutopilotWaypoint(
+                        char_name=player_name,
+                        system_id=destination_id,
+                        clear_all=False,
+                        beginning=False)
+                    return True
+                case "clearall":
+                    for system in self.systems.values():
+                        if player_name in system.getLocatedCharacters():
+                            evegate.esiAutopilotWaypoint(player_name, system.systemId)
+                            return True
+                case "route":
+                    if len(jump_route) == 0:
+                        evegate.esiAutopilotWaypoint(player_name, destination_id)
+                        return True
+                    else:
+                        first = True
+                        for way_point in jump_route:
+                            evegate.esiAutopilotWaypoint(
+                                char_name=evegate.esiCharName(),
+                                system_id=way_point,
+                                clear_all=first,
+                                beginning=first)
+                            first = False
+                        return True
+
+        return False
+
     def _wireUpDatabaseViews(self):
         self._wireUpDatabaseViewsJB()
         self._wireUpDatabaseViewPOI()
@@ -533,21 +574,13 @@ class MainWindow(QtWidgets.QMainWindow):
             lps_ctx_menu = POIContextMenu()
             lps_ctx_menu.setStyleSheet(Styles().getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
-            if res == lps_ctx_menu.destination:
-                evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["destination_id"])
-                return
-            elif res == lps_ctx_menu.waypoint:
-                evegate.esiAutopilotWaypoint(
-                    char_name=evegate.esiCharName(),
-                    system_id=item["destination_id"],
-                    clear_all=False,
-                    beginning=False
-                )
-                return
-            elif res == lps_ctx_menu.delete:
-                cache.clearPOI(item["destination_id"])
-                self.poi_changed.emit()
-                return
+            if item and "destination_id" in item.keys():
+                if self.handleDestinationActions(res, item["destination_id"]):
+                    return
+                elif res == lps_ctx_menu.delete:
+                    cache.clearPOI(item["destination_id"])
+                    self.poi_changed.emit()
+                    return
 
         self.ui.tableViewPOIs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.ui.tableViewPOIs.customContextMenuRequested.connect(showPOIContextMenu)
@@ -580,40 +613,18 @@ class MainWindow(QtWidgets.QMainWindow):
             Cache().putIntoCache("thera_source_system", system_name)
             self.ui.tableViewThera.model().sourceModel().updateData(system_name)
 
-
-
         self.ui.lineEditThera.editingFinished.connect(theraSystemChanged)
         self.ui.toolRescanThrea.clicked.connect(theraSystemChanged)
+
         def showTheraContextMenu(pos):
             cache = Cache()
             index = self.ui.tableViewThera.model().mapToSource(self.ui.tableViewThera.indexAt(pos)).row()
-
             item = self.ui.tableViewThera.model().sourceModel().thera_data[index]
             lps_ctx_menu = TheraContextMenu()
             lps_ctx_menu.setStyleSheet(Styles().getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
-            if res == lps_ctx_menu.destination:
-                # evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["sourceWormholeType"]["id"])
-                evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["wormholeDestinationSolarSystemId"])
+            if self.handleDestinationActions(res, item["wormholeDestinationSolarSystemId"]):
                 return
-            elif res == lps_ctx_menu.waypoint:
-                evegate.esiAutopilotWaypoint(
-                    char_name=evegate.esiCharName(),
-                    system_id=item["wormholeDestinationSolarSystemId"],
-                    clear_all=False,
-                    beginning=False
-                )
-                return
-            elif res == lps_ctx_menu.setRoute:
-                first = True
-                for way_point in item["jump_route"]:
-                    evegate.esiAutopilotWaypoint(
-                        char_name=evegate.esiCharName(),
-                        system_id=way_point,
-                        clear_all=first,
-                        beginning=first
-                    )
-                    first = False
             elif res == lps_ctx_menu.updateData:
                 self.ui.tableViewThera.model().sourceModel().updateData()
                 return
@@ -643,13 +654,9 @@ class MainWindow(QtWidgets.QMainWindow):
             index = self.ui.tableViewJBs.model().mapToSource(self.ui.tableViewJBs.indexAt(pos)).row()
             item = cache.getJumpGatesAtIndex(index)
             lps_ctx_menu = JumpBridgeContextMenu()
-            lps_ctx_menu.updateContextMenu(item)
             lps_ctx_menu.setStyleSheet(Styles().getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewJBs.mapToGlobal(pos))
-            if res == lps_ctx_menu.destination:
-                evegate.esiAutopilotWaypoint(evegate.esiCharName(), item["id_src"])
-                return
-            elif res == lps_ctx_menu.waypoint:
+            if self.handleDestinationActions(res, item["id_src"]):
                 return
             elif res == lps_ctx_menu.update:
                 inx_selected = self.ui.tableViewJBs.selectedIndexes()
@@ -787,12 +794,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if system_id is None:
             return
-        selected_system = evegate.esiUniverseSystems(system_id)
-        selected_constellation = evegate.esiUniverseConstellations(selected_system["constellation_id"])
-        selected_region = selected_constellation["region_id"]
-        selected_region_name = evegate.esiUniverseNames([selected_region])[selected_region]
-        selected_region_name = dotlan.convertRegionName(selected_region_name)
-        self.changeRegionByName(selected_region_name, system_id)
+        self.changeRegionByName(Universe.regionNameFromSystemID(system_id), system_id)
 
     def prepareContextMenu(self):
         # Menus - only once
@@ -828,15 +830,16 @@ class MainWindow(QtWidgets.QMainWindow):
         def openDotlan(checked):
             system = self.trayIcon.contextMenu().currentSystem
             if system:
-                webbrowser.open_new_tab(
-                    "https://evemaps.dotlan.net/system/{}".format(system.name))
+                QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(system.name))
+
         self.trayIcon.contextMenu().openDotlan.triggered.connect(openDotlan)
 
         def openZKillboard(checked):
             system = self.trayIcon.contextMenu().currentSystem
             if system:
-                webbrowser.open_new_tab(
+                QDesktopServices.openUrl(
                     "https://zkillboard.com/system/{}".format(system.systemId))
+
         self.trayIcon.contextMenu().openZKillboard.triggered.connect(openZKillboard)
 
         def setDestination():
@@ -1143,11 +1146,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeJumpbridgesVisibility(self, val):
         self.dotlan.changeJumpbridgesVisibility(val)
-        if val:
-            self.updateMapView()
+        self.updateMapView()
 
     def changeStatisticsVisibility(self, val):
         self.dotlan.changeStatisticsVisibility(val)
+        self.updateMapView()
         if val:
             self.statisticsThread.requestStatistics()
 
@@ -1211,6 +1214,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #    logging.error("Invalid locale change for character with name '{}', character is offline.".format(char_name))
         #    return
         logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
+        self.ui.lineEditThera.setText(system_name)
         if system_name not in self.systems:
             if change_region:   # and char_name in self.monitoredPlayerNames:
                 try:

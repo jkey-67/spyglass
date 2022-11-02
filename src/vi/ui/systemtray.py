@@ -28,8 +28,9 @@ from PySide6.QtCore import Signal as pyqtSignal
 
 from vi.resources import resourcePath
 from vi import states
+from vi.ui.styles import Styles
 from vi.soundmanager import SoundManager
-
+from vi.cache import Cache
 
 class TrayContextMenu(QtWidgets.QMenu):
     instances = set()
@@ -131,33 +132,21 @@ class TrayContextMenu(QtWidgets.QMenu):
 class JumpBridgeContextMenu(QtWidgets.QMenu):
     def __init__(self):
         QtWidgets.QMenu.__init__(self)
-        self.destination = QAction("Set destination")
-        self.waypoint = QAction("Add waypoint")
-        self.update = QAction("Update")
-        self.delete = QAction("Delete")
-
-        self.addAction(self.destination)
-        self.addAction(self.waypoint)
-        self.addAction(self.update)
+        self.update = QAction("Update Jump Bridge Data")
+        self.delete = QAction("Delete the Jump Bridge")
+        self.player_menu = PlayerContextMenu(Cache().getActivePlayerNames())
+        self.insertMenu(None, self.player_menu)
         self.addSeparator()
+        self.addAction(self.update)
         self.addAction(self.delete)
-
-    def updateContextMenu(self, items):
-        keys = items.keys()
-        has_id_src = ("id_src" in keys) and (items["id_src"] is not None)
-        self.waypoint.setEnabled(has_id_src)
-        self.destination.setEnabled(has_id_src)
 
 
 class POIContextMenu(QtWidgets.QMenu):
     def __init__(self):
         QtWidgets.QMenu.__init__(self)
-        self.destination = QAction("Set Destination")
-        self.waypoint = QAction("Add Waypoint")
-        self.delete = QAction("Delete POI")
-
-        self.addAction(self.destination)
-        self.addAction(self.waypoint)
+        self.delete = QAction("Delete the POI")
+        self.player_menu = PlayerContextMenu(Cache().getActivePlayerNames())
+        self.insertMenu(None, self.player_menu)
         self.addSeparator()
         self.addAction(self.delete)
 
@@ -165,17 +154,42 @@ class POIContextMenu(QtWidgets.QMenu):
 class TheraContextMenu(QtWidgets.QMenu):
     def __init__(self):
         QtWidgets.QMenu.__init__(self)
-        self.destination = QAction("Set Destination")
-        self.waypoint = QAction("Add Waypoint")
-        self.setRoute = QAction("Set Route")
-
-        self.updateData = QAction("Update Data")
-
-        self.addAction(self.destination)
-        self.addAction(self.waypoint)
-        self.addAction(self.setRoute)
+        self.player_menu = PlayerContextMenu(Cache().getActivePlayerNames())
+        self.insertMenu(None, self.player_menu)
+        self.updateData = QAction("Update Thera Connections")
         self.addSeparator()
         self.addAction(self.updateData)
+
+
+class PlayerContextMenu(QtWidgets.QMenu):
+    def __init__(self, players: list):
+        QtWidgets.QMenu.__init__(self, title="EVE-Online Actions")
+        self.new_player = list()
+
+        for player in players:
+            new_player_actions = {
+                            "menu": QtWidgets.QMenu(player),
+                            "destination": QAction("Set Destination", None, checkable=False),
+                            "waypoint": QAction("Add Waypoint", None, checkable=False),
+                            # "route": QAction("Set Route", None, checkable=False),
+                            "clearall": QAction("Clear all Waypoints", None, checkable=False)
+                        }
+            new_player_actions["destination"].eve_action = {"player_name": player, "action": "destination"}
+            new_player_actions["waypoint"].eve_action = {"player_name": player, "action": "waypoint"}
+            # new_player_actions["route"].eve_action = {"player_name": player, "action": "route"}
+            # new_player_actions["route"].setToolTip("Sets a route using defined Spyglass jump bridges")
+            new_player_actions["clearall"].eve_action = {"player_name": player, "action": "clearall"}
+            new_player_actions["clearall"].setToolTip("Clears all way points")
+            new_player_menu = new_player_actions["menu"]
+            new_player_menu.addAction(new_player_actions["destination"])
+            new_player_menu.addAction(new_player_actions["waypoint"])
+            # new_player_menu.addAction(new_player_actions["route"])
+            new_player_menu.addAction(new_player_actions["clearall"])
+            new_player_menu.setStyleSheet(Styles().getStyle())
+            self.new_player.append(new_player_actions)
+            self.addMenu(new_player_menu)
+
+        self.setStyleSheet(Styles().getStyle())
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
