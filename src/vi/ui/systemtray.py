@@ -165,29 +165,32 @@ class PlayerContextMenu(QtWidgets.QMenu):
     def __init__(self, players: list):
         QtWidgets.QMenu.__init__(self, title="EVE-Online Actions")
         self.new_player = list()
-
-        for player in players:
-            new_player_actions = {
-                            "menu": QtWidgets.QMenu(player),
-                            "destination": QAction("Set Destination", None, checkable=False),
-                            "waypoint": QAction("Add Waypoint", None, checkable=False),
-                            # "route": QAction("Set Route", None, checkable=False),
-                            "clearall": QAction("Clear all Waypoints", None, checkable=False)
-                        }
-            new_player_actions["destination"].eve_action = {"player_name": player, "action": "destination"}
-            new_player_actions["waypoint"].eve_action = {"player_name": player, "action": "waypoint"}
-            # new_player_actions["route"].eve_action = {"player_name": player, "action": "route"}
-            # new_player_actions["route"].setToolTip("Sets a route using defined Spyglass jump bridges")
-            new_player_actions["clearall"].eve_action = {"player_name": player, "action": "clearall"}
-            new_player_actions["clearall"].setToolTip("Clears all way points")
-            new_player_menu = new_player_actions["menu"]
-            new_player_menu.addAction(new_player_actions["destination"])
-            new_player_menu.addAction(new_player_actions["waypoint"])
-            # new_player_menu.addAction(new_player_actions["route"])
-            new_player_menu.addAction(new_player_actions["clearall"])
-            new_player_menu.setStyleSheet(Styles().getStyle())
-            self.new_player.append(new_player_actions)
-            self.addMenu(new_player_menu)
+        self.no_char = QAction("No registered characters", None, checkable=False)
+        if len(players) == 0:
+            self.addAction(self.no_char)
+        else:
+            for player in players:
+                new_player_actions = {
+                                "menu": QtWidgets.QMenu(player),
+                                "destination": QAction("Set Destination", None, checkable=False),
+                                "waypoint": QAction("Add Waypoint", None, checkable=False),
+                                # "route": QAction("Set Route", None, checkable=False),
+                                "clearall": QAction("Clear all Waypoints", None, checkable=False)
+                            }
+                new_player_actions["destination"].eve_action = {"player_name": player, "action": "destination"}
+                new_player_actions["waypoint"].eve_action = {"player_name": player, "action": "waypoint"}
+                # new_player_actions["route"].eve_action = {"player_name": player, "action": "route"}
+                # new_player_actions["route"].setToolTip("Sets a route using defined Spyglass jump bridges")
+                new_player_actions["clearall"].eve_action = {"player_name": player, "action": "clearall"}
+                new_player_actions["clearall"].setToolTip("Clears all way points")
+                new_player_menu = new_player_actions["menu"]
+                new_player_menu.addAction(new_player_actions["destination"])
+                new_player_menu.addAction(new_player_actions["waypoint"])
+                # new_player_menu.addAction(new_player_actions["route"])
+                new_player_menu.addAction(new_player_actions["clearall"])
+                new_player_menu.setStyleSheet(Styles().getStyle())
+                self.new_player.append(new_player_actions)
+                self.addMenu(new_player_menu)
 
         self.setStyleSheet(Styles().getStyle())
 
