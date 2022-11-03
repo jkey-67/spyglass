@@ -60,6 +60,14 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - processing of chat entries now run separated from the map
  - using clipboard with Photon UI improved
 
+ ### 1.6.5
+ - The navigation context menus now allow to select the api char
+ - Adding some icons, update of Thera connection on button
+ - Now QDesktopServices is used to show web pages
+ - Added json files to access the Universe
+ - fix high sec system now found, new ships added
+ - using shorter npc faction names on map
+
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
@@ -91,7 +99,7 @@ Please remember to manage your access to all [third-party-applications](https://
 ## POIs
 - If you are docked on station, copy the name of the structure to the clipboard to fill the POI list.
 
-## JDs
+## JBs
 - If you are docked on station, copy the name of the structure from inside the Solar System: Information Structure Tab
 - In space, use the right mouse button to click on the structure inside the overview and copy then
 
