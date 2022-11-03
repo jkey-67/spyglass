@@ -48,7 +48,6 @@ from vi.ui.systemtray import TrayContextMenu
 from vi.ui.systemtray import JumpBridgeContextMenu
 from vi.ui.systemtray import POIContextMenu
 from vi.ui.systemtray import TheraContextMenu
-from vi.ui.systemtray import PlayerContextMenu
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser
 from vi.clipboard import evaluateClipboardData

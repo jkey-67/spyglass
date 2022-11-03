@@ -134,7 +134,7 @@ class JumpBridgeContextMenu(QtWidgets.QMenu):
         QtWidgets.QMenu.__init__(self)
         self.update = QAction("Update Jump Bridge Data")
         self.delete = QAction("Delete the Jump Bridge")
-        self.player_menu = PlayerContextMenu(Cache().getActivePlayerNames())
+        self.player_menu = PlayerContextMenu(Cache().getAPICharNames())
         self.insertMenu(None, self.player_menu)
         self.addSeparator()
         self.addAction(self.update)
@@ -145,7 +145,7 @@ class POIContextMenu(QtWidgets.QMenu):
     def __init__(self):
         QtWidgets.QMenu.__init__(self)
         self.delete = QAction("Delete the POI")
-        self.player_menu = PlayerContextMenu(Cache().getActivePlayerNames())
+        self.player_menu = PlayerContextMenu(Cache().getAPICharNames())
         self.insertMenu(None, self.player_menu)
         self.addSeparator()
         self.addAction(self.delete)
@@ -154,7 +154,7 @@ class POIContextMenu(QtWidgets.QMenu):
 class TheraContextMenu(QtWidgets.QMenu):
     def __init__(self):
         QtWidgets.QMenu.__init__(self)
-        self.player_menu = PlayerContextMenu(Cache().getActivePlayerNames())
+        self.player_menu = PlayerContextMenu(Cache().getAPICharNames())
         self.insertMenu(None, self.player_menu)
         self.updateData = QAction("Update Thera Connections")
         self.addSeparator()
