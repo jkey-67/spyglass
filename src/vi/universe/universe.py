@@ -60,8 +60,8 @@ class Universe(object):
         return next((sys["name"] for sys in Universe.SYSTEMS if sys["system_id"] == system_id), None)
 
     @staticmethod
-    def systemIdByName(system_name):
-        return next((sys["system_id"] for sys in Universe.SYSTEMS if sys["name"] == system_name), None)
+    def systemIdByName(system_name: str):
+        return next((sys["system_id"] for sys in Universe.SYSTEMS if sys["name"].upper() == system_name.upper()), None)
 
     @staticmethod
     def shipNames():

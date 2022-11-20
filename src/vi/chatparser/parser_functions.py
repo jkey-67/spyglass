@@ -159,7 +159,7 @@ def parseSystems(systems, rtext, systems_found):
     # todo:parse systems may run in a loop
 
     system_names = Universe.systemNamesUpperCase() #  systems.keys()
-
+    maps_system_name = [sys.upper() for sys in systems]
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:
             return in_text.replace(in_word, CTX.FORMAT_SYSTEM_IN_RERION.format(in_system, in_word))
@@ -196,24 +196,29 @@ def parseSystems(systems, rtext, systems_found):
             upper_word = word.upper()
             if upper_word != word and upper_word in CTX.WORDS_TO_IGNORE:
                 continue
-            if upper_word in system_names:  # - direct hit on name
-                if upper_word in systems:
-                    systems_found.add(systems[upper_word])  # of the system?
-                    formatted_text = formatSystem(text, word, upper_word, True)
+            match_system_id = Universe.systemIdByName(word)
+            if match_system_id:  # - direct hit on name
+                match_system_name = Universe.systemNameById(match_system_id)
+                if match_system_name in systems.keys():
+                    systems_found.add(systems[match_system_name])  # of the system?
+                    formatted_text = formatSystem(text, word, match_system_name, True)
                 else:
-                    formatted_text = formatSystem(text, word, upper_word, False)
+                    formatted_text = formatSystem(text, word, match_system_name, False)
                 textReplace(text, formatted_text)
                 return True
             elif 2 < len(upper_word) < 5:  # - upperWord < 4 chars.
                 for system in system_names:  # system begins with?
                     if system.startswith(upper_word):
-                        if upper_word in systems:
-                            systems_found.add(systems[system])
-                            formatted_text = formatSystem(text, word, upper_word, True)
-                        else:
-                            formatted_text = formatSystem(text, word, system, False)
-                        textReplace(text, formatted_text)
-                        return True
+                        match_system_id = Universe.systemIdByName(system)
+                        if match_system_id:  # - direct hit on name
+                            match_system_name = Universe.systemNameById(match_system_id)
+                            if match_system_name in systems.keys():
+                                systems_found.add(systems[match_system_name])  # of the system?
+                                formatted_text = formatSystem(text, word, match_system_name, True)
+                            else:
+                                formatted_text = formatSystem(text, word, match_system_name, False)
+                            textReplace(text, formatted_text)
+                            return True
             """
             elif "-" in upper_word and len(upper_word) > 2:  # - short with - (minus)
                 upper_word_parts = upper_word.split("-")  # (I-I will match I43-IF3)

@@ -45,7 +45,6 @@ class TestCache(unittest.TestCase):
         self.assertIsNone(res)
 
     def test_loadStargates(self):
-        Universe.getMonitoredSystems
         with open(os.path.join(self.curr_path, "evestargates.json"), "r") as fp:
             res = json.load(fp)
             ids = {30000734: {"dist": 0}}

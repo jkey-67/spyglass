@@ -1175,9 +1175,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.jbs_changed.emit()
 
     def mapLinkClicked(self, url: QtCore.QUrl):
-        system_name = str(url.path().split("/")[-1]).upper()
+        system_name = str(url.path().split("/")[-1])
         if system_name in self.systems:
-            system = self.systems[str(system_name)]
+            system = self.systems[system_name]
             sc = SystemChat(self, SystemChat.SYSTEM, system, self.chatEntries, self.knownPlayerNames)
             self.chat_message_added.connect(sc.addChatEntry)
             self.avatar_loaded.connect(sc.newAvatarAvailable)

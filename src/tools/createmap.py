@@ -168,13 +168,13 @@ def svgFileToDot(filename):
     for sysuse in systemUses.select("use"):
         id = sysuse["xlink:href"]
         name = svg_template.select(id)[0]
-        sysname= name.text[10:16]
-        result += "{} [shape=circle label=\"{}\"]\n".format(sysuse["id"],sysname)
+        sysname = name.text[10:16]
+        result += "{} [shape=circle label=\"{}\"]\n".format(sysuse["id"], sysname)
 
     for sysuse in svg_template.select("#jumps")[0]:
         try:
-            systems = sysuse.attrs["id"][2:].split("-")
-            result += "sys{} -> sys{}\n".format(systems[0],systems[1])
+            svg_systems = sysuse.attrs["id"][2:].split("-")
+            result += "sys{} -> sys{}\n".format(svg_systems[0], svg_systems[1])
         except :
             pass
 
