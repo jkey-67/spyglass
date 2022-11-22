@@ -219,30 +219,7 @@ def parseSystems(systems, rtext, systems_found):
                                 formatted_text = formatSystem(text, word, match_system_name, False)
                             textReplace(text, formatted_text)
                             return True
-            """
-            elif "-" in upper_word and len(upper_word) > 2:  # - short with - (minus)
-                upper_word_parts = upper_word.split("-")  # (I-I will match I43-IF3)
-                for system in system_names:
-                    system_parts = system.split("-")
-                    if (len(upper_word_parts) == 2 and len(system_parts) == 2 and len(upper_word_parts[0]) > 1 and len(
-                            upper_word_parts[1]) > 1 and len(system_parts[0]) > 1 and len(system_parts[1]) > 1 and len(
-                            upper_word_parts) == len(system_parts) and upper_word_parts[0][0] == system_parts[0][0] and
-                            upper_word_parts[1][0] == system_parts[1][0]):
-                        if system in systems:
-                            systems_found.add(systems[system])
-                        formatted_text = formatSystem(text, word, system)
-                        textReplace(text, formatted_text)
-                        return True
-            elif len(upper_word) > 2:  # what if F-YH58 is named FY?
-                for system in system_names:
-                    cleared_system = system.replace("-", "")
-                    if cleared_system.startswith(upper_word):
-                        if system in systems:
-                            systems_found.add(systems[system])
-                        formatted_text = formatSystem(text, word, system)
-                        textReplace(text, formatted_text)
-                        return True
-    """
+
     # if ( len(foundSystems) > 1):
     # todo check for system name clear/clr here
     return False

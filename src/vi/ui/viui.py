@@ -46,6 +46,7 @@ from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
 from vi.ui.systemtray import TrayContextMenu
 from vi.ui.systemtray import JumpBridgeContextMenu
+from vi.ui.systemtray import MapContextMenu
 from vi.ui.systemtray import POIContextMenu
 from vi.ui.systemtray import TheraContextMenu
 from vi.ui.styles import Styles
@@ -1601,13 +1602,29 @@ class MainWindow(QtWidgets.QMainWindow):
         """ checks if there is a system below the mouse position, if the systems region differs from the current
             region, the menu item to change the current region is added.
         """
-        selected_sys = self.systemUnderMouse(self.ui.mapView.mapPosFromPoint(event))
-        if selected_sys:
+        selected_system = self.systemUnderMouse(self.ui.mapView.mapPosFromPoint(event))
+
+        map_ctx_menu = MapContextMenu()
+        map_ctx_menu.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
+        map_ctx_menu.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
+        map_ctx_menu.quitAction.triggered.connect(self.trayIcon.quit)
+        map_ctx_menu.changeRegion.triggered.connect(
+            lambda: self.changeRegionBySystemID(selected_system.systemId))
+        map_ctx_menu.alarm_distance.connect(self.changeAlarmDistance)
+        map_ctx_menu.setStyleSheet(Styles().getStyle())
+
+        if selected_system:
             concurrent_region_name = Cache().getFromCache("region_name")
-            selected_region_name = Universe.regionNameFromSystemID(selected_sys.systemId)
+            selected_region_name = Universe.regionNameFromSystemID(selected_system.systemId)
             if dotlan.convertRegionName(selected_region_name) == concurrent_region_name:
                 selected_region_name = None
-            self.trayIcon.contextMenu().updateMenu(selected_sys, selected_region_name)
+            map_ctx_menu.updateMenu(sys_name=selected_system,
+                                    rgn_name=selected_region_name,
+                                    alarm_distance=self.alarmDistance)
         else:
-            self.trayIcon.contextMenu().updateMenu()
-        self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
+            map_ctx_menu.updateMenu(alarm_distance=self.alarmDistance)
+        res = map_ctx_menu.exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
+        if selected_system:
+            if self.handleDestinationActions(res, selected_system.systemId):
+                return
+

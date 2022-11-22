@@ -25,12 +25,13 @@ from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon
 from PySide6.QtCore import Signal as pyqtSignal
-
+from PySide6.QtGui import QDesktopServices
 from vi.resources import resourcePath
 from vi import states
 from vi.ui.styles import Styles
 from vi.soundmanager import SoundManager
 from vi.cache import Cache
+
 
 class TrayContextMenu(QtWidgets.QMenu):
     instances = set()
@@ -49,6 +50,7 @@ class TrayContextMenu(QtWidgets.QMenu):
         return False
 
     def updateMenu(self, sys_name=None, rgn_name=None):
+        self.currentSystem = sys_name
         if sys_name:
             self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
             self.setDestination.setEnabled(True)
@@ -106,7 +108,7 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.alarmCheck.setChecked(True)
         self.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
         self.addAction(self.alarmCheck)
-        distanceMenu = self.addMenu("Alarm Distance")
+        distance_menu = self.addMenu("Alarm Distance")
         self.distanceGroup = QActionGroup(self)
         for i in range(0, 6):
             action = QAction("{0} Jumps".format(i), None, checkable=True)
@@ -115,8 +117,8 @@ class TrayContextMenu(QtWidgets.QMenu):
             action.alarmDistance = i
             action.triggered.connect(self.changeAlarmDistance)
             self.distanceGroup.addAction(action)
-            distanceMenu.addAction(action)
-        self.addMenu(distanceMenu)
+            distance_menu.addAction(action)
+        self.addMenu(distance_menu)
         self.addSeparator()
         self.quitAction = QAction("Quit", self)
         self.quitAction.triggered.connect(self.trayIcon.quit)
@@ -127,6 +129,102 @@ class TrayContextMenu(QtWidgets.QMenu):
             if action.isChecked():
                 self.trayIcon.alarmDistance = action.alarmDistance
                 self.trayIcon.changeAlarmDistance()
+
+
+class MapContextMenu(QtWidgets.QMenu):
+
+    alarm_distance = pyqtSignal(int)
+
+    def __init__(self):
+        QtWidgets.QMenu.__init__(self)
+        self.currentUser = None
+        self.currentSystem = None
+        self.alarmDistance = 2
+        self._buildMenu()
+
+    def hasJumpGate(sys_name = None) -> bool:
+        return False
+
+    def updateMenu(self, sys_name=None, rgn_name=None, alarm_distance=2):
+        self.alarmDistance = alarm_distance
+        for action in self.distanceGroup.actions():
+            action.setChecked( action.alarmDistance ==self.alarmDistance )
+
+        if sys_name:
+            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
+            self.gameMenu.setEnabled(True)
+            self.openDotlan.setEnabled(True)
+            self.openZKillboard.setEnabled(True)
+            self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
+            self.currentSystem = sys_name
+        else:
+            self.gameMenu.setTitle("EVE-Online")
+            self.gameMenu.setEnabled(False)
+            self.openDotlan.setEnabled(False)
+            self.openZKillboard.setEnabled(False)
+            self.clearJumpGate.setEnabled(False)
+            self.currentSystem = None
+        if rgn_name:
+            self.changeRegion.setText("Change Region {}".format(rgn_name))
+            self.changeRegion.setEnabled(True)
+        else:
+            self.changeRegion.setText("Change Region")
+            self.changeRegion.setEnabled(False)
+
+    def _buildMenu(self):
+        self.framelessCheck = QAction("Frameless Window", self, checkable=True)
+        self.addAction(self.framelessCheck)
+        self.addSeparator()
+        self.gameMenu = PlayerContextMenu(Cache().getAPICharNames())
+        self.addMenu(self.gameMenu)
+        self.addSeparator()
+        self.openDotlan = QAction("Dotlan", None, checkable=False)
+        self.addAction(self.openDotlan)
+        self.openZKillboard = QAction("zKillbard", None, checkable=False)
+        self.addAction(self.openZKillboard)
+        self.changeRegion = QAction("Change Region", None, checkable=False)
+        self.addAction(self.changeRegion)
+        self.addSeparator()
+        self.alarmCheck = QAction("Show alarm notifications", self, checkable=True)
+        self.alarmCheck.setChecked(True)
+        self.addAction(self.alarmCheck)
+        distance_menu = self.addMenu("Alarm Distance")
+        self.distanceGroup = QActionGroup(self)
+        for i in range(0, 6):
+            action = QAction("{0} Jumps".format(i), None, checkable=True)
+            if i == self.alarm_distance:
+                action.setChecked(True)
+            action.alarmDistance = i
+            action.triggered.connect(self.changeAlarmDistance)
+            self.distanceGroup.addAction(action)
+            distance_menu.addAction(action)
+        self.addMenu(distance_menu)
+        self.addSeparator()
+        self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
+        self.addAction(self.clearJumpGate)
+        self.addSeparator()
+        self.quitAction = QAction("Quit", self)
+        self.addAction(self.quitAction)
+
+        def openDotlan(checked):
+            system = self.currentSystem
+            if system:
+                QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(system.name))
+
+        self.openDotlan.triggered.connect(openDotlan)
+
+        def openZKillboard(checked):
+            system = self.currentSystem
+            if system:
+                QDesktopServices.openUrl(
+                    "https://zkillboard.com/system/{}".format(system.systemId))
+
+        self.openZKillboard.triggered.connect(openZKillboard)
+
+    def changeAlarmDistance(self):
+        for action in self.distanceGroup.actions():
+            if action.isChecked():
+                self.alarm_distance.emit(action.alarmDistance)
 
 
 class JumpBridgeContextMenu(QtWidgets.QMenu):
