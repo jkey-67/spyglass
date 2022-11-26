@@ -16,7 +16,7 @@ def instFiles():
         '--workpath', builddir,
         '--onefile',
         '--windowed',
-        '--name', 'spyglass-1.6.4',
+        '--name', 'spyglass-1.6.6-RC01',
         '../spyglass.py',
         '--icon=../icon.ico',
         '--add-data=../vi/universe/*.json;./vi/universe',
