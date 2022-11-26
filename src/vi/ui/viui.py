@@ -23,6 +23,8 @@ import sys
 import time
 import requests
 from typing import Union
+from typing import Optional
+
 import vi.version
 from vi.universe import Universe
 import logging
@@ -49,6 +51,7 @@ from vi.ui.systemtray import JumpBridgeContextMenu
 from vi.ui.systemtray import MapContextMenu
 from vi.ui.systemtray import POIContextMenu
 from vi.ui.systemtray import TheraContextMenu
+from vi.ui.systemtray import ActionPackage
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser
 from vi.clipboard import evaluateClipboardData
@@ -145,7 +148,6 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "eve-sso-login-black-small.png"))),
                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -183,6 +185,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapJumpGates = Cache().getJumpGates()
         self.setupMap()
         self.invertWheel = False
+        self._connectActionPack()
 
         update_splash_window_info("Preset application")
 
@@ -208,7 +211,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._updateKnownPlayerAndMenu(api_char_names)
 
         if len(self.knownPlayerNames) == 0:
-            diag_text = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\n"\
+            diag_text = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\n" \
                         "Some features (clipboard KOS checking, alarms, etc.) may not work until your character(s)" "" \
                         "have been registered. Change systems, with each character you want to monitor, while " \
                         "Spyglass is running to remedy this."
@@ -273,7 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._setupThreads()
         self._startStatisticTimer()
         self._wireUpDatabaseViews()
-
+        self.updateSidePanel()
         update_splash_window_info("Apply theme.")
 
         initial_theme = Cache().getFromCache("theme")
@@ -320,6 +323,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def show(self):
         QtWidgets.QMainWindow.show(self)
 
+    def _connectActionPack(self):
+        self.actions_pack = ActionPackage()
+        self.actions_pack.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
+        self.actions_pack.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
+        self.actions_pack.quitAction.triggered.connect(self.trayIcon.quit)
+
     def _updateKnownPlayerAndMenu(self, names=None):
         """
         Updates the players menu
@@ -345,6 +354,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if known_player_names != self.knownPlayerNames:
             Cache().setKnownPlayerNames(known_player_names)
             self.players_changed.emit()
+
+        self.updateSidePanel()
 
     def _addPlayerMenu(self):
         self.playerGroup = QActionGroup(self.ui.menu)
@@ -404,9 +415,6 @@ class MainWindow(QtWidgets.QMainWindow):
             Cache().recallAndApplySettings(self, "settings")
         except Exception as e:
             logging.error(e)
-            # todo: add a button to delete the cache / DB
-            self.trayIcon.showMessage("Settings error",
-                                      "Something went wrong loading saved state:\n {0}".format(str(e)), 1)
 
     def changeAutoRegion(self, auto_change: bool):
         self.autoChangeRegion = auto_change
@@ -543,6 +551,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wireUpDatabaseCharacters()
         self._wireUpThera()
 
+    def updateSidePanel(self):
+        inx_qTabPOIS = self.ui.qSidepannel.indexOf(self.ui.qTabPOIS)
+        inx_qTabJumpbridges = self.ui.qSidepannel.indexOf(self.ui.qTabJumpbridges)
+        if evegate.esiCharName() is None:
+            self.ui.qSidepannel.setTabVisible(inx_qTabPOIS, False)
+            self.ui.qSidepannel.setTabVisible(inx_qTabJumpbridges, False)
+        else:
+            self.ui.qSidepannel.setTabVisible(inx_qTabPOIS, True)
+            self.ui.qSidepannel.setTabVisible(inx_qTabJumpbridges, True)
+
     def _wireUpDatabaseViewPOI(self):
         model = POITableModell()
 
@@ -678,10 +696,10 @@ class MainWindow(QtWidgets.QMainWindow):
         char_model = TableModelPlayers()
 
         def callOnCharsUpdate():
-            char_model.setQuery('select name as Name,'\
-                                '(CASE active WHEN 0 THEN "No" ELSE "Yes" END) AS Monitor,'\
-                                '(CASE WHEN key is NULL THEN "" ELSE "ESI" END ) AS Registered,'\
-                                '(CASE name WHEN (SELECT data FROM cache WHERE key IS "api_char_name")'\
+            char_model.setQuery('select name as Name,' \
+                                '(CASE active WHEN 0 THEN "No" ELSE "Yes" END) AS Monitor,' \
+                                '(CASE WHEN key is NULL THEN "" ELSE "ESI" END ) AS Registered,' \
+                                '(CASE name WHEN (SELECT data FROM cache WHERE key IS "api_char_name")' \
                                 ' THEN "Yes" ELSE "" END) AS Current FROM players')
 
         self.tableViewPlayersDelegate = StyledItemDelegatePlayers(self)
@@ -900,15 +918,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         try:
             self.dotlan = dotlan.Map(
-                    region=region_name,
-                    svgFile=svg,
-                    setJumpMapsVisible=self.ui.jumpbridgesButton.isChecked(),
-                    setSatisticsVisible=self.ui.statisticsButton.isChecked(),
-                    setSystemStatistic=self.mapStatisticCache,
-                    setCampaignsSystems=self.mapCampaigns,
-                    setIncursionSystems=self.mapIncursions,
-                    setPlayerSovereignty=self.mapSovereignty,
-                    setJumpBridges=self.mapJumpGates)
+                region=region_name,
+                svgFile=svg,
+                setJumpMapsVisible=self.ui.jumpbridgesButton.isChecked(),
+                setSatisticsVisible=self.ui.statisticsButton.isChecked(),
+                setSystemStatistic=self.mapStatisticCache,
+                setCampaignsSystems=self.mapCampaigns,
+                setIncursionSystems=self.mapIncursions,
+                setPlayerSovereignty=self.mapSovereignty,
+                setJumpBridges=self.mapJumpGates)
             logging.info("Using dotlan map {}".format(region_name))
         except dotlan.DotlanException as e:
             logging.critical(e)
@@ -917,8 +935,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.dotlan.outdatedCacheError:
             e = self.dotlan.outdatedCacheError
-            diag_text = "Something went wrong getting map data. Proceeding with older cached data. "\
-                "Check for a newer version and inform the maintainer.\n\nError: {0} {1}".format(type(e), str(e))
+            diag_text = "Something went wrong getting map data. Proceeding with older cached data. " \
+                        "Check for a newer version and inform the maintainer.\n\nError: {0} {1}".format(type(e), str(e))
             logging.warning(diag_text)
             QMessageBox.warning(self, "Using map from cache", diag_text, QMessageBox.Ok)
 
@@ -975,7 +993,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     ("ui.splitter", "restoreGeometry", str(self.ui.splitter.saveGeometry()), True),
                     ("ui.splitter", "restoreState", str(self.ui.splitter.saveState()), True),
                     ("ui.mapView", "setZoomFactor", self.ui.mapView.zoomFactor()),
-                    ("ui.tabWidgetThera", "restoreGeometry", str(self.ui.tabWidgetThera.saveGeometry()), True),
+                    ("ui.qSidepannel", "restoreGeometry", str(self.ui.qSidepannel.saveGeometry()), True),
                     (None, "changeChatFontSize", ChatEntryWidget.TEXT_SIZE),
                     (None, "setOpacity", self.opacityGroup.checkedAction().opacity),
                     (None, "changeAlwaysOnTop", self.ui.alwaysOnTopAction.isChecked()),
@@ -1063,7 +1081,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.soundSetupAction.setEnabled(False)
             QMessageBox.warning(
                 None, "Sound disabled",
-                "The lib 'pyglet' which is used to play sounds cannot be found, ""so the soundsystem is disabled.\n"\
+                "The lib 'pyglet' which is used to play sounds cannot be found, ""so the soundsystem is disabled.\n" \
                 "If you want sound, please install the 'pyglet' library. This warning will not be shown again.",
                 QMessageBox.Ok)
         else:
@@ -1424,7 +1442,7 @@ class MainWindow(QtWidgets.QMainWindow):
         info_dialog.ui = Ui_Info()
         info_dialog.ui.setupUi(info_dialog)
         info_dialog.ui.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        info_dialog.ui.logoLabel.setPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "denci.png"))))
+        # info_dialog.ui.logoLabel.setPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "denci.png"))))
         info_dialog.ui.closeButton.clicked.connect(info_dialog.accept)
         info_dialog.show()
 
@@ -1588,7 +1606,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not rescan:
             self.updateMapView()
 
-    def systemUnderMouse(self, pos: QPoint):
+    def systemUnderMouse(self, pos: QPoint) -> Optional[dotlan.System]:
         """returns the name of the system under the mouse pointer
         """
         for name, system in self.systems.items():

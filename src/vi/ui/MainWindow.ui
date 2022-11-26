@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="resource.qrc">
-    <normaloff>:/Icons/res/logo.svg</normaloff>:/Icons/res/logo.svg</iconset>
+    <normaloff>:/Icons/icon.ico</normaloff>:/Icons/icon.ico</iconset>
   </property>
   <property name="windowOpacity">
    <double>1.000000000000000</double>
@@ -222,7 +222,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>64</width>
+                 <width>48</width>
                  <height>32</height>
                 </size>
                </property>
@@ -268,7 +268,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>64</width>
+                 <width>48</width>
                  <height>32</height>
                 </size>
                </property>
@@ -362,7 +362,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTabWidget" name="tabWidgetThera">
+         <widget class="QTabWidget" name="qSidepannel">
           <property name="tabPosition">
            <enum>QTabWidget::East</enum>
           </property>
@@ -378,7 +378,7 @@
           <property name="tabBarAutoHide">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="tab">
+          <widget class="QWidget" name="qTabIntel">
            <attribute name="title">
             <string>Intel</string>
            </attribute>
@@ -445,7 +445,7 @@
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>16777215</width>
+                  <width>32</width>
                   <height>32</height>
                  </size>
                 </property>
@@ -483,7 +483,7 @@
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>16777215</width>
+                  <width>32</width>
                   <height>32</height>
                  </size>
                 </property>
@@ -540,7 +540,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="POIs">
+          <widget class="QWidget" name="qTabPOIS">
            <attribute name="title">
             <string>POIs</string>
            </attribute>
@@ -593,7 +593,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_2">
+          <widget class="QWidget" name="qTabJumpbridges">
            <attribute name="title">
             <string>JBs</string>
            </attribute>
@@ -664,7 +664,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_3">
+          <widget class="QWidget" name="qTabAPIChar">
            <attribute name="title">
             <string>API Chars</string>
            </attribute>
@@ -819,7 +819,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="qThera">
+          <widget class="QWidget" name="qTabThera">
            <attribute name="title">
             <string>Thera</string>
            </attribute>
@@ -919,7 +919,7 @@
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>EVE-Spy</string>
+     <string>EVE-Spyglass</string>
     </property>
     <addaction name="separator"/>
     <addaction name="infoAction"/>

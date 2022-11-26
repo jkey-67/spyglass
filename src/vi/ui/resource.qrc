@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>icon.ico</file>
     <file>res/arrows-rotate.svg</file>
     <file>res/eve-sso-login-black-large.png</file>
     <file>res/eve-sso-login-black-small.png</file>

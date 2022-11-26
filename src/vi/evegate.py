@@ -1172,6 +1172,10 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
             elif show_npc and len(sov) > 1:
                 list_of_all_factions.add(sov["faction_id"])
                 npc_sov[str(sov["system_id"])] = sov
+
+        alliance_ids = set([player_sov[itm]["alliance_id"] for itm in player_sov if "alliance_id" in player_sov[itm].keys()])
+        for alliance_id in alliance_ids:
+                esiAlliances(alliance_id)
         for sov in player_sov.values():
             if "alliance_id" in sov.keys():
                 alli_id = sov["alliance_id"]
@@ -1448,11 +1452,12 @@ def esiAlliances(alliance_id, use_outdated=True):
     else:
         req = "https://esi.evetech.net/latest/alliances/{}/?datasource=tranquility".format(alliance_id)
         response = requests.get(req)
-        if response.status_code != 200:
+        if response.status_code == 200:
+            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+            return response.json()
+        else:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-            response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
-        return response.json()
+        return {"ticker": "-"}
 
 
 def esiUniverseRegions(region_id: int, use_outdated=False):
@@ -1856,15 +1861,35 @@ def getSpyglassUpdateLink(ver=VERSION):
         return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
     page_json_found = response.json()
     if len(page_json_found) > 0 and "assets" in page_json_found[0].keys():
+        cnt =  page_json_found[0]["assets"][0]["download_count"]
         return page_json_found[0]["assets"][0]["browser_download_url"]
     else:
         return None
 
 
+def dumpSpyglassDownloadStats():
+
+    req = "https://api.github.com/repos/jkey-67/spyglass/releases"
+    response = requests.get(req)
+    if response.status_code != 200:
+        return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
+    page_json_found = response.json()
+    for item in page_json_found:
+        if "assets" in item.keys():
+            for asset in item["assets"]:
+                cnt = asset["download_count"]
+                name = asset["browser_download_url"]
+                print("Statistic of {} download count {}".format(name,cnt))
+    else:
+        return None
+
+
+
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
-
+    dumpSpyglassDownloadStats()
+    res = getSpyglassUpdateLink()
     res = listOfJumpGatePairs()
     res = checkTheraConnections()
     res = getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None)

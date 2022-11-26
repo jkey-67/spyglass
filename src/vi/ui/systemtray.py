@@ -25,12 +25,80 @@ from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon
 from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import QObject
 from PySide6.QtGui import QDesktopServices
 from vi.resources import resourcePath
 from vi import states
 from vi.ui.styles import Styles
 from vi.soundmanager import SoundManager
 from vi.cache import Cache
+
+
+class ActionPackage(QObject):
+    def __init__(self):
+        QObject.__init__(self)
+        self.framelessCheck = QAction("Frameless Window", None, checkable=True)
+        self.setDestination = QAction("Set Destination", None, checkable=False)
+        self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
+        self.avoidSystem = QAction("Avoid System", None, checkable=False)
+        self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
+        self.clearAvoidList = QAction("Clear Avoid Systems", None, checkable=False)
+        self.clearAll = QAction("Clear all Waypoints", None, checkable=False)
+        self.openDotlan = QAction("Dotlan", None, checkable=False)
+        self.openZKillboard = QAction("zKillbard", None, checkable=False)
+        self.changeRegion = QAction("Change Region", None, checkable=False)
+        self.alarmCheck = QAction("Show alarm notifications", None, checkable=True)
+        self.quitAction = QAction("Quit", None)
+
+        self.alarmDistance = list()
+
+        for i in range(0, 6):
+            action = QAction("{0} Jumps".format(i), None, checkable=True)
+            if i == 0:
+                action.setChecked(True)
+            action.alarmDistance = i
+            self.alarmDistance.append(action)
+
+        self.currentSystem = None
+
+        self.openDotlan.triggered.connect(self.browserOpenDotlan)
+        self.openZKillboard.triggered.connect(self.browserOpenZKillboard)
+
+    def updateActionPackage(self, sys_name=None, rgn_name=None):
+        self.currentSystem = sys_name
+        if sys_name:
+            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
+            self.setDestination.setEnabled(True)
+            self.addWaypoint.setEnabled(True)
+            self.openDotlan.setEnabled(True)
+            self.openZKillboard.setEnabled(True)
+            self.avoidSystem.setEnabled(True)
+            self.clearJumpGate.setEnabled(self.hasJumpGate(sys_name.name))
+            self.currentSystem = sys_name
+        else:
+            self.gameMenu.setTitle("EVE-Online")
+            self.setDestination.setEnabled(False)
+            self.addWaypoint.setEnabled(False)
+            self.openDotlan.setEnabled(False)
+            self.openZKillboard.setEnabled(False)
+            self.avoidSystem.setEnabled(False)
+            self.clearJumpGate.setEnabled(False)
+            self.currentSystem = None
+        if rgn_name:
+            self.changeRegion.setText("Change Region {}".format(rgn_name))
+            self.changeRegion.setEnabled(True)
+        else:
+            self.changeRegion.setText("Change Region")
+            self.changeRegion.setEnabled(False)
+
+    def browserOpenDotlan(self, checked):
+            if self.currentSystem:
+                QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name))
+
+    def browserOpenZKillboard(self, checked):
+        if self.currentSystem:
+            QDesktopServices.openUrl(
+                "https://zkillboard.com/system/{}".format(self.currentSystem.systemId))
 
 
 class TrayContextMenu(QtWidgets.QMenu):
@@ -78,33 +146,36 @@ class TrayContextMenu(QtWidgets.QMenu):
 
     def _buildMenu(self):
         self.framelessCheck = QAction("Frameless Window", self, checkable=True)
-        self.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
-        self.addAction(self.framelessCheck)
-        self.addSeparator()
-        self.gameMenu = self.addMenu("EVE-Online")
         self.setDestination = QAction("Set Destination", None, checkable=False)
         self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
         self.avoidSystem = QAction("Avoid System", None, checkable=False)
         self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
         self.clearAvoidList = QAction("Clear Avoid Systems", None, checkable=False)
         self.clearAll = QAction("Clear all Waypoints", None, checkable=False)
-        self.gameMenu.addAction(self.setDestination)
-        self.gameMenu.addAction(self.addWaypoint)
-        self.gameMenu.addAction(self.avoidSystem)
-        self.gameMenu.addAction(self.clearAvoidList)
-        self.gameMenu.addAction(self.clearJumpGate)
-        self.gameMenu.addSeparator()
-        self.gameMenu.addAction(self.clearAll)
-        self.addMenu(self.gameMenu)
-        self.addSeparator()
         self.openDotlan = QAction("Dotlan", None, checkable=False)
-        self.addAction(self.openDotlan)
         self.openZKillboard = QAction("zKillbard", None, checkable=False)
-        self.addAction(self.openZKillboard)
         self.changeRegion = QAction("Change Region", None, checkable=False)
-        self.addAction(self.changeRegion)
-        self.addSeparator()
         self.alarmCheck = QAction("Show alarm notifications", self, checkable=True)
+        self.quitAction = QAction("Quit", self)
+
+        self.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
+        self.addAction(self.framelessCheck)
+        # self.addSeparator()
+        # self.gameMenu = self.addMenu("EVE-Online")
+
+        # self.gameMenu.addAction(self.setDestination)
+        # self.gameMenu.addAction(self.addWaypoint)
+        # self.gameMenu.addAction(self.avoidSystem)
+        # self.gameMenu.addAction(self.clearAvoidList)
+        # self.gameMenu.addAction(self.clearJumpGate)
+        # self.gameMenu.addSeparator()
+        # self.gameMenu.addAction(self.clearAll)
+        # self.addMenu(self.gameMenu)
+        # self.addSeparator()
+        # self.addAction(self.openDotlan)
+        # self.addAction(self.openZKillboard)
+        # self.addAction(self.changeRegion)
+        self.addSeparator()
         self.alarmCheck.setChecked(True)
         self.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
         self.addAction(self.alarmCheck)
@@ -120,7 +191,6 @@ class TrayContextMenu(QtWidgets.QMenu):
             distance_menu.addAction(action)
         self.addMenu(distance_menu)
         self.addSeparator()
-        self.quitAction = QAction("Quit", self)
         self.quitAction.triggered.connect(self.trayIcon.quit)
         self.addAction(self.quitAction)
 
@@ -142,13 +212,10 @@ class MapContextMenu(QtWidgets.QMenu):
         self.alarmDistance = 2
         self._buildMenu()
 
-    def hasJumpGate(sys_name = None) -> bool:
-        return False
-
     def updateMenu(self, sys_name=None, rgn_name=None, alarm_distance=2):
         self.alarmDistance = alarm_distance
         for action in self.distanceGroup.actions():
-            action.setChecked( action.alarmDistance ==self.alarmDistance )
+            action.setChecked(action.alarmDistance == self.alarmDistance)
 
         if sys_name:
             self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
@@ -173,19 +240,21 @@ class MapContextMenu(QtWidgets.QMenu):
 
     def _buildMenu(self):
         self.framelessCheck = QAction("Frameless Window", self, checkable=True)
+        self.openDotlan = QAction("Dotlan", None, checkable=False)
+        self.openZKillboard = QAction("zKillbard", None, checkable=False)
+        self.changeRegion = QAction("Change Region", None, checkable=False)
+        self.alarmCheck = QAction("Show alarm notifications", self, checkable=True)
+        self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
+
         self.addAction(self.framelessCheck)
         self.addSeparator()
         self.gameMenu = PlayerContextMenu(Cache().getAPICharNames())
         self.addMenu(self.gameMenu)
         self.addSeparator()
-        self.openDotlan = QAction("Dotlan", None, checkable=False)
         self.addAction(self.openDotlan)
-        self.openZKillboard = QAction("zKillbard", None, checkable=False)
         self.addAction(self.openZKillboard)
-        self.changeRegion = QAction("Change Region", None, checkable=False)
         self.addAction(self.changeRegion)
         self.addSeparator()
-        self.alarmCheck = QAction("Show alarm notifications", self, checkable=True)
         self.alarmCheck.setChecked(True)
         self.addAction(self.alarmCheck)
         distance_menu = self.addMenu("Alarm Distance")
@@ -200,26 +269,10 @@ class MapContextMenu(QtWidgets.QMenu):
             distance_menu.addAction(action)
         self.addMenu(distance_menu)
         self.addSeparator()
-        self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
         self.addAction(self.clearJumpGate)
         self.addSeparator()
         self.quitAction = QAction("Quit", self)
         self.addAction(self.quitAction)
-
-        def openDotlan(checked):
-            system = self.currentSystem
-            if system:
-                QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(system.name))
-
-        self.openDotlan.triggered.connect(openDotlan)
-
-        def openZKillboard(checked):
-            system = self.currentSystem
-            if system:
-                QDesktopServices.openUrl(
-                    "https://zkillboard.com/system/{}".format(system.systemId))
-
-        self.openZKillboard.triggered.connect(openZKillboard)
 
     def changeAlarmDistance(self):
         for action in self.distanceGroup.actions():
