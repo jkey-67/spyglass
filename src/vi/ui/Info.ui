@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>700</width>
-    <height>702</height>
+    <height>678</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -805,8 +805,8 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>20</x>
      <y>20</y>
-     <width>221</width>
-     <height>221</height>
+     <width>280</width>
+     <height>280</height>
     </rect>
    </property>
    <property name="sizePolicy">
@@ -823,12 +823,15 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="maximumSize">
     <size>
-     <width>221</width>
-     <height>221</height>
+     <width>280</width>
+     <height>280</height>
     </size>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap resource="resource.qrc">:/Icons/res/logo.svg</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -873,6 +876,8 @@ p, li { white-space: pre-wrap; }
    </widget>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

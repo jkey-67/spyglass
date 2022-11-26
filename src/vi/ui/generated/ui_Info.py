@@ -17,12 +17,13 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDialog, QGroupBox, QLabel,
     QPlainTextEdit, QPushButton, QSizePolicy, QWidget)
+import resource_rc
 
 class Ui_Info(object):
     def setupUi(self, Info):
         if not Info.objectName():
             Info.setObjectName(u"Info")
-        Info.resize(700, 702)
+        Info.resize(700, 678)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(6)
@@ -55,14 +56,15 @@ class Ui_Info(object):
         self.closeButton.setGeometry(QRect(20, 630, 651, 26))
         self.logoLabel = QLabel(Info)
         self.logoLabel.setObjectName(u"logoLabel")
-        self.logoLabel.setGeometry(QRect(20, 20, 221, 221))
+        self.logoLabel.setGeometry(QRect(20, 20, 280, 280))
         sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.logoLabel.sizePolicy().hasHeightForWidth())
         self.logoLabel.setSizePolicy(sizePolicy1)
         self.logoLabel.setMinimumSize(QSize(221, 221))
-        self.logoLabel.setMaximumSize(QSize(221, 221))
+        self.logoLabel.setMaximumSize(QSize(280, 280))
+        self.logoLabel.setPixmap(QPixmap(u":/Icons/res/logo.svg"))
         self.logoLabel.setScaledContents(True)
         self.logoLabel.setAlignment(Qt.AlignCenter)
         self.groupBox2 = QGroupBox(Info)
@@ -812,7 +814,7 @@ class Ui_Info(object):
 "<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">Donations of ISK are appreciated.</span></p></body></html>", None))
         self.versionLabel.setText(QCoreApplication.translate("Info", u"Version: ", None))
         self.closeButton.setText(QCoreApplication.translate("Info", u"Close", None))
-        self.logoLabel.setText(QCoreApplication.translate("Info", u"TextLabel", None))
+        self.logoLabel.setText("")
         self.groupBox2.setTitle(QCoreApplication.translate("Info", u"Audio:", None))
         self.label2.setText(QCoreApplication.translate("Info", u"<html><head/><body><p>Audio Files \u00a9 Keith W. 'zimbot' Blackwell (CC-BY 3.0), available @ <a href=\"http://www.freesound.org/people/zimbot/\"><span style=\" text-decoration: underline; color:#0057ae;\">freesound.org</span></a></p></body></html>", None))
     # retranslateUi
