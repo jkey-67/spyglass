@@ -1,0 +1,17 @@
+<RCC>
+  <qresource prefix="Icons">
+    <file>res/arrows-rotate.svg</file>
+    <file>res/eve-sso-login-black-large.png</file>
+    <file>res/eve-sso-login-black-small.png</file>
+    <file>res/eve-sso-login-white-large.png</file>
+    <file>res/eve-sso-login-white-small.png</file>
+    <file>res/jumpbridge.svg</file>
+    <file>res/minus.svg</file>
+    <file>res/logo.svg</file>
+    <file>res/plus.svg</file>
+    <file>res/qmark.png</file>
+    <file>res/restoreframe.svg</file>
+    <file>res/statistic.svg</file>
+    <file>res/trash-box.svg</file>
+  </qresource>
+</RCC>
