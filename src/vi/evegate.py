@@ -82,7 +82,11 @@ def esiCharName() -> Optional[str]:
         str: Name of the current char from cache as string, or None
     """
     res = Cache().getFromCache("api_char_name", True)
-    if res == "":
+    if res is None or res == "":
+        res = Cache().getAPICharNames()
+        if len(res):
+            setEsiCharName(res[0])
+            return res[0]
         return None
     else:
         return res
