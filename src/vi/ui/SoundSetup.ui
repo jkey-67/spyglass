@@ -9,12 +9,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>588</width>
-    <height>311</height>
+    <width>512</width>
+    <height>305</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Sound Setup</string>
+  </property>
+  <property name="windowOpacity">
+   <double>1.000000000000000</double>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
@@ -52,8 +55,24 @@
           </item>
           <item>
            <widget class="QToolButton" name="testSoundButton">
+            <property name="toolTip">
+             <string>Play the soundfile</string>
+            </property>
             <property name="text">
              <string>Play</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/play.svg</normaloff>:/Icons/res/play.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+            <property name="shortcut">
+             <string>Ctrl+S</string>
             </property>
            </widget>
           </item>
@@ -61,36 +80,8 @@
         </item>
         <item>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Dist 3</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <widget class="QToolButton" name="palyAlarm_3">
-            <property name="text">
-             <string>Play</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>Dist 5</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>Dist. 2 </string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QLineEdit" name="soundAlarm_4">
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="soundAlarm_2">
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -101,26 +92,15 @@
             <property name="text">
              <string>...</string>
             </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
-           <widget class="QLineEdit" name="soundAlarm_5">
-            <property name="readOnly">
-             <bool>true</bool>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/load.svg</normaloff>:/Icons/res/load.svg</iconset>
             </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QToolButton" name="selectAlarm_2">
-            <property name="text">
-             <string>...</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="3">
-           <widget class="QToolButton" name="palyAlarm_4">
-            <property name="text">
-             <string>Play</string>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -131,10 +111,10 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Dist 4</string>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="soundAlarm_5">
+            <property name="readOnly">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -143,12 +123,133 @@
             <property name="text">
              <string>...</string>
             </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/load.svg</normaloff>:/Icons/res/load.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
            </widget>
           </item>
-          <item row="4" column="3">
-           <widget class="QToolButton" name="palyAlarm_5">
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Dist 3</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QToolButton" name="palyAlarm_2">
+            <property name="toolTip">
+             <string>Play the soundfile</string>
+            </property>
             <property name="text">
              <string>Play</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/play.svg</normaloff>:/Icons/res/play.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+            <property name="shortcut">
+             <string>Ctrl+S</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Dist 5</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QToolButton" name="selectAlarm_4">
+            <property name="text">
+             <string>...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/load.svg</normaloff>:/Icons/res/load.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QToolButton" name="selectAlarm_2">
+            <property name="text">
+             <string>...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/load.svg</normaloff>:/Icons/res/load.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QToolButton" name="selectAlarm_5">
+            <property name="text">
+             <string>...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/load.svg</normaloff>:/Icons/res/load.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QToolButton" name="palyAlarm_4">
+            <property name="toolTip">
+             <string>Play the soundfile</string>
+            </property>
+            <property name="text">
+             <string>Play</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/play.svg</normaloff>:/Icons/res/play.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+            <property name="shortcut">
+             <string>Ctrl+S</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Dist. 2 </string>
             </property>
            </widget>
           </item>
@@ -159,31 +260,86 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="3">
-           <widget class="QToolButton" name="palyAlarm_1">
+          <item row="4" column="3">
+           <widget class="QToolButton" name="palyAlarm_5">
+            <property name="toolTip">
+             <string>Play the soundfile</string>
+            </property>
             <property name="text">
              <string>Play</string>
             </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/play.svg</normaloff>:/Icons/res/play.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+            <property name="shortcut">
+             <string>Ctrl+S</string>
+            </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="soundAlarm_2">
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="soundAlarm_4">
             <property name="readOnly">
              <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item row="1" column="3">
-           <widget class="QToolButton" name="palyAlarm_2">
+          <item row="2" column="3">
+           <widget class="QToolButton" name="palyAlarm_3">
+            <property name="toolTip">
+             <string>Play the soundfile</string>
+            </property>
             <property name="text">
              <string>Play</string>
             </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/play.svg</normaloff>:/Icons/res/play.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+            <property name="shortcut">
+             <string>Ctrl+S</string>
+            </property>
            </widget>
           </item>
-          <item row="4" column="2">
-           <widget class="QToolButton" name="selectAlarm_5">
+          <item row="0" column="3">
+           <widget class="QToolButton" name="palyAlarm_1">
+            <property name="toolTip">
+             <string>Play the soundfile</string>
+            </property>
             <property name="text">
-             <string>...</string>
+             <string>Play</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/play.svg</normaloff>:/Icons/res/play.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+            <property name="shortcut">
+             <string>Ctrl+S</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Dist 4</string>
             </property>
            </widget>
           </item>
@@ -191,13 +347,6 @@
            <widget class="QLineEdit" name="soundAlarm_1">
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="2">
-           <widget class="QToolButton" name="selectAlarm_4">
-            <property name="text">
-             <string>...</string>
             </property>
            </widget>
           </item>
@@ -219,9 +368,31 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
-           <widget class="QPushButton" name="closeButton">
+           <widget class="QToolButton" name="useSpokenNotifications">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Enable test to speach</string>
+            </property>
             <property name="text">
-             <string>Close</string>
+             <string>Use Spoken Notifications</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/speach.svg</normaloff>:/Icons/res/speach.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -239,9 +410,22 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="defaultSounds">
+           <widget class="QToolButton" name="defaultSounds">
+            <property name="toolTip">
+             <string>Set to defaults</string>
+            </property>
             <property name="text">
              <string>Default</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/default.svg</normaloff>:/Icons/res/default.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -253,8 +437,20 @@
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <widget class="QLabel" name="label">
+          <property name="maximumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="text">
-           <string>Volume</string>
+           <string/>
+          </property>
+          <property name="pixmap">
+           <pixmap resource="resource.qrc">:/Icons/res/volume.svg</pixmap>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -270,6 +466,9 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>Adust Sound Volume</string>
             </property>
             <property name="maximum">
              <number>100</number>
@@ -294,6 +493,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

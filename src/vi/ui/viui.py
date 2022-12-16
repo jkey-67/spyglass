@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-
+import json
 import os
 import datetime
 import sys
@@ -74,10 +74,79 @@ class POITableModell(QSqlQueryModel):
         super(POITableModell, self).__init__(parent)
 
     def flags(self, index) -> QtCore.Qt.ItemFlags:
-        if index.column() == 1:
-            return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+        defaultFlags = super(POITableModell, self).flags(index)
+        if index.isValid():
+            if index.column() == 1:
+                return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable | defaultFlags # | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
+            else:
+                return Qt.ItemIsSelectable | Qt.ItemIsEnabled | defaultFlags # | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
         else:
-            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            return Qt.ItemIsDropEnabled | defaultFlags
+
+    def supportedDropActions(self):
+        return Qt.MoveAction | Qt.CopyAction
+
+    def dropMimeData(self, data, action, row, column, parent):
+        return True
+
+    def dropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int, parent) -> bool:
+        if action == QtCore.Qt.IgnoreAction:
+            return True
+        if not data.hasFormat('text/plain'):
+            return False
+        if column > 0:
+            return False
+
+        num_rows = self.rowCount(QtCore.QModelIndex())
+
+        begin_row = 0
+        if row != -1:
+            begin_row = row
+        elif parent.isValid():
+            begin_row = parent.row()
+        else:
+            begin_row = num_rows
+
+        if begin_row != num_rows and begin_row != 0:
+            begin_row += 1
+
+        encoded_data = data.data('text/plain')
+
+        stream = QtCore.QDataStream(encoded_data, QtCore.QIODevice.ReadOnly)
+        new_items = []
+        rows = 0
+        while not stream.atEnd():
+            text = str()
+            stream >> text
+            new_items.append(text)
+            rows += 1
+
+        # insert the new rows for the dropped items and set the data to these items appropriately
+        self.insertRows(begin_row, rows, QtCore.QModelIndex())
+        for text in new_items:
+            idx = self.index(begin_row, 0, QtCore.QModelIndex())
+            self.setData(idx, text, 0)
+            self.dataChanged.emit(idx, idx)
+            begin_row += 1
+
+        return True
+
+    def mimeTypes(self):
+        return ['text/plain']
+
+    def mimeData(self, indexes):
+        mimedata = QtCore.QMimeData()
+        encoded_data = QtCore.QByteArray()
+        stream = QtCore.QDataStream(encoded_data, QtCore.QIODevice.WriteOnly)
+        for index in indexes:
+            if index.isValid():
+                # src_index = self.model().mapToSource(index)
+                text = json.dumps(Cache().getPOIAtIndex(index.row()))
+
+        stream << QtCore.QByteArray(text.encode('utf-8-sig'))
+        # mimedata.setData('application/json', encoded_data)
+        mimedata.setData('text/plain', encoded_data)
+        return mimedata
 
 
 class StyledItemDelegatePOI(QStyledItemDelegate):
@@ -569,6 +638,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.tableViewPOIs.resizeColumnsToContents()
             self.ui.tableViewPOIs.resizeRowsToContents()
 
+        self.ui.tableViewPOIs.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.tableViewPOIs.setDragEnabled(True)
+        self.ui.tableViewPOIs.setAcceptDrops(True)
+        self.ui.tableViewPOIs.setDropIndicatorShown(True)
+        self.ui.tableViewPOIs.setDragDropOverwriteMode(False)
+
+        self.ui.tableViewPOIs.setDragDropMode(QAbstractItemView.InternalMove)
+        self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.ui.tableViewPOIs.setDefaultDropAction(Qt.MoveAction)
         # callPOIUpdate()
         sort = QSortFilterProxyModel()
         sort.setSourceModel(model)
@@ -1453,11 +1532,11 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             SoundManager().setSoundFile(mask, "")
         if dialog:
-            dialog.soundAlarm_1.setText(SoundManager().soundFile("alarm_1"))
-            dialog.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
-            dialog.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
-            dialog.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
-            dialog.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
+            dialog.ui.soundAlarm_1.setText(SoundManager().soundFile("alarm_1"))
+            dialog.ui.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
+            dialog.ui.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
+            dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
+            dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
 
     def showSoundSetup(self):
         dialog = QtWidgets.QDialog(self)
@@ -1487,7 +1566,27 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
         dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
         dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
-        dialog.ui.closeButton.clicked.connect(dialog.accept)
+        dialog.ui.useSpokenNotifications.setChecked(self.ui.useSpokenNotificationsAction.isChecked())
+        dialog.ui.useSpokenNotifications.clicked.connect(self.changeUseSpokenNotifications)
+        # dialog.setWindowFlags(Qt.Popup)
+
+        def defaultSoundSetup():
+            self.changeUseSpokenNotifications(False)
+            SoundManager().setSoundFile("alarm_1", "")
+            SoundManager().setSoundFile("alarm_2", "")
+            SoundManager().setSoundFile("alarm_3", "")
+            SoundManager().setSoundFile("alarm_4", "")
+            SoundManager().setSoundFile("alarm_5", "")
+            SoundManager().setSoundVolume(50)
+            dialog.ui.volumeSlider.setValue(int(SoundManager().soundVolume))
+            dialog.ui.soundAlarm_1.setText(SoundManager().soundFile("alarm_1"))
+            dialog.ui.soundAlarm_2.setText(SoundManager().soundFile("alarm_2"))
+            dialog.ui.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
+            dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
+            dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
+            dialog.ui.useSpokenNotifications.setChecked(self.ui.useSpokenNotificationsAction.isChecked())
+
+        dialog.ui.defaultSounds.clicked.connect(defaultSoundSetup)
         dialog.show()
 
     def systemTrayActivated(self, reason):

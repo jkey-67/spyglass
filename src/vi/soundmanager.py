@@ -35,7 +35,7 @@ except:
 try:
     from PySide6.QtTextToSpeech import QTextToSpeech
     QTEXTTOSPEECH_ENABLE = True
-except:
+except Exception as ex:
     QTEXTTOSPEECH_ENABLE = False
     pass
 
@@ -105,13 +105,16 @@ class SoundManager(metaclass=Singleton):
 
     def soundFile(self, mask):
         if mask in self.SOUNDS.keys():
-            return self.SOUNDS[mask]
+            if SoundManager.DEF_SND_FILE == self.SOUNDS[mask]:
+                return ""
+            else:
+                return self.SOUNDS[mask]
         else:
             return ""
 
     def setSoundFile(self, mask, filename):
-        if mask in self.SOUNDS.keys() and filename:
-            if filename == "":
+        if mask in self.SOUNDS.keys():
+            if filename == "" or filename is None:
                 filename = SoundManager.DEF_SND_FILE
             self.SOUNDS[mask] = filename
             self.sounds[mask] = QSoundEffect()
@@ -120,8 +123,6 @@ class SoundManager(metaclass=Singleton):
                 self.sounds[mask].setSource(url)
             Cache().putIntoCache("soundsetting.{}".format(mask), filename)
             self.loadSoundFiles()
-        else:
-            filename = SoundManager.DEF_SND_FILE
 
     def loadSoundFiles(self):
         for itm in self.SOUNDS:
@@ -172,10 +173,12 @@ class SoundManager(metaclass=Singleton):
                     self.speach_engine.setProperty('volume', self.soundVolume/100.0)
                     self.speach_engine.say(abbreviatedMessage)
             elif name in self.sounds.keys() and self.sounds[name] is not None:
-                self.sounds[name].setVolume(self.soundVolume / 100 * self.SNDVOL[name])
-                self.sounds[name].setMuted(False)
-                self.sounds[name].play()
-                self.sounds[name].status()
+                if self.sounds[name].isLoaded():
+                    vol = self.soundVolume / 100 * self.SNDVOL[name]
+                    self.sounds[name].setVolume(vol)
+                    self.sounds[name].setMuted(False)
+                    self.sounds[name].play()
+                    self.sounds[name].status()
             else:
                 self.sounds[name].setVolume(self.soundVolume / 100 * self.SNDVOL[name])
                 self.sounds["alarm"].setMuted(False)

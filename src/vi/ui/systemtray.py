@@ -274,10 +274,22 @@ class MapContextMenu(QtWidgets.QMenu):
         self.quitAction = QAction("Quit", self)
         self.addAction(self.quitAction)
 
+        self.openDotlan.triggered.connect(self.browserOpenDotlan)
+        self.openZKillboard.triggered.connect(self.browserOpenZKillboard)
+
     def changeAlarmDistance(self):
         for action in self.distanceGroup.actions():
             if action.isChecked():
                 self.alarm_distance.emit(action.alarmDistance)
+
+    def browserOpenDotlan(self, checked):
+            if self.currentSystem:
+                QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name))
+
+    def browserOpenZKillboard(self, checked):
+        if self.currentSystem:
+            QDesktopServices.openUrl(
+                "https://zkillboard.com/system/{}".format(self.currentSystem.systemId))
 
 
 class JumpBridgeContextMenu(QtWidgets.QMenu):
