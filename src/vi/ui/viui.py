@@ -307,7 +307,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Disable the sound UI if sound is not available
         update_splash_window_info("Doublecheck the sound UI if sound is not available...")
-        if not SoundManager().soundAvailable:
+        if not SoundManager.soundAvailable:
             self.changeSound(disable=True)
             update_splash_window_info("Sound disabled.")
         else:

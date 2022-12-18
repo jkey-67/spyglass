@@ -45,7 +45,7 @@ from vi import states
 
 class CTX:
     EVE_SYSTEM = ("EVE-System", "EVE System", "Système EVE", "Система EVE")
-    CHARS_TO_IGNORE = ("*", "?", ",", "!", ".")
+    CHARS_TO_IGNORE = ("*", "?", ",", "!", ".", "^")
     WORDS_TO_IGNORE = ("IN", "IS", "AS")
     FORMAT_URL = u"""<a style="color:#28a5ed;font-weight:bold" href="link/{0}">{0}</a>"""
     FORMAT_SHIP = u"""<a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/{0}">{0}</a>"""

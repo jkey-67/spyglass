@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QWidget
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtGui import *
 from PySide6 import QtCore, QtSvg
 
@@ -47,6 +49,8 @@ class PanningWebView(QWidget):
         self.svgRenderer = QtSvg.QSvgRenderer()
         self.svgRenderer.setAspectRatioMode(Qt.KeepAspectRatioByExpanding)
         self.svgRenderer.repaintNeeded.connect(self.update)
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
 
     def setContent(self, cnt ):
         if self.scrolling:
@@ -66,14 +70,14 @@ class PanningWebView(QWidget):
         super().resizeEvent(event)
 
     def paintEvent(self, event):
+        painter = QPainter(self)
+        # painter.fillRect(self.rect(), self.palette().brush(QPalette.Window))
         if self.svgRenderer:
-            painter = QPainter()
-            painter.begin(self)
+
             rect = QtCore.QRectF(-self.scrollPos.x(), -self.scrollPos.y(),
                                  self.svgRenderer.defaultSize().width() * self.zoom,
                                  self.svgRenderer.defaultSize().height() * self.zoom)
             self.svgRenderer.render(painter, rect)
-            painter.end()
 
     def setZoomFactor(self, zoom):
         if zoom > 8:

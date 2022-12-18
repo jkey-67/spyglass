@@ -24,6 +24,8 @@ from PySide6.QtCore import QThread, QLocale, QUrl, QCoreApplication
 from .resources import resourcePath
 from vi.singleton import Singleton
 from PySide6.QtMultimedia import QSoundEffect
+from PySide6.QtMultimedia import QAudioDevice
+from PySide6.QtMultimedia import QMediaDevices
 
 try:
     from espeakng import Speaker
@@ -50,7 +52,8 @@ try:
 except ImportError:
     gPygletAvailable = False
 
-#todo:warn sound not match to alarm system distance
+# todo:warn sound not match to alarm system distance
+
 
 class SoundManager(metaclass=Singleton):
     DEF_SND_FILE = "178032__zimbot__redalert-klaxon-sttos-recreated.wav"
@@ -71,8 +74,8 @@ class SoundManager(metaclass=Singleton):
               "alarm_3": 0.0625,
               "alarm_4": 0.03125,
               "alarm_5": 0.015625,
-              "kos": 0.30,
-              "request": 0.30}
+              "kos": 0.03,
+              "request": 0.03}
 
     soundVolume = 25  # Must be an integer between 0 and 100
     soundAvailable = True
@@ -91,6 +94,17 @@ class SoundManager(metaclass=Singleton):
         except Exception as ex:
             self.speach_engine = None
             logging.error(ex)
+        self.soundActive = True
+        self.audioDevice = QAudioDevice(QMediaDevices.defaultAudioOutput())
+        SoundManager.soundAvailable = self.audioDevice is not None
+        device_info = QMediaDevices.audioOutputs()
+        logging.info("Using default audio device \'{}\'".format(self.audioDevice.description()))
+        for device in device_info:
+            logging.info(" Availiable audio device \'{}\'".format(device.description()))
+
+        for itm in self.SOUNDS:
+            self.sounds[itm] = QSoundEffect(self.audioDevice)
+            self.sounds[itm].setLoopCount(0)
 
         cache = Cache()
         self.setSoundFile("alarm_1", cache.getFromCache("soundsetting.alarm_1"))
@@ -102,6 +116,7 @@ class SoundManager(metaclass=Singleton):
         if vol:
             self.setSoundVolume(vol)
         self.loadSoundFiles()
+        # self.playSound("request")
 
     def soundFile(self, mask):
         if mask in self.SOUNDS.keys():
@@ -117,7 +132,7 @@ class SoundManager(metaclass=Singleton):
             if filename == "" or filename is None:
                 filename = SoundManager.DEF_SND_FILE
             self.SOUNDS[mask] = filename
-            self.sounds[mask] = QSoundEffect()
+
             if self.SOUNDS[mask]:
                 url = QUrl.fromLocalFile(self.SOUNDS[mask])
                 self.sounds[mask].setSource(url)
@@ -126,7 +141,6 @@ class SoundManager(metaclass=Singleton):
 
     def loadSoundFiles(self):
         for itm in self.SOUNDS:
-            self.sounds[itm] = QSoundEffect()
             if self.SOUNDS[itm] and os.path.exists(self.SOUNDS[itm]):
                 url = QUrl.fromLocalFile(self.SOUNDS[itm])
             elif self.SOUNDS[itm]:
@@ -135,6 +149,7 @@ class SoundManager(metaclass=Singleton):
                 url = None
             if url:
                 self.sounds[itm].setSource(url)
+                QCoreApplication.processEvents()
 
     def platformSupportsSpeech(self):
         self.useSpokenNotifications = False
@@ -160,31 +175,34 @@ class SoundManager(metaclass=Singleton):
     def setSoundVolume(self, newValue:int):
         self.soundVolume = max(0, min(100, newValue))
         Cache().putIntoCache("soundsetting.volume", self.soundVolume)
-        for itm in self.sounds.keys():
-            self.sounds[itm].setVolume(self.soundVolume/100)
 
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
-        if self.soundAvailable and self.soundActive:
+        QCoreApplication.processEvents()
+
+        if SoundManager.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage != "":
                 if isinstance(self.speach_engine, Speaker):
                     self.speach_engine.amplitude = self.soundVolume
                     self.speach_engine.say(abbreviatedMessage)
+                    QCoreApplication.processEvents()
+                    QCoreApplication.processEvents()
                 else:
                     self.speach_engine.setProperty('volume', self.soundVolume/100.0)
                     self.speach_engine.say(abbreviatedMessage)
+                    QCoreApplication.processEvents()
+                    QCoreApplication.processEvents()
             elif name in self.sounds.keys() and self.sounds[name] is not None:
-                if self.sounds[name].isLoaded():
-                    vol = self.soundVolume / 100 * self.SNDVOL[name]
-                    self.sounds[name].setVolume(vol)
-                    self.sounds[name].setMuted(False)
-                    self.sounds[name].play()
-                    self.sounds[name].status()
-            else:
-                self.sounds[name].setVolume(self.soundVolume / 100 * self.SNDVOL[name])
-                self.sounds["alarm"].setMuted(False)
-                self.sounds["alarm"].play()
-                self.sounds["alarm"].status()
-        QApplication.processEvents()
+                def_sound_effect = self.sounds[name]
+                sound_effect = self.sounds[name]
+                if sound_effect.isLoaded() and not sound_effect.isPlaying():
+                    sound_effect.setVolume(self.soundVolume / 100 * self.SNDVOL[name])
+                    sound_effect.setLoopCount(0)
+                    sound_effect.play()
+                elif def_sound_effect.isLoaded() and not def_sound_effect.isPlaying():
+                    def_sound_effect.setVolume(self.soundVolume / 100 * self.SNDVOL[name])
+                    def_sound_effect.setLoopCount(0)
+                    def_sound_effect.play()
+        QCoreApplication.processEvents()
 
     def quit(self):
         QApplication.processEvents()
