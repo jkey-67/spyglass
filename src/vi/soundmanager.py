@@ -19,7 +19,7 @@
 
 import os
 import logging
-from PySide6.QtCore import QLocale, QCoreApplication
+from PySide6.QtCore import QLocale
 from .resources import resourcePath
 from vi.singleton import Singleton
 from vi.cache.cache import Cache
@@ -120,10 +120,6 @@ class SoundManager(metaclass=Singleton):
         pygame.mixer.init()
         self.loadSoundFiles()
 
-    def __del__(self):
-        pygame.mixer.quit()
-
-
     def soundFile(self, mask):
         if mask in self.SOUNDS.keys():
             if self.DEF_SND_FILE == self.SOUNDS[mask]:
@@ -150,6 +146,9 @@ class SoundManager(metaclass=Singleton):
             sound_filename_used = res_sound_filename
         else:
             sound_filename_used = None
+
+        if self.EFFECT[itm]:
+            self.EFFECT[itm].fadeout(25)
         if sound_filename_used is not None:
             self.EFFECT[itm] = pygame.mixer.Sound(sound_filename_used)
             self.EFFECT[itm].set_volume(self.soundVolume / 100 * self.SNDVOL[itm])
@@ -188,20 +187,30 @@ class SoundManager(metaclass=Singleton):
             val.set_volume(self.soundVolume / 100 * self.SNDVOL[key])
 
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
-        QCoreApplication.processEvents()
 
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage != "":
                 if isinstance(self.speach_engine, Speaker):
                     self.speach_engine.amplitude = self.soundVolume
                     self.speach_engine.say(abbreviatedMessage)
-                    QCoreApplication.processEvents()
-                    QCoreApplication.processEvents()
                 else:
                     self.speach_engine.setProperty('volume', self.soundVolume/100.0)
                     self.speach_engine.say(abbreviatedMessage)
-                    QCoreApplication.processEvents()
-                    QCoreApplication.processEvents()
             elif name in self.EFFECT.keys() and self.EFFECT[name] is not None:
+                self.EFFECT[name].fadeout(125)
                 self.EFFECT[name].play()
+
+    def quit(self):
+        for effect in self.EFFECT.values():
+            if effect:
+                effect.fadeout(125)
+
+    def wait(self):
+        for effect in self.EFFECT.values():
+            if effect:
+                effect.stop()
+        pygame.mixer.quit()
+
+
+
 

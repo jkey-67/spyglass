@@ -1585,6 +1585,7 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
             dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
             dialog.ui.useSpokenNotifications.setChecked(self.ui.useSpokenNotificationsAction.isChecked())
+            SoundManager().loadSoundFiles()
 
         dialog.ui.defaultSounds.clicked.connect(defaultSoundSetup)
         dialog.show()
