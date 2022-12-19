@@ -19,20 +19,13 @@
 
 import os
 import logging
-from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QLocale, QUrl, QCoreApplication
+from PySide6.QtCore import QLocale, QCoreApplication
 from .resources import resourcePath
 from vi.singleton import Singleton
-from PySide6.QtMultimedia import QSoundEffect
-from PySide6.QtMultimedia import QAudioDevice
-from PySide6.QtMultimedia import QMediaDevices
-# from playsound import playsound
-# import threading
+from vi.cache.cache import Cache
 
-
-# def palSoundAsync(file: str):
-    #   threading.Thread(target=playsound, args=(file,), daemon=True).start()
-
+import pygame
+import pygame._sdl2.audio as sdl2_audio
 
 try:
     from espeakng import Speaker
@@ -48,7 +41,6 @@ except Exception as ex:
     QTEXTTOSPEECH_ENABLE = False
     pass
 
-from vi.cache.cache import Cache
 
 global gPygletAvailable
 
@@ -74,7 +66,7 @@ class SoundManager(metaclass=Singleton):
               "kos": "178031__zimbot__transporterstartbeep0-sttos-recreated.wav",
               "request": "178028__zimbot__bosun-whistle-sttos-recreated.wav"}
 
-    SNDVOL = {"alarm": 1.00,
+    SNDVOL = {"alarm": 0.75,
               "alarm_0": 0.50,
               "alarm_1": 0.25,
               "alarm_2": 0.125,
@@ -84,12 +76,20 @@ class SoundManager(metaclass=Singleton):
               "kos": 0.03,
               "request": 0.03}
 
-    soundVolume = 25  # Must be an integer between 0 and 100
+    EFFECT = {"alarm": None,
+              "alarm_0": None,
+              "alarm_1": None,
+              "alarm_2": None,
+              "alarm_3": None,
+              "alarm_4": None,
+              "alarm_5": None,
+              "kos": None,
+              "request": None}
+    soundVolume = 50  # Must be an integer between 0 and 100
     soundAvailable = True
     useSpokenNotifications = False
 
     def __init__(self):
-        self.sounds = {}
         try:
             if QTEXTTOSPEECH_ENABLE:
                 self.speach_engine = QTextToSpeech()
@@ -100,17 +100,13 @@ class SoundManager(metaclass=Singleton):
         except Exception as ex:
             self.speach_engine = None
             logging.error(ex)
+        pygame.mixer.init()
+        self.audioDevices = tuple(sdl2_audio.get_audio_device_names(False))
         self.soundActive = True
-        self.audioDevice = QAudioDevice(QMediaDevices.defaultAudioOutput())
-        SoundManager.soundAvailable = self.audioDevice is not None
-        device_info = QMediaDevices.audioOutputs()
-        logging.info("Using default audio device \'{}\'".format(self.audioDevice.description()))
-        for device in device_info:
-            logging.info(" Availiable audio device \'{}\'".format(device.description()))
-
-        for itm in self.SOUNDS:
-            self.sounds[itm] = QSoundEffect(self.audioDevice, QCoreApplication.instance())
-            self.sounds[itm].setLoopCount(0)
+        self.soundAvailable = self.audioDevices is not None
+        logging.info("Using default audio device \'{}\'".format(self.audioDevices[0]))
+        for device in self.audioDevices[1:]:
+            logging.info(" Availiable audio device \'{}\'".format(device))
 
         cache = Cache()
         self.SOUNDS["alarm_1"] = cache.getFromCache("soundsetting.alarm_1")
@@ -120,13 +116,17 @@ class SoundManager(metaclass=Singleton):
         self.SOUNDS["alarm_5"] = cache.getFromCache("soundsetting.alarm_5")
         vol = cache.getFromCache("soundsetting.volume")
         if vol:
-            SoundManager.soundVolume = vol
+            self.soundVolume = vol
+        pygame.mixer.init()
         self.loadSoundFiles()
-        # self.playSound("request")
+
+    def __del__(self):
+        pygame.mixer.quit()
+
 
     def soundFile(self, mask):
         if mask in self.SOUNDS.keys():
-            if SoundManager.DEF_SND_FILE == self.SOUNDS[mask]:
+            if self.DEF_SND_FILE == self.SOUNDS[mask]:
                 return ""
             else:
                 return self.SOUNDS[mask]
@@ -136,12 +136,8 @@ class SoundManager(metaclass=Singleton):
     def setSoundFile(self, mask, filename):
         if mask in self.SOUNDS.keys():
             if filename == "" or filename is None:
-                filename = SoundManager.DEF_SND_FILE
+                filename = self.DEF_SND_FILE
             self.SOUNDS[mask] = filename
-
-            if self.SOUNDS[mask]:
-                url = QUrl.fromLocalFile(self.SOUNDS[mask])
-                self.sounds[mask].setSource(url)
             Cache().putIntoCache("soundsetting.{}".format(mask), filename)
             self.loadSoundFile(mask)
 
@@ -149,20 +145,16 @@ class SoundManager(metaclass=Singleton):
         sound_filename = self.SOUNDS[itm]
         res_sound_filename = resourcePath(os.path.join("vi", "ui", "res", sound_filename))
         if sound_filename and os.path.exists(sound_filename):
-            url = QUrl.fromLocalFile(sound_filename)
+            sound_filename_used = sound_filename
         elif self.SOUNDS[itm] and os.path.exists(res_sound_filename):
-            url = QUrl.fromLocalFile(res_sound_filename)
+            sound_filename_used = res_sound_filename
         else:
-            url = None
-        if url is not None:
-            self.sounds[itm] = QSoundEffect(self.audioDevice, QCoreApplication.instance())
-            self.sounds[itm].setSource(url)
-            self.sounds[itm].setLoopCount(0)
-            self.sounds[itm].setVolume(SoundManager.soundVolume / 100 * self.SNDVOL[itm])
-        elif self.sounds[itm]:
-            self.sounds[itm].stop()
-            self.sounds[itm] = None
-        QCoreApplication.processEvents()
+            sound_filename_used = None
+        if sound_filename_used is not None:
+            self.EFFECT[itm] = pygame.mixer.Sound(sound_filename_used)
+            self.EFFECT[itm].set_volume(self.soundVolume / 100 * self.SNDVOL[itm])
+        elif self.EFFECT[itm]:
+            self.EFFECT[itm] = None
 
     def loadSoundFiles(self):
         for itm in self.SOUNDS:
@@ -190,39 +182,26 @@ class SoundManager(metaclass=Singleton):
         self.useSpokenNotifications = new_value
 
     def setSoundVolume(self, newValue:int):
-        SoundManager.soundVolume = max(0, min(100, newValue))
-        Cache().putIntoCache("soundsetting.volume", SoundManager.soundVolume)
-        for key, val in self.sounds.items():
-            self.sounds[key].setVolume(SoundManager.soundVolume / 100 * self.SNDVOL[key])
+        self.soundVolume = max(0, min(100, newValue))
+        Cache().putIntoCache("soundsetting.volume", self.soundVolume)
+        for key, val in self.EFFECT.items():
+            val.set_volume(self.soundVolume / 100 * self.SNDVOL[key])
 
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
         QCoreApplication.processEvents()
 
-        if SoundManager.soundAvailable and self.soundActive:
+        if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage != "":
                 if isinstance(self.speach_engine, Speaker):
-                    self.speach_engine.amplitude = SoundManager.soundVolume
+                    self.speach_engine.amplitude = self.soundVolume
                     self.speach_engine.say(abbreviatedMessage)
                     QCoreApplication.processEvents()
                     QCoreApplication.processEvents()
                 else:
-                    self.speach_engine.setProperty('volume', SoundManager.soundVolume/100.0)
+                    self.speach_engine.setProperty('volume', self.soundVolume/100.0)
                     self.speach_engine.say(abbreviatedMessage)
                     QCoreApplication.processEvents()
                     QCoreApplication.processEvents()
-            elif name in self.sounds.keys() and self.sounds[name] is not None:
-                # palSoundAsync( "/home/jkeymer/projects/spyglass/src/vi/ui/res/178028__zimbot__bosun-whistle-sttos-recreated.wav")
-                # return
-                def_sound_effect = self.sounds[name]
-                sound_effect = self.sounds[name]
-                if sound_effect.isLoaded() and sound_effect.status() is QSoundEffect.Status.Ready:
-                    sound_effect.play()
-                elif def_sound_effect.isLoaded() and sound_effect.status() is QSoundEffect.Status.Ready:
-                    def_sound_effect.play()
-
-    def quit(self):
-        QApplication.processEvents()
-
-    def wait(self):
-        QApplication.processEvents()
+            elif name in self.EFFECT.keys() and self.EFFECT[name] is not None:
+                self.EFFECT[name].play()
 
