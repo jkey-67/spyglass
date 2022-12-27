@@ -60,7 +60,7 @@ from vi.ui.modelthera import TableModelThera
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtSql import QSqlQueryModel
 
-from vi.ui import Ui_MainWindow, Ui_Info, Ui_SoundSetup
+from vi.ui import Ui_MainWindow, Ui_EVESpyInfo, Ui_SoundSetup
 
 """
  Timer intervals
@@ -1518,11 +1518,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showInfo(self):
         info_dialog = QtWidgets.QDialog(self)
-        info_dialog.ui = Ui_Info()
+        info_dialog.ui = Ui_EVESpyInfo()
         info_dialog.ui.setupUi(info_dialog)
         info_dialog.ui.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        # info_dialog.ui.logoLabel.setPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "denci.png"))))
-        info_dialog.ui.closeButton.clicked.connect(info_dialog.accept)
+        info_dialog.setWindowFlags(Qt.Popup)
         info_dialog.show()
 
     def selectSoundFile(self, mask, dialog):
@@ -1568,7 +1567,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
         dialog.ui.useSpokenNotifications.setChecked(self.ui.useSpokenNotificationsAction.isChecked())
         dialog.ui.useSpokenNotifications.clicked.connect(self.changeUseSpokenNotifications)
-        # dialog.setWindowFlags(Qt.Popup)
+        dialog.setWindowFlags(Qt.Popup)
 
         def defaultSoundSetup():
             self.changeUseSpokenNotifications(False)
