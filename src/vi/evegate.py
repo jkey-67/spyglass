@@ -1888,6 +1888,7 @@ def dumpSpyglassDownloadStats():
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
+    checkSpyglassVersionUpdate("1.1",True)
     dumpSpyglassDownloadStats()
     res = getSpyglassUpdateLink()
     res = listOfJumpGatePairs()

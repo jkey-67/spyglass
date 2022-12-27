@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ChatroomsChooser.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.0
+## Created by: Qt User Interface Compiler version 6.4.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,14 +16,15 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
-    QLabel, QPlainTextEdit, QPushButton, QSizePolicy,
-    QVBoxLayout, QWidget)
+    QLabel, QPlainTextEdit, QSizePolicy, QSpacerItem,
+    QToolButton, QVBoxLayout, QWidget)
+import resource_rc
 
 class Ui_ChatroomsChooser(object):
     def setupUi(self, ChatroomsChooser):
         if not ChatroomsChooser.objectName():
             ChatroomsChooser.setObjectName(u"ChatroomsChooser")
-        ChatroomsChooser.resize(556, 197)
+        ChatroomsChooser.resize(381, 229)
         self.gridLayout = QGridLayout(ChatroomsChooser)
         self.gridLayout.setObjectName(u"gridLayout")
         self.verticalLayout = QVBoxLayout()
@@ -42,18 +43,25 @@ class Ui_ChatroomsChooser(object):
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.defaultButton = QPushButton(ChatroomsChooser)
+        self.defaultButton = QToolButton(ChatroomsChooser)
         self.defaultButton.setObjectName(u"defaultButton")
+        icon = QIcon()
+        icon.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.defaultButton.setIcon(icon)
+        self.defaultButton.setIconSize(QSize(24, 24))
 
         self.horizontalLayout_2.addWidget(self.defaultButton)
 
-        self.cancelButton = QPushButton(ChatroomsChooser)
-        self.cancelButton.setObjectName(u"cancelButton")
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        self.horizontalLayout_2.addWidget(self.cancelButton)
+        self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
-        self.saveButton = QPushButton(ChatroomsChooser)
+        self.saveButton = QToolButton(ChatroomsChooser)
         self.saveButton.setObjectName(u"saveButton")
+        icon1 = QIcon()
+        icon1.addFile(u":/Icons/res/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.saveButton.setIcon(icon1)
+        self.saveButton.setIconSize(QSize(24, 24))
 
         self.horizontalLayout_2.addWidget(self.saveButton)
 
@@ -73,7 +81,6 @@ class Ui_ChatroomsChooser(object):
         ChatroomsChooser.setWindowTitle(QCoreApplication.translate("ChatroomsChooser", u"Chatrooms", None))
         self.label.setText(QCoreApplication.translate("ChatroomsChooser", u"Enter the chatrooms to watch into the following field. Separate them by comma.", None))
         self.defaultButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Restore Defaults", None))
-        self.cancelButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Cancel", None))
         self.saveButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Save", None))
     # retranslateUi
 

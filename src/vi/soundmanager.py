@@ -139,6 +139,9 @@ class SoundManager(metaclass=Singleton):
 
     def loadSoundFile(self, itm):
         sound_filename = self.SOUNDS[itm]
+        if sound_filename is None:
+            self.SOUNDS[itm] = SoundManager.DEF_SND_FILE
+            sound_filename = SoundManager.DEF_SND_FILE
         res_sound_filename = resourcePath(os.path.join("vi", "ui", "res", sound_filename))
         if sound_filename and os.path.exists(sound_filename):
             sound_filename_used = sound_filename

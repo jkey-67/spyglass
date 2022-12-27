@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'Info.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.0
+## Created by: Qt User Interface Compiler version 6.4.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,22 +16,22 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDialog, QGroupBox, QLabel,
-    QPlainTextEdit, QPushButton, QSizePolicy, QWidget)
+    QPlainTextEdit, QSizePolicy, QWidget)
 import resource_rc
 
-class Ui_Info(object):
-    def setupUi(self, Info):
-        if not Info.objectName():
-            Info.setObjectName(u"Info")
-        Info.resize(700, 678)
+class Ui_EVESpyInfo(object):
+    def setupUi(self, EVESpyInfo):
+        if not EVESpyInfo.objectName():
+            EVESpyInfo.setObjectName(u"EVESpyInfo")
+        EVESpyInfo.resize(700, 653)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(6)
-        sizePolicy.setHeightForWidth(Info.sizePolicy().hasHeightForWidth())
-        Info.setSizePolicy(sizePolicy)
-        Info.setMinimumSize(QSize(700, 653))
-        Info.setMaximumSize(QSize(700, 702))
-        self.groupBox = QGroupBox(Info)
+        sizePolicy.setHeightForWidth(EVESpyInfo.sizePolicy().hasHeightForWidth())
+        EVESpyInfo.setSizePolicy(sizePolicy)
+        EVESpyInfo.setMinimumSize(QSize(700, 653))
+        EVESpyInfo.setMaximumSize(QSize(700, 702))
+        self.groupBox = QGroupBox(EVESpyInfo)
         self.groupBox.setObjectName(u"groupBox")
         self.groupBox.setGeometry(QRect(20, 390, 651, 221))
         self.plainTextEdit = QPlainTextEdit(self.groupBox)
@@ -42,19 +42,16 @@ class Ui_Info(object):
         font.setPointSize(9)
         self.plainTextEdit.setFont(font)
         self.plainTextEdit.setReadOnly(True)
-        self.label = QLabel(Info)
+        self.label = QLabel(EVESpyInfo)
         self.label.setObjectName(u"label")
         self.label.setGeometry(QRect(249, 8, 421, 334))
         self.label.setAlignment(Qt.AlignHCenter|Qt.AlignTop)
         self.label.setOpenExternalLinks(True)
-        self.versionLabel = QLabel(Info)
+        self.versionLabel = QLabel(EVESpyInfo)
         self.versionLabel.setObjectName(u"versionLabel")
         self.versionLabel.setGeometry(QRect(350, 29, 221, 21))
         self.versionLabel.setAlignment(Qt.AlignCenter)
-        self.closeButton = QPushButton(Info)
-        self.closeButton.setObjectName(u"closeButton")
-        self.closeButton.setGeometry(QRect(20, 630, 651, 26))
-        self.logoLabel = QLabel(Info)
+        self.logoLabel = QLabel(EVESpyInfo)
         self.logoLabel.setObjectName(u"logoLabel")
         self.logoLabel.setGeometry(QRect(20, 20, 280, 280))
         sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -67,7 +64,7 @@ class Ui_Info(object):
         self.logoLabel.setPixmap(QPixmap(u":/Icons/res/logo.svg"))
         self.logoLabel.setScaledContents(True)
         self.logoLabel.setAlignment(Qt.AlignCenter)
-        self.groupBox2 = QGroupBox(Info)
+        self.groupBox2 = QGroupBox(EVESpyInfo)
         self.groupBox2.setObjectName(u"groupBox2")
         self.groupBox2.setGeometry(QRect(20, 320, 651, 71))
         self.label2 = QLabel(self.groupBox2)
@@ -77,15 +74,15 @@ class Ui_Info(object):
         self.label2.setAlignment(Qt.AlignCenter)
         self.label2.setOpenExternalLinks(True)
 
-        self.retranslateUi(Info)
+        self.retranslateUi(EVESpyInfo)
 
-        QMetaObject.connectSlotsByName(Info)
+        QMetaObject.connectSlotsByName(EVESpyInfo)
     # setupUi
 
-    def retranslateUi(self, Info):
-        Info.setWindowTitle(QCoreApplication.translate("Info", u"Info", None))
-        self.groupBox.setTitle(QCoreApplication.translate("Info", u"Full GPL:", None))
-        self.plainTextEdit.setPlainText(QCoreApplication.translate("Info", u"                    GNU GENERAL PUBLIC LICENSE\n"
+    def retranslateUi(self, EVESpyInfo):
+        EVESpyInfo.setWindowTitle(QCoreApplication.translate("EVESpyInfo", u"Info", None))
+        self.groupBox.setTitle(QCoreApplication.translate("EVESpyInfo", u"Full GPL:", None))
+        self.plainTextEdit.setPlainText(QCoreApplication.translate("EVESpyInfo", u"                    GNU GENERAL PUBLIC LICENSE\n"
 "                       Version 3, 29 June 2007\n"
 "\n"
 " Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>\n"
@@ -795,7 +792,7 @@ class Ui_Info(object):
 "the library.  If this is what you want to do, use the GNU Lesser General\n"
 "Public License instead of this License.  But first, please read\n"
 "<https://www.gnu.org/licenses/why-not-lgpl.html>.", None))
-        self.label.setText(QCoreApplication.translate("Info", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+        self.label.setText(QCoreApplication.translate("EVESpyInfo", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
@@ -812,10 +809,9 @@ class Ui_Info(object):
 "<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; ma"
                         "rgin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">This software is based on original work by Sebastian Meyer <br />and is open source licensed under GPL v3.<br />Find original sources and documentation at<br /></span><a href=\"https://github.com/XanthosX/vintel\"><span style=\" font-size:10pt; text-decoration: underline; color:#0000ff;\">https://github.com/xanthos-eve/vintel</span></a></p>\n"
 "<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">Donations of ISK are appreciated.</span></p></body></html>", None))
-        self.versionLabel.setText(QCoreApplication.translate("Info", u"Version: ", None))
-        self.closeButton.setText(QCoreApplication.translate("Info", u"Close", None))
+        self.versionLabel.setText(QCoreApplication.translate("EVESpyInfo", u"Version: ", None))
         self.logoLabel.setText("")
-        self.groupBox2.setTitle(QCoreApplication.translate("Info", u"Audio:", None))
-        self.label2.setText(QCoreApplication.translate("Info", u"<html><head/><body><p>Audio Files \u00a9 Keith W. 'zimbot' Blackwell (CC-BY 3.0), available @ <a href=\"http://www.freesound.org/people/zimbot/\"><span style=\" text-decoration: underline; color:#0057ae;\">freesound.org</span></a></p></body></html>", None))
+        self.groupBox2.setTitle(QCoreApplication.translate("EVESpyInfo", u"Audio:", None))
+        self.label2.setText(QCoreApplication.translate("EVESpyInfo", u"<html><head/><body><p>Audio Files \u00a9 Keith W. 'zimbot' Blackwell (CC-BY 3.0), available @ <a href=\"http://www.freesound.org/people/zimbot/\"><span style=\" text-decoration: underline; color:#0057ae;\">freesound.org</span></a></p></body></html>", None))
     # retranslateUi
 

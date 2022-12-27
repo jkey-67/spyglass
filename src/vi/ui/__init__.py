@@ -1,5 +1,5 @@
 from .generated.ui_ChatroomsChooser import Ui_ChatroomsChooser
-from .generated.ui_Info import Ui_Info
+from .generated.ui_Info import Ui_EVESpyInfo
 from .generated.ui_MainWindow import Ui_MainWindow
 from .generated.ui_RegionChooser import Ui_RegionChooser
 from .generated.ui_JumpbridgeChooser import Ui_JumpbridgeChooser

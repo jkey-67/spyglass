@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Info</class>
- <widget class="QDialog" name="Info">
+ <class>EVESpyInfo</class>
+ <widget class="QDialog" name="EVESpyInfo">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>700</width>
-    <height>678</height>
+    <height>653</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -785,19 +785,6 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="closeButton">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>630</y>
-     <width>651</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Close</string>
    </property>
   </widget>
   <widget class="QLabel" name="logoLabel">
