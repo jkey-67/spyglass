@@ -23,9 +23,17 @@ from PySide6.QtCore import QLocale
 from .resources import resourcePath
 from vi.singleton import Singleton
 from vi.cache.cache import Cache
+from threading import Thread
 
 import pygame
 import pygame._sdl2.audio as sdl2_audio
+
+try:
+    import pyttsx3
+    PYTTSX3_ENABLED = True
+except:
+    PYTTSX3_ENABLED = False
+    pass
 
 try:
     from espeakng import Speaker
@@ -34,24 +42,17 @@ except:
     ESPEAKNG_ENABLED = False
     pass
 
-try:
-    from PySide6.QtTextToSpeech import QTextToSpeech
-    QTEXTTOSPEECH_ENABLE = True
-except Exception as ex:
-    QTEXTTOSPEECH_ENABLE = False
-    pass
 
+class SayThread(Thread):
+    def __init__(self, *args, **kwargs):
+        Thread.__init__(self, *args, **kwargs)
+        self.daemon = True
+        self.start()
 
-global gPygletAvailable
-
-try:
-    import pyglet
-    from pyglet import media
-    gPygletAvailable = True
-except ImportError:
-    gPygletAvailable = False
-
-# todo:warn sound not match to alarm system distance
+    def run(self):
+        tts_engine = pyttsx3.init()
+        tts_engine.say(self._args)
+        tts_engine.runAndWait()
 
 
 class SoundManager(metaclass=Singleton):
@@ -91,8 +92,13 @@ class SoundManager(metaclass=Singleton):
 
     def __init__(self):
         try:
-            if QTEXTTOSPEECH_ENABLE:
-                self.speach_engine = QTextToSpeech()
+            if PYTTSX3_ENABLED:
+                self.speach_engine = pyttsx3.init()
+                for voice in self.speach_engine.getProperty('voices'):
+                    print(voice)
+                    if "_EN-US" in voice.id:
+                        self.speach_engine.setProperty('voice', voice.id)
+                        break
             elif ESPEAKNG_ENABLED:
                 self.speach_engine = Speaker()
             else:
@@ -165,8 +171,12 @@ class SoundManager(metaclass=Singleton):
     def platformSupportsSpeech(self):
         self.useSpokenNotifications = False
         if self.speach_engine:
-            if isinstance(self.speach_engine, Speaker):
+            if isinstance(self.speach_engine, pyttsx3.engine.Engine):
+                self.useSpokenNotifications = True
+            elif isinstance(self.speach_engine, Speaker):
                 self.speach_engine.voice = 'en'
+                # self.speach_engine.pitch = 90
+                # self.speach_engine.wpm = 240
                 self.useSpokenNotifications = True
             elif isinstance(self.speach_engine, QTextToSpeech):
                 avail_engines = self.speach_engine.getProperty('voices')
@@ -193,7 +203,9 @@ class SoundManager(metaclass=Singleton):
 
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage != "":
-                if isinstance(self.speach_engine, Speaker):
+                if isinstance(self.speach_engine, pyttsx3.engine.Engine):
+                    SayThread(args=abbreviatedMessage)
+                elif isinstance(self.speach_engine, Speaker):
                     self.speach_engine.amplitude = self.soundVolume
                     self.speach_engine.say(abbreviatedMessage)
                 else:

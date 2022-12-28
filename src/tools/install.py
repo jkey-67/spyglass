@@ -4,7 +4,7 @@ import os
 
 def instFiles():
     
-    workdir = os.path.abspath(os.path.join(os.getcwd(),"..",".."))
+    workdir = os.path.abspath(os.path.join(os.getcwd(), "..", ".."))
     devdir = workdir
     distdir = os.path.join(devdir, 'dist')
     builddir = os.path.join(devdir, 'build')
@@ -16,7 +16,7 @@ def instFiles():
         '--workpath', builddir,
         '--onefile',
         '--windowed',
-        '--name', 'spyglass-1.6.6-RC02',
+        '--name', 'spyglass-1.6.6-RC04',
         '../spyglass.py',
         '--icon=../icon.ico',
         '--add-data=../vi/universe/*.json;./vi/universe',
@@ -33,6 +33,7 @@ def instFiles():
         '--hidden-import=pyttsx3.drivers.sapi5',
         '--hidden-import=packaging'
     ])
+
 
 if __name__ == "__main__":
     instFiles()
