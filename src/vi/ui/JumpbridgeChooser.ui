@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>595</width>
-    <height>613</height>
+    <height>638</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,23 +48,55 @@
        <number>3</number>
       </property>
       <item>
-       <widget class="QPushButton" name="cancelButton">
+       <widget class="QToolButton" name="cancelButton">
+        <property name="toolTip">
+         <string>Apply changes</string>
+        </property>
         <property name="text">
          <string>Apply</string>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="generateJumpBridgeButton">
-        <property name="text">
-         <string>Generate </string>
+        <property name="icon">
+         <iconset resource="resource.qrc">
+          <normaloff>:/Icons/res/apply.svg</normaloff>:/Icons/res/apply.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="saveButton">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="generateJumpBridgeButton">
+        <property name="toolTip">
+         <string>Generate the list uf jumpbridges online</string>
+        </property>
         <property name="text">
-         <string>Export</string>
+         <string>Generate </string>
+        </property>
+        <property name="icon">
+         <iconset resource="resource.qrc">
+          <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
         </property>
        </widget>
       </item>
@@ -107,18 +139,18 @@
          <number>3</number>
         </property>
         <item row="1" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,1">
+         <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,0,0">
           <property name="spacing">
            <number>3</number>
           </property>
           <property name="leftMargin">
-           <number>0</number>
+           <number>3</number>
           </property>
           <property name="topMargin">
            <number>3</number>
           </property>
           <property name="rightMargin">
-           <number>0</number>
+           <number>3</number>
           </property>
           <property name="bottomMargin">
            <number>3</number>
@@ -127,9 +159,42 @@
            <widget class="QLineEdit" name="urlField"/>
           </item>
           <item>
-           <widget class="QPushButton" name="fileChooser">
+           <widget class="QToolButton" name="fileChooser">
+            <property name="toolTip">
+             <string>Set the import file name or define the import URL</string>
+            </property>
             <property name="text">
-             <string>Choose File</string>
+             <string>Import File Name / URL</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/load.svg</normaloff>:/Icons/res/load.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="saveButton">
+            <property name="toolTip">
+             <string>Export the current Jump Bridge set to a text file</string>
+            </property>
+            <property name="text">
+             <string>Export</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/save.svg</normaloff>:/Icons/res/save.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -166,17 +231,17 @@ p, li { white-space: pre-wrap; }
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Select the jump bridge data file or URL for automated updates on startup</string>
-          </property>
-         </widget>
-        </item>
         <item row="3" column="0">
          <widget class="QProgressBar" name="generateJumpBridgeProgress">
           <property name="value">
            <number>24</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Select the jump bridge data file or URL for automated updates on startup</string>
           </property>
          </widget>
         </item>
@@ -192,8 +257,9 @@ p, li { white-space: pre-wrap; }
   <tabstop>fileChooser</tabstop>
   <tabstop>cancelButton</tabstop>
   <tabstop>generateJumpBridgeButton</tabstop>
-  <tabstop>saveButton</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

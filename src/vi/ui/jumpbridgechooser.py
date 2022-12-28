@@ -19,6 +19,7 @@
 import logging
 import os
 from PySide6 import QtWidgets
+from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QMessageBox, QFileDialog
 from PySide6.QtCore import Signal as pyqtSignal
 from vi.ui import Ui_JumpbridgeChooser
@@ -28,19 +29,25 @@ from vi.cache import Cache
 
 class JumpbridgeChooser(QtWidgets.QDialog):
     set_jumpbridge_url = pyqtSignal(str)
+    run_jb_generation = False
 
     def __init__(self, parent, url):
         QtWidgets.QDialog.__init__(self, parent)
         self.ui = Ui_JumpbridgeChooser()
         self.ui.setupUi(self)
-        self.ui.saveButton.clicked.connect(self.savePath)
+        self.ui.saveButton.clicked.connect(self.exportFileName)
         self.ui.cancelButton.clicked.connect(self.cancelGenerateJumpBridge)
-        self.ui.fileChooser.clicked.connect(self.choosePathSave)
+        self.ui.fileChooser.clicked.connect(self.importFileName)
         self.ui.generateJumpBridgeButton.clicked.connect(self.generateJumpBridge)
         self.ui.generateJumpBridgeButton.setEnabled(evegate.esiCharName() is not None)
         self.ui.urlField.setText(url)
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
+        self.setWindowFlags(Qt.Popup)
+
+    def done(self, arg__1: int) -> None:
+        self.run_jb_generation = False
+        QtWidgets.QDialog.done(self, arg__1)
 
     def processUpdate(self, total, pos) -> bool:
         """
@@ -76,7 +83,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
             self.signalURLChange()
             self.accept()
 
-    def savePath(self):
+    def exportFileName(self):
         save_path = QFileDialog.getSaveFileName(self,
                                            caption="Select JB Text File to export",
                                            dir=os.path.join(os.path.expanduser("~")))[0]
@@ -97,8 +104,8 @@ class JumpbridgeChooser(QtWidgets.QDialog):
                 logging.error(e)
                 QMessageBox.critical(None, "Export  jump bridge data failed", "Error: {0}".format(str(e)))
 
-    def choosePathSave(self):
-        path = QFileDialog.getSaveFileName(self,
+    def importFileName(self):
+        path = QFileDialog.getOpenFileName(self,
                                            caption="Select JB Text File to export",
                                            dir=os.path.join(os.path.expanduser("~")))[0]
         if str(path) != "":

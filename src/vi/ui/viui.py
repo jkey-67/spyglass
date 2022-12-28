@@ -1122,7 +1122,7 @@ class MainWindow(QtWidgets.QMainWindow):
         action = self.intelTimeGroup.checkedAction()
         self.intelTimeGroup.intelTime = action.intelTime
         self.chatparser.intelTime = action.intelTime
-        self.ui.timeInfo.setText("All Intel( past{} minutes)".format(self.chatparser.intelTime))
+        self.ui.timeInfo.setText("All Intel (past {} minutes)".format(self.chatparser.intelTime))
         self.rescanIntel()
 
     def setOpacity(self, value=None):
@@ -1521,7 +1521,7 @@ class MainWindow(QtWidgets.QMainWindow):
         info_dialog.ui = Ui_EVESpyInfo()
         info_dialog.ui.setupUi(info_dialog)
         info_dialog.ui.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        info_dialog.setWindowFlags(Qt.Popup)
+        info_dialog.setWindowFlags(Qt.Popup or Qt.WindowTitleHint)
         info_dialog.show()
 
     def selectSoundFile(self, mask, dialog):
