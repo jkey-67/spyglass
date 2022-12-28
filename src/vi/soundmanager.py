@@ -44,6 +44,7 @@ except:
 
 
 class SayThread(Thread):
+    soundVolume = 100.0
     def __init__(self, *args, **kwargs):
         Thread.__init__(self, *args, **kwargs)
         self.daemon = True
@@ -51,6 +52,7 @@ class SayThread(Thread):
 
     def run(self):
         tts_engine = pyttsx3.init()
+        tts_engine.setProperty('volume', self.soundVolume)
         tts_engine.say(self._args)
         tts_engine.runAndWait()
 
@@ -204,7 +206,9 @@ class SoundManager(metaclass=Singleton):
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage != "":
                 if isinstance(self.speach_engine, pyttsx3.engine.Engine):
+                    SayThread.soundVolume = self.soundVolume / 100.0;
                     SayThread(args=abbreviatedMessage)
+
                 elif isinstance(self.speach_engine, Speaker):
                     self.speach_engine.amplitude = self.soundVolume
                     self.speach_engine.say(abbreviatedMessage)

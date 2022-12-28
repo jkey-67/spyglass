@@ -1521,7 +1521,7 @@ class MainWindow(QtWidgets.QMainWindow):
         info_dialog.ui = Ui_EVESpyInfo()
         info_dialog.ui.setupUi(info_dialog)
         info_dialog.ui.versionLabel.setText(u"Version: {0}".format(vi.version.VERSION))
-        info_dialog.setWindowFlags(Qt.Popup or Qt.WindowTitleHint)
+        # info_dialog.setWindowFlags(Qt.Popup or Qt.WindowTitleHint)
         info_dialog.show()
 
     def selectSoundFile(self, mask, dialog):
@@ -1544,17 +1544,17 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.volumeSlider.setValue(int(SoundManager().soundVolume))
         dialog.ui.volumeSlider.valueChanged[int].connect(SoundManager().setSoundVolume)
         dialog.ui.testSoundButton.clicked.connect(
-            lambda: SoundManager().playSound(name="alarm", abbreviatedMessage="Testing the playback sound system!"))
+            lambda: SoundManager().playSound(name="alarm", abbreviatedMessage="Testing the playback sound system"))
         dialog.ui.palyAlarm_1.clicked.connect(
-            lambda: SoundManager().playSound(name="alarm_1", abbreviatedMessage="Alarm distance 1"))
+            lambda: SoundManager().playSound(name="alarm_1", abbreviatedMessage="Alarm distance is 1"))
         dialog.ui.palyAlarm_2.clicked.connect(
-            lambda: SoundManager().playSound(name="alarm_2", abbreviatedMessage="Alarm distance 2"))
+            lambda: SoundManager().playSound(name="alarm_2", abbreviatedMessage="Alarm distance is 2"))
         dialog.ui.palyAlarm_3.clicked.connect(
-            lambda: SoundManager().playSound(name="alarm_3", abbreviatedMessage="Alarm distance 3"))
+            lambda: SoundManager().playSound(name="alarm_3", abbreviatedMessage="Alarm distance is 3"))
         dialog.ui.palyAlarm_4.clicked.connect(
-            lambda: SoundManager().playSound(name="alarm_4", abbreviatedMessage="Alarm distance 4"))
+            lambda: SoundManager().playSound(name="alarm_4", abbreviatedMessage="Alarm distance is 4"))
         dialog.ui.palyAlarm_5.clicked.connect(
-            lambda: SoundManager().playSound(name="alarm_5", abbreviatedMessage="Alarm distance 5"))
+            lambda: SoundManager().playSound(name="alarm_5", abbreviatedMessage="The alarm distance is 5"))
         dialog.ui.selectAlarm_1.clicked.connect(lambda: self.selectSoundFile("alarm_1", dialog))
         dialog.ui.selectAlarm_2.clicked.connect(lambda: self.selectSoundFile("alarm_2", dialog))
         dialog.ui.selectAlarm_3.clicked.connect(lambda: self.selectSoundFile("alarm_3", dialog))
@@ -1567,7 +1567,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
         dialog.ui.useSpokenNotifications.setChecked(self.ui.useSpokenNotificationsAction.isChecked())
         dialog.ui.useSpokenNotifications.clicked.connect(self.changeUseSpokenNotifications)
-        dialog.setWindowFlags(Qt.Popup)
+        # dialog.setWindowFlags(Qt.Popup)
 
         def defaultSoundSetup():
             self.changeUseSpokenNotifications(False)

@@ -38,7 +38,7 @@ class ChatroomChooser(QtWidgets.QDialog):
         if not room_names:
             room_names = u','.join(ChatroomChooser.DEFAULT_ROOM_MANES)
         self.ui.roomnamesField.setPlainText(room_names)
-        self.setWindowFlags(Qt.Popup)
+        # self.setWindowFlags(Qt.Popup)
 
     def saveClicked(self):
         text = str(self.ui.roomnamesField.toPlainText())

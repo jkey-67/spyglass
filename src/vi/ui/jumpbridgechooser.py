@@ -43,7 +43,8 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.ui.urlField.setText(url)
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
-        self.setWindowFlags(Qt.Popup)
+        # self.setWindowFlags(Qt.Popup)
+        self.fileDialog = QFileDialog(self)
 
     def done(self, arg__1: int) -> None:
         self.run_jb_generation = False
@@ -105,7 +106,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
                 QMessageBox.critical(None, "Export  jump bridge data failed", "Error: {0}".format(str(e)))
 
     def importFileName(self):
-        path = QFileDialog.getOpenFileName(self,
+        path = self.fileDialog.getOpenFileName(None,
                                            caption="Select JB Text File to export",
                                            dir=os.path.join(os.path.expanduser("~")))[0]
         if str(path) != "":

@@ -52,7 +52,7 @@ class RegionChooser(QtWidgets.QDialog):
         if not region_name:
             region_name = u"Providence"
         self.ui.regionNameField.setText(region_name)
-        self.setWindowFlags(Qt.Popup)
+        # self.setWindowFlags(Qt.Popup)
 
     def saveClicked(self):
         text = str(self.ui.regionNameField.text())
