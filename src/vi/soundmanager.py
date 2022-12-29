@@ -52,7 +52,7 @@ class SayThread(Thread):
         self.start()
 
     def run(self):
-        tts_engine = pyttsx3.init("espeak-ng")
+        tts_engine = pyttsx3.init("sapi5" if sys.platform.startswith("win32") else "espeak-ng")
         tts_engine.setProperty('volume', self.soundVolume)
         tts_engine.say(self._args)
         tts_engine.runAndWait()
@@ -95,8 +95,8 @@ class SoundManager(metaclass=Singleton):
 
     def __init__(self):
         try:
-            if PYTTSX3_ENABLED and not sys.platform.startswith("linux"):
-                self.speach_engine = pyttsx3.init()
+            if PYTTSX3_ENABLED and sys.platform.startswith("win32"):
+                self.speach_engine = pyttsx3.init("sapi5")
                 for voice in self.speach_engine.getProperty('voices'):
                     print(voice)
                     if "_EN-US" in voice.id:
