@@ -18,6 +18,7 @@
 ###########################################################################
 
 import os
+import sys
 import logging
 from PySide6.QtCore import QLocale
 from .resources import resourcePath
@@ -51,7 +52,7 @@ class SayThread(Thread):
         self.start()
 
     def run(self):
-        tts_engine = pyttsx3.init()
+        tts_engine = pyttsx3.init("espeak-ng")
         tts_engine.setProperty('volume', self.soundVolume)
         tts_engine.say(self._args)
         tts_engine.runAndWait()
@@ -94,7 +95,7 @@ class SoundManager(metaclass=Singleton):
 
     def __init__(self):
         try:
-            if PYTTSX3_ENABLED:
+            if PYTTSX3_ENABLED and not sys.platform.startswith("linux"):
                 self.speach_engine = pyttsx3.init()
                 for voice in self.speach_engine.getProperty('voices'):
                     print(voice)
@@ -177,17 +178,8 @@ class SoundManager(metaclass=Singleton):
                 self.useSpokenNotifications = True
             elif isinstance(self.speach_engine, Speaker):
                 self.speach_engine.voice = 'en'
-                # self.speach_engine.pitch = 90
-                # self.speach_engine.wpm = 240
                 self.useSpokenNotifications = True
-            elif isinstance(self.speach_engine, QTextToSpeech):
-                avail_engines = self.speach_engine.getProperty('voices')
-                if len(avail_engines):
-                    for eng_name in avail_engines:
-                        logging.info("Available sound engine \'{}\'".format(eng_name))
-                    self.speach_engine.setLocale(QLocale(QLocale.English))
-                    self.useSpokenNotifications = True
-                    return self.useSpokenNotifications
+            return self.useSpokenNotifications
         if not self.useSpokenNotifications:
             logging.info(" There is no text to speak engine available, all text to speak function disabled.")
         return self.useSpokenNotifications
@@ -206,7 +198,7 @@ class SoundManager(metaclass=Singleton):
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage != "":
                 if isinstance(self.speach_engine, pyttsx3.engine.Engine):
-                    SayThread.soundVolume = self.soundVolume / 100.0;
+                    SayThread.soundVolume = self.soundVolume / 100.0
                     SayThread(args=abbreviatedMessage)
 
                 elif isinstance(self.speach_engine, Speaker):
@@ -229,7 +221,4 @@ class SoundManager(metaclass=Singleton):
             if effect:
                 effect.stop()
         pygame.mixer.quit()
-
-
-
 

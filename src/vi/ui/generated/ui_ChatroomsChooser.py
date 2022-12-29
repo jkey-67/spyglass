@@ -43,27 +43,27 @@ class Ui_ChatroomsChooser(object):
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.defaultButton = QToolButton(ChatroomsChooser)
-        self.defaultButton.setObjectName(u"defaultButton")
+        self.saveButton = QToolButton(ChatroomsChooser)
+        self.saveButton.setObjectName(u"saveButton")
         icon = QIcon()
-        icon.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.defaultButton.setIcon(icon)
-        self.defaultButton.setIconSize(QSize(24, 24))
+        icon.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.saveButton.setIcon(icon)
+        self.saveButton.setIconSize(QSize(24, 24))
 
-        self.horizontalLayout_2.addWidget(self.defaultButton)
+        self.horizontalLayout_2.addWidget(self.saveButton)
 
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
-        self.saveButton = QToolButton(ChatroomsChooser)
-        self.saveButton.setObjectName(u"saveButton")
+        self.defaultButton = QToolButton(ChatroomsChooser)
+        self.defaultButton.setObjectName(u"defaultButton")
         icon1 = QIcon()
-        icon1.addFile(u":/Icons/res/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.saveButton.setIcon(icon1)
-        self.saveButton.setIconSize(QSize(24, 24))
+        icon1.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.defaultButton.setIcon(icon1)
+        self.defaultButton.setIconSize(QSize(24, 24))
 
-        self.horizontalLayout_2.addWidget(self.saveButton)
+        self.horizontalLayout_2.addWidget(self.defaultButton)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_2)
@@ -80,7 +80,10 @@ class Ui_ChatroomsChooser(object):
     def retranslateUi(self, ChatroomsChooser):
         ChatroomsChooser.setWindowTitle(QCoreApplication.translate("ChatroomsChooser", u"Chatrooms", None))
         self.label.setText(QCoreApplication.translate("ChatroomsChooser", u"Enter the chatrooms to watch into the following field. Separate them by comma.", None))
-        self.defaultButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Restore Defaults", None))
+#if QT_CONFIG(tooltip)
+        self.saveButton.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Apply setting and close", None))
+#endif // QT_CONFIG(tooltip)
         self.saveButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Save", None))
+        self.defaultButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Restore Defaults", None))
     # retranslateUi
 

@@ -35,13 +35,16 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="QToolButton" name="defaultButton">
+        <widget class="QToolButton" name="saveButton">
+         <property name="toolTip">
+          <string>Apply setting and close</string>
+         </property>
          <property name="text">
-          <string>Restore Defaults</string>
+          <string>Save</string>
          </property>
          <property name="icon">
           <iconset resource="resource.qrc">
-           <normaloff>:/Icons/res/default.svg</normaloff>:/Icons/res/default.svg</iconset>
+           <normaloff>:/Icons/res/apply.svg</normaloff>:/Icons/res/apply.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -65,13 +68,13 @@
         </spacer>
        </item>
        <item>
-        <widget class="QToolButton" name="saveButton">
+        <widget class="QToolButton" name="defaultButton">
          <property name="text">
-          <string>Save</string>
+          <string>Restore Defaults</string>
          </property>
          <property name="icon">
           <iconset resource="resource.qrc">
-           <normaloff>:/Icons/res/save.svg</normaloff>:/Icons/res/save.svg</iconset>
+           <normaloff>:/Icons/res/default.svg</normaloff>:/Icons/res/default.svg</iconset>
          </property>
          <property name="iconSize">
           <size>

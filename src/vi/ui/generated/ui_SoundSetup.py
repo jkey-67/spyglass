@@ -199,12 +199,21 @@ class Ui_SoundSetup(object):
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.applySoundSetting = QToolButton(self.frame)
+        self.applySoundSetting.setObjectName(u"applySoundSetting")
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.applySoundSetting.setIcon(icon2)
+        self.applySoundSetting.setIconSize(QSize(24, 24))
+
+        self.horizontalLayout.addWidget(self.applySoundSetting)
+
         self.useSpokenNotifications = QToolButton(self.frame)
         self.useSpokenNotifications.setObjectName(u"useSpokenNotifications")
         self.useSpokenNotifications.setMinimumSize(QSize(0, 0))
-        icon2 = QIcon()
-        icon2.addFile(u":/Icons/res/speach.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.useSpokenNotifications.setIcon(icon2)
+        icon3 = QIcon()
+        icon3.addFile(u":/Icons/res/speach.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.useSpokenNotifications.setIcon(icon3)
         self.useSpokenNotifications.setIconSize(QSize(24, 24))
         self.useSpokenNotifications.setCheckable(True)
 
@@ -216,9 +225,9 @@ class Ui_SoundSetup(object):
 
         self.defaultSounds = QToolButton(self.frame)
         self.defaultSounds.setObjectName(u"defaultSounds")
-        icon3 = QIcon()
-        icon3.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.defaultSounds.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.defaultSounds.setIcon(icon4)
         self.defaultSounds.setIconSize(QSize(24, 24))
 
         self.horizontalLayout.addWidget(self.defaultSounds)
@@ -326,6 +335,10 @@ class Ui_SoundSetup(object):
         self.palyAlarm_1.setShortcut(QCoreApplication.translate("SoundSetup", u"Ctrl+S", None))
 #endif // QT_CONFIG(shortcut)
         self.label_6.setText(QCoreApplication.translate("SoundSetup", u"Dist 4", None))
+#if QT_CONFIG(tooltip)
+        self.applySoundSetting.setToolTip(QCoreApplication.translate("SoundSetup", u"Apply setting and close", None))
+#endif // QT_CONFIG(tooltip)
+        self.applySoundSetting.setText(QCoreApplication.translate("SoundSetup", u"...", None))
 #if QT_CONFIG(tooltip)
         self.useSpokenNotifications.setToolTip(QCoreApplication.translate("SoundSetup", u"Enable test to speach", None))
 #endif // QT_CONFIG(tooltip)

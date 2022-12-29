@@ -85,6 +85,9 @@
    </item>
    <item>
     <widget class="QToolButton" name="saveButton">
+     <property name="toolTip">
+      <string>Apply setting and close</string>
+     </property>
      <property name="text">
       <string>Change</string>
      </property>
