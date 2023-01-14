@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.1
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -206,6 +206,16 @@ class Ui_MainWindow(object):
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
+
+        self.label = QLabel(self.mapbuttonwidget)
+        self.label.setObjectName(u"label")
+
+        self.horizontalLayout_2.addWidget(self.label)
+
+        self.currentESICharacter = QComboBox(self.mapbuttonwidget)
+        self.currentESICharacter.setObjectName(u"currentESICharacter")
+
+        self.horizontalLayout_2.addWidget(self.currentESICharacter)
 
         self.zoomInButton = QToolButton(self.mapbuttonwidget)
         self.zoomInButton.setObjectName(u"zoomInButton")
@@ -424,19 +434,21 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setSpacing(0)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.label = QLabel(self.qTabAPIChar)
-        self.label.setObjectName(u"label")
+        self.connectToEveOnline = QPushButton(self.qTabAPIChar)
+        self.connectToEveOnline.setObjectName(u"connectToEveOnline")
+        self.connectToEveOnline.setMinimumSize(QSize(0, 27))
+        self.connectToEveOnline.setMaximumSize(QSize(166, 22))
+        self.connectToEveOnline.setAutoFillBackground(False)
+        self.connectToEveOnline.setText(u"")
+        self.connectToEveOnline.setIcon(icon1)
+        self.connectToEveOnline.setIconSize(QSize(163, 38))
+        self.connectToEveOnline.setFlat(False)
 
-        self.horizontalLayout_3.addWidget(self.label)
+        self.horizontalLayout_3.addWidget(self.connectToEveOnline)
 
         self.horizontalSpacer = QSpacerItem(10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer)
-
-        self.currentESICharacter = QComboBox(self.qTabAPIChar)
-        self.currentESICharacter.setObjectName(u"currentESICharacter")
-
-        self.horizontalLayout_3.addWidget(self.currentESICharacter)
 
         self.removeChar = QToolButton(self.qTabAPIChar)
         self.removeChar.setObjectName(u"removeChar")
@@ -447,8 +459,6 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_3.addWidget(self.removeChar)
 
-        self.horizontalLayout_3.setStretch(0, 1)
-        self.horizontalLayout_3.setStretch(2, 3)
 
         self.verticalLayout_4.addLayout(self.horizontalLayout_3)
 
@@ -461,24 +471,6 @@ class Ui_MainWindow(object):
         self.tableChars.verticalHeader().setVisible(False)
 
         self.verticalLayout_4.addWidget(self.tableChars)
-
-        self.horizontalLayout_5 = QHBoxLayout()
-        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.horizontalLayout_5.setContentsMargins(5, 5, 5, 5)
-        self.connectToEveOnline = QPushButton(self.qTabAPIChar)
-        self.connectToEveOnline.setObjectName(u"connectToEveOnline")
-        self.connectToEveOnline.setMinimumSize(QSize(0, 27))
-        self.connectToEveOnline.setMaximumSize(QSize(166, 22))
-        self.connectToEveOnline.setAutoFillBackground(False)
-        self.connectToEveOnline.setText(u"")
-        self.connectToEveOnline.setIcon(icon1)
-        self.connectToEveOnline.setIconSize(QSize(163, 38))
-        self.connectToEveOnline.setFlat(False)
-
-        self.horizontalLayout_5.addWidget(self.connectToEveOnline)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_5)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
@@ -685,6 +677,7 @@ class Ui_MainWindow(object):
         self.frameButton.setToolTip(QCoreApplication.translate("MainWindow", u"Restore WIndow Frame", None))
 #endif // QT_CONFIG(tooltip)
         self.frameButton.setText("")
+        self.label.setText(QCoreApplication.translate("MainWindow", u"API Char ", None))
 #if QT_CONFIG(tooltip)
         self.zoomInButton.setToolTip(QCoreApplication.translate("MainWindow", u"Zoom In", None))
 #endif // QT_CONFIG(tooltip)
@@ -716,7 +709,6 @@ class Ui_MainWindow(object):
         self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabIntel), QCoreApplication.translate("MainWindow", u"Intel", None))
         self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabPOIS), QCoreApplication.translate("MainWindow", u"POIs", None))
         self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabJumpbridges), QCoreApplication.translate("MainWindow", u"JBs", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"Current API Char", None))
 #if QT_CONFIG(tooltip)
         self.removeChar.setToolTip(QCoreApplication.translate("MainWindow", u"Remove API Key", None))
 #endif // QT_CONFIG(tooltip)
