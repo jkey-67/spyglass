@@ -141,6 +141,8 @@ You need a private third party application key stored in src\eve_api_key.py like
 
 `CLIENTS_API_KEY = "-top-secret-api-key-"`
 
+Register as developer and create a own application key on the [EVE-Developer](https://developers.eveonline.com/applications) webpage.
+
 Currently, users with Windows may want to choose Qt 5.15.2 inside requirements.txt
 
 ## The background of Spyglass
