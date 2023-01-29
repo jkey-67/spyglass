@@ -87,7 +87,7 @@ class POITableModell(QSqlQueryModel):
         return Qt.MoveAction | Qt.CopyAction
 
     def dropMimeData(self, data, action, row, column, parent):
-        return True
+        return False
 
     def dropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int, parent) -> bool:
         if action == QtCore.Qt.IgnoreAction:
@@ -137,16 +137,22 @@ class POITableModell(QSqlQueryModel):
     def mimeData(self, indexes):
         mimedata = QtCore.QMimeData()
         encoded_data = QtCore.QByteArray()
-        stream = QtCore.QDataStream(encoded_data, QtCore.QIODevice.WriteOnly)
+        # stream = QtCore.QDataStream(encoded_data, QtCore.QIODevice.WriteOnly)
         for index in indexes:
             if index.isValid():
+                db_data = Cache().getPOIAtIndex(index.row())
                 # src_index = self.model().mapToSource(index)
-                text = json.dumps(Cache().getPOIAtIndex(index.row()))
-
-        stream << QtCore.QByteArray(text.encode('utf-8-sig'))
-        # mimedata.setData('application/json', encoded_data)
-        mimedata.setData('text/plain', encoded_data)
+                text = "<url=showinfo{}//{}>{}</url>".format(db_data["type_id"], db_data["structure_id"], db_data["name"])
+        mimedata.setText(text)
         return mimedata
+
+    def keyPressEvent(self, e):
+        if e == Qt.QKeySequence.Copy:
+            index = self.currentIndex()
+            if index.isValid():
+                db_data = Cache().getPOIAtIndex(index.row())
+                # src_index = self.model().mapToSource(index)
+                text = "<url=showinfo{}//{}>{}</url>".format(db_data["type_id"],db_data["structure_id"],db_data["name"])
 
 
 class StyledItemDelegatePOI(QStyledItemDelegate):
@@ -674,6 +680,30 @@ class MainWindow(QtWidgets.QMainWindow):
             if item and "destination_id" in item.keys():
                 if self.handleDestinationActions(res, item["destination_id"]):
                     return
+                elif res == lps_ctx_menu.copy:
+                    if "structure_id" in item.keys():
+                        self.oldClipboardContent = "<url=showinfo:{}//{}>{}</url>".format(item["type_id"], item["structure_id"],
+                                                                           item["name"])
+                        self.clipboard.setText(self.oldClipboardContent)
+                    elif "station_id" in item.keys():
+                        self.oldClipboardContent = "<url=showinfo:{}//{}>{}</url>".format(item["type_id"], item["station_id"],
+                                                                           item["name"])
+                        self.clipboard.setText(self.oldClipboardContent)
+                    return
+                elif res == lps_ctx_menu.copy_all:
+                    txt = str()
+                    for item in cache.getPOIs():
+                        if txt != "":
+                            txt = txt + "\n"
+                        if "structure_id" in item.keys():
+                            txt = txt + "<url=showinfo:{}//{}>{}</url>".format(item["type_id"], item["structure_id"],
+                                                                               item["name"])
+                        elif "station_id" in item.keys():
+                            txt = txt + "<url=showinfo:{}//{}>{}</url>".format(item["type_id"], item["station_id"],
+                                                                               item["name"])
+                    self.oldClipboardContent = txt
+                    self.clipboard.setText(self.oldClipboardContent)
+                    return
                 elif res == lps_ctx_menu.delete:
                     cache.clearPOI(item["destination_id"])
                     self.poi_changed.emit()
@@ -737,9 +767,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.dotlan:
                 self.dotlan.setJumpbridges(self.mapJumpGates)
             model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', datetime(modified,'unixepoch','localtime')as 'last update', ( case used when 2 then 'okay' else 'probably okay' END ) 'Paired' FROM jumpbridge")
-
+        self.callOnJbUpdate = callOnUpdate
         callOnUpdate()
-
         self.jbs_changed.connect(callOnUpdate)
         sort = QSortFilterProxyModel()
         sort.setSourceModel(model)
@@ -762,10 +791,18 @@ class MainWindow(QtWidgets.QMainWindow):
                     items[inx.row()] = cache.getJumpGatesAtIndex(inx.row())
                 for item in items.values():
                     evegate.getAllJumpGates(evegate.esiCharName(), item["src"], item["dst"])
-                self.jbs_changed.emit()
+                    self.jbs_changed.emit()
+                    QApplication.processEvents()
+                return
             elif res == lps_ctx_menu.delete:
-                cache.clearJumpGate(item["src"])
-                self.jbs_changed.emit()
+                inx_selected = self.ui.tableViewJBs.selectedIndexes()
+                items = dict()
+                for inx in inx_selected:
+                    items[inx.row()] = cache.getJumpGatesAtIndex(inx.row())
+                for item in items.values():
+                    cache.clearJumpGate(item["src"])
+                    self.jbs_changed.emit()
+                    QApplication.processEvents()
                 return
 
         self.ui.tableViewJBs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -1257,20 +1294,21 @@ class MainWindow(QtWidgets.QMainWindow):
         content = str(self.clipboard.text())
         if content != self.oldClipboardContent:
             cache = Cache()
-            content = str(self.clipboard.text())
-            cb_type, cb_data = evaluateClipboardData(content)
-            if cb_type == "poi":
-                if cache.putPOI(cb_data):
-                    self.poi_changed.emit()
-            elif cb_type == "jumpbridge":
-                if cache.putJumpGate(
-                        src=cb_data["src"],
-                        dst=cb_data["dst"],
-                        src_id=cb_data["id_src"],
-                        dst_id=cb_data["id_dst"],
-                        json_src=cb_data["json_src"],
-                        json_dst=cb_data["json_dst"]):
-                    self.jbs_changed.emit()
+            for content in str(self.clipboard.text()).splitlines():
+                cb_type, cb_data = evaluateClipboardData(content)
+                if cb_type == "poi":
+                    if cache.putPOI(cb_data):
+                        self.poi_changed.emit()
+                elif cb_type == "jumpbridge":
+                    if cache.putJumpGate(
+                            src=cb_data["src"],
+                            dst=cb_data["dst"],
+                            src_id=cb_data["id_src"],
+                            dst_id=cb_data["id_dst"],
+                            json_src=cb_data["json_src"],
+                            json_dst=cb_data["json_dst"]):
+                        self.jbs_changed.emit()
+            self.oldClipboardContent = content
 
     def mapLinkClicked(self, url: QtCore.QUrl):
         system_name = str(url.path().split("/")[-1])
@@ -1375,10 +1413,13 @@ class MainWindow(QtWidgets.QMainWindow):
         chooser.rooms_changed.connect(self.changedRoomNames)
         chooser.show()
 
+    def callOnJbUpdate(self):
+        return
     def showJumpbridgeChooser(self):
         url = Cache().getFromCache("jumpbridge_url")
         chooser = JumpbridgeChooser(self, url)
         chooser.set_jumpbridge_url.connect(self.updateJumpbridgesFromFile)
+        chooser.update_jumpbridge.connect(self.callOnJbUpdate)
         chooser.show()
 
     @staticmethod

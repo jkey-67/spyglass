@@ -29,6 +29,7 @@ from vi.cache import Cache
 
 class JumpbridgeChooser(QtWidgets.QDialog):
     set_jumpbridge_url = pyqtSignal(str)
+    update_jumpbridge = pyqtSignal()
     run_jb_generation = False
 
     def __init__(self, parent, url):
@@ -63,6 +64,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         """
         self.ui.generateJumpBridgeProgress.setMaximum(total)
         self.ui.generateJumpBridgeProgress.setValue(pos)
+        self.update_jumpbridge.emit()
         QtWidgets.QApplication.processEvents()
         return self.run_jb_generation
 

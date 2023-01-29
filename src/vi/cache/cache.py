@@ -456,6 +456,23 @@ class Cache(object):
                     ret_val["destination_id"] = ret_val["structure_id"]
                 return ret_val
 
+    def getPOIs(self) -> Optional[list]:
+        """
+        gets the POI at index position inx
+        Args:
+            inx: model index
+
+        Returns:
+            dict of the POI or None
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "select json from pointofinterest"
+            founds = self.con.execute(query).fetchall()
+            if len(founds) == 0:
+                return None
+            else:
+                return [json.loads(itm[0]) for itm in founds]
+
     def clearPOI(self, destination_id: int) -> None:
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM pointofinterest  WHERE id IS ?"

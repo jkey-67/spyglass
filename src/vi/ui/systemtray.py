@@ -92,8 +92,8 @@ class ActionPackage(QObject):
             self.changeRegion.setEnabled(False)
 
     def browserOpenDotlan(self, checked):
-            if self.currentSystem:
-                QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name))
+        if self.currentSystem:
+            QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name))
 
     def browserOpenZKillboard(self, checked):
         if self.currentSystem:
@@ -307,9 +307,13 @@ class JumpBridgeContextMenu(QtWidgets.QMenu):
 class POIContextMenu(QtWidgets.QMenu):
     def __init__(self):
         QtWidgets.QMenu.__init__(self)
-        self.delete = QAction("Delete the POI")
+        self.delete = QAction("Remove the selected POI")
+        self.copy = QAction("Selected POI to clipboard")
+        self.copy_all = QAction("All POIs to clipboard")
         self.player_menu = PlayerContextMenu(Cache().getAPICharNames())
         self.insertMenu(None, self.player_menu)
+        self.addAction(self.copy)
+        self.addAction(self.copy_all)
         self.addSeparator()
         self.addAction(self.delete)
 

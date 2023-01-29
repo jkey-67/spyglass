@@ -34,6 +34,8 @@ from packaging import version
 
 import queue
 import requests
+from requests.sessions import Session
+from threading import Thread, local
 import logging
 import urllib.parse
 import http.server
@@ -50,14 +52,22 @@ import eve_api_key
 from vi.cache.cache import Cache, currentEveTime, secondsTillDowntime
 from vi.version import VERSION
 
+thread_local = local()
 
 ERROR = -1
 NOT_EXISTS = 0
 EXISTS = 1
 
+
+def getSession() -> Session:
+    if not hasattr(thread_local, 'session'):
+        thread_local.session = requests.Session()  # Create a new Session if not exists
+    return thread_local.session
+
+
+
 """ todo: split the cache from esi functionality
 """
-
 def setEsiCharName(name):
     """
     Sets the name of the current active api char to sqlite cache.
@@ -117,7 +127,7 @@ def esiStatus() -> dict:
 
     """
     req = "https://esi.evetech.net/latest/status/?datasource=tranquility"
-    response = requests.get(req)
+    response = getSession().get(req)
     if response.status_code != 200:
         logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
         response.raise_for_status()
@@ -144,7 +154,7 @@ def esiCharNameToId(char_name: str, use_outdated=False) -> Optional[int]:
         if "characters" in content.keys():
             for idFound in content["characters"]:
                 url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=idFound["id"])
-                response = requests.get(url.format(char_name))
+                response = getSession().get(url.format(char_name))
                 if response.status_code == 200:
                     details = response.json()
                     if "name" in details.keys():
@@ -197,7 +207,7 @@ def esiUniverseIds(names, use_outdated=False):
                     list_of_name = list_of_name + ","
                 list_of_name = list_of_name + "\"{}\"".format(name)
             url = "https://esi.evetech.net/latest/universe/ids/?datasource=tranquility"
-            response = requests.post(url, data="[{}]".format(list_of_name))
+            response = getSession().post(url, data="[{}]".format(list_of_name))
             if response.status_code == 200:
                 content = response.json()
                 with Cache() as cache:
@@ -254,7 +264,7 @@ def esiUniverseNames(ids, use_outdated=False):
                 list_of_ids = list_of_ids + ","
             list_of_ids = list_of_ids + str(checked_id)
         url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
-        response = requests.post(url, data="[{}]".format(list_of_ids))
+        response = getSession().post(url, data="[{}]".format(list_of_ids))
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -302,7 +312,7 @@ def esiImageEvetechNet(character_id: int, req_type: evetech_image, image_size=64
     avatar = None
     if character_id:
         image_url = "https://images.evetech.net/{type}/{id}/{info}?tenant=tranquility&size={size}"
-        response = requests.get(image_url.format(id=character_id, size=image_size, type=req_type[0], info=req_type[1]))
+        response = getSession().get(image_url.format(id=character_id, size=image_size, type=req_type[0], info=req_type[1]))
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %60s", response.status_code, response.reason, response.url)
             avatar = None
@@ -326,7 +336,7 @@ def getTypesIcon(type_id: int, size_image=64) -> Optional[bytearray]:
     img = used_cache.getImageFromCache(str(type_id))
     if img is None:
         image_url = "https://images.evetech.net/types/{id}/icon"
-        response = requests.get(image_url.format(id=type_id, size=size_image))
+        response = getSession().get(image_url.format(id=type_id, size=size_image))
         if response.status_code == 200:
             used_cache.putImageToCache(str(type_id), response.content)
             img = response.content
@@ -354,7 +364,7 @@ def esiCharactersPortrait(char_name, image_size=64):
         char_id = esiCharNameToId(char_name)
         if char_id:
             image_url = "https://images.evetech.net/characters/{id}/portrait?tenant=tranquility&size={size}"
-            response = requests.get(image_url.format(id=char_id, size=image_size))
+            response = getSession().get(image_url.format(id=char_id, size=image_size))
             if response.status_code != 200:
                 logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
                 response.raise_for_status()
@@ -396,7 +406,7 @@ def esiCharacters(char_id, use_outdated=False):
     else:
         try:
             url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=int(char_id))
-            response = requests.get(url)
+            response = getSession().get(url)
             if response.status_code != 200:
                 logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
                 response.raise_for_status()
@@ -442,7 +452,7 @@ def esiCharactersOnline(char_name: str) -> bool:
     if token:
         url = "https://esi.evetech.net/latest/characters/{}/online/?datasource=tranquility&token={}".format(
             esiCharNameToId(char_name), token.access_token)
-        response = requests.get(url)
+        response = getSession().get(url)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             return False
@@ -471,7 +481,7 @@ def esiCharactersLocation(char_name: str) -> Optional[int]:
         url = "https://esi.evetech.net/latest/characters/{}/location/?datasource=tranquility&token={}".format(
             esiCharNameToId(char_name),
             token.access_token)
-        response = requests.get(url)
+        response = getSession().get(url)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -496,7 +506,7 @@ def esiCharactersCorporationHistory(char_id, use_outdated=True):
         try:
             char_id = int(char_id)
             url = "https://esi.evetech.net/latest/characters/{id}/corporationhistory/?datasource=tranquility".format(id=char_id)
-            response = requests.get(url)
+            response = getSession().get(url)
             if response.status_code != 200:
                 logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
                 response.raise_for_status()
@@ -539,7 +549,7 @@ def esiUniverseSystem_jumps(use_outdated=False):
         if jump_data is None:
             jump_data = {}
             url = "https://esi.evetech.net/latest/universe/system_jumps/?datasource=tranquility"
-            response = requests.get(url)
+            response = getSession().get(url)
             if response.status_code != 200:
                 logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
                 response.raise_for_status()
@@ -557,7 +567,7 @@ def esiUniverseSystem_jumps(use_outdated=False):
         if system_data is None:
             system_data = {}
             url = "https://esi.evetech.net/latest/universe/system_kills/?datasource=tranquility"
-            response = requests.get(url)
+            response = getSession().get(url)
             if response.status_code != 200:
                 logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
                 response.raise_for_status()
@@ -684,7 +694,7 @@ class APIServerThread(QThread):
             self.browser.close()
         with APIServerThread.WEB_SERVER_LOCK:
             if self.webserver:
-                response = requests.get("http://localhost:8182/oauth-callback")
+                response = getSession().get("http://localhost:8182/oauth-callback")
         QThread.quit(self)
 
 
@@ -740,7 +750,7 @@ def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Opt
     }
     if add_headers:
         headers.update(add_headers)
-    response = requests.post(
+    response = getSession().post(
         "https://login.eveonline.com/v2/oauth/token",
         data=form_values,
         headers=headers,
@@ -750,7 +760,7 @@ def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Opt
         header = {
             "Authorization": "{} {}".format(oauth_call["token_type"], oauth_call["access_token"]),
         }
-        oauth_result = requests.get("https://login.eveonline.com/oauth/verify", headers=header)
+        oauth_result = getSession().get("https://login.eveonline.com/oauth/verify", headers=header)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -839,7 +849,7 @@ def refreshToken(params: Optional[ApiKey]) -> Optional[ApiKey]:
         "Content-Type": "application/x-www-form-urlencoded",
         "Host": "login.eveonline.com",
     }
-    response = requests.post("https://login.eveonline.com/v2/oauth/token", data=data, headers=headers)
+    response = getSession().post("https://login.eveonline.com/v2/oauth/token", data=data, headers=headers)
     if response.status_code == 200:
         ref_token = response.json()
         params.update(ref_token)
@@ -886,7 +896,7 @@ def sendTokenRequest(form_values, add_headers=None):
     if add_headers:
         headers.update(add_headers)
 
-    response = requests.post(
+    response = getSession().post(
         "https://login.eveonline.com/v2/oauth/token",
         data=form_values,
         headers=headers,
@@ -911,7 +921,7 @@ def esiAutopilotWaypoint(char_name: str, system_id: int, beginning=True, clear_a
             "token": token.access_token,
         }
         req = "https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
-        response = requests.post(req)
+        response = getSession().post(req)
         if response.status_code != 204:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
 
@@ -933,7 +943,7 @@ def getRouteFromEveOnline(jumpgates, src, dst):
         route_elements = route_elements + "{}|{}".format(elem[0], elem[1])
 
     req = "https://esi.evetech.net/v1/route/{}/{}/?connections={}".format(src, dst, route_elements)
-    response = requests.get(req)
+    response = getSession().get(req)
     if response.status_code != 200:
         # logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
         # response.raise_for_status()
@@ -951,7 +961,7 @@ def esiIncursions(use_outdated=False):
         return json.loads(response)
     else:
         req = "https://esi.evetech.net/latest/incursions/?datasource=tranquility"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -980,7 +990,7 @@ def esiSovereigntyCampaigns(use_outdated=False):
         return json.loads(response)
     else:
         req = "https://esi.evetech.net/latest/sovereignty/campaigns/?datasource=tranquility"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1005,7 +1015,7 @@ def esiSovereigntyStructures(use_outdated=False):
         return json.loads(response)
     else:
         req = "https://esi.evetech.net/latest/sovereignty/structures/?datasource=tranquility"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1030,7 +1040,7 @@ def esiSovereigntyMap(use_outdated=False):
         return json.loads(response)
     else:
         req = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1057,7 +1067,7 @@ def getCampaignsStructureIds(use_outdated=False):
 
 def getAllStructures(typeid=None):
     req = "https://esi.evetech.net/latest/universe/structures/?datasource=tranquility"
-    response = requests.get(req)
+    response = getSession().get(req)
     if response.status_code != 200:
         logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
         response.raise_for_status()
@@ -1090,7 +1100,7 @@ def esiUniverseStructure(esi_char_name: str, structure_id: int, use_outdated=Fal
         if token:
             req = "https://esi.evetech.net/latest/universe/structures/{}/?datasource=tranquility&token={}".format(
                 structure_id, token.access_token)
-            response = requests.get(req)
+            response = getSession().get(req)
             if response.status_code == 200:
                 cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
                 res_value = response.json()
@@ -1117,7 +1127,7 @@ def esiCorporationsStructures(esi_char_name: str, corporations_id: int, use_outd
         if token:
             req = "https://esi.evetech.net/latest/corporations/{}/structures/?datasource=tranquility&token={}"\
                 .format(corporations_id, token.access_token)
-            response = requests.get(req)
+            response = getSession().get(req)
             if response.status_code == 200:
                 cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
                 res_value = response.json()
@@ -1137,7 +1147,7 @@ def esiLatestSovereigntyMap(use_outdated=False, fore_refresh=False):
         campaigns_list = json.loads(response)
     else:
         req = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1257,7 +1267,7 @@ def esiSearch(esi_char_name: str, search_text, search_category: str, search_stri
           "&categories={cat}&strict={sstr}&search={sys}&token={tok}".format(
             character_id=token.CharacterID, tok=token.access_token,
             sys=search_text, cat=search_category, sstr=search_strict)
-    res = requests.get(req)
+    res = getSession().get(req)
     if res.status_code == 200:
         return res.json()
     else:
@@ -1281,7 +1291,7 @@ def getAllJumpGates(nameChar:str, systemName="", systemNameDst="", callback=None
                 tok=token.access_token,
                 src=systemName,
                 dst=systemNameDst)
-    response = requests.get(req)
+    response = getSession().get(req)
     if response.status_code != 200:
         logging.error(response.reason)
         return None
@@ -1376,7 +1386,7 @@ def esiUniverseStargates(stargate_id, use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/stargates/{}/?datasource=tranquility&language=en".format(stargate_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1394,7 +1404,7 @@ def esiUniverseStations(station_id, use_outdated=False) -> Optional[dict]:
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/stations/{}/?datasource=tranquility&language=en".format(station_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -1413,7 +1423,7 @@ def esiUniverseSystems(system_id, use_outdated=False) -> Optional[dict]:
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/systems/{}/?datasource=tranquility&language=en".format(system_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -1432,7 +1442,7 @@ def esiUniverseAllSystems( use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/systems/?datasource=tranquility&language=en"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -1451,7 +1461,7 @@ def esiAlliances(alliance_id, use_outdated=True):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/alliances/{}/?datasource=tranquility".format(alliance_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -1468,7 +1478,7 @@ def esiUniverseRegions(region_id: int, use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/regions/{}/?datasource=tranquility&language=en".format(region_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -1489,7 +1499,7 @@ def esiUniverseGetAllRegions(use_outdated=False) -> Optional[list]:
         return json.loads(all_systems)
     else:
         url = "https://esi.evetech.net/latest/universe/regions/?datasource=tranquility"
-        response = requests.get(url)
+        response = getSession().get(url)
         if response.status_code == 200:
             cache.putIntoCache("universe_all_regions", response.text, secondUntilExpire(response))
             return response.json()
@@ -1506,7 +1516,7 @@ def esiUniverseConstellations(constellation_id: int, use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/constellations/{}/?datasource=tranquility&language=en".format(constellation_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1522,7 +1532,7 @@ def esiUniverseAllConstellations(use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/constellations/?datasource=tranquility&language=en"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1548,7 +1558,7 @@ def esiUniverseAllCategories(use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/categories/?datasource=tranquility&language=en"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1576,7 +1586,7 @@ def esiUniverseCategories(categorie_id: int, use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/categories/{}/?datasource=tranquility&language=en".format(categorie_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1601,7 +1611,7 @@ def esiUniverseAllGroups(categorie_id: int, use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/groups/?datasource=tranquility&language=en"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1627,7 +1637,7 @@ def esiUniverseGroups(group_id: int, use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/groups/{}/?datasource=tranquility&language=en".format(group_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1653,7 +1663,7 @@ def esiUniverseAllTypes(types_id: int, use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/types/?datasource=tranquility&language=en"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1679,7 +1689,7 @@ def esiUniverseTypes(types_id: int, use_outdated=False):
         return json.loads(cached_id)
     else:
         req = "https://esi.evetech.net/latest/universe/types/{}/?datasource=tranquility&language=en".format(types_id)
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
@@ -1814,7 +1824,7 @@ def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
     if force_check or checked is None:
         new_version = None
         req = "https://api.github.com/repos/jkey-67/spyglass/releases"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code != 200:
             return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
         page_json_found = response.json()
@@ -1888,7 +1898,8 @@ def dumpSpyglassDownloadStats():
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
-    checkSpyglassVersionUpdate("1.1",True)
+    # checkSpyglassVersionUpdate("1.1",True)
+    # res = getAllJumpGates("nele McCool")
     dumpSpyglassDownloadStats()
     res = getSpyglassUpdateLink()
     res = listOfJumpGatePairs()
