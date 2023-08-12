@@ -30,6 +30,7 @@ from vi.cache import Cache
 class JumpbridgeChooser(QtWidgets.QDialog):
     set_jumpbridge_url = pyqtSignal(str)
     update_jumpbridge = pyqtSignal()
+    delete_jumpbridge = pyqtSignal()
     run_jb_generation = False
 
     def __init__(self, parent, url):
@@ -40,6 +41,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.ui.cancelButton.clicked.connect(self.cancelGenerateJumpBridge)
         self.ui.fileChooser.clicked.connect(self.importFileName)
         self.ui.generateJumpBridgeButton.clicked.connect(self.generateJumpBridge)
+        self.ui.deleteAllJumpBridgeButton.clicked.connect(self.removeAllJumpbridges)
         self.ui.generateJumpBridgeButton.setEnabled(evegate.esiCharName() is not None)
         self.ui.urlField.setText(url)
         self.ui.generateJumpBridgeProgress.hide()
@@ -113,3 +115,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
                                            dir=os.path.join(os.path.expanduser("~")))[0]
         if str(path) != "":
             self.ui.urlField.setText(str(path))
+
+    def removeAllJumpbridges(self):
+        self.delete_jumpbridge.emit()
+        QtWidgets.QApplication.processEvents()

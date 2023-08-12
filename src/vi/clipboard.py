@@ -77,7 +77,12 @@ def evaluateClipboardData(content):
                     jb_data["json_dst"] = None
                 return ["jumpbridge", jb_data]
             else:
-                return [None, []]
+                jump_bridge_text.named["id_src"] = None
+                jump_bridge_text.named["id_dst"] = None
+                jump_bridge_text.named["json_src"] = None
+                jump_bridge_text.named["json_dst"] = None
+                return ["jumpbridge", jump_bridge_text.named]
+
         else:
             jump_bridge_text.named["id_src"] = None
             jump_bridge_text.named["id_dst"] = None
@@ -126,7 +131,7 @@ def evaluateClipboardData(content):
             else:
                 return ["poi", simple_text.named]
 
-        if "name" in info.keys():
+        if "name" in info.keys() and "sys" in info.keys():
             structure_search = evegate.esiSearch(
                 esi_char_name=evegate.esiCharName(),
                 search_text="{} - {}".format(info["sys"], info["name"]),
@@ -148,5 +153,9 @@ def evaluateClipboardData(content):
                     station_id=station_search["station"][0])
                 if station_info:
                     return ["poi", station_info]
+
+    html_text = parse("https://{link}", content)
+    if html_text:
+        return ["link", content]
 
     return [None, []]

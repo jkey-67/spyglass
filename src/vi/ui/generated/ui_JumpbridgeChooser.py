@@ -49,11 +49,24 @@ class Ui_JumpbridgeChooser(object):
 
         self.horizontalLayout_4.addItem(self.horizontalSpacer)
 
+        self.deleteAllJumpBridgeButton = QToolButton(self.widget3)
+        self.deleteAllJumpBridgeButton.setObjectName(u"deleteAllJumpBridgeButton")
+        icon1 = QIcon()
+        icon1.addFile(u":/Icons/res/trash-box.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.deleteAllJumpBridgeButton.setIcon(icon1)
+        self.deleteAllJumpBridgeButton.setIconSize(QSize(24, 24))
+
+        self.horizontalLayout_4.addWidget(self.deleteAllJumpBridgeButton)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
+
+        self.horizontalLayout_4.addItem(self.horizontalSpacer_2)
+
         self.generateJumpBridgeButton = QToolButton(self.widget3)
         self.generateJumpBridgeButton.setObjectName(u"generateJumpBridgeButton")
-        icon1 = QIcon()
-        icon1.addFile(u":/Icons/res/arrows-rotate.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.generateJumpBridgeButton.setIcon(icon1)
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/res/arrows-rotate.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.generateJumpBridgeButton.setIcon(icon2)
         self.generateJumpBridgeButton.setIconSize(QSize(24, 24))
 
         self.horizontalLayout_4.addWidget(self.generateJumpBridgeButton)
@@ -82,18 +95,18 @@ class Ui_JumpbridgeChooser(object):
 
         self.fileChooser = QToolButton(self.widget2)
         self.fileChooser.setObjectName(u"fileChooser")
-        icon2 = QIcon()
-        icon2.addFile(u":/Icons/res/load.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.fileChooser.setIcon(icon2)
+        icon3 = QIcon()
+        icon3.addFile(u":/Icons/res/load.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.fileChooser.setIcon(icon3)
         self.fileChooser.setIconSize(QSize(24, 24))
 
         self.horizontalLayout.addWidget(self.fileChooser)
 
         self.saveButton = QToolButton(self.widget2)
         self.saveButton.setObjectName(u"saveButton")
-        icon3 = QIcon()
-        icon3.addFile(u":/Icons/res/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.saveButton.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/Icons/res/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.saveButton.setIcon(icon4)
         self.saveButton.setIconSize(QSize(24, 24))
 
         self.horizontalLayout.addWidget(self.saveButton)
@@ -127,7 +140,6 @@ class Ui_JumpbridgeChooser(object):
 
         QWidget.setTabOrder(self.urlField, self.fileChooser)
         QWidget.setTabOrder(self.fileChooser, self.cancelButton)
-        QWidget.setTabOrder(self.cancelButton, self.generateJumpBridgeButton)
 
         self.retranslateUi(JumpbridgeChooser)
 
@@ -140,6 +152,10 @@ class Ui_JumpbridgeChooser(object):
         self.cancelButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Apply changes", None))
 #endif // QT_CONFIG(tooltip)
         self.cancelButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Apply", None))
+#if QT_CONFIG(tooltip)
+        self.deleteAllJumpBridgeButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Generate the list uf jumpbridges online", None))
+#endif // QT_CONFIG(tooltip)
+        self.deleteAllJumpBridgeButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Generate ", None))
 #if QT_CONFIG(tooltip)
         self.generateJumpBridgeButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Generate the list uf jumpbridges online", None))
 #endif // QT_CONFIG(tooltip)
@@ -166,18 +182,19 @@ class Ui_JumpbridgeChooser(object):
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600; font-style:italic;\">Examples:<"
                         "/span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	System1 &lt;-&gt; System2</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	System1 \u00bb System1</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	SystemA &lt;-&gt; SystemB</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	ID SystemA --&gt; SystemB</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	SystemA \u00bb SystemB</p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">If selected, all jumpbridges will be drawn on map as bezier lines in different shades fo green.</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Write the system names exactly as they are written in the maps.</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">D"
-                        "on't forget the space in between the system names and the jumpbridge!</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Write the system names exactly as they"
+                        " are written in the maps.</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Don't forget the space in between the system names and the jumpbridge!</p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Generate jump bridge:</span></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Generating the jumpbridges may take a while, received data will be cached internally and can be interrupted and continued. For some reasons, the received jumpbridges data may be not accurate.</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Especially esi data sets for systems with heavy fights inside can provide several jumpbridges for only one target system.</p></body></ht"
-                        "ml>", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0;"
+                        " text-indent:0px;\">Especially esi data sets for systems with heavy fights inside can provide several jumpbridges for only one target system.</p></body></html>", None))
         self.label.setText(QCoreApplication.translate("JumpbridgeChooser", u"Select the jump bridge data file or URL for automated updates on startup", None))
     # retranslateUi
 

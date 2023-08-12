@@ -323,8 +323,12 @@ class Cache(object):
 
         """
         with Cache.SQLITE_WRITE_LOCK:
-            query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ?"
-            self.con.execute(query, (src, src))
+            if src is None:
+                query = "DELETE FROM jumpbridge;"
+                self.con.execute(query, ())
+            else:
+                query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ?"
+                self.con.execute(query, (src, src))
             self.con.commit()
 
     def getOutdatedJumpGates(self):

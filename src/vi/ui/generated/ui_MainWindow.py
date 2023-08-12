@@ -677,7 +677,7 @@ class Ui_MainWindow(object):
         self.frameButton.setToolTip(QCoreApplication.translate("MainWindow", u"Restore WIndow Frame", None))
 #endif // QT_CONFIG(tooltip)
         self.frameButton.setText("")
-        self.label.setText(QCoreApplication.translate("MainWindow", u"API Char ", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"API Char", None))
 #if QT_CONFIG(tooltip)
         self.zoomInButton.setToolTip(QCoreApplication.translate("MainWindow", u"Zoom In", None))
 #endif // QT_CONFIG(tooltip)

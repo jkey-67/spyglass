@@ -22,6 +22,8 @@ import datetime
 import sys
 import time
 import requests
+import parse
+
 from typing import Union
 from typing import Optional
 
@@ -930,89 +932,6 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.changeRegionByName(Universe.regionNameFromSystemID(system_id), system_id)
 
-    def prepareContextMenu(self):
-        # Menus - only once
-        region_name = Cache().getFromCache("region_name")
-        logging.info("Initializing contextual menus")
-
-        # Add a contextual menu to the mapView
-        def mapContextMenuEvent(event):
-            self.trayIcon.contextMenu().updateMenu(None)
-            self.trayIcon.contextMenu().exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
-
-        self.ui.mapView.contextMenuEvent = mapContextMenuEvent
-        self.ui.mapView.contextMenu = self.trayIcon.contextMenu()
-
-        # Also set up our app menus
-        if not region_name:
-            self.ui.providenceCatchRegionAction.setChecked(True)
-        elif region_name.startswith("Providencecatch"):
-            self.ui.providenceCatchRegionAction.setChecked(True)
-        elif region_name.startswith("Catch"):
-            self.ui.catchRegionAction.setChecked(True)
-        elif region_name.startswith("Providence"):
-            self.ui.providenceRegionAction.setChecked(True)
-        elif region_name.startswith("Wicked"):
-            self.ui.wickedcreekScaldingpassRegionAction.setChecked(True)
-        elif region_name.startswith("Tack"):
-            self.ui.wickedcreekScaldingpassRegionAction.setChecked(True)
-        elif region_name.startswith("Querious"):
-            self.ui.queriousRegionAction.setChecked(True)
-        else:
-            self.ui.chooseRegionAction.setChecked(False)
-
-        def openDotlan(checked):
-            system = self.trayIcon.contextMenu().currentSystem
-            if system:
-                QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(system.name))
-
-        self.trayIcon.contextMenu().openDotlan.triggered.connect(openDotlan)
-
-        def openZKillboard(checked):
-            system = self.trayIcon.contextMenu().currentSystem
-            if system:
-                QDesktopServices.openUrl(
-                    "https://zkillboard.com/system/{}".format(system.systemId))
-
-        self.trayIcon.contextMenu().openZKillboard.triggered.connect(openZKillboard)
-
-        def setDestination():
-            name = evegate.esiCharName()
-            system = self.trayIcon.contextMenu().currentSystem
-            if system and name:
-                evegate.esiAutopilotWaypoint(name, system.systemId)
-        self.trayIcon.contextMenu().setDestination.triggered.connect(setDestination)
-
-        self.trayIcon.contextMenu().hasJumpGate = lambda name: Cache().hasJumpGate(name)
-
-        def clearJumpGate():
-            Cache().clearJumpGate(self.trayIcon.contextMenu().currentSystem.name)
-            self.jbs_changed.emit()
-
-        self.trayIcon.contextMenu().clearJumpGate.triggered.connect(clearJumpGate)
-
-        def addWaypoint(checked):
-            name = evegate.esiCharName()
-            system = self.trayIcon.contextMenu().currentSystem
-            if name and system:
-                evegate.esiAutopilotWaypoint(name, system, False, False)
-        self.trayIcon.contextMenu().addWaypoint.triggered.connect(addWaypoint)
-
-        def avoidSystem(checked):
-            return
-        self.trayIcon.contextMenu().avoidSystem.triggered.connect(avoidSystem)
-
-        def clearAll(checked):
-            char_name = evegate.esiCharName()
-            for system in self.systems.values():
-                if char_name in system.getLocatedCharacters():
-                    evegate.esiAutopilotWaypoint(char_name, system.systemId)
-                    return
-            return
-        self.trayIcon.contextMenu().clearAll.triggered.connect(clearAll)
-
-        self.trayIcon.contextMenu().changeRegion.triggered.connect(self.changeRegionFromCtxMenu)
-
     def setupMap(self):
         logging.debug("setupMap started...")
         cache = Cache()
@@ -1187,7 +1106,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trayIcon.contextMenu().setStyleSheet(theme)
         logging.info("Setting new theme: {}".format(action.theme))
         Cache().putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
-        self.prepareContextMenu()
 
     def changeSound(self, value=None, disable=False):
         if disable:
@@ -1308,6 +1226,9 @@ class MainWindow(QtWidgets.QMainWindow):
                             json_src=cb_data["json_src"],
                             json_dst=cb_data["json_dst"]):
                         self.jbs_changed.emit()
+                elif cb_type == "link":
+                    QDesktopServices.openUrl(cb_data)
+
             self.oldClipboardContent = content
 
     def mapLinkClicked(self, url: QtCore.QUrl):
@@ -1415,11 +1336,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def callOnJbUpdate(self):
         return
+
     def showJumpbridgeChooser(self):
         url = Cache().getFromCache("jumpbridge_url")
         chooser = JumpbridgeChooser(self, url)
         chooser.set_jumpbridge_url.connect(self.updateJumpbridgesFromFile)
         chooser.update_jumpbridge.connect(self.callOnJbUpdate)
+        chooser.delete_jumpbridge.connect(self.callDeleteJumpbridge)
         chooser.show()
 
     @staticmethod
@@ -1431,6 +1354,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showJumpbridge(self, value):
         self.ui.jumpbridgesButton.setChecked(value)
+
+    def callDeleteJumpbridge(self):
+        Cache().clearJumpGate(None)
+        self.jbs_changed.emit()
+        QApplication.processEvents()
 
     def updateJumpbridgesFromFile(self, url):
         """ Updates the jumpbridge cache from url or local a local file, following
@@ -1460,14 +1388,35 @@ class MainWindow(QtWidgets.QMainWindow):
                     content = []
                     with open(url, 'r') as f:
                         content = f.readlines()
-                    for line in content:
-                        parts = line.strip().split()
-                        # src <-> dst system_id jump_bridge_id
-                        if len(parts) > 2:
-                            data.append(parts)
-                for parts in data:
-                    cache.putJumpGate(src=parts[0], dst=parts[2])
+
+                Cache().clearJumpGate(None)
                 self.jbs_changed.emit()
+                QApplication.processEvents()
+
+                for line in content:
+                    jump_bridge_text = parse.parse("{src} » {dst}", line)
+                    if jump_bridge_text:
+                        cache.putJumpGate(src=jump_bridge_text.named["src"], dst = jump_bridge_text.named["dst"])
+                        continue
+                    jump_bridge_text = parse.parse("{src} » {dst} {}", line)
+                    if jump_bridge_text:
+                        cache.putJumpGate(src=jump_bridge_text.named["src"], dst = jump_bridge_text.named["dst"])
+                        continue
+                    jump_bridge_text = parse.parse("{id} {src} --> {dst}", line)
+                    if jump_bridge_text:
+                        cache.putJumpGate(src=jump_bridge_text.named["src"], dst = jump_bridge_text.named["dst"])
+                        continue
+                    jump_bridge_text = parse.parse("{src} <-> {dst}", line)
+                    if jump_bridge_text:
+                        cache.putJumpGate(src=jump_bridge_text.named["src"], dst=jump_bridge_text.named["dst"])
+                        continue
+                    jump_bridge_text = parse.parse("{src} --> {dst}", line)
+                    if jump_bridge_text:
+                        cache.putJumpGate(src=jump_bridge_text.named["src"], dst=jump_bridge_text.named["dst"])
+                        continue
+
+                self.jbs_changed.emit()
+                QApplication.processEvents()
             Cache().putIntoCache("jumpbridge_url", url)
 
         except Exception as e:
@@ -1786,5 +1735,9 @@ class MainWindow(QtWidgets.QMainWindow):
         res = map_ctx_menu.exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
         if selected_system:
             if self.handleDestinationActions(res, selected_system.systemId):
+                return
+            elif res == map_ctx_menu.clearJumpGate:
+                Cache().clearJumpGate(selected_system.name)
+                self.jbs_changed.emit()
                 return
 

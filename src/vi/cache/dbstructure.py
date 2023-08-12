@@ -72,6 +72,10 @@ def updateDatabase(oldVersion, con):
         queries += ["ALTER TABLE players add COLUMN online INT;",
                     "UPDATE version SET version = 9"]
 
+    # if oldVersion < 10:
+    #     queries += ["ALTER TABLE pointofinterest add COLUMN inx INT;",
+    #                 "UPDATE version SET version = 10"]
+
     for query in queries:
         con.execute(query)
     for update in databaseUpdates:

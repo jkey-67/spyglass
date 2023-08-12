@@ -12,6 +12,9 @@ from vi.clipboard import evaluateClipboardData
 
 
 class TestIntel(unittest.TestCase):
+    # Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
+    # cache_used = Cache()
+    # evegate.setEsiCharName("nele McCool")
 
     def test_system_parser_with_camel_case(self):
         all_systems = Map("providence").systems
@@ -61,3 +64,24 @@ class TestIntel(unittest.TestCase):
         if res_systems:
             for item in res_systems:
                 self.assertEqual("TXJ-II", item.name, "System name 'TXJ' not fetched correct as TXJ-II")
+
+    def test_system_parser_ship_names(self):
+        all_systems = Map("providence").systems
+        formatted_text = u"<rtext>{0}</rtext>".format("TXJ Anna Succubus")
+        soup = BeautifulSoup(formatted_text, 'html.parser')
+        rtext = soup.select("rtext")[0]
+        res_systems = set()
+        parser_functions.parseSystems(all_systems, rtext, res_systems)
+        self.assertFalse(res_systems == set(), "System name 'TXJ' not fetched correct as TXJ-II")
+        if res_systems:
+            for item in res_systems:
+                self.assertEqual("TXJ-II", item.name, "System name 'TXJ' not fetched correct as TXJ-II")
+        self.assertTrue(parser_functions.parseShips(rtext))
+
+    def test_evaluateClipboardData(self):
+        res, data = evaluateClipboardData("<url=showinfo:35832//1039859073627>2PG-KN - Churchwood</url>")
+        self.assertEqual(res, "poi", "Structure should be POI")
+        res, data = evaluateClipboardData("<url=showinfo:52678//60003760 alt='Current Station'>Jita IV - Moon 4 - Caldari Navy Assembly Plant</url>")
+        self.assertEqual(res, "poi", "Structure should be POI")
+        res, data = evaluateClipboardData("OX-S7P » 8CN-CH - Speedway 2")
+        self.assertEqual(res, "jumpbridge", "Structure should be jumpbridge")

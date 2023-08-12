@@ -8,7 +8,7 @@ from vi.clipboard import evaluateClipboardData
 
 
 class TestCache(unittest.TestCase):
-    use_outdated_cache = True
+    use_outdated_cache = False
     curr_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "universe")
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
     cache_used = Cache()
@@ -61,6 +61,14 @@ class TestCache(unittest.TestCase):
             res = json.load(fp)
             systems = [sys["system_id"] for sys in res if sys["constellation_id"] == 20000107]
         self.assertIsNotNone(systems)
+
+    def test_update_all_json_files(self):
+        use_outdated_cache = False
+        self.test_generateShipnames()
+        self.test_generateRegions()
+        self.test_generateConstellations()
+        self.test_generateStargates()
+        use_outdated_cache = True
 
     def test_generateShipnames(self):
         res = evegate.esiUniverseCategories(6, use_outdated=self.use_outdated_cache)
@@ -334,7 +342,6 @@ class TestCache(unittest.TestCase):
         self.assertIsNone(res)
         res = evegate.refreshToken(None)
         self.assertIsNone(res)
-
 
 
 if __name__ == '__main__':
