@@ -26,6 +26,7 @@ from PySide6.QtCore import Signal as pyqtSignal
 from vi.resources import resourcePath
 from PySide6.QtGui import QImage, QPixmap, QDesktopServices
 from vi.ui import Ui_ChatEntry
+from vi.chatparser.message import Message
 
 
 class ChatEntryWidget(QtWidgets.QWidget):
@@ -35,7 +36,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
     questionMarkPixmap = None
     mark_system = pyqtSignal(str)
 
-    def __init__(self, message):
+    def __init__(self, message: Message):
         QtWidgets.QWidget.__init__(self)
         self.message = message
         self.ui = Ui_ChatEntry()
@@ -52,7 +53,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
             self.ui.avatarLabel.setVisible(False)
 
     def __del__(self):
-        logging.debug("ChatEntryWidget __del__ for message {}".format(self.message.message))
+        logging.debug("ChatEntryWidget __del__ for message {}".format(self.message.guiText))
 
     def linkClicked(self, link):
         link = str(link)
@@ -65,9 +66,9 @@ class ChatEntryWidget(QtWidgets.QWidget):
     def updateText(self):
         time = datetime.datetime.strftime(self.message.timestamp, "%H:%M:%S")
         text = u"<small>{time} - <b>{user}</b> - <i>{room}</i></small><br>{text}".format(user=self.message.user,
-                                                                                         room=self.message.room,
+                                                                                         room=self.message.roomName,
                                                                                          time=time,
-                                                                                         text=self.message.message.rstrip(" \r\n").lstrip(" \r\n"))
+                                                                                         text=self.message.guiText.rstrip(" \r\n").lstrip(" \r\n"))
         self.ui.textLabel.setText(text)
 
     def updateAvatar(self, avatar_data) -> bool:

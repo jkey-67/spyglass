@@ -36,28 +36,19 @@
 """
 
 
-import vi.evegate as evegate
+from vi.evegate import checkPlayerName, ERROR, EXISTS, NOT_EXISTS
 from vi.universe import Universe
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString
 from vi import states
-
-
-class CTX:
-    EVE_SYSTEM = ("EVE-System", "EVE System", "Système EVE", "Система EVE")
-    CHARS_TO_IGNORE = ("*", "?", ",", "!", ".", "^")
-    WORDS_TO_IGNORE = ("IN", "IS", "AS")
-    FORMAT_URL = u"""<a style="color:#28a5ed;font-weight:bold" href="link/{0}">{0}</a>"""
-    FORMAT_SHIP = u"""<a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/{0}">{0}</a>"""
-    FORMAT_SYSTEM = u"""<a style="color:#888880;font-weight:bold" href="mark_system/{0}">{1}</a>"""
-    FORMAT_SYSTEM_IN_RERION = u"""<a style="color:#CC8800;font-weight:bold" href="mark_system/{0}">{1}</a>"""
-    STATUS_CLEAR = {"CLEAR", "CLR", "CRL"}
-    STATUS_STATUS = {"STAT", "STATUS"}
-    STATUS_BLUE = {"BLUE", "BLUES ONLY", "ONLY BLUE" "STILL BLUE", "ALL BLUES"}
+from .message import Message
+from .ctx import CTX
+import datetime
 
 
 def textReplace(element, new_text):
     """
+        replace the
 
     Args:
         element(NavigableString):
@@ -74,6 +65,59 @@ def textReplace(element, new_text):
         element.insert_before(newElement)
     element.replace_with("")
     # todo: try element.replaceWith(newElement)
+
+
+def parsePlayerNames(rtext) -> bool:
+    texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
+    for text in texts:
+        tokens = text.strip().split()
+
+        if len(tokens) == 0:
+            continue
+
+        if len(tokens) == 1:
+            search_text = tokens[0].upper()
+            if search_text in CTX.STATUS_CLEAR:
+                return False
+            if search_text in CTX.STATUS_BLUE:
+                return False
+            if search_text in CTX.STATUS_STATUS:
+                return False
+            if len(search_text) < 4:
+                return False
+            search_text = tokens[0]
+            res, id = checkPlayerName(search_text)
+            if res == EXISTS:
+                textReplace(text, CTX.FORMAT_PLAYER_NAME.format(search_text, id))
+                return True
+
+        inx = 0
+        while inx+1 < len(tokens):
+            if len(tokens) > 1:
+                search_text = "{} {}".format(tokens[inx], tokens[inx + 1])
+                res, id = checkPlayerName(search_text)
+                if res == EXISTS:
+                    textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, id)))
+                    return True
+            inx = inx + 1
+        inx = 0
+        while inx + 2 < len(tokens):
+            if len(tokens) > 2:
+                search_text = "{} {} {}".format(tokens[inx], tokens[inx + 1] , tokens[inx + 2])
+                res, id = checkPlayerName(search_text)
+                if res == EXISTS:
+                    textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, id)))
+                    return True
+            inx = inx + 1
+
+        if len(tokens) > 0:
+            search_text = tokens[0]
+            res, id = checkPlayerName(search_text)
+            if res == EXISTS:
+                textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, id)))
+                return True
+
+    return False
 
 
 def parseStatus(rtext):
@@ -141,11 +185,11 @@ def isCharName(name) -> bool:
 
     """
     # todo:implement me
-    name = name
-    return False
+    res = checkPlayerName(name)
+    return res == EXISTS
 
 
-def parseSystems(systems, rtext, systems_found):
+def parseSystems(systems, rtext, systems_found) -> bool:
     """
     Parse a message for system names
     Args:
@@ -160,6 +204,7 @@ def parseSystems(systems, rtext, systems_found):
 
     system_names = Universe.systemNamesUpperCase() #  systems.keys()
     maps_system_name = [sys.upper() for sys in systems]
+
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:
             return in_text.replace(in_word, CTX.FORMAT_SYSTEM_IN_RERION.format(in_system, in_word))
@@ -190,7 +235,7 @@ def parseSystems(systems, rtext, systems_found):
                         # '_____ GATE' mentioned in message, which is not what we're
                         # interested in, so go to checking next word.
                         continue
-                if words[idx + 1].upper() == 'CLR' or words[idx + 1].upper() == 'CLEAR':
+                if words[idx + 1].upper() in CTX.STATUS_CLEAR:
                     if isCharName(words[idx] + " "+words[idx + 1]):
                         continue
             upper_word = word.upper()
@@ -206,7 +251,7 @@ def parseSystems(systems, rtext, systems_found):
                     formatted_text = formatSystem(text, word, match_system_name, False)
                 textReplace(text, formatted_text)
                 return True
-            elif 2 < len(upper_word) < 5:  # - upperWord < 4 chars.
+            elif 3 < len(upper_word) < 5:  # - upperWord < 4 chars.
                 for system in system_names:  # system begins with?
                     if system.startswith(upper_word):
                         match_system_id = Universe.systemIdByName(system)
@@ -225,7 +270,53 @@ def parseSystems(systems, rtext, systems_found):
     return False
 
 
-def parseUrls(rtext):
+def parseMessageForMap(systems_on_map, message: Message) -> Message:
+    """
+        Parse the massage based on the current systems an text
+    Args:
+        systems_on_map:
+        message:
+
+    Returns:
+
+    """
+    original_text = message.plainText
+    formatted_text = u"<rtext>{0}</rtext>".format(original_text)
+    soup = BeautifulSoup(formatted_text, 'html.parser')
+    rtext = soup.select("rtext")[0]
+    systems = set()
+
+    while parseUrls(rtext):
+        continue
+
+    parseSystems(systems_on_map, rtext, systems)
+    #while parseSystems(systems_on_map, rtext, systems):
+    #    continue
+
+    for system in systems:
+        if system in systems_on_map:
+            while parsePlayerNames(rtext):
+                continue
+
+    while parseShips(rtext):
+        continue
+
+    parsed_status = parseStatus(rtext)
+    status = parsed_status if parsed_status is not None else states.ALARM
+
+    message.guiText = str(rtext)
+    message.status = status
+    message.original_text = original_text
+    message.affectedSystems = systems
+    if systems:
+        for system in systems:
+            system.messages.append(message)
+            system.status = status
+
+    return message
+
+
+def parseUrls(rtext) -> bool:
     """Patch text format into an existing  http/https link found in a message.
     Args:
         rtext: The text to be patched
@@ -258,3 +349,34 @@ def parseUrls(rtext):
         for url in urls:
             textReplace(text, formatUrl(text, url))
             return True
+
+
+def parseLocal(path, char_name, line) -> Message:
+    """
+        Parse a local file for a change of th current system.
+    Args:
+        path: the name of the monitored file
+        char_name: the players  name which is assigned to the pathname
+        line: the new line of text to be parsed
+
+    Returns:
+        Message Object which hold the information regarding the change of the system
+            user: holds the name of the character
+            status : if states.LOCATION a change of the system is required
+            affectedSystems: a list holding the name of the system
+
+    """
+    message = Message(room="Local", message=line)
+
+    if message.user in CTX.EVE_SYSTEM:
+        if ":" in message.plainText:
+            message.user = char_name
+            message.affectedSystems = [message.plainText.split(":")[1].strip().replace("*", "")]
+            message.status = states.LOCATION
+        else:
+            # We could not determine if the message was system-change related
+            message.affectedSystems.clear()
+            message.status = states.IGNORE
+    else:
+        message.status = states.IGNORE
+    return message

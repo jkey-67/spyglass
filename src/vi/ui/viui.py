@@ -64,6 +64,7 @@ from PySide6.QtSql import QSqlQueryModel
 
 from vi.ui import Ui_MainWindow, Ui_EVESpyInfo, Ui_SoundSetup
 
+from vi.chatparser.message import Message
 """
  Timer intervals
 """
@@ -1253,7 +1254,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setLocation(self, char_name, system_name: str, change_region: bool = False):
         """
-        Change the location of the char to the given system inside the current map, if required the region may be changed.
+        Change the location of the char to the given system inside the current map, if required the region may be
+        changed. If the character is api registerd, the actual system will be shown in the center of the screen.
 
         Args:
             char_name: name of the character
@@ -1448,7 +1450,7 @@ class MainWindow(QtWidgets.QMainWindow):
         chooser.new_region_chosen.connect(handleRegionChosen)
         chooser.show()
 
-    def addMessageToIntelChat(self, message):
+    def addMessageToIntelChat(self, message: Message):
         scroll_to_bottom = False
         if self.ui.chatListWidget.verticalScrollBar().value() == self.ui.chatListWidget.verticalScrollBar().maximum():
             scroll_to_bottom = True
@@ -1646,7 +1648,7 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.debug("Map statistic update  succeeded.")
         elif data["result"] == "error":
             text = data["text"]
-            self.trayIcon.showMessage("Loading statistics failed", text, 3)
+            # self.trayIcon.showMessage("Loading statistics failed", text, 3)
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
     def zoomMapIn(self):
@@ -1661,7 +1663,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for message in messages:
             # If players location has changed
             if message.status == states.LOCATION:
-                locale_to_set[message.user] = message.systems
+                locale_to_set[message.user] = message.affectedSystems
             elif message.canProcess():
                 self.addMessageToIntelChat(message)
                 """
@@ -1669,8 +1671,8 @@ class MainWindow(QtWidgets.QMainWindow):
                  and alarm if within alarm distance.
                 """
                 systems_on_map = self.systems
-                if message.systems:
-                    for system in message.systems:
+                if message.affectedSystems:
+                    for system in message.affectedSystems:
                         system_name = system.name
                         if system_name in systems_on_map.keys():
                             systems_on_map[system_name].setStatus(message.status, message.timestamp)

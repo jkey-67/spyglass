@@ -385,16 +385,18 @@ def checkPlayerName(char_name):
         Returns:
              int: 1 if exists, 0 if not and -1 if an error occurred
     """
+    res_id = None
     if not char_name:
-        return ERROR
+        return ERROR, res_id
     try:
-        if esiCharNameToId(char_name):
-            return EXISTS
+        res_id = esiCharNameToId(char_name)
+        if res_id:
+            return EXISTS, res_id
         else:
-            return NOT_EXISTS
+            return NOT_EXISTS, res_id
     except Exception as e:
         logging.error("Exception on checkPlayerName: %s", e)
-    return ERROR
+    return ERROR, res_id
 
 
 def esiCharacters(char_id, use_outdated=False):

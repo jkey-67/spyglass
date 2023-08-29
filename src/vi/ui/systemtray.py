@@ -32,6 +32,7 @@ from vi import states
 from vi.ui.styles import Styles
 from vi.soundmanager import SoundManager
 from vi.cache import Cache
+from vi.chatparser.message import Message
 
 
 class ActionPackage(QObject):
@@ -400,10 +401,10 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             cm.alarmCheck.setChecked(new_value)
         self.showAlarm = new_value
 
-    def showNotification(self, message, system, char, distance):
+    def showNotification(self, message: Message, system, char, distance):
         if message is None:
             return
-        room = message.room
+        room = message.roomName
         title = None
         text = None
         icon = None

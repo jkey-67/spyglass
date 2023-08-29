@@ -50,9 +50,16 @@ def evaluateClipboardData(content):
         else:
             jump_bridge_text = None
 
+    if jump_bridge_text is None:
+        jump_bridge_text = parse('{src} » {dst} - {name}', content)
+
+    if jump_bridge_text is None:
+        jump_bridge_text = parse('{src} {p1} --> {dst} {p2}', content)
+
+
     if jump_bridge_text and len(jump_bridge_text.named) > 2:
         jb_data = dict()
-        if evegate.esiCharName():
+        if evegate.esiCharName() and False:
             structure = evegate.esiSearch(
                 esi_char_name=evegate.esiCharName(),
                 search_text="{} » {}".format(jump_bridge_text["src"], jump_bridge_text["dst"]),
@@ -154,8 +161,8 @@ def evaluateClipboardData(content):
                 if station_info:
                     return ["poi", station_info]
 
-    html_text = parse("https://{link}", content)
-    if html_text:
-        return ["link", content]
+    #html_text = parse("https://{link}", content)
+    #if html_text:
+    #    return ["link", content]
 
     return [None, []]

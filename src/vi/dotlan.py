@@ -698,6 +698,7 @@ class System(object):
         self.transform = "translate(0, 0)" if transform is None else transform
         self.cachedOffsetPoint = None
         self._neighbours = set()
+        self.__alarmDistances = set()
         self.statistics = {"jumps": "?", "shipkills": "?", "factionkills": "?", "podkills": "?"}
         self.currentStyle = ""
         self.__hasCampaigns = False

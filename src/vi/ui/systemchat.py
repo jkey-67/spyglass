@@ -75,7 +75,7 @@ class SystemChat(QtWidgets.QDialog):
         if self.chatType == SystemChat.SYSTEM:
             message = entry.message
             avatarPixmap = entry.ui.avatarLabel.pixmap()
-            if self.selector in message.systems:
+            if self.selector in message.affectedSystems:
                 self._addMessageToChat(message, avatarPixmap)
 
     def openDotlan(self):
