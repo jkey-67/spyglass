@@ -63,10 +63,11 @@ class TestCache(unittest.TestCase):
         self.assertIsNotNone(systems)
 
     def test_update_all_json_files(self):
-        use_outdated_cache = False
+        use_outdated_cache = True
         self.test_generateShipnames()
         self.test_generateRegions()
         self.test_generateConstellations()
+        use_outdated_cache = False
         self.test_generateStargates()
         use_outdated_cache = True
 
@@ -209,16 +210,16 @@ class TestCache(unittest.TestCase):
             cnt = 6
             first_entry = True
             for itm in res:
-                res = evegate.esiUniverseRegions(itm,use_outdated=self.use_outdated_cache)
+                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
                 self.assertIsNotNone(res, "esiUniverseGroups should never return None")
                 for constellation_id in res["constellations"]:
-                    res = evegate.esiUniverseConstellations(constellation_id,use_outdated=self.use_outdated_cache)
+                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache)
                     for sys_id in res["systems"]:
-                        res = evegate.esiUniverseSystems(sys_id,use_outdated=self.use_outdated_cache)
-                        if "stargates" not in res:
+                        res = evegate.esiUniverseSystems(sys_id, use_outdated=self.use_outdated_cache)
+                        if res is None or "stargates" not in res:
                             continue
                         for stargate_id in res["stargates"]:
-                            res = evegate.esiUniverseStargates(stargate_id,use_outdated=self.use_outdated_cache)
+                            res = evegate.esiUniverseStargates(stargate_id, use_outdated=self.use_outdated_cache)
                             ship_text = u'{}'.format(json.dumps(res))
                             curr_len = curr_len + len(ship_text)
                             if curr_len > max_len:
