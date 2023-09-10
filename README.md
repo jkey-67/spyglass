@@ -68,6 +68,17 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - fix high sec system now found, new ships added
  - using shorter npc faction names on map
 
+### 1.6.6
+ - icons added on gui
+ - bug fixes to improve stability 
+
+### 1.6.7
+ - stargates added
+ - now Jumpbridges can be used without esi validation   
+ - bug fixes for chat parsing  
+ - bug fixes to improve stability
+
+
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
