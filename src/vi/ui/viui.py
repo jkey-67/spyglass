@@ -65,6 +65,8 @@ from PySide6.QtSql import QSqlQueryModel
 from vi.ui import Ui_MainWindow, Ui_EVESpyInfo, Ui_SoundSetup
 
 from vi.chatparser.message import Message
+
+from vi.zkillboard import zkillMonitor
 """
  Timer intervals
 """
@@ -869,11 +871,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
         self.statisticsThread.start()
         self.apiThread = None
+
+        #self.zkillboard = zkillMonitor(parent=self)
+        #self.zkillboard.startConnect()
+
         logging.info("Set up threads and their connections done.")
 
     def _terminateThreads(self):
         logging.info("Stop the threads ...")
         try:
+            #self.zkillboard.startDisconnect()
             SoundManager().quit()
             SoundManager().wait()
             self.avatarFindThread.quit()

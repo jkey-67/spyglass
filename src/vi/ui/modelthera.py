@@ -34,13 +34,13 @@ class TableModelThera(QAbstractTableModel):
         self.thera_data = checkTheraConnections(system_name)
         self.model_display_list = [
             # {"Out ID": ["id"]},
-            {"Out Sig": ["signatureId"]},
-            {"In ID": ["wormholeDestinationSignatureId"]},
+            {"Sig In": ["wormholeDestinationSignatureId"]},
+            {"Sig Out": ["signatureId"]},
+            {"Region": ["destinationSolarSystem", "region", "name"]},
+            # {"Status": ["status"]},
             {"System": ["destinationSolarSystem", "name"]},
             {"Security": ["destinationSolarSystem", "security"]},
             {"Jumps": ["jumps"]},
-            {"Region": ["destinationSolarSystem", "region", "name"]},
-            # {"Status": ["status"]},
             # {"lys": ["lightyears"]},
             # {"Destination Constellation ID": ["destinationSolarSystem", "constellationID"]},
             # {"Destination Region ID": ["destinationSolarSystem", "regionId"]},
@@ -83,8 +83,6 @@ class TableModelThera(QAbstractTableModel):
             # {"Destination System ID": ["destinationSolarSystem", "id"]},
             # {"Destination ID": ["destinationSolarSystem", "region", "id"]},
             # {"Destination": ["destinationSolarSystem", "region", "name"]},
-            # {"Route": ["jump_route"]}]
-
 
             #{"Out Sig": ["signatureId"]},
             #{"In Sig": ["wormholeDestinationSignatureId"]},

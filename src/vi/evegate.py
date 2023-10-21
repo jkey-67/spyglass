@@ -24,7 +24,7 @@ import time
 import parse
 import threading
 from vi.universe import Universe
-
+from vi.universe.routeplanner import RoutPlanner
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QThread, QUrl
 from PySide6.QtCore import Signal as pyqtSignal
@@ -1851,19 +1851,24 @@ def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
                 "Pending version check, current version is {}.".format(checked)]
 
 
-def checkTheraConnections(system_name="1-7HVI", fetch_jump_route=False):
-    req = "https://www.eve-scout.com/api/wormholes?systemSearch={}".format(system_name)
-    response = requests.get(req)
-    if response.status_code == 200:
-        thera_connections = response.json()
+def checkTheraConnections(system_name="1-7HVI", fetch_jump_route=True):
+    thera_connections = Cache().getThreaConnections()
+    if len(thera_connections) == 0:
+        req = "https://www.eve-scout.com/api/wormholes?systemSearch={}".format(system_name)
+        response = requests.get(req)
+        if response.status_code == 200:
+            Cache().setThreaConnections(response.text)
+            thera_connections = response.json()
+
+    if len(thera_connections):
         jump_pairs = listOfJumpGatePairs()
         src_id = Universe.systemIdByName(system_name)
         for thera_item in thera_connections:
             dst_id = thera_item["destinationSolarSystem"]["id"]
             if 31000920 != src_id and 31000920 != dst_id:
                 if fetch_jump_route:
-                    thera_item["jump_route"] = getRouteFromEveOnline(jump_pairs, src_id, dst_id)
-                    thera_item["jumps"] = len(thera_item["jump_route"])
+                    cons = len(RoutPlanner.findRouteByID(src_id, dst_id, use_ansi=True))
+                    thera_item["jumps"] = cons -1 if cons > 0 else 0
         return thera_connections
     else:
         return []

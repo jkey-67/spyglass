@@ -589,3 +589,12 @@ class Cache(object):
             self.con.execute(query)
             self.con.commit()
 
+    def setThreaConnections(self, data):
+        self.putIntoCache("Thera_Connections", data, 60)
+
+    def getThreaConnections(self):
+        data = self.getFromCache("Thera_Connections")
+        if data is not None:
+            return json.loads(data)
+        else:
+            return list()

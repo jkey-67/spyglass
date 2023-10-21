@@ -67,7 +67,10 @@ class Message(object):
         try:
             return datetime.datetime.strptime(time_str, "%Y.%m.%d %H:%M:%S")
         except ValueError:
-            return None
+            try:
+                return datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ")
+            except ValueError:
+                return None
 
 
     @staticmethod

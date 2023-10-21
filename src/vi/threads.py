@@ -24,6 +24,7 @@ import os
 from PySide6.QtCore import QThread
 from PySide6.QtCore import Signal as pyqtSignal
 from vi import evegate
+from vi import zkillboard
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 
