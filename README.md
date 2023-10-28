@@ -79,7 +79,11 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - bug fixes to improve stability
 
 ### 1.6.8
- - using zkillboard webstream as intel source
+ - alliances with access to the intel channels will be marked as friendly  
+ - now using the zKillboard webstream as source for intel if victim or attacker is part of an alliance which is marked as friendly     
+ - calculation of the path length now includes jump bridges
+ - bug fixes for the sqlite database 
+ - the intel status is displayed in transparent tool window on hover  
 
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
@@ -133,6 +137,8 @@ https://pypi.org/project/requests/
 https://pypi.org/project/parse/ 
 - espeakng (awaiting QtTextToSpeech)
 https://pypi.org/project/espeakng/
+- networkx
+https://networkx.org/
 
 Optional use the Windows installer https://github.com/espeak-ng/espeak-ng/releases
 

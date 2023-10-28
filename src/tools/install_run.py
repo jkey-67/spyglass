@@ -3,7 +3,12 @@ import PyInstaller.__main__
 import os
 
 def instFiles():
-    
+    """
+        generate the linux installer
+    Returns:
+        None
+    """
+
     workdir = os.path.abspath(os.path.join(os.getcwd(), "..", ".."))
     devdir = workdir
     distdir = os.path.join(devdir, 'dist')
@@ -16,7 +21,7 @@ def instFiles():
         '--workpath', builddir,
         '--onefile',
         '--windowed',
-        '--name', 'spyglass-1.6.7.run',
+        '--name', 'spyglass-1.6.8.run',
         '../spyglass.py',
         '--icon=../icon.ico',
         "--add-data=../vi/universe/*.json:./vi/universe",

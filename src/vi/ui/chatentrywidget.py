@@ -41,8 +41,12 @@ class ChatEntryWidget(QtWidgets.QWidget):
         self.message = message
         self.ui = Ui_ChatEntry()
         self.ui.setupUi(self)
-        if not self.questionMarkPixmap:
-            self.questionMarkPixmap = QPixmap(resourcePath(os.path.join("vi", "ui", "res", "qmark.png"))).scaledToHeight(self.DIM_IMG)
+        if self.message.roomName == "zKillboard":
+            self.questionMarkPixmap = QPixmap(
+                resourcePath(os.path.join("vi", "ui", "res", "zKillboard.svg"))).scaledToHeight(self.DIM_IMG)
+        elif not self.questionMarkPixmap:
+            self.questionMarkPixmap = QPixmap(
+                resourcePath(os.path.join("vi", "ui", "res", "qmark.png"))).scaledToHeight(self.DIM_IMG)
 
         self.ui.avatarLabel.setPixmap(self.questionMarkPixmap)
 
@@ -68,7 +72,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
         text = u"<small>{time} - <b>{user}</b> - <i>{room}</i></small><br>{text}".format(user=self.message.user,
                                                                                          room=self.message.roomName,
                                                                                          time=time,
-                                                                                         text=self.message.guiText.rstrip(" \r\n").lstrip(" \r\n"))
+                                                                                         text=self.message.guiText.rstrip("\r\n").lstrip("\r\n"))
         self.ui.textLabel.setText(text)
 
     def updateAvatar(self, avatar_data) -> bool:
@@ -80,7 +84,15 @@ class ChatEntryWidget(QtWidgets.QWidget):
         Returns:
             False: if no image voud be loaded from the blob
         """
-        image = QImage.fromData(avatar_data)
+        if type(avatar_data) is QImage:
+            image = avatar_data
+        elif type(avatar_data) is bytes:
+            image = QImage.fromData(avatar_data)
+        elif type(avatar_data) is str:
+            image = QImage(avatar_data)
+        else:
+            return False
+
         pixmap = QPixmap.fromImage(image)
         if pixmap.isNull():
             return False

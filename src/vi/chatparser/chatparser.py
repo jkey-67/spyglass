@@ -142,8 +142,8 @@ class ChatParser(object):
 
         message = Message(room=room_name,
                           message=line)
-
-        if message.timestamp < datetime.datetime.utcnow()-datetime.timedelta(minutes=self.intelTime):
+        valid_timestamp = datetime.datetime.utcnow()-datetime.timedelta(minutes=self.intelTime)
+        if message.timestamp < valid_timestamp:
             logging.debug("Skip {} Room:{}".format(line, room_name))
             return None
 

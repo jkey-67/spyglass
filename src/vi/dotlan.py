@@ -941,6 +941,35 @@ class System(object):
         self.firstLine["style"] = self.SYSTEM_STYLE.format(line_colour)
         self.secondLine["style"] = self.ALARM_STYLE.format(line_colour)
 
+    def getTooltipText(self):
+        format_src = '''<p><span style=" font-weight:600; color:#e5a50a;">{system}</span>'''\
+                     '''<span style=" font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span></p>'''\
+                     '''<p><span style=" font-weight:600; color:#e01b24;">{systemstats}</span></p>'''
+
+                     # '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''\
+                     # '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''\
+
+
+        res = format_src.format(
+            system=self.name,
+            ticker=self.ticker,
+            systemstats=self.svgtext.string,
+            timers="",
+            zkillinfo=""
+        )
+
+        for msg in self.messages:
+            res = res + "<br/>" + msg.guiText
+        return res + "</p>"
+
+    def clearIntel(self):
+        self.messages.clear()
+        self.setStatus( states.UNKNOWN )
+
+    def pruneMessage(self, message):
+        if message in self.messages:
+            self.messages.remove(message)
+
 
 def convertRegionName(name):
     """

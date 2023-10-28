@@ -1,3 +1,5 @@
+import logging
+
 import networkx as nx
 from vi.cache import cache
 from vi.universe import Universe
@@ -27,7 +29,12 @@ class RoutPlanner(object):
             graph = RoutPlanner.UNIVERSE.copy()
             if use_ansi:
                 for itm in cache.Cache().getJumpGates():
-                    graph.add_edge(Universe.systemIdByName(itm[0]), Universe.systemIdByName(itm[2]))
+                    src = Universe.systemIdByName(itm[0])
+                    dst = Universe.systemIdByName(itm[2])
+                    if src is not None and dst is not None:
+                        graph.add_edge(src, dst)
+                    else:
+                        logging.info("Invalid jump bridge data")
 
             if use_thera:
                 for itm in cache.Cache().getThreaConnections():
@@ -36,7 +43,8 @@ class RoutPlanner(object):
                     graph.add_edge(id_src, id_dst)
 
             return nx.shortest_path(graph, source=src_id, target=dst_id)
-        except:
+        except Exception as ex:
+            logging.info("Invalid jump bridge data {}".format(ex))
             return list()
 
     @staticmethod

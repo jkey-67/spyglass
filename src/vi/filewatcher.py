@@ -118,3 +118,7 @@ class FileWatcher(QtCore.QThread):
             except Exception as e:
                 logging.error(e)
         self.files = files_in_dir
+
+    def addMonitorFile(self, filename):
+        self.files[filename]=0
+        self.fileWatcher.addPath(filename)

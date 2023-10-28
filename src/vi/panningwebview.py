@@ -17,13 +17,13 @@
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 from PySide6.QtWidgets import QApplication
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QToolTip
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtGui import *
 from PySide6 import QtCore, QtSvg
 
 from PySide6.QtCore import QPoint, QPointF
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent
 import logging
 
 
@@ -154,7 +154,7 @@ class PanningWebView(QWidget):
             QApplication.restoreOverrideCursor()
             return
 
-    def hoveCheck(self, pos: QPointF) -> bool:
+    def hoveCheck(self, global_pos: QPoint, map_pos: QPoint) -> bool:
         return False
 
     def doubleClicked(self, pos: QPoint) -> bool:
@@ -187,8 +187,16 @@ class PanningWebView(QWidget):
             self.scrolling = True
             self.webViewScrolled.emit(True)
             return
-        if self.hoveCheck(self.mapPosFromEvent(mouse_event)):
+        if self.hoveCheck(mouse_event.globalPos(), self.mapPosFromEvent(mouse_event)):
             QApplication.setOverrideCursor(QtCore.Qt.PointingHandCursor)
         else:
             QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
         return
+
+    def tooltipAtMapPosition(self, global_pos: QPoint, map_pos: QPoint) -> bool:
+        return False
+
+    def event(self, event) -> bool:
+        if event.type() == QEvent.ToolTip:
+            return self.tooltipAtMapPosition(event.globalPos(), self.mapPosFromEvent(event))
+        return super(PanningWebView, self).event(event)

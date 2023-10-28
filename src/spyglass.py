@@ -22,9 +22,10 @@ import sys
 import os
 import logging
 import traceback
-
+import datetime
 from logging.handlers import RotatingFileHandler
 from PySide6 import QtGui, QtWidgets, QtCore
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtSql import QSqlDatabase
 
@@ -34,6 +35,7 @@ from vi.cache import cache
 from vi.ui.styles import Styles
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
+from vi.zkillboard import zkillMonitor
 
 def exceptHook(exception_type, exception_value, traceback_object):
     """
@@ -122,6 +124,11 @@ class Application(QApplication):
         change_splash_text("setting local directory for cache and logging")
 
         spyglass_dir = os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)), "spyglass")
+        zkillMonitor.MONITORING_PATH = \
+            os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)),
+                         "spyglass",
+                         datetime.datetime.strftime(datetime.datetime.utcnow(), "zKillboard_daily_logfile_%Y%m%d.txt"))
+
         if not os.path.exists(spyglass_dir):
             os.mkdir(spyglass_dir)
         cache.Cache.PATH_TO_CACHE = os.path.join(spyglass_dir, "cache-2.sqlite3")
@@ -144,7 +151,7 @@ class Application(QApplication):
 
         if back_ground_color:
             self.setStyleSheet("background-color: %s;" % back_ground_color)
-        css = Styles().getStyle()
+        css = Styles.getStyle()
         self.setStyleSheet(css)
         del css
 

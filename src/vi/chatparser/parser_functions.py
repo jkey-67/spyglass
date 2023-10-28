@@ -308,6 +308,7 @@ def parseMessageForMap(systems_on_map, message: Message) -> Message:
     message.status = status
     message.original_text = original_text
     message.affectedSystems = systems
+
     if systems:
         for system in systems:
             system.messages.append(message)

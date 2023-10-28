@@ -123,7 +123,7 @@ class Cache(object):
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM cache WHERE key = ?"
             self.con.execute(query, (key,))
-            query = "INSERT INTO cache (key, data, modified, maxAge) VALUES (?, ?, ?, ?)"
+            query = "INSERT INTO cache (key, data, modified, maxage) VALUES (?, ?, ?, ?)"
             self.con.execute(query, (key, value, time.time(), max_age))
             self.con.commit()
 
@@ -155,7 +155,7 @@ class Cache(object):
             raise Exception("SQLITE_WRITE_LOCK not locked")
         query = "DELETE FROM cache WHERE key = ?;"
         self.con.execute(query, (key,))
-        query = "INSERT INTO cache (key, data, modified, maxAge) VALUES (?, ?, ?, ?);"
+        query = "INSERT INTO cache (key, data, modified, maxage) VALUES (?, ?, ?, ?);"
         self.con.execute(query, (key, value, time.time(), max_age))
 
     def getFromCache(self, key, outdated=False) -> Optional[any]:
@@ -186,7 +186,7 @@ class Cache(object):
             self.con.execute(query)
             self.con.commit()
 
-    def putImageToCache(self, name, data):
+    def putImageToAvatar(self, name, data):
         """ Put the picture of a player or other item into the avatars table
 
         Args:
@@ -196,15 +196,20 @@ class Cache(object):
               data:Picture data to be inserted as blob
         """
         with Cache.SQLITE_WRITE_LOCK:
-            # data is a blob, so we have to change it to buffer
-            data = to_blob(data)
-            query = "DELETE FROM avatars WHERE charname = ?"
-            self.con.execute(query, (name,))
-            query = "INSERT INTO avatars (charname, data, modified) VALUES (?, ?, ?)"
-            self.con.execute(query, (name, data, time.time()))
+            select_query = "SELECT charname FROM avatars WHERE charname = ?"
+            founds = self.con.execute(select_query, (name,)).fetchall()
+            if founds != []:
+                # data is a blob, so we have to change it to buffer
+                data = to_blob(data)
+                query = "UPDATE avatars SET data = ?, modified = ?  WHERE charname = ?"
+                self.con.execute(query, (data, time.time(), name))
+            else:
+                data = to_blob(data)
+                query = "INSERT INTO avatars (charname, data, modified, maxage) VALUES (?, ?, ?,?)"
+                self.con.execute(query, (name, data, time.time(), 47*24*60*60))
             self.con.commit()
 
-    def getImageFromCache(self, name) -> Optional[bytes]:
+    def getImageFromAvatar(self, name) -> Optional[bytes]:
         """ Getting the avatars_pictures data from the Cache. Returns None if there is no entry in the cache
 
         Args:
@@ -222,7 +227,87 @@ class Cache(object):
             data = from_blob(founds[0][0])
             return data
 
-    def clearOutdatedImages(self, months: int = 12):
+
+    def putImageToIconCache(self, icon_id:int, data):
+        """ Put the icon of an item into the iconcache table
+
+        Args:
+            icon_id(int):Key of interests
+
+        Args:
+              data:Picture data to be inserted as blob
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            select_query = "SELECT id FROM iconcache WHERE id = ?"
+            icon_founds = self.con.execute(select_query, (icon_id,)).fetchall()
+            if icon_founds != []:
+                # data is a blob, so we have to change it to buffer
+                data = to_blob(data)
+                query = "UPDATE iconcache SET icon = ?, modified = ?  WHERE id = ?"
+                self.con.execute(query, (data, time.time(), icon_id))
+            else:
+                data = to_blob(data)
+                query = "INSERT INTO iconcache (id, icon, modified, maxage) VALUES (?, ?, ?,?)"
+                self.con.execute(query, (icon_id, data, time.time(), 365*24*60*60))
+            self.con.commit()
+
+    def getImageFromIconCache(self, icon_id: int) -> Optional[bytes]:
+        """ Getting the image data from the Cache. Returns None if there is no entry in the cache
+
+        Args:
+            icon_id(int):Key of interests
+
+        Returns:
+            bytes:blob of data or None
+        """
+        select_query = "SELECT icon FROM iconcache WHERE id = ?"
+        founds = self.con.execute(select_query, (icon_id,)).fetchall()
+        if len(founds) == 0:
+            return None
+        else:
+            # dats is buffer, we convert it back to str
+            data = from_blob(founds[0][0])
+            return data
+
+    def putJsonToAvatar(self, player_name: str, json_txt: str, player_id=None, alliance_id=None):
+        """ Put the picture of a player or other item into the avatars table
+
+        Args:
+            player_name(str):Key of interests
+            json_txt: text of json description
+            player_id: id of player
+            alliance_id: alliance id of player
+
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            select_query = "SELECT charname FROM avatars WHERE charname = ?"
+            founds = self.con.execute(select_query, (player_name,)).fetchall()
+            if founds != []:
+                # data is a blob, so we have to change it to buffer
+                query = "UPDATE avatars SET json = ?, modified = ? ,player_id = ?, alliance_id = ?  WHERE charname = ?"
+                self.con.execute(query, (json_txt, time.time(), player_name, player_id, alliance_id))
+            else:
+                query = "INSERT INTO avatars (charname, json, modified, player_id, alliance_id, maxage) VALUES (?, ?, ?, ?, ?, ?)"
+                self.con.execute(query, (player_name, json_txt, time.time(), player_id, alliance_id, 48*24*60*60))
+            self.con.commit()
+
+    def getJsonFromAvatar(self, name) -> Optional[bytes]:
+        """ Getting the avatars_pictures data from the Cache. Returns None if there is no entry in the cache
+
+        Args:
+            name(str):Key of interests
+
+        Returns:
+            bytes:blob of data or None
+        """
+        select_query = "SELECT json FROM avatars WHERE charname = ?"
+        res = self.con.execute(select_query, (name,)).fetchall()
+        if len(res):
+            return res[0][0]
+        else:
+            return None
+
+    def clearOutdatedAvatar(self, months: int = 12):
         """
         Clears all images older than 6 months
 
@@ -514,7 +599,7 @@ class Cache(object):
     def putAPIKey(self, key, max_age=60 * 60 * 24 * 90):
         self.clearAPIKey(key["CharacterName"])
         with Cache.SQLITE_WRITE_LOCK:
-            query = "INSERT INTO players (id, name, key, active, modified, max_age) VALUES (?, ?, ?, ?, ?, ?)"
+            query = "INSERT INTO players (id, name, key, active, modified, maxage) VALUES (?, ?, ?, ?, ?, ?)"
             self.con.execute(query,
                              (key["CharacterID"], key["CharacterName"], json.dumps(key), 1, time.time(), max_age))
             self.con.commit()
@@ -542,7 +627,7 @@ class Cache(object):
         with self as cache:
             for player_name in values:
                 if player_name not in current_players:
-                    query = "INSERT INTO players (name, modified, active,max_age) VALUES (?, ?, 1, ?)"
+                    query = "INSERT INTO players (name, modified, active,maxage) VALUES (?, ?, 1, ?)"
                     cache.con.execute(query, (player_name, time.time(), secondsTillDowntime()))
             cache.con.commit()
 
@@ -557,7 +642,7 @@ class Cache(object):
         with self as cache:
             for player_name in current_players | values:
                 if player_name not in current_players:
-                    query = "INSERT INTO players (active,name,max_age) VALUES (?, ?, {});".format(secondsTillDowntime())
+                    query = "INSERT INTO players (active,name,maxage) VALUES (?, ?, {});".format(secondsTillDowntime())
                 else:
                     query = "UPDATE  players SET active = ?  WHERE name = ?;"
                 cache.con.execute(query, (player_name in values, player_name))
@@ -570,7 +655,7 @@ class Cache(object):
         with self as cache:
             for player_name in current_players | online_player_names:
                 if player_name not in current_players:
-                    query = "INSERT INTO players (active,online,name,max_age) VALUES (?,1, ?, {});".format(secondsTillDowntime())
+                    query = "INSERT INTO players (active,online,name,maxage) VALUES (?,1, ?, {});".format(secondsTillDowntime())
                     cache.con.execute(query, (player_name in online_player_names, player_name))
                 query = "UPDATE  players set modified = ?  online=1 WHERE name= ? ;"
                 cache.con.execute(query, (time.time(), player_name))
@@ -585,7 +670,7 @@ class Cache(object):
 
         """
         with Cache.SQLITE_WRITE_LOCK:
-            query = "DELETE FROM players WHERE datetime(modified+max_age,'unixepoch') < datetime() and key is null"
+            query = "DELETE FROM players WHERE datetime(modified+maxage,'unixepoch') < datetime() and key is null"
             self.con.execute(query)
             self.con.commit()
 
@@ -598,3 +683,91 @@ class Cache(object):
             return json.loads(data)
         else:
             return list()
+
+    def insertAlliance(self, alliance_id, alliance_name, alliance_standing=None):
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "INSERT INTO alliances (id,name,standing,maxage) VALUES (?,?, ?);"
+            self.con.execute(query, alliance_id, alliance_name, alliance_standing)
+            self.con.commit()
+
+    def getAllianceRed(self) -> list:
+        """
+            get all red alliances from database
+        Returns:
+
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT id FROM alliances WHERE standing <= 0 "
+            res = self.con.execute(query).fetchall()
+        lst = list()
+        for i in res:
+            lst.append(i[0])
+        return lst
+
+    def getAllianceBlue(self) -> list:
+        """
+            get all blue alliances from database
+        Returns:
+
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT alliance_id FROM avatars WHERE alliance_id is not NULL"
+            res = self.con.execute(query).fetchall()
+        lst = list()
+        for i in res:
+            lst.append(i[0])
+        res = list(dict.fromkeys(lst))
+        return res
+
+    def clearOutdatedKillmails(self):
+        """
+        Clears all expired kill mails
+
+        Returns:
+            None
+
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            self.con.execute("DELETE FROM killmails WHERE datetime(modified+maxage,'unixepoch') < datetime()")
+            self.con.commit()
+
+    def putKillmailtoCache(self, killmail_id, system_id, region_id, json_txt, modified=time.time(), maxage=48*60*60) -> None:
+        """
+            Puts a zKillboard notification into the database
+        Args:
+            killmail_id:
+            system_id: id of system
+            region_id: id of the reagion
+            json_txt:
+            modified:
+            maxage: two days 48h
+
+        Returns:
+            None
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            self.con.execute("DELETE FROM killmails WHERE datetime(modified+maxage,'unixepoch') < datetime()")
+            query = "INSERT OR IGNORE INTO killmails (id, system_id, region_id, json, modified, maxage) VALUES (?,?,?,?,?,?);"
+            self.con.execute(query, (killmail_id, system_id, region_id, json_txt, modified, maxage)).fetchall()
+            self.con.commit()
+
+    def getKillmails(self, intel_time=20*60):
+        query = "select json from killmails WHERE datetime(modified + {},'unixepoch') < datetime()".format(intel_time)
+        res = self.con.execute(query).fetchall()
+        lst = list()
+        for i in res:
+            lst.append(i[0])
+        return lst
+
+    def clearOutdated(self) -> None:
+        """
+            Deletes  all outdated items when modified + maxage  < datetime()
+        Returns:
+            None
+        """
+        with Cache.SQLITE_WRITE_LOCK:
+            self.con.execute("DELETE FROM cache WHERE datetime(modified+maxage,'unixepoch') < datetime()")
+            self.con.execute("DELETE FROM players WHERE datetime(modified+maxage,'unixepoch') < datetime()")
+            self.con.execute("DELETE FROM avatars WHERE datetime(modified+maxage,'unixepoch') < datetime()")
+            self.con.execute("DELETE FROM killmails WHERE datetime(modified+maxage,'unixepoch') < datetime()")
+            self.con.commit()

@@ -356,11 +356,11 @@ class PlayerContextMenu(QtWidgets.QMenu):
                 new_player_menu.addAction(new_player_actions["waypoint"])
                 # new_player_menu.addAction(new_player_actions["route"])
                 new_player_menu.addAction(new_player_actions["clearall"])
-                new_player_menu.setStyleSheet(Styles().getStyle())
+                new_player_menu.setStyleSheet(Styles.getStyle())
                 self.new_player.append(new_player_actions)
                 self.addMenu(new_player_menu)
 
-        self.setStyleSheet(Styles().getStyle())
+        self.setStyleSheet(Styles.getStyle())
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):

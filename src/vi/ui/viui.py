@@ -55,7 +55,7 @@ from vi.ui.systemtray import POIContextMenu
 from vi.ui.systemtray import TheraContextMenu
 from vi.ui.systemtray import ActionPackage
 from vi.ui.styles import Styles
-from vi.chatparser.chatparser import ChatParser
+from vi.chatparser.chatparser import ChatParser, parseMessageForMap
 from vi.clipboard import evaluateClipboardData
 from vi.ui.modelplayer import TableModelPlayers, StyledItemDelegatePlayers
 from vi.ui.modelthera import TableModelThera
@@ -564,17 +564,31 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.mapView.setScrollPosition(pos)
         self.ui.mapVertScrollBar.valueChanged.connect(updateY)
 
-        def hoveCheck(pos: QPoint) -> bool:
+        def hoveCheck(globalPos: QPoint, pos: QPoint) -> bool:
             """returns true if the mouse is above a system, else false
             """
             for name, system in self.systems.items():
                 val = system.mapCoordinates
                 rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
                 if rc.contains(pos):
+                    QtWidgets.QToolTip.showText(globalPos, system.getTooltipText(), self)
                     return True
             return False
+
         self.ui.mapView.hoveCheck = hoveCheck
 
+        def tooltipAtMapPosition(globalPos: QPoint, map_pos: QPoint) -> bool:
+            """returns true if the mouse is above a system, else false
+            """
+            for name, system in self.systems.items():
+                val = system.mapCoordinates
+                rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
+                if rc.contains(map_pos):
+                    QtWidgets.QToolTip.showText(globalPos, system.getTooltipText(), self)
+                    return True
+            return False
+
+        self.ui.mapView.tooltipAtMapPosition = tooltipAtMapPosition
         def doubleClicked(pos: QPoint):
             for name, system in self.systems.items():
                 val = system.mapCoordinates
@@ -680,7 +694,7 @@ class MainWindow(QtWidgets.QMainWindow):
             index = self.ui.tableViewPOIs.model().mapToSource(self.ui.tableViewPOIs.indexAt(pos)).row()
             item = cache.getPOIAtIndex(index)
             lps_ctx_menu = POIContextMenu()
-            lps_ctx_menu.setStyleSheet(Styles().getStyle())
+            lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
             if item and "destination_id" in item.keys():
                 if self.handleDestinationActions(res, item["destination_id"]):
@@ -753,7 +767,7 @@ class MainWindow(QtWidgets.QMainWindow):
             index = self.ui.tableViewThera.model().mapToSource(self.ui.tableViewThera.indexAt(pos)).row()
             item = self.ui.tableViewThera.model().sourceModel().thera_data[index]
             lps_ctx_menu = TheraContextMenu()
-            lps_ctx_menu.setStyleSheet(Styles().getStyle())
+            lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
             if self.handleDestinationActions(res, item["wormholeDestinationSolarSystemId"]):
                 return
@@ -785,7 +799,7 @@ class MainWindow(QtWidgets.QMainWindow):
             index = self.ui.tableViewJBs.model().mapToSource(self.ui.tableViewJBs.indexAt(pos)).row()
             item = cache.getJumpGatesAtIndex(index)
             lps_ctx_menu = JumpBridgeContextMenu()
-            lps_ctx_menu.setStyleSheet(Styles().getStyle())
+            lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewJBs.mapToGlobal(pos))
             if self.handleDestinationActions(res, item["id_src"]):
                 return
@@ -872,15 +886,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.start()
         self.apiThread = None
 
-        #self.zkillboard = zkillMonitor(parent=self)
-        #self.zkillboard.startConnect()
-
+        self.zkillboard = zkillMonitor(parent=self)
+        self.zkillboard.startConnect()
+        self.filewatcherThread.addMonitorFile(zkillMonitor.MONITORING_PATH)
         logging.info("Set up threads and their connections done.")
 
     def _terminateThreads(self):
         logging.info("Stop the threads ...")
         try:
-            #self.zkillboard.startDisconnect()
+            self.zkillboard.startDisconnect()
             SoundManager().quit()
             SoundManager().wait()
             self.avatarFindThread.quit()
@@ -1002,7 +1016,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 for file_path in self.filewatcherThread.files:
                     if file_path.endswith(".txt"):
                         path, file = os.path.split(file_path)
-                        room_name = file[:-31]
+                        room_name = ChatParser.roomNameFromFileName(file)
                         modify_time = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
                         delta = now - modify_time
                         if (delta.total_seconds() < 60 * self.chatparser.intelTime) and (delta.total_seconds() > 0):
@@ -1166,13 +1180,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if do_show:
             self.show()
-
-    def clearCache(self):
-        used_cache = Cache()
-        used_cache.clearOutdatedPlayerNames()
-        used_cache.clearOutdatedCache()
-        used_cache.clearOutdatedImages(3)
-        used_cache.clearOutdatedJumpGates()
 
     def changeShowAvatars(self, value=None):
         if value is None:
@@ -1471,11 +1478,26 @@ class MainWindow(QtWidgets.QMainWindow):
                     message.status))
 
         chat_entry_widget = ChatEntryWidget(message)
+        avatar_icon = None
+        if message.user == "SPYGLASS":
+            with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
+                avatar_icon = f.read()
+        elif message.user == "zKillboard.com":
+            chat_entry_widget.updateAvatar(":/icons/zKillboard.svg")
+            # with open(resourcePath(os.path.join("vi", "ui", "res", "zKillboard.svg")), "rb") as f:
+            #     avatar_icon = f.read()
+        elif message.user != "zKillboard.com":
+            avatar_icon = Cache().getImageFromAvatar(message.user)
+            if avatar_icon is None:
+                self.avatarFindThread.addChatEntry(chat_entry_widget)
+        if avatar_icon is not None:
+            chat_entry_widget.updateAvatar(avatar_icon)
+
         list_widget_item = QtWidgets.QListWidgetItem(self.ui.chatListWidget)
         list_widget_item.setSizeHint(chat_entry_widget.sizeHint())
         self.ui.chatListWidget.addItem(list_widget_item)
         self.ui.chatListWidget.setItemWidget(list_widget_item, chat_entry_widget)
-        self.avatarFindThread.addChatEntry(chat_entry_widget)
+
         self.chatEntries.append(chat_entry_widget)
         chat_entry_widget.mark_system.connect(self.markSystemOnMap)
         self.chat_message_added.emit(chat_entry_widget, message.timestamp)
@@ -1485,7 +1507,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def clearIntelChat(self):
         logging.info("Clearing Intel")
-        # self.setupMap()
+
+        try:
+            for system in self.dotlan.systems.values():
+                system.clearIntel()
+        except Exception as e:
+            logging.error(e)
+
         try:
             while self.ui.chatListWidget.count() > 0:
                 item = self.ui.chatListWidget.item(0)
@@ -1496,6 +1524,11 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error(e)
 
     def pruneMessages(self):
+        """
+            prune all outdated messages
+        Returns:
+
+        """
         try:
             now = time.mktime(evegate.currentEveTime().timetuple())
             now_to = time.time()
@@ -1506,6 +1539,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 if now - time.mktime(message.timestamp.timetuple()) > (60 * self.chatparser.intelTime):
                     self.chatEntries.remove(chat_entry_widget)
                     self.ui.chatListWidget.takeItem(0)
+                    try:
+                        for system in self.dotlan.systems.values():
+                            system.pruneMessage(message)
+                    except Exception as e:
+                        logging.error(e)
+
                 else:
                     break
         except Exception as e:
@@ -1664,39 +1703,81 @@ class MainWindow(QtWidgets.QMainWindow):
     def zoomMapOut(self):
         self.ui.mapView.zoomOut()
 
+    def handleMessage(self, message: Message):
+        # If players location has changed
+        locale_to_set = dict()
+        if message.status == states.LOCATION:
+            locale_to_set[message.user] = message.affectedSystems
+        elif message.canProcess():
+            """
+             For each system that was mentioned in the message, check for alarm distance to the current system
+             and alarm if within alarm distance.
+            """
+            systems_on_map = self.systems
+            if message.affectedSystems:
+                systems = list()
+                for system_id in message.affectedSystems:
+                    system_name = Universe.systemNameById(system_id)
+                    if system_name in systems_on_map.keys():
+                        systems.append(self.dotlan.systemsById[system_id])
+                message.affectedSystems = systems
+                parseMessageForMap(systems_on_map, message)
+                for system in message.affectedSystems:
+                    if system.name in systems_on_map.keys():
+                        systems_on_map[system.name].setStatus(message.status, message.timestamp)
+                    is_alarm = message.status == states.ALARM
+                    if is_alarm and message.user not in self.knownPlayerNames:
+                        alarm_distance = self.alarmDistance if is_alarm else 0
+                        for nSystem, data in system.getNeighbours(alarm_distance).items():
+                            if "distance" not in data:
+                                continue
+                            chars = nSystem.getLocatedCharacters()
+                            if len(chars) > 0:
+                                if len(self.monitoredPlayerNames.intersection(set(chars))) > 0 and message.user not in chars:
+                                    self.trayIcon.showNotification(
+                                        message,
+                                        system.name,
+                                        ", ".join(chars),
+                                        data["distance"])
+            self.addMessageToIntelChat(message)
+        return locale_to_set
+
     def logFileChanged(self, path, rescan=False):
         locale_to_set = dict()
         messages = self.chatparser.fileModified(path, self.systems, rescan)
         for message in messages:
-            # If players location has changed
-            if message.status == states.LOCATION:
-                locale_to_set[message.user] = message.affectedSystems
-            elif message.canProcess():
-                self.addMessageToIntelChat(message)
-                """
-                 For each system that was mentioned in the message, check for alarm distance to the current system
-                 and alarm if within alarm distance.
-                """
-                systems_on_map = self.systems
-                if message.affectedSystems:
-                    for system in message.affectedSystems:
-                        system_name = system.name
-                        if system_name in systems_on_map.keys():
-                            systems_on_map[system_name].setStatus(message.status, message.timestamp)
-                        is_alarm = message.status == states.ALARM
-                        if is_alarm and message.user not in self.knownPlayerNames:
-                            alarm_distance = self.alarmDistance if is_alarm else 0
-                            for nSystem, data in system.getNeighbours(alarm_distance).items():
-                                if "distance" not in data:
-                                    continue
-                                chars = nSystem.getLocatedCharacters()
-                                if len(chars) > 0:
-                                    if len(self.monitoredPlayerNames.intersection(set(chars))) > 0 and message.user not in chars:
-                                        self.trayIcon.showNotification(
-                                            message,
-                                            system.name,
-                                            ", ".join(chars),
-                                            data["distance"])
+            if 0:
+                locale_to_set.update(self.handleMessage(message))
+            else:
+                # If players location has changed
+                if message.status == states.LOCATION:
+                    locale_to_set[message.user] = message.affectedSystems
+                elif message.canProcess():
+                    self.addMessageToIntelChat(message)
+                    """
+                     For each system that was mentioned in the message, check for alarm distance to the current system
+                     and alarm if within alarm distance.
+                    """
+                    systems_on_map = self.systems
+                    if message.affectedSystems:
+                        for system in message.affectedSystems:
+                            system_name = system.name
+                            if system_name in systems_on_map.keys():
+                                systems_on_map[system_name].setStatus(message.status, message.timestamp)
+                            is_alarm = message.status == states.ALARM
+                            if is_alarm and message.user not in self.knownPlayerNames:
+                                alarm_distance = self.alarmDistance if is_alarm else 0
+                                for nSystem, data in system.getNeighbours(alarm_distance).items():
+                                    if "distance" not in data:
+                                        continue
+                                    chars = nSystem.getLocatedCharacters()
+                                    if len(chars) > 0:
+                                        if len(self.monitoredPlayerNames.intersection(set(chars))) > 0 and message.user not in chars:
+                                            self.trayIcon.showNotification(
+                                                message,
+                                                system.name,
+                                                ", ".join(chars),
+                                                data["distance"])
 
         for name, systems in locale_to_set.items():
             self._updateKnownPlayerAndMenu(name)
@@ -1729,7 +1810,7 @@ class MainWindow(QtWidgets.QMainWindow):
         map_ctx_menu.changeRegion.triggered.connect(
             lambda: self.changeRegionBySystemID(selected_system.systemId))
         map_ctx_menu.alarm_distance.connect(self.changeAlarmDistance)
-        map_ctx_menu.setStyleSheet(Styles().getStyle())
+        map_ctx_menu.setStyleSheet(Styles.getStyle())
 
         if selected_system:
             concurrent_region_name = Cache().getFromCache("region_name")

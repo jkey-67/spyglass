@@ -24,15 +24,6 @@
 
 /** The following stylesheet is a derivative of the qdarkstyle package */
 
-QToolTip
-{
-    border: 1px solid #76797C;
-    background-color: rgb(90, 102, 117);;
-    color: white;
-    padding: 5px;
-    opacity: 200;
-}
-
 QWidget
 {
     color: #eff0f1;
@@ -1149,4 +1140,14 @@ QProgressBar {
 
 QProgressBar::chunk {
     background-color: #05B8CC;
+}
+
+QToolTip
+{
+    background: transparent;
+    background-color: #31363b;
+    border: 1px solid #76797C;
+    border-radius: 10px;
+    padding: 5px;
+    opacity: 200;
 }

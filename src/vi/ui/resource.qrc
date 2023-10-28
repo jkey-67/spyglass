@@ -21,5 +21,6 @@
     <file>res/restoreframe.svg</file>
     <file>res/statistic.svg</file>
     <file>res/trash-box.svg</file>
+    <file>res/zKillboard.svg</file>
   </qresource>
 </RCC>

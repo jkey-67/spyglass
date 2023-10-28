@@ -35,7 +35,7 @@ def updateDatabase(oldVersion, con):
     """
     queries = []
     if oldVersion < 1:
-        queries += ["CREATE TABLE version (version INT)", "INSERT INTO version (version) VALUES (1)"]
+        queries += ["CREATE TABLE IF NOT EXISTS version (version INT);", "INSERT INTO version (version) VALUES (1)"]
     if oldVersion < 2:
         queries += ["CREATE TABLE playernames (charname VARCHAR PRIMARY KEY, status INT, modified INT)",
                     "CREATE TABLE avatars (charname VARCHAR PRIMARY KEY, data  BLOB, modified INT)",
@@ -45,7 +45,8 @@ def updateDatabase(oldVersion, con):
                     "UPDATE version SET version = 3"]
 
     if oldVersion < 4:
-        queries += ["CREATE TABLE jumpbridge (src VARCHAR PRIMARY KEY, dst VARCHAR, id_src INT, id_dst INT, used INT, modified INT, maxage INT)",
+        queries += ["CREATE TABLE jumpbridge (src VARCHAR PRIMARY KEY, dst VARCHAR, id_src INT, id_dst INT, used INT,"
+                    "modified INT, maxage INT)",
                     "UPDATE version SET version = 4"]
 
     if oldVersion < 5:
@@ -65,16 +66,25 @@ def updateDatabase(oldVersion, con):
         queries += ["ALTER TABLE players add COLUMN modified INT;",
                     "ALTER TABLE players add COLUMN system_id INT;",
                     "ALTER TABLE players add COLUMN intel_range INT;",
-                    "DROP TABLE playernames;",
+                    "DROP TABLE IF EXISTS playernames;",
                     "UPDATE players SET modified = {};".format(time.time()),
                     "UPDATE version SET version = 8"]
     if oldVersion < 9:
         queries += ["ALTER TABLE players add COLUMN online INT;",
                     "UPDATE version SET version = 9"]
 
-    # if oldVersion < 10:
-    #     queries += ["ALTER TABLE pointofinterest add COLUMN inx INT;",
-    #                 "UPDATE version SET version = 10"]
+    if oldVersion < 10:
+        queries += ["ALTER TABLE avatars add COLUMN player_id INT;",
+                    "ALTER TABLE avatars add COLUMN alliance_id INT;",
+                    "ALTER TABLE avatars add COLUMN json VARCHAR;",
+                    "ALTER TABLE avatars add COLUMN maxage INT;",
+                    "CREATE TABLE alliances (id INT PRIMARY KEY, name VARCHAR, standing INT, maxage INT  );",
+                    "CREATE TABLE iconcache (id INT PRIMARY KEY, icon BLOB , modified INT, maxage INT);",
+                    "CREATE TABLE killmails (id INT PRIMARY KEY, system_id INT, region_id, json VARCHAR," 
+                    "modified INT, maxage INT);",
+                    "DELETE FROM cache WHERE key LIKE 'ids_dicts_%' OR key LIKE 'system_tmp%';",
+                    "ALTER TABLE players RENAME COLUMN max_age TO maxage;",
+                    "UPDATE version SET version = 10"]
 
     for query in queries:
         con.execute(query)

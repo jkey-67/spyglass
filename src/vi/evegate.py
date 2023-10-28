@@ -157,6 +157,9 @@ def esiCharNameToId(char_name: str, use_outdated=False) -> Optional[int]:
                 response = getSession().get(url.format(char_name))
                 if response.status_code == 200:
                     details = response.json()
+                    if "alliance_id" in details.keys():
+                        alliance_id = details["alliance_id"]
+                        # cache.insertAlliance(alliance_id, None, None, 24*60*60)
                     if "name" in details.keys():
                         name_found = details["name"]
                         if name_found.lower() == char_name.lower():
@@ -333,12 +336,12 @@ def getTypesIcon(type_id: int, size_image=64) -> Optional[bytearray]:
 
     """
     used_cache = Cache()
-    img = used_cache.getImageFromCache(str(type_id))
+    img = used_cache.getImageFromIconCache(type_id)
     if img is None:
         image_url = "https://images.evetech.net/types/{id}/icon"
         response = getSession().get(image_url.format(id=type_id, size=size_image))
         if response.status_code == 200:
-            used_cache.putImageToCache(str(type_id), response.content)
+            used_cache.putImageToIconCache(type_id, response.content)
             img = response.content
         else:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
@@ -375,6 +378,40 @@ def esiCharactersPortrait(char_name, image_size=64):
         avatar = None
     return avatar
 
+
+def esiCharactersPublicInfo(char_name: str):
+    """Downloading the public player/character info
+
+    Args:
+        char_name: id of the character
+
+    Returns:
+        bytearray: None if something gone wrong, else the png
+    """
+
+    try:
+        cache = Cache()
+        json_txt = cache.getJsonFromAvatar(char_name)
+        if json_txt is None:
+            char_id = esiCharNameToId(char_name)
+            url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=char_id)
+            response = getSession().get(url)
+            if response.status_code != 200:
+                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+                response.raise_for_status()
+            json_avatar = json.loads(response.text)
+            alliance_id = json_avatar["alliance_id"] if "alliance_id" in json_avatar.keys() else None
+            cache.putJsonToAvatar(player_name=char_name,
+                                  json_txt=response.text,
+                                  player_id=char_id,
+                                  alliance_id=alliance_id)
+            return json_avatar
+        else:
+            return json.loads(json_txt)
+
+    except Exception as e:
+        logging.error("Exception during esiCharactersPortrait: %s", e)
+    return None
 
 def checkPlayerName(char_name):
     """ Checking on esi for an exiting exact player name
@@ -779,7 +816,7 @@ def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Opt
 
 def openWithEveonline(parent=None):
     """perform an api key request and updates the cache on case of a positive response
-        returns the selected user name from the login
+        returns the selected username from the login
     """
     client_param_set = {
         "client_id": eve_api_key.CLIENTS_API_KEY,
@@ -1703,6 +1740,34 @@ def esiUniverseTypes(types_id: int, use_outdated=False):
         return response.json()
 
 
+def esiCharactersStanding(char_name, use_outdated=False):
+    """
+    Get information of characters standings
+
+
+    Args:
+        use_outdated:
+
+    Returns:
+
+    """
+    cache_key = "characters_{}_standings".format(char_name)
+    cache = Cache()
+    cached_standing = cache.getFromCache(cache_key, use_outdated)
+    if cached_standing is not None:
+        return json.loads(cached_standing)
+    else:
+        token = checkTokenTimeLine(getTokenOfChar(char_name))
+        if token:
+            url = "https://esi.evetech.net/latest/characters/{}/standings/?datasource=tranquility&token={}".format(
+                esiCharNameToId(char_name), token.access_token)
+            response = getSession().get(url)
+            if response.status_code != 200:
+                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+                return dict()
+            cache.putIntoCache(cache_key, response.text, 3600)
+            return json.loads(response.text)
+    return dict()
 
 def hasAnsiblex( sys ) -> bool:
     return False
@@ -1882,7 +1947,7 @@ def getSpyglassUpdateLink(ver=VERSION):
         return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
     page_json_found = response.json()
     if len(page_json_found) > 0 and "assets" in page_json_found[0].keys():
-        cnt =  page_json_found[0]["assets"][0]["download_count"]
+        cnt = page_json_found[0]["assets"][0]["download_count"]
         return page_json_found[0]["assets"][0]["browser_download_url"]
     else:
         return None
@@ -1905,24 +1970,29 @@ def dumpSpyglassDownloadStats():
         return None
 
 
-
 # The main application for testing
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
     # checkSpyglassVersionUpdate("1.1",True)
     # res = getAllJumpGates("nele McCool")
+    Cache().clearOutdated()
+    Cache().removeAvatar("Test123")
+    Cache().putImageToAvatar("Test123", "123")
+    Cache().putImageToAvatar("Test123", "12345")
+    Cache().removeAvatar("nele McCool")
+
+    res = Cache().getKillmails()
+
+    res = esiCharactersPublicInfo("nele McCool")
+    res = esiCharactersPublicInfo("nele McCool")
+    Cache().removeAvatar("nele McCool")
+    res = esiCharactersStanding("nele McCool")
     dumpSpyglassDownloadStats()
     res = getSpyglassUpdateLink()
     res = listOfJumpGatePairs()
     res = checkTheraConnections()
     res = getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None)
     res = esiSovereigntyStructures()
-    with Cache() as cache:
-        for item in res:
-            key = "{}_{}_{}".format("system", "tmp", str(item["solar_system_id"]))
-            cache.putIntoCacheNoLock(key, str(item))
-        cache.con.commit()
-
     res = esiSovereigntyMap()
     res = esiSovereigntyCampaigns()
     res = esiGetCharsOnlineStatus()
@@ -1930,4 +2000,6 @@ if __name__ == "__main__":
     res = esiGetCharsOnlineStatus()
     res = checkSpyglassVersionUpdate()
 
+    "mark_system/W-KXEX"
+    "30005142"
 

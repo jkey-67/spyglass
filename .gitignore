@@ -8,3 +8,4 @@ src/.idea/*
 venv/
 workspace.xml
 cache.sqlit3
+cache-2.sqlite3

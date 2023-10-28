@@ -61,25 +61,30 @@ class AvatarFindThread(QThread):
                 if not self.active:
                     return
                 charname = chatEntry.message.user
+
                 logging.debug("AvatarFindThread getting avatar for %s" % charname)
                 avatar = None
-                if charname == "SPYGLASS":
+
+                if avatar is None and charname == "SPYGLASS":
                     with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
+
                 if avatar is None:
-                    avatar = Cache().getImageFromCache(charname)
+                    avatar = Cache().getImageFromAvatar(charname)
                     if avatar:
                         logging.debug("AvatarFindThread found cached avatar for %s" % charname)
+
                 if avatar is None:
                     diffLastCall = time.time() - lastCall
                     if diffLastCall < wait:
                         time.sleep((wait - diffLastCall) / 1000.0)
+                    evegate.esiCharactersPublicInfo(charname)
                     avatar = evegate.esiCharactersPortrait(charname)
                     lastCall = time.time()
                     if avatar is None:
                         Cache().removeAvatar(charname)
                     else:
-                        Cache().putImageToCache(charname, avatar)
+                        Cache().putImageToAvatar(charname, avatar)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % charname)
                     self.avatar_update.emit(chatEntry, avatar)

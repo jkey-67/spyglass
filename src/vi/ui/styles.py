@@ -53,15 +53,16 @@ class Styles:
         except Exception as e:
             logging.critical(e)
 
+    @staticmethod
+    def getStyles():
+        return Styles.styleList
 
-    def getStyles(self):
-        return self.styleList
-
-    def getStyle(self):
+    @staticmethod
+    def getStyle():
         if (Styles.currentStyle == "light"):
-            return self.defaultStyle
+            return Styles.defaultStyle
         elif Styles.currentStyle == "abyss":
-            return self.darkStyle
+            return Styles.darkStyle
         else:
             return ""
 
@@ -82,7 +83,8 @@ class Styles:
                 "text_inverter": True}
             return def_commons
 
-    def setStyle(self, style):
+    @staticmethod
+    def setStyle(style):
         if style in Styles.styleList:
             Styles.currentStyle = style
         else:
