@@ -865,6 +865,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 "The assess key will be removed from database.".format(evegate.esiCharName()),
                 QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
             if ret == QMessageBox.Yes:
+                Cache().removeFromCache("api_char_name")
                 Cache().removeAPIKey(evegate.esiCharName())
                 self.ui.currentESICharacter.clear()
                 self.ui.currentESICharacter.addItems(Cache().getAPICharNames())

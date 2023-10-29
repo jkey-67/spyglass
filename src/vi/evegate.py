@@ -91,15 +91,18 @@ def esiCharName() -> Optional[str]:
     Returns:
         str: Name of the current char from cache as string, or None
     """
-    res = Cache().getFromCache("api_char_name", True)
-    if res is None or res == "":
-        res = Cache().getAPICharNames()
-        if len(res):
-            setEsiCharName(res[0])
-            return res[0]
-        return None
+    res_name = Cache().getFromCache("api_char_name", True)
+    if res_name is None or res_name == "" or res_name not in Cache().getAPICharNames():
+        res_name = Cache().getAPICharNames()
+        if res_name and len(res_name):
+            setEsiCharName(res_name[0])
+            Cache().putIntoCache("api_char_name", res_name[0])
+            return res_name[0]
+        else:
+            Cache().removeFromCache("api_char_name")
+            return None
     else:
-        return res
+        return res_name
 
 
 def secondUntilExpire(response, default:int = 3600) -> int:

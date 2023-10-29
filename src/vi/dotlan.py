@@ -942,9 +942,9 @@ class System(object):
         self.secondLine["style"] = self.ALARM_STYLE.format(line_colour)
 
     def getTooltipText(self):
-        format_src = '''<p><span style=" font-weight:600; color:#e5a50a;">{system}</span>'''\
-                     '''<span style=" font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span></p>'''\
-                     '''<p><span style=" font-weight:600; color:#e01b24;">{systemstats}</span></p>'''
+        format_src = '''<span style=" font-weight:600; color:#e5a50a;">{system}</span>'''\
+                     '''<span style=" font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span><br/>'''\
+                     '''<span style=" font-weight:600; color:#e01b24;">{systemstats}</span>'''
 
                      # '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''\
                      # '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''\
@@ -960,7 +960,7 @@ class System(object):
 
         for msg in self.messages:
             res = res + "<br/>" + msg.guiText
-        return res + "</p>"
+        return res
 
     def clearIntel(self):
         self.messages.clear()
