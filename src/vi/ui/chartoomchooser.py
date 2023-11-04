@@ -25,7 +25,7 @@ from vi.ui import Ui_ChatroomsChooser
 
 class ChatroomChooser(QtWidgets.QDialog):
     rooms_changed = pyqtSignal(list)
-    DEFAULT_ROOM_MANES = [u"Scald Intel", u"FI.RE Intel", u"Outer-Core Intel"]
+    DEFAULT_ROOM_MANES = [u"Bean-Intel", u"zKillboard"]
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)

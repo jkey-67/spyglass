@@ -1344,6 +1344,8 @@ def getAllJumpGates(nameChar:str, systemName="", systemNameDst="", callback=None
             if id_structure in processed:
                 continue
             json_src = esiUniverseStructure(esi_char_name=nameChar, structure_id=id_structure, use_outdated=use_outdated)
+            if json_src is None:
+                continue
             jump_bridge_text = parse.parse("{src} » {dst} - {info}", json_src["name"])
             structure = esiSearch(
                 esi_char_name=nameChar,
