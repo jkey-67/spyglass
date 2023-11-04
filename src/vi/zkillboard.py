@@ -68,7 +68,8 @@ class zkillMonitor(QObject):
         logging.info("Websocket closed from url {}".format(self.address))
         self.reconnectTimer.start()
 
-    def _writeHeader(self):
+    @staticmethod
+    def _writeHeader():
         if not os.path.exists(zkillMonitor.MONITORING_PATH):
             with open(zkillMonitor.MONITORING_PATH, "w", encoding='utf-16-le') as fp:
                 fp.write("\n")
@@ -100,7 +101,8 @@ class zkillMonitor(QObject):
             with open(zkillMonitor.MONITORING_PATH, "a", encoding='utf-16-le') as fp:
                 fp.write(kill_string)
 
-    def logKillmail(self, kill_data):
+    @staticmethod
+    def logKillmail(kill_data):
         kill_time = time.mktime(time.strptime(kill_data["killmail_time"], "%Y-%m-%dT%H:%M:%SZ"))
         Cache().putKillmailtoCache(
             killmail_id=kill_data["killmail_id"],
@@ -110,7 +112,8 @@ class zkillMonitor(QObject):
             json_txt=json.dumps(kill_data)
         )
 
-    def getIntelString(self, kill_data) -> str:
+    @staticmethod
+    def getIntelString(kill_data) -> str:
         """
             gets the log text from teh json kill
 
@@ -158,13 +161,15 @@ class zkillMonitor(QObject):
             ship=CTX.FORMAT_SHIP.format(kill_victim_ship_type),
             link=CTX.FORMAT_URL.format(kill_url)))
 
-    def updateKillDatabase(self, kill_data):
+    @staticmethod
+    def updateKillDatabase(kill_data):
         victim = kill_data["victim"]
         character_id = victim["character_id"] if "character_id" in victim.keys() else 0
         alliance_id = victim["alliance_id"] if "alliance_id" in victim.keys() else 0
         return alliance_id in Cache().getAllianceBlue()
 
-    def logKillAsIntel(self, kill_data) -> bool:
+    @staticmethod
+    def logKillAsIntel(kill_data) -> bool:
         """
         evaluates the kill to get a decision if the related message should be logged or not
         Args:

@@ -24,7 +24,6 @@ import requests
 from vi.cache import Cache
 from PySide6 import QtWidgets
 from PySide6 import QtCore
-from PySide6.QtGui import Qt
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtWidgets import QMessageBox
 from vi.ui import Ui_RegionChooser
@@ -52,7 +51,6 @@ class RegionChooser(QtWidgets.QDialog):
         if not region_name:
             region_name = u"Providence"
         self.ui.regionNameField.setText(region_name)
-        # self.setWindowFlags(Qt.Popup)
 
     def saveClicked(self):
         text = str(self.ui.regionNameField.text())

@@ -74,7 +74,7 @@ class ActionPackage(QObject):
             self.openDotlan.setEnabled(True)
             self.openZKillboard.setEnabled(True)
             self.avoidSystem.setEnabled(True)
-            self.clearJumpGate.setEnabled(self.hasJumpGate(sys_name.name))
+            self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
             self.currentSystem = sys_name
         else:
             self.gameMenu.setTitle("EVE-Online")
@@ -115,8 +115,6 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.trayIcon = trayIcon
         self._buildMenu()
 
-    def hasJumpGate(sys_name=None) -> bool:
-        return False
 
     def updateMenu(self, sys_name=None, rgn_name=None):
         self.currentSystem = sys_name
@@ -127,7 +125,7 @@ class TrayContextMenu(QtWidgets.QMenu):
             self.openDotlan.setEnabled(True)
             self.openZKillboard.setEnabled(True)
             self.avoidSystem.setEnabled(True)
-            self.clearJumpGate.setEnabled(self.hasJumpGate(sys_name.name))
+            self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
             self.currentSystem = sys_name
         else:
             self.gameMenu.setTitle("EVE-Online")

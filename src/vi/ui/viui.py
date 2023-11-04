@@ -16,7 +16,6 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-import json
 import os
 import datetime
 import sys
@@ -44,7 +43,7 @@ from vi import states
 from vi.filewatcher import FileWatcher
 from vi.ui import JumpbridgeChooser, ChatroomChooser, RegionChooser, SystemChat, ChatEntryWidget
 
-from vi.cache.cache import Cache
+from vi.cache.cache import Cache, currentEveTime
 from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
@@ -90,9 +89,6 @@ class POITableModell(QSqlQueryModel):
 
     def supportedDropActions(self):
         return Qt.MoveAction | Qt.CopyAction
-
-    def dropMimeData(self, data, action, row, column, parent):
-        return False
 
     def dropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int, parent) -> bool:
         if action == QtCore.Qt.IgnoreAction:
@@ -140,16 +136,16 @@ class POITableModell(QSqlQueryModel):
         return ['text/plain']
 
     def mimeData(self, indexes):
-        mimedata = QtCore.QMimeData()
+        mime_data = QtCore.QMimeData()
         encoded_data = QtCore.QByteArray()
         # stream = QtCore.QDataStream(encoded_data, QtCore.QIODevice.WriteOnly)
         for index in indexes:
             if index.isValid():
                 db_data = Cache().getPOIAtIndex(index.row())
-                # src_index = self.model().mapToSource(index)
-                text = "<url=showinfo{}//{}>{}</url>".format(db_data["type_id"], db_data["structure_id"], db_data["name"])
-        mimedata.setText(text)
-        return mimedata
+                text = "<url=showinfo{}//{}>{}</url>".format(
+                    db_data["type_id"], db_data["structure_id"], db_data["name"])
+                mime_data.setText(text)
+        return mime_data
 
     def keyPressEvent(self, e):
         if e == Qt.QKeySequence.Copy:
@@ -755,9 +751,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.tableViewThera.model().sourceModel().updateData(system_name)
 
         def theraSystemChanged():
-            system_name = self.ui.lineEditThera.text()
-            Cache().putIntoCache("thera_source_system", system_name)
-            self.ui.tableViewThera.model().sourceModel().updateData(system_name)
+            sys_name = self.ui.lineEditThera.text()
+            Cache().putIntoCache("thera_source_system", sys_name)
+            self.ui.tableViewThera.model().sourceModel().updateData(sys_name)
 
         self.ui.lineEditThera.editingFinished.connect(theraSystemChanged)
         self.ui.toolRescanThrea.clicked.connect(theraSystemChanged)
@@ -831,10 +827,10 @@ class MainWindow(QtWidgets.QMainWindow):
         char_model = TableModelPlayers()
 
         def callOnCharsUpdate():
-            char_model.setQuery('select name as Name,' \
-                                '(CASE active WHEN 0 THEN "No" ELSE "Yes" END) AS Monitor,' \
-                                '(CASE WHEN key is NULL THEN "" ELSE "ESI" END ) AS Registered,' \
-                                '(CASE name WHEN (SELECT data FROM cache WHERE key IS "api_char_name")' \
+            char_model.setQuery('select name as Name,'
+                                '(CASE active WHEN 0 THEN "No" ELSE "Yes" END) AS Monitor,'
+                                '(CASE WHEN key is NULL THEN "" ELSE "ESI" END ) AS Registered,'
+                                '(CASE name WHEN (SELECT data FROM cache WHERE key IS "api_char_name")'
                                 ' THEN "Yes" ELSE "" END) AS Current FROM players')
 
         self.tableViewPlayersDelegate = StyledItemDelegatePlayers(self)
@@ -1044,7 +1040,6 @@ class MainWindow(QtWidgets.QMainWindow):
         """
             Persisting things to the cache before closing the window
         """
-        self.ui
         # Program state to cache (to read it on next startup)
         settings = ((None, "restoreGeometry", str(self.saveGeometry()), True),
                     (None, "restoreState", str(self.saveState()), True),
@@ -1138,7 +1133,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.soundSetupAction.setEnabled(False)
             QMessageBox.warning(
                 None, "Sound disabled",
-                "The lib 'pyglet' which is used to play sounds cannot be found, ""so the soundsystem is disabled.\n" \
+                "The lib 'pyglet' which is used to play sounds cannot be found, ""so the soundsystem is disabled.\n"
                 "If you want sound, please install the 'pyglet' library. This warning will not be shown again.",
                 QMessageBox.Ok)
         else:
@@ -1270,7 +1265,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def setLocation(self, char_name, system_name: str, change_region: bool = False):
         """
         Change the location of the char to the given system inside the current map, if required the region may be
-        changed. If the character is api registerd, the actual system will be shown in the center of the screen.
+        changed. If the character is api registered, the actual system will be shown in the center of the screen.
 
         Args:
             char_name: name of the character
@@ -1310,7 +1305,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def updateMapView(self):
         try:
-            if self.currContent != self.dotlan.svg:
+            # if self.currContent != self.dotlan.svg:
                 self.mapTimer.stop()
                 if self.ui.mapView.setContent(QByteArray(self.dotlan.svg.encode('utf-8'))):
                     self.currContent = self.dotlan.svg
@@ -1531,7 +1526,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
         try:
-            now = time.mktime(evegate.currentEveTime().timetuple())
+
+            now = time.mktime(currentEveTime().timetuple())
             now_to = time.time()
             for row in range(self.ui.chatListWidget.count()):
                 chat_list_widget_item = self.ui.chatListWidget.item(0)
@@ -1545,9 +1541,6 @@ class MainWindow(QtWidgets.QMainWindow):
                             system.pruneMessage(message)
                     except Exception as e:
                         logging.error(e)
-
-                else:
-                    break
         except Exception as e:
             logging.error(e)
 
@@ -1658,7 +1651,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def updateStatisticsOnMap(self, data):
         if data["result"] == "ok":
-            if "statistics" in data:
+            if "statistics" in data.keys():
                 self.mapStatisticCache = data["statistics"]
                 if self.dotlan:
                     self.dotlan.addSystemStatistics(data['statistics'])
@@ -1695,7 +1688,6 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.debug("Map statistic update  succeeded.")
         elif data["result"] == "error":
             text = data["text"]
-            # self.trayIcon.showMessage("Loading statistics failed", text, 3)
             logging.error("updateStatisticsOnMap, error: %s" % text)
 
     def zoomMapIn(self):

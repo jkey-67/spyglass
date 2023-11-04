@@ -36,24 +36,21 @@
 """
 
 
-from vi.evegate import checkPlayerName, ERROR, EXISTS, NOT_EXISTS
+from vi.evegate import checkPlayerName, EXISTS
 from vi.universe import Universe
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString
 from vi import states
 from .message import Message
 from .ctx import CTX
-import datetime
 
 
 def textReplace(element, new_text):
     """
-        replace the
-
+        replace the text
     Args:
         element(NavigableString):
         new_text:
-
     Returns:
 
     """
@@ -86,35 +83,35 @@ def parsePlayerNames(rtext) -> bool:
             if len(search_text) < 4:
                 return False
             search_text = tokens[0]
-            res, id = checkPlayerName(search_text)
+            res, player_id = checkPlayerName(search_text)
             if res == EXISTS:
-                textReplace(text, CTX.FORMAT_PLAYER_NAME.format(search_text, id))
+                textReplace(text, CTX.FORMAT_PLAYER_NAME.format(search_text, player_id))
                 return True
 
         inx = 0
         while inx+1 < len(tokens):
             if len(tokens) > 1:
                 search_text = "{} {}".format(tokens[inx], tokens[inx + 1])
-                res, id = checkPlayerName(search_text)
+                res, player_id = checkPlayerName(search_text)
                 if res == EXISTS:
-                    textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, id)))
+                    textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, player_id)))
                     return True
             inx = inx + 1
         inx = 0
         while inx + 2 < len(tokens):
             if len(tokens) > 2:
                 search_text = "{} {} {}".format(tokens[inx], tokens[inx + 1] , tokens[inx + 2])
-                res, id = checkPlayerName(search_text)
+                res, player_id = checkPlayerName(search_text)
                 if res == EXISTS:
-                    textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, id)))
+                    textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, player_id)))
                     return True
             inx = inx + 1
 
         if len(tokens) > 0:
             search_text = tokens[0]
-            res, id = checkPlayerName(search_text)
+            res, player_id = checkPlayerName(search_text)
             if res == EXISTS:
-                textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, id)))
+                textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, player_id)))
                 return True
 
     return False

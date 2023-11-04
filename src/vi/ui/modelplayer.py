@@ -19,9 +19,9 @@
 
 from typing import Union
 from PySide6.QtGui import *
-from PySide6 import QtGui, QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QStyledItemDelegate
 
 from vi import evegate

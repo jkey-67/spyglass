@@ -24,7 +24,6 @@ import os
 from PySide6.QtCore import QThread
 from PySide6.QtCore import Signal as pyqtSignal
 from vi import evegate
-from vi import zkillboard
 from vi.cache.cache import Cache
 from vi.resources import resourcePath
 
@@ -100,7 +99,9 @@ class AvatarFindThread(QThread):
 
 
 class MapStatisticsThread(QThread):
-
+    """
+    Fetching statistic data and player locations
+    """
     statistic_data_update = pyqtSignal(dict)
 
     def __init__(self):
@@ -122,26 +123,24 @@ class MapStatisticsThread(QThread):
             tsk = self.queue.get()
             if not self.active:
                 return
+            statistics_data = dict({"result": "pending"})
             try:
-                statistics_data = dict({"result": "pending"})
                 if "sovereignty" in tsk:
-                    logging.info("MapStatisticsThread fetching  sovereignty.")
                     statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=False, show_npc=True)
+                    statistics_data["structures"] = evegate.esiSovereigntyStructures()
 
                 if "statistics" in tsk:
-                    logging.info("MapStatisticsThread fetching  statistic.")
                     statistics_data["statistics"] = evegate.esiUniverseSystem_jumps()
-                    statistics_data["incursions"] = evegate.getIncursionSystemsIds(False)
+                    statistics_data["incursions"] = evegate.esiIncursions(False)
                     statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(False)
 
                 if "location" in tsk:
-                    logging.info("MapStatisticsThread fetching  location.")
                     statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
 
                 logging.debug("MapStatisticsThread fetching  statistic succeeded.")
                 statistics_data["result"] = "ok"
             except Exception as e:
-                logging.error("Error in MapStatisticsThread: %s %s %s", e, str(statistics_data), str(tsk))
+                logging.error("Error in MapStatisticsThread: %s %s", e, str(tsk))
                 statistics_data["result"] = "error"
                 statistics_data["text"] = str(e)
 

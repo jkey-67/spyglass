@@ -21,7 +21,6 @@ from vi.cache import Cache
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal as pyqtSignal
 from vi.ui import Ui_ChatroomsChooser
-from PySide6.QtGui import Qt
 
 
 class ChatroomChooser(QtWidgets.QDialog):

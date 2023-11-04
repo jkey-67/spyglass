@@ -19,7 +19,6 @@
 import logging
 import os
 from PySide6 import QtWidgets
-from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QMessageBox, QFileDialog
 from PySide6.QtCore import Signal as pyqtSignal
 from vi.ui import Ui_JumpbridgeChooser

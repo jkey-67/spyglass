@@ -26,6 +26,7 @@ from requests import get as getRequest
 from os import path
 import datetime
 import logging
+import json
 from bs4 import BeautifulSoup
 from vi import states
 from vi.cache.cache import Cache
@@ -36,15 +37,15 @@ JB_COLORS = ("66CD00", "7CFC00", "7CFC00", "00FF00", "ADFF2F", "9ACD32", "00FA9A
 
 
 class DotlanException(Exception):
-    def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+    def __init__(self, *args):
+        Exception.__init__(self, *args)
 
 
 class Map(object):
     """
         The map including all information from dotlan
     """
-    #todo:dark.svgs should follow stylesheet
+    # todo : dark.svgs should follow stylesheet
     DOTLAN_BASIC_URL = u"https://evemaps.dotlan.net/svg/{0}.dark.svg"
     styles = Styles()
 
@@ -60,12 +61,9 @@ class Map(object):
             new_opacity = (1.0-delta/20.0)
             if new_opacity < 0:
                 new_opacity = 0.0
-            self.marker["opacity"] = new_opacity
-        if True:
-            content = str(self.soup)
-        else:
-            content = str(self.soup.select("svg")[0])
-        return content
+            self.marker["opacity"] = str(new_opacity)
+
+        return str(self.soup)
 
     def __init__(self, region,
                  svgFile=None,
@@ -84,26 +82,24 @@ class Map(object):
         self._jumpMapsVisible = setJumpMapsVisible
         self._statisticsVisible = setSatisticsVisible
         if self.region == "Providencecatch" or self.region == "Providence-catch-compact":
-            region_to_load = "providence-catch"
+            region_to_load = convertRegionName("providence-catch")
         else:
-            region_to_load = self.region
+            region_to_load = convertRegionName(self.region)
 
         # Get map from dotlan if not in the cache
-        if not svgFile:
-            svg = cache.getFromCache("map_" + self.region)
-        else:
-            svg = svgFile
+        svg = cache.getFromCache("map_{}".format(region_to_load)) if svgFile is None else svgFile
 
-        if not svg or svg.startswith("region not found"):
+        if svg is None or svg.startswith("region not found"):
             try:
                 svg = self._getSvgFromDotlan(region_to_load)
                 if not svg or svg.startswith("region not found"):
+                    region_to_load = "Providence"
                     svg = self._getSvgFromDotlan("providence")
-                cache.putIntoCache("map_" + self.region, svg,
-                                   24 * 60 * 60)  ###evegate.secondsTillDowntime() + ### 60 * 60)
+                else:
+                    cache.putIntoCache("map_{}".format(region_to_load), svg, 24 * 60 * 60)
             except Exception as e:
                 self.outdatedCacheError = e
-                svg = cache.getFromCache("map_" + self.region, True)
+                svg = cache.getFromCache("map_{}".format(region_to_load))
                 if not svg or svg.startswith("region not found"):
                     t = "No Map in cache, nothing from dotlan. Must give up " \
                         "because this happened:\n{0} {1}\n\nThis could be a " \
@@ -157,22 +153,25 @@ class Map(object):
         if setPlayerSovereignty:
             self.setSystemSovereignty(setPlayerSovereignty)
 
-        if False:
-            self.debugWriteSoup()
-
-    def setIncursionSystems(self, lst_system_ids):
+    def setIncursionSystems(self, incursions):
         """
         Mark all incursion systems on the current map
         Args:
-            lst_system_ids(list(int)): list of system ids
+            incursions(list(int)): list of system ids
 
         Returns:
             None
 
         """
-        if lst_system_ids is not None:
+        for incursion in incursions:
+            lst_system_ids = incursion["infested_solar_systems"]
+            staging_solar_system_id = incursion["staging_solar_system_id"]
+            has_boss = incursion["has_boss"]
             for sys_id, sys in self.systemsById.items():
-                sys.setIncursion(sys_id in lst_system_ids)
+                if sys_id in lst_system_ids:
+                    sys.setIncursion(hasIncursion=sys_id in lst_system_ids,
+                                     isStaging=sys_id == staging_solar_system_id,
+                                     hasBoss=has_boss)
 
     def setCampaignsSystems(self, lst_system_ids):
         """
@@ -225,8 +224,8 @@ class Map(object):
         uses = {}
         for use in soup.select("use"):
             use_id = use["xlink:href"][1:]
-            use.attrs["width"] = svg_width
-            use.attrs["height"] = svg_height
+            use.attrs["width"] = str(svg_width)
+            use.attrs["height"] = str(svg_height)
             use.attrs["x"] = str(float(use.attrs["x"]) * scale)
             use.attrs["y"] = str(float(use.attrs["y"]) * scale)
             uses[use_id] = use
@@ -421,7 +420,7 @@ class Map(object):
             group.append(line)
         svg.insert(0, group)
 
-        map = svg.select("#map")
+        svg_map = svg.select("#map")
 
         for defs in svg.select("defs"):
             for tag in defs.select("a"):
@@ -432,10 +431,10 @@ class Map(object):
             for symbol in defs.select("symbol"):
                 if symbol:
                     symbol.name = "g"
-                    map.insert(0, symbol)
+                    svg_map.insert(0, symbol)
         try:
             jumps = soup.select("#jumps")[0]
-        except Exception as e:
+        except (Exception,):
             jumps = list()
 
         # Set up the tags for system statistics
@@ -473,12 +472,12 @@ class Map(object):
         Gets the svg map from dotlan
 
         Args:
-            region(str): name or the region
+            region(str): name or the region space will be converted to _ url is lower
 
         Returns:
             The loaded svg map as text.
         """
-        url = self.DOTLAN_BASIC_URL.format(region)
+        url = self.DOTLAN_BASIC_URL.format(region).replace(" ", "_").lower()
         content = getRequest(url).text
         return content
 
@@ -563,10 +562,8 @@ class Map(object):
                 my = y1 + dy + offset * math.sin(angle)
 
                 line = soup.new_tag("path", d="M{} {} Q {} {} {} {}".format(x1, y1, mx, my, x2, y2),
-                                        visibility="hidden",
-                                        fill="none",
-                                        style="stroke:#{0}".format(jb_color))
-                line["stroke-width"] = 2
+                                    visibility="hidden", fill="none", style="stroke:#{0}".format(jb_color))
+                line["stroke-width"] = str(2)
                 line["opacity"] = "0.8"
             else:
                 source_system = self.systems[sys1] if sys1 in self.systems else self.systems[sys2] if sys2 in self.systems else None
@@ -591,11 +588,8 @@ class Map(object):
                 my = y1 + dy + offset * math.sin(angle)
                 # jbColor = "80c080"
                 line = soup.new_tag("path", d="M{} {} Q {} {} {} {}".format(x1, y1, mx, my, x2, y2),
-                                        visibility="hidden",
-                                        fill="none",
-                                        text="",
-                                        style="stroke:#{0}".format(jb_color))
-                line["stroke-width"] = 1
+                                    visibility="hidden", fill="none", text="", style="stroke:#{0}".format(jb_color))
+                line["stroke-width"] = "1"
                 line["opacity"] = "0.8"
 
                 text = soup.new_tag("text")
@@ -703,6 +697,7 @@ class System(object):
         self.currentStyle = ""
         self.__hasCampaigns = False
         self.__hasIncursion = False
+        self.__isStaging = False
         self.__hasIncursionBoss = False
         self.svgtext = None
 
@@ -754,22 +749,24 @@ class System(object):
         elif not campaigns and self.__hasCampaigns:
             camp_node = self.mapSoup.find(id=id_name)
             camp_node.decompose()
+        self.__hasCampaigns = campaigns
 
-    def setIncursion(self, incursion: bool, hasBoss=False):
+    def setIncursion(self, hasIncursion: bool = False, isStaging: bool = False, hasBoss: bool = False):
         id_name = self.name + u"_incursion"
-        if incursion and not self.__hasIncursion:
+        if hasIncursion and not self.__hasIncursion:
             curr_node = self.mapSoup.find(id=id_name)
             if curr_node is None:
                 coords = self.mapCoordinates
-                new_tag = self.mapSoup.new_tag("rect", x=coords["x"]-10, y=coords["y"]-8,
-                                          width=coords["width"]+16, height=coords["height"]+16, id=id_name,
-                                          rx=12, ry=12, fill="url(#incStBg)" if hasBoss else "url(#incBg)")
+                new_tag = self.mapSoup.new_tag("rect", x=coords["x"]-10, y=coords["y"]-8, width=coords["width"]+16,
+                                               height=coords["height"]+16, id=id_name, rx=12, ry=12,
+                                               fill="url(#incStBg)" if hasBoss else "url(#incBg)")
                 jumps = self.mapSoup.select("#jumps")[0]
                 jumps.insert(0, new_tag)
-        elif not incursion and self.__hasIncursion:
+        elif not hasIncursion and self.__hasIncursion:
             camp_node = self.mapSoup.find(id=id_name)
             camp_node.decompose()
-        self.__hasIncursion = incursion
+        self.__hasIncursion = hasIncursion
+        self.__isStaging = isStaging
         self.__hasIncursionBoss = hasBoss
 
     def setBackgroundColor(self, color):
@@ -943,12 +940,46 @@ class System(object):
 
     def getTooltipText(self):
         format_src = '''<span style=" font-weight:600; color:#e5a50a;">{system}</span>'''\
-                     '''<span style=" font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span><br/>'''\
-                     '''<span style=" font-weight:600; color:#e01b24;">{systemstats}</span>'''
+                     '''<span style=" font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>'''\
+                     '''<br/><span style=" font-weight:600; color:#e01b24;">{systemstats}</span>'''
 
                      # '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''\
                      # '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''\
 
+        if self.__hasIncursion:
+            if self.__isStaging:
+                format_src = format_src + '''<br/><span style=" font-weight:600; color:#ffcc00;">-Incursion Staging{}-</span>'''.format(" Boss" if self.__hasIncursionBoss else "")
+            else:
+                format_src = format_src + '''<br/><span style=" font-weight:600; color:#ff9900;">-Incursion{}-</span>'''.format(" Boss" if self.__hasIncursionBoss else "")
+
+        if self.__hasCampaigns:
+            cache_key = "sovereignty_campaigns"
+            response = Cache().getFromCache(cache_key)
+            if response:
+                campaign_data = json.loads(response)
+                for itm in campaign_data:
+                    start_time = itm["start_time"]
+                    solar_system_id = itm["solar_system_id"]
+                    structure_id = itm["structure_id"]
+
+                    cache_key = "_".join(("structure", "id", str(structure_id)))
+                    cache = Cache()
+                    cached_id = cache.getFromCache(cache_key, True)
+                    if cached_id:
+                        structure_data = json.loads(cached_id)
+                    else:
+                        structure_data = None
+
+                    event_type = itm["event_type"]
+                    if solar_system_id == self.systemId:
+                        if event_type == "tcu_defense":
+                            format_src = format_src + '''<br/><span style=" font-weight:600; color:#c00000;">TCU {}</span>'''.format(start_time)
+                        if event_type == "ihub_defense":
+                            format_src = format_src + '''<br/><span style=" font-weight:600; color:#c00000;">IHUB {}</span>'''.format(start_time)
+                        if event_type == "station_defense":
+                            format_src = format_src + '''<br/><span style=" font-weight:600; color:#c00000;">Defense Events {}</span>'''.format(start_time)
+                        if event_type == "station_freeport":
+                            format_src = format_src + '''<br/><span style=" font-weight:600; color:#c00000;">Freeport Events {}</span>'''.format(start_time)
 
         res = format_src.format(
             system=self.name,
@@ -997,7 +1028,7 @@ def convertRegionName(name):
 
 # this is for testing:
 if __name__ == "__main__":
-    map = Map("providence")
+    svg_map = Map("providence")
     s = map.systems["I7S-1S"]
     s.setStatus(states.ALARM)
     logging.error(map.svg)

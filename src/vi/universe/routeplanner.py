@@ -43,8 +43,7 @@ class RoutPlanner(object):
                     graph.add_edge(id_src, id_dst)
 
             return nx.shortest_path(graph, source=src_id, target=dst_id)
-        except Exception as ex:
-            logging.info("Invalid jump bridge data {}".format(ex))
+        except (Exception,):
             return list()
 
     @staticmethod

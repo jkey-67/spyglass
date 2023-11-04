@@ -17,8 +17,8 @@
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 from PySide6.QtWidgets import QApplication
-from PySide6.QtWidgets import QWidget, QToolTip
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
+from PySide6.QtWidgets import QWidget
+
 from PySide6.QtGui import *
 from PySide6 import QtCore, QtSvg
 

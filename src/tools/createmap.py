@@ -24,8 +24,10 @@ import os
 import sys
 
 from bs4 import BeautifulSoup
-sys.path.append('../')
 from vi import evegate
+
+sys.path.append('../')
+
 
 def checkArguments(args):
     error = False
@@ -36,23 +38,28 @@ def checkArguments(args):
     if error:
         sys.exit(2)
 
+
 def loadSvg(path):
     content = None
     with open(path) as f:
         content = f.read()
     return BeautifulSoup(content)
 
-def is_diffrent_region( src, dst):
+
+def is_diffrent_region(src, dst):
     rgn_src = evegate.esiUniverseConstellations(src["constellation_id"], True)
     rgn_dst = evegate.esiUniverseConstellations(dst["constellation_id"], True)
     return rgn_src["region_id"] != rgn_dst["region_id"]
 
+
 def is_different_constellation(src, dst):
     return src["constellation_id"] != dst["constellation_id"]
 
+
 missing_sys = list()
 
-def addJumpsToSvgFile( system, jumps, svg_template, use_cache=True):
+
+def addJumpsToSvgFile(system, jumps, svg_template, use_cache=True):
 
     for gate_id in system["stargates"]:
         gates = evegate.esiUniverseStargates(gate_id, use_cache)
@@ -66,20 +73,19 @@ def addJumpsToSvgFile( system, jumps, svg_template, use_cache=True):
             src_system = evegate.esiUniverseSystems(src, use_cache)
             dst_system = evegate.esiUniverseSystems(dst, use_cache)
             if is_diffrent_region(src_system, dst_system):
-                line_tag["class"] ="jr"
+                line_tag["class"] = "jr"
             elif is_different_constellation(src_system, dst_system):
-                line_tag["class"] ="jc"
+                line_tag["class"] = "jc"
             else:
                 line_tag["class"] = "j"
             jumps.append(line_tag)
-        elif dst_pos == None:
-            missing_sys.append((dst))
+        elif dst_pos is None:
+            missing_sys.append(dst)
 
-def addIceBeltsToSvgFile( system, svg_template, use_cache=True):
+
+def addIceBeltsToSvgFile(system, svg_template, use_cache=True):
     for sysuse in svg_template.select("use"):
         src = sysuse["system_id"]
-        #<rect class="i" height="28" id="ice30001171" rx="14" ry="13" style="fill: #31363B;" width="56" x="1" y="0.5"></rect>
-
 
 
 def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
@@ -89,8 +95,8 @@ def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
         a_tag = svg_template.new_tag("a")
         a_tag["xlink:href"] = "http://evemaps.dotlan.net/system/{}".format(system["name"])
         a_tag["class"] = "sys link-5-{}".format(system_id)
-        sys_rect = svg_template.new_tag("rect", height="22", id="rect{}".format(system_id), rx="11", ry="11", width="50",
-                                    x="4", y="3.5")
+        sys_rect = svg_template.new_tag("rect", height="22", id="rect{}".format(system_id),
+                                        rx="11", ry="11", width="50", x="4", y="3.5")
         sys_rect["class"] = "s"
         sys_text = svg_template.new_tag("text", x="28", y="14")
         sys_text["class"] = "ss"
@@ -115,7 +121,6 @@ def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
         use_tag["y"] = round(y / 30.0) * 30.0
         systemUses.append(use_tag)
 
-""" updates all jump connection"""
 
 def updateSvgFile(filename):
     use_cache = True
@@ -124,14 +129,14 @@ def updateSvgFile(filename):
     systemUses = svg_template.select("#sysuse")[0]
 
     jumps.clear()
-    #return svg_template
+    # return svg_template
 
     trans_map = ['0.0', '0.0']
     try:
-       the_map = svg_template.select("#map")[0]
-       trans_map =the_map.attrs["transform"][10:-1].split(",")
-       del the_map.attrs["transform"]
-    except:
+        the_map = svg_template.select("#map")[0]
+        trans_map = the_map.attrs["transform"][10:-1].split(",")
+        del the_map.attrs["transform"]
+    except (Exception,):
         pass
     for sysuse in systemUses.select("use"):
         symbol_id = sysuse["id"]
@@ -147,16 +152,14 @@ def updateSvgFile(filename):
         sysuse.attrs["x"] = round(float(sysuse.attrs["x"])/62.5)*62.5
         sysuse.attrs["y"] = round(float(sysuse.attrs["y"])/35.0)*35.0
 
-
     for sysuse in systemUses.select("use"):
         symbol_id = sysuse["id"]
         system_id = symbol_id[3:]
         system = evegate.esiUniverseSystems(system_id, use_cache)
         addJumpsToSvgFile(system, jumps, svg_template, use_cache)
 
-    #addSystemToSvg( svg_template, missing_sys, 0, -30, True)
-    #print(missing_sys)
     return svg_template
+
 
 def svgFileToDot(filename):
     result = "graph Beziehungen {\n"
@@ -166,8 +169,8 @@ def svgFileToDot(filename):
     systemUses = svg_template.select("#sysuse")[0]
 
     for sysuse in systemUses.select("use"):
-        id = sysuse["xlink:href"]
-        name = svg_template.select(id)[0]
+        itm_id = sysuse["xlink:href"]
+        name = svg_template.select(itm_id)[0]
         sysname = name.text[10:16]
         result += "{} [shape=circle label=\"{}\"]\n".format(sysuse["id"], sysname)
 
@@ -175,15 +178,15 @@ def svgFileToDot(filename):
         try:
             svg_systems = sysuse.attrs["id"][2:].split("-")
             result += "sys{} -> sys{}\n".format(svg_systems[0], svg_systems[1])
-        except :
+        except (Exception,):
             pass
 
     result += "}\n"
     return result
 
 
-def createSvgFile( region_ids ):
-    use_cache=True
+def createSvgFile(region_ids):
+    use_cache = True
     svg_template = loadSvg("~/projects/spyglass/src/vi/ui/res/mapdata/MapTemplate.svg")
     jumps = svg_template.select("#jumps")[0]
     systemUses = svg_template.select("#sysuse")[0]
@@ -215,7 +218,6 @@ def createSvgFile( region_ids ):
                 elif y_max < y_cur:
                     y_max = y_cur
 
-
     for region_id in region_ids:
         region_json = evegate.esiUniverseRegions(region_id, use_cache)
         for const_id in region_json["constellations"]:
@@ -226,7 +228,7 @@ def createSvgFile( region_ids ):
                 a_tag["xlink:href"] = "http://evemaps.dotlan.net/system/{}".format(system["name"])
                 a_tag["constellation"] = system["constellation_id"]
                 a_tag["region"] = region_id
-                a_tag["class"] ="sys link-5-{}".format(system_id)
+                a_tag["class"] = "sys link-5-{}".format(system_id)
                 sys_rect = svg_template.new_tag("rect", height="22", id="rect{}".format(system_id), rx="11", ry="11", width="50", x="4", y="3.5")
                 sys_rect["class"] = "s"
                 sys_text = svg_template.new_tag("text", x="28", y="14")
@@ -246,7 +248,7 @@ def createSvgFile( region_ids ):
                 svg_template.defs.append(sys_tag)
                 x = (float(systems_json["position"]["x"]) + float(system["position"]["x"])-x_min)/(x_max-x_min)*1024*4
                 y = (float(systems_json["position"]["y"]) + float(system["position"]["y"])-y_min)/(y_max-y_min)*768*4
-                use_tag = svg_template.new_tag("use", height="30",id="sys{}".format(system_id), width="62.5")
+                use_tag = svg_template.new_tag("use", height="30", id="sys{}".format(system_id), width="62.5")
                 use_tag["xlink:href"] = "#def{}".format(system_id)
                 use_tag["x"] = round(x/62.5)*62.5
                 use_tag["y"] = round(y/30.0)*30.0
@@ -258,16 +260,16 @@ def createSvgFile( region_ids ):
             systems_json = evegate.esiUniverseConstellations(const_id, use_cache)
             for system_id in systems_json["systems"]:
                 system = evegate.esiUniverseSystems(system_id, use_cache)
-                addJumpsToSvgFile(system, jumps,svg_template,use_cache )
+                addJumpsToSvgFile(system, jumps, svg_template, use_cache)
 
     svg_template.svg["width"] = "4096"
     svg_template.svg["height"] = "3097"
-    svg_template.svg["viewbox"]="0 0 4096 3097"
+    svg_template.svg["viewbox"] = "0 0 4096 3097"
     return svg_template
 
 
 def main():
-    base_path = os.path.join(os.path.expanduser("~"),"projects","spyglass","src","vi","ui","res","mapdata" )
+    base_path = os.path.join(os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata")
     if False:  # create a dot file
         result = svgFileToDot(os.path.join(base_path,"New_Combined-step_6.svg"))
         with open(os.path.join(base_path,"Denci_Tactical.dot"), "wb") as svgFile:
@@ -282,7 +284,7 @@ def main():
             svgFile.write(result)
             svgFile.close()
 
-    if True:#only rout jump lines
+    if True: # only rout jump lines
         newSvg = updateSvgFile(os.path.join(base_path, "New_Combined-step_9.svg"))
         result = newSvg.body.next.prettify().encode("utf-8")
         with open(os.path.join(base_path, "Denci_Tactical.svg"), "wb") as svgFile:

@@ -100,10 +100,10 @@ class ChatEntryWidget(QtWidgets.QWidget):
         try:
             if self.ui.avatarLabel:
                 self.ui.avatarLabel.setPixmap(scaled_avatar)
-        except Exception :
+        except (Exception,):
             logging.warning("Updating a deleted chat item")
             self.ui.avatarLabel = None
-            self = None
+            # self = None
         return True
 
     def changeFontSize(self, newSize):

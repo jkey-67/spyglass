@@ -28,7 +28,7 @@ class Message(object):
     def __init__(self,
                  room: str,
                  message: str,
-                 systems=list()):
+                 systems: list = list()):
         self.roomName = room                                # chatroom the message was posted
         self.affectedSystems = systems                      # list of systems mentioned in the message
         self.timestamp = Message.lineToDatetime(message)    # time stamp of the massage

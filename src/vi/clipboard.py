@@ -56,7 +56,6 @@ def evaluateClipboardData(content):
     if jump_bridge_text is None:
         jump_bridge_text = parse('{src} {p1} --> {dst} {p2}', content)
 
-
     if jump_bridge_text and len(jump_bridge_text.named) > 2:
         jb_data = dict()
         if evegate.esiCharName() and False:
@@ -160,9 +159,5 @@ def evaluateClipboardData(content):
                     station_id=station_search["station"][0])
                 if station_info:
                     return ["poi", station_info]
-
-    #html_text = parse("https://{link}", content)
-    #if html_text:
-    #    return ["link", content]
 
     return [None, []]

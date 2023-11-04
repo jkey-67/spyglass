@@ -1,18 +1,18 @@
 ###########################################################################
 #  Vintel - Visual Intel Chat Analyzer									  #
 #  Copyright (C) 2014-15 Sebastian Meyer (sparrow.242.de+eve@gmail.com )  #
-#																		  #
+#   																	  #
 #  This program is free software: you can redistribute it and/or modify	  #
 #  it under the terms of the GNU General Public License as published by	  #
 #  the Free Software Foundation, either version 3 of the License, or	  #
 #  (at your option) any later version.									  #
-#																		  #
+#   																	  #
 #  This program is distributed in the hope that it will be useful,		  #
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
 #  GNU General Public License for more details.							  #
-#																		  #
-#																		  #
+#   																	  #
+#   																	  #
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
@@ -85,6 +85,10 @@ def updateDatabase(oldVersion, con):
                     "DELETE FROM cache WHERE key LIKE 'ids_dicts_%' OR key LIKE 'system_tmp%';",
                     "ALTER TABLE players RENAME COLUMN max_age TO maxage;",
                     "UPDATE version SET version = 10"]
+    if oldVersion < 11:
+        queries += ["DELETE FROM cache WHERE key LIKE 'map_%';",
+                    "CREATE TABLE map (id INT PRIMARY KEY, dotlan VARCHAR, native VARCHAR, modified INT, maxage INT);",
+                    "UPDATE version SET version = 11"]
 
     for query in queries:
         con.execute(query)

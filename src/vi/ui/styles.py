@@ -59,17 +59,18 @@ class Styles:
 
     @staticmethod
     def getStyle():
-        if (Styles.currentStyle == "light"):
+        if Styles.currentStyle == "light":
             return Styles.defaultStyle
         elif Styles.currentStyle == "abyss":
             return Styles.darkStyle
         else:
             return ""
 
-    def getCommons(self):
-        if (Styles.currentStyle == "light" and Styles.defaultCommons != ""):
+    @staticmethod
+    def getCommons():
+        if Styles.currentStyle == "light" and Styles.defaultCommons != "":
             return Styles.defaultCommons
-        elif (Styles.currentStyle == "abyss" and Styles.darkCommons != ""):
+        elif Styles.currentStyle == "abyss" and Styles.darkCommons != "":
             return Styles.darkCommons
         else:
             def_commons = {
@@ -91,8 +92,9 @@ class Styles:
             logging.critical("Attempted to switch to unknown style: {}".format(style))
 
 
-class TextInverter():
-    def getTextColourFromBackground(self, colour):
+class TextInverter:
+    @staticmethod
+    def getTextColourFromBackground(colour):
         if colour[0] == '#':
             colour = colour[1:]
         red = int(colour[0:2], 16)

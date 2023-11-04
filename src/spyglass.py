@@ -25,7 +25,6 @@ import traceback
 import datetime
 from logging.handlers import RotatingFileHandler
 from PySide6 import QtGui, QtWidgets, QtCore
-from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtSql import QSqlDatabase
 
@@ -37,6 +36,7 @@ from vi.resources import resourcePath
 from vi.cache.cache import Cache
 from vi.zkillboard import zkillMonitor
 
+
 def exceptHook(exception_type, exception_value, traceback_object):
     """
         Global function to catch unhandled exceptions.
@@ -46,7 +46,7 @@ def exceptHook(exception_type, exception_value, traceback_object):
         logging.critical(''.join(traceback.format_tb(traceback_object)))
         logging.critical('{0}: {1}'.format(exception_type, exception_value))
         logging.critical("--------------------------------------------------------------------------------------------")
-    except:
+    except (Exception,):
         pass
 
 
@@ -78,11 +78,8 @@ class Application(QApplication):
         def change_splash_text(txt):
             logging.info(txt)
             if self.splash and len(txt):
-                self.splash.showMessage("   {}".format(txt),
-                                        QtCore.Qt.AlignLeft,
-                                        QtGui.QColor(0x808000))
+                self.splash.showMessage("   {}".format(txt), QtCore.Qt.AlignLeft, QtGui.QColor(0x808000))
 
-        # Set up paths
         chat_log_directory = ""
         if len(sys.argv) > 1:
             chat_log_directory = sys.argv[1]

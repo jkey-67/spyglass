@@ -73,8 +73,8 @@ class Cache(object):
         self.SQLITE_WRITE_LOCK.acquire()
         return self
 
-    def __exit__(self, type, value, traceback):
-        if type is not None:
+    def __exit__(self, typeof, value, traceback):
+        if typeof is not None:
             self.con.rollback()
         self.SQLITE_WRITE_LOCK.release()
 
@@ -198,7 +198,7 @@ class Cache(object):
         with Cache.SQLITE_WRITE_LOCK:
             select_query = "SELECT charname FROM avatars WHERE charname = ?"
             founds = self.con.execute(select_query, (name,)).fetchall()
-            if founds != []:
+            if len(founds):
                 # data is a blob, so we have to change it to buffer
                 data = to_blob(data)
                 query = "UPDATE avatars SET data = ?, modified = ?  WHERE charname = ?"
@@ -227,8 +227,7 @@ class Cache(object):
             data = from_blob(founds[0][0])
             return data
 
-
-    def putImageToIconCache(self, icon_id:int, data):
+    def putImageToIconCache(self, icon_id: int, data):
         """ Put the icon of an item into the iconcache table
 
         Args:
@@ -240,7 +239,7 @@ class Cache(object):
         with Cache.SQLITE_WRITE_LOCK:
             select_query = "SELECT id FROM iconcache WHERE id = ?"
             icon_founds = self.con.execute(select_query, (icon_id,)).fetchall()
-            if icon_founds != []:
+            if len(icon_founds):
                 # data is a blob, so we have to change it to buffer
                 data = to_blob(data)
                 query = "UPDATE iconcache SET icon = ?, modified = ?  WHERE id = ?"
@@ -282,7 +281,7 @@ class Cache(object):
         with Cache.SQLITE_WRITE_LOCK:
             select_query = "SELECT charname FROM avatars WHERE charname = ?"
             founds = self.con.execute(select_query, (player_name,)).fetchall()
-            if founds != []:
+            if len(founds):
                 # data is a blob, so we have to change it to buffer
                 query = "UPDATE avatars SET json = ?, modified = ? ,player_id = ?, alliance_id = ?  WHERE charname = ?"
                 self.con.execute(query, (json_txt, time.time(), player_name, player_id, alliance_id))
@@ -372,7 +371,7 @@ class Cache(object):
     def putJumpGate(self, src, dst, src_id=None, dst_id=None,
                     json_src=None, json_dst=None, used=None, max_age=60*60*24*14) -> bool:
         """
-        Updates a Ansiblex jump bride struct inside the database
+        Updates an Ansiblex jump bride struct inside the database
         Args:
             src: Source system
             dst: Destination system
@@ -400,7 +399,7 @@ class Cache(object):
             self.con.commit()
             return True
 
-    def clearJumpGate(self, src) -> None:
+    def clearJumpGate(self, src: Optional[str]) -> None:
         """ Removes all items from the jumpbridge table where FROM or TO match str
 
         Args:
@@ -549,7 +548,6 @@ class Cache(object):
         """
         gets the POI at index position inx
         Args:
-            inx: model index
 
         Returns:
             dict of the POI or None
@@ -655,7 +653,8 @@ class Cache(object):
         with self as cache:
             for player_name in current_players | online_player_names:
                 if player_name not in current_players:
-                    query = "INSERT INTO players (active,online,name,maxage) VALUES (?,1, ?, {});".format(secondsTillDowntime())
+                    query = "INSERT INTO players (active,online,name,maxage) VALUES (?,1, ?, {});".format(
+                        secondsTillDowntime())
                     cache.con.execute(query, (player_name in online_player_names, player_name))
                 query = "UPDATE  players set modified = ?  online=1 WHERE name= ? ;"
                 cache.con.execute(query, (time.time(), player_name))
@@ -687,7 +686,7 @@ class Cache(object):
     def insertAlliance(self, alliance_id, alliance_name, alliance_standing=None):
         with Cache.SQLITE_WRITE_LOCK:
             query = "INSERT INTO alliances (id,name,standing,maxage) VALUES (?,?, ?);"
-            self.con.execute(query, alliance_id, alliance_name, alliance_standing)
+            self.con.execute(query, (alliance_id, alliance_name, alliance_standing))
             self.con.commit()
 
     def getAllianceRed(self) -> list:
@@ -758,6 +757,17 @@ class Cache(object):
         for i in res:
             lst.append(i[0])
         return lst
+
+    def putDotlanMap(self, region_id, xml_map=None, native_map=None):
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "INSERT OR REPLACE INTO map (id, dotlan, native, modified, maxage) VALUES (?,?,?,?);"
+            self.con.execute(query, (region_id, xml_map, native_map, currentEveTime(), 24*60+60)).fetchall()
+            self.con.commit()
+
+    def getDotlanMap(self, region_id):
+        with Cache.SQLITE_WRITE_LOCK:
+            query = "SELECT dotlan FROM map WHERE id = ?;"
+            self.con.execute(query, (region_id, ))
 
     def clearOutdated(self) -> None:
         """

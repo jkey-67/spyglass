@@ -19,18 +19,10 @@
 
 import datetime
 import os
-import time
 import logging
 
-from bs4 import BeautifulSoup
 from vi import states
-
-from .parser_functions import parseStatus
-from .parser_functions import parseUrls, parseShips, parseSystems
-
 from .message import Message
-
-from .parser_functions import CTX
 from .parser_functions import parseMessageForMap
 from .parser_functions import parseLocal
 
@@ -57,7 +49,8 @@ class ChatParser(object):
         if path is not None:
             self._collectInitFileData(path)
 
-    def lastDowntime(self):
+    @staticmethod
+    def lastDowntime():
         """ Return the timestamp from the last downtime
         """
         target = datetime.datetime.utcnow()
@@ -67,7 +60,6 @@ class ChatParser(object):
         return target.timestamp()
 
     def _collectInitFileData(self, path):
-        current_time = time.time()
         last_downtime = self.lastDowntime()  # 60 * 60 * 24  # what is 1 day in seconds
         for filename in os.listdir(path):
             full_path = os.path.join(path, filename)
