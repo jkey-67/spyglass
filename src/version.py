@@ -21,7 +21,7 @@ fileType=0x1,
 # 0x0 - the function is not defined for this fileType
 subtype=0x0,
 # Creation date and time stamp.
-date=(08, 19)
+date=(08,19)
 ),
   kids=[
 StringFileInfo(

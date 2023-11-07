@@ -22,7 +22,7 @@ class Universe(object):
     NPC_FACTION_NAMES = NPCNAMES
     LOCATED_CHARS = set()
 
-    def __init__(self, path_to_sql_file="cache.sqlite3"):
+    def __init__(self):
         return
 
     @staticmethod

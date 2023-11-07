@@ -48,16 +48,16 @@ def concat(firstFile, secondFile):
 
     for jumpgroup in secondSvg.select("#jumps"):
         for jump in jumpgroup.select("line"):
-            jump["x1"] = float(jump["x1"]) + 1024
-            jump["x2"] = float(jump["x2"]) + 1024
-            jump["y1"] = float(jump["y1"]) + 300
-            jump["y2"] = float(jump["y2"]) + 300
+            jump["x1"] = str(float(jump["x1"]) + 1024)
+            jump["x2"] = str(float(jump["x2"]) + 1024)
+            jump["y1"] = str(float(jump["y1"]) + 300)
+            jump["y2"] = str(float(jump["y2"]) + 300)
             jumps.append(jump)
 
     for sysgroup in secondSvg.select("#sysuse"):
         for sysuse in sysgroup.select("use"):
-            sysuse["x"] = float(sysuse["x"]) + 1024
-            sysuse["y"] = float(sysuse["y"]) + 300
+            sysuse["x"] = str(float(sysuse["x"]) + 1024)
+            sysuse["y"] = str(float(sysuse["y"]) + 300)
             systemUses.append(sysuse)
 
     defElement = firstSvg.select("defs")[0]
@@ -76,7 +76,6 @@ def concat(firstFile, secondFile):
 
 
 def loadSvg(path):
-    content = None
     with open(path) as f:
         content = f.read()
     return BeautifulSoup(content)

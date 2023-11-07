@@ -178,8 +178,6 @@ def esiCharNameToId(char_name: str, use_outdated=False) -> Optional[int]:
                 response = getSession().get(url.format(char_name))
                 if response.status_code == 200:
                     details = response.json()
-                    if "alliance_id" in details.keys():
-                        alliance_id = details["alliance_id"]
                     if "name" in details.keys():
                         name_found = details["name"]
                         if name_found.lower() == char_name.lower():
@@ -254,11 +252,11 @@ def esiUniverseIds(names, use_outdated=False):
     return data
 
 
-def esiUniverseNames(ids, use_outdated=False):
+def esiUniverseNames(ids: set, use_outdated=False):
     """ Returns the names for a list of ids
 
         Args:
-            ids(list): list of ids to search
+            ids(set): set of ids to search
             use_outdated(bool): if True the cache timestamp will be ignored
 
         Returns:
@@ -754,7 +752,7 @@ class APIServerThread(QThread):
             self.browser.close()
         with APIServerThread.WEB_SERVER_LOCK:
             if self.webserver:
-                response = getSession().get(url="http://localhost:8182/oauth-callback")
+                getSession().get(url="http://localhost:8182/oauth-callback")
         QThread.quit(self)
 
 
@@ -1200,8 +1198,8 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
     def update_callback(seq_in):
         if callback:
             seq_in = seq_in + "."
-            callback("updating alliance and system database {}".format(seq_in))
-            if len(seq_in) > 40:
+            callback("Fetch player sovereignty by ESI {}".format(seq_in))
+            if len(seq_in) > 20:
                 seq_in = ""
         return seq_in
 
@@ -1213,12 +1211,12 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
     else:
         player_sov = dict()
         npc_sov = dict()
-        list_of_all_factions = set()
+        set_of_all_factions = set()
         for sov in esiLatestSovereigntyMap(use_outdated, fore_refresh):
             if len(sov) > 2:
                 player_sov[str(sov["system_id"])] = sov
             elif show_npc and len(sov) > 1:
-                list_of_all_factions.add(sov["faction_id"])
+                set_of_all_factions.add(sov["faction_id"])
                 npc_sov[str(sov["system_id"])] = sov
 
         alliance_ids = set([player_sov[itm]["alliance_id"] for itm in player_sov if "alliance_id" in player_sov[itm].keys()])
@@ -1231,7 +1229,7 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
             seq = update_callback(seq)
 
         if show_npc:
-            npc_list = esiUniverseNames(list_of_all_factions)
+            npc_list = esiUniverseNames(set_of_all_factions)
             for sov in npc_sov.values():
                 if "faction_id" in sov.keys():
                     sov["ticker"] = Universe.npcFactionNames(sov["faction_id"], npc_list)
@@ -1529,7 +1527,7 @@ def esiUniverseRegions(region_id: int, use_outdated=False):
             return None
 
 
-def esiUniverseGetAllRegions(use_outdated=False) -> Optional[list]:
+def esiUniverseGetAllRegions(use_outdated=False) -> Optional[set]:
     """ Uses the EVE API to get the list of all region ids
 
     Returns:
@@ -1768,7 +1766,8 @@ def esiCharactersStanding(char_name: str, use_outdated=False):
                 return json.loads(response.text)
     return dict()
 
-def hasAnsiblex( sys ) -> bool:
+
+def hasAnsiblex(sys) -> bool:
     return False
 
 
@@ -1784,11 +1783,10 @@ def applyRouteToEveOnline(name_char, jump_list):
 
 
 def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
-    """check github for a new latest release
+    """check GitHub for a new latest release
     """
     checked = Cache().getFromCache("version_check")
     if force_check or checked is None:
-        new_version = None
         url = "https://api.github.com/repos/jkey-67/spyglass/releases"
         response = getSession().get(url=url)
         if response.status_code != 200:
@@ -1867,53 +1865,7 @@ def dumpSpyglassDownloadStats():
 
 # The main application for testing
 if __name__ == "__main__":
-    Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
+    Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-32.sqlite3"
     dumpSpyglassDownloadStats()
-    statistics_data = dict()
-    statistics_data["statistics"] = esiUniverseSystem_jumps()
-    statistics_data["incursions"] = esiIncursions(False)
-    statistics_data["campaigns"] = getCampaignsSystemsIds(False)
 
-    Cache().removeFromCache("_".join(("name", "id", "Rovengard Ogaster")))
-    esiCharNameToId("Rovengard Ogaster")
-    esiCharactersOnline("Rovengard Ogaster")
-    esiCharactersOnline("nele McCool")
-    ''''
-
-    cache_key = "sovereignty_structures"
-    sovereignty_structures = json.loads(Cache().getFromCache(cache_key, True))
-    structure_id = dict()
-    if sovereignty_structures:
-        for sovereignty_structure in sovereignty_structures:
-            structure_id[sovereignty_structure["structure_id"]] = sovereignty_structure
-
-
-    # checkSpyglassVersionUpdate("1.1",True)
-    # res = getAllJumpGates("nele McCool")
-    Cache().clearOutdated()
-    Cache().removeAvatar("Test123")
-    Cache().putImageToAvatar("Test123", "123")
-    Cache().putImageToAvatar("Test123", "12345")
-    Cache().removeAvatar("nele McCool")
-
-    res = Cache().getKillmails()
-
-    res = esiCharactersPublicInfo("nele McCool")
-    res = esiCharactersPublicInfo("nele McCool")
-    Cache().removeAvatar("nele McCool")
-    res = esiCharactersStanding("nele McCool")
-    res = getSpyglassUpdateLink()
-    res = listOfJumpGatePairs()
-    res = checkTheraConnections()
-    res = getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None)
-    res = esiSovereigntyStructures()
-    res = esiSovereigntyMap()
-    res = esiSovereigntyCampaigns()
-    res = esiGetCharsOnlineStatus()
-
-    res = esiGetCharsOnlineStatus()
-    res = checkSpyglassVersionUpdate()
-
-    "mark_system/W-KXEX"
-    "30005142"
-    '''
+    res = esiUniverseGetAllRegions()

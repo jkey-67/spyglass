@@ -19,7 +19,7 @@
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
 
-from PySide6.QtGui import *
+from PySide6.QtGui import QPainter, QResizeEvent, QWheelEvent, QMouseEvent
 from PySide6 import QtCore, QtSvg
 
 from PySide6.QtCore import QPoint, QPointF
@@ -33,7 +33,7 @@ class PanningWebView(QWidget):
     webViewResized = QtCore.Signal()
 
     def __init__(self, parent=None):
-        super(PanningWebView, self).__init__()
+        super(PanningWebView, self).__init__(parent)
         self.zoom = 1.0
         self.wheel_dir = 1.0
         self.imgSize = QtCore.QSize(1024, 768)
@@ -71,7 +71,6 @@ class PanningWebView(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        # painter.fillRect(self.rect(), self.palette().brush(QPalette.Window))
         if self.svgRenderer:
 
             rect = QtCore.QRectF(-self.scrollPos.x(), -self.scrollPos.y(),

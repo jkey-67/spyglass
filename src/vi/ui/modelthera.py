@@ -108,7 +108,6 @@ class TableModelThera(QAbstractTableModel):
         return QtCore.Qt.ItemFlag.ItemIsEnabled
 
     def data(self, index: Union[QModelIndex, QPersistentModelIndex], role: int = ...) -> Any:
-        node = index.internalPointer()
         if role == PySide6.QtCore.Qt.DisplayRole:
             sel_item = self.thera_data[index.row()]
             sel_item_dict = self.model_display_list[index.column()]
@@ -119,8 +118,6 @@ class TableModelThera(QAbstractTableModel):
 
         elif role == PySide6.QtCore.Qt.ForegroundRole:
             sel_item = self.thera_data[index.row()]
-            source_system = sel_item["sourceSolarSystem"]
-            destination_system = sel_item["destinationSolarSystem"]
             match index.column():
                 case 0:
                     if sel_item["wormholeEol"] == "stable":

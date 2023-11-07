@@ -127,7 +127,6 @@ class zkillMonitor(QObject):
         zTime       = kill_data["killmail_time"]
         system_id   = kill_data["solar_system_id"]
         kill_url    = kill_data["zkb"]["url"]
-        atackers    = kill_data["attackers"]
 
         #  0---------1--------"
         #  0123456789012345678"
@@ -164,7 +163,6 @@ class zkillMonitor(QObject):
     @staticmethod
     def updateKillDatabase(kill_data):
         victim = kill_data["victim"]
-        character_id = victim["character_id"] if "character_id" in victim.keys() else 0
         alliance_id = victim["alliance_id"] if "alliance_id" in victim.keys() else 0
         return alliance_id in Cache().getAllianceBlue()
 
@@ -182,7 +180,6 @@ class zkillMonitor(QObject):
         if zkillMonitor.LOG_VICTIM:
             victim = kill_data["victim"]
             if "character_id" in victim.keys():
-                character_id = victim["character_id"]
                 if "alliance_id" in victim.keys():
                     alliance_id = victim["alliance_id"]
                     if alliance_id in blue_alliances:

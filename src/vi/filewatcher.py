@@ -99,7 +99,6 @@ class FileWatcher(QtCore.QThread):
         Returns:
             None: modifies the file member
         """
-        now = time.time()
         path = self.path
         files_in_dir = {}
         last_downtime = self.lastDowntime()

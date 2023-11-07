@@ -200,7 +200,7 @@ def parseSystems(systems, rtext, systems_found) -> bool:
     # todo:parse systems may run in a loop
 
     system_names = Universe.systemNamesUpperCase() #  systems.keys()
-    maps_system_name = [sys.upper() for sys in systems]
+    # maps_system_name = [sys.upper() for sys in systems]
 
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:
@@ -281,16 +281,16 @@ def parseMessageForMap(systems_on_map, message: Message) -> Message:
     formatted_text = u"<rtext>{0}</rtext>".format(original_text)
     soup = BeautifulSoup(formatted_text, 'html.parser')
     rtext = soup.select("rtext")[0]
-    systems = set()
+    message.affectedSystems = set()
 
     while parseUrls(rtext):
         continue
 
-    parseSystems(systems_on_map, rtext, systems)
+    parseSystems(systems_on_map, rtext, message.affectedSystems)
     #while parseSystems(systems_on_map, rtext, systems):
     #    continue
 
-    for system in systems:
+    for system in message.affectedSystems:
         if system in systems_on_map:
             while parsePlayerNames(rtext):
                 continue
@@ -299,17 +299,14 @@ def parseMessageForMap(systems_on_map, message: Message) -> Message:
         continue
 
     parsed_status = parseStatus(rtext)
-    status = parsed_status if parsed_status is not None else states.ALARM
+    message.status = parsed_status if parsed_status is not None else states.ALARM
 
     message.guiText = str(rtext)
-    message.status = status
     message.original_text = original_text
-    message.affectedSystems = systems
 
-    if systems:
-        for system in systems:
-            system.messages.append(message)
-            system.status = status
+    for system in message.affectedSystems:
+        system.messages.append(message)
+        system.status = message.status
 
     return message
 

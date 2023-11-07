@@ -563,7 +563,7 @@ class Cache(object):
     def clearPOI(self, destination_id: int) -> None:
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM pointofinterest  WHERE id IS ?"
-            founds = self.con.execute(query, (destination_id,)).fetchall()
+            self.con.execute(query, (destination_id,)).fetchall()
             self.con.commit()
 
     def clearAPIKey(self, param) -> None:

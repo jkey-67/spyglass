@@ -5,7 +5,7 @@ import os
 
 def instFiles():
     """
-        generate the windows installer
+        generate the Windows installer
     Returns:
         None
     """
@@ -21,7 +21,7 @@ def instFiles():
         '--workpath', builddir,
         '--onefile',
         '--windowed',
-        '--name', 'spyglass-1.6.8',
+        '--name', 'spyglass-1.6.9',
         '../spyglass.py',
         '--icon=../icon.ico',
         '--add-data=../vi/universe/*.json;./vi/universe',

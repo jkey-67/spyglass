@@ -29,7 +29,6 @@ def readSvg(path):
     if not os.path.exists(path):
         errout("ERROR: {0} does not exist!".format(path))
         sys.exit(2)
-    soup = None
     with open(path) as f:
         soup = BeautifulSoup(f.read())
     return soup

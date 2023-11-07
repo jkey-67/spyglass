@@ -85,8 +85,8 @@ class TestCache(unittest.TestCase):
             for itm in res["groups"]:
                 res = evegate.esiUniverseGroups(itm, use_outdated=self.use_outdated_cache)
                 self.assertIsNotNone(res, "esiUniverseGroups should never return None")
-                for type in res["types"]:
-                    res = evegate.esiUniverseTypes(type, use_outdated=self.use_outdated_cache)
+                for res_type in res["types"]:
+                    res = evegate.esiUniverseTypes(res_type, use_outdated=self.use_outdated_cache)
                     self.assertIsNotNone(res, "esiUniverseTypes should never return None")
                     ship_text = u'{{"id": {}, "name": "{}"}}'.format(res["type_id"], res["name"].upper())
                     curr_len = curr_len + len(ship_text)
@@ -286,8 +286,8 @@ class TestCache(unittest.TestCase):
             'OX-S7P » 8CN-CH - Speedway 2'
         ]
         for itm in jb_list:
-            type, res = evaluateClipboardData(itm)
-            self.assertEqual(type, "jumpbridge", "Result of '{}'is not jumpbridge".format(itm))
+            res_type, res = evaluateClipboardData(itm)
+            self.assertEqual(res_type, "jumpbridge", "Result of '{}'is not jumpbridge".format(itm))
 
         pos_list = [
             'OX-S7P - Terrapin Station',
@@ -299,8 +299,8 @@ class TestCache(unittest.TestCase):
             "Jita IV - Moon 4 - Caldari Navy Assembly Plant"
             ]
         for itm in pos_list:
-            type, res = evaluateClipboardData(itm)
-            self.assertEqual(type, "poi", "Result of '{}' is not poi".format(itm))
+            res_type, res = evaluateClipboardData(itm)
+            self.assertEqual(res_type, "poi", "Result of '{}' is not poi".format(itm))
 
     def test_esi(self):
         res = evegate.esiStatus()

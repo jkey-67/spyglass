@@ -33,7 +33,7 @@ class Styles:
 
     styleList = ["light", "abyss"]
 
-    currentStyle = "light"
+    currentStyle = "abyss"
 
     def __init__(self):
         try:
@@ -42,14 +42,13 @@ class Styles:
                 Styles.defaultStyle = default.read()
             with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.yaml"))) as default:
                 Styles.defaultCommons = yaml.full_load(default)
-            default = None
 
             # dark theme
             with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.css"))) as dark:
                 Styles.darkStyle = dark.read()
             with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.yaml"))) as dark:
                 Styles.darkCommons = yaml.full_load(dark)
-            dark = None
+
         except Exception as e:
             logging.critical(e)
 

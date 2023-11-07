@@ -304,7 +304,7 @@ class JumpBridgeContextMenu(QtWidgets.QMenu):
 
 
 class POIContextMenu(QtWidgets.QMenu):
-    def __init__(self):
+    def __init__(self, region_name=None):
         QtWidgets.QMenu.__init__(self)
         self.delete = QAction("Remove the selected POI")
         self.copy = QAction("Selected POI to clipboard")
@@ -313,6 +313,8 @@ class POIContextMenu(QtWidgets.QMenu):
         self.insertMenu(None, self.player_menu)
         self.addAction(self.copy)
         self.addAction(self.copy_all)
+        self.selectRegion = QAction("Select region on map")
+        self.addAction(self.selectRegion)
         self.addSeparator()
         self.addAction(self.delete)
 
@@ -322,6 +324,8 @@ class TheraContextMenu(QtWidgets.QMenu):
         QtWidgets.QMenu.__init__(self)
         self.player_menu = PlayerContextMenu(Cache().getAPICharNames())
         self.insertMenu(None, self.player_menu)
+        self.selectRegion = QAction("Select region on map")
+        self.addAction(self.selectRegion)
         self.updateData = QAction("Update Thera Connections")
         self.addSeparator()
         self.addAction(self.updateData)
@@ -416,7 +420,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             speech_text = (u"System {0} Alarm distance {1} in Room {2}, {3} jumps away from {4}".format(
                 system, distance, room, distance, char))
             text = speech_text + (u"\nText: %s" % text)
-            SoundManager().playSound("alarm_{}".format(distance), text, speech_text)
+            SoundManager().playSound("alarm_{}".format(distance), text, "" if message.roomName != "zKillboard" else speech_text)
             self.lastNotifications[states.ALARM] = time.time()
         elif (message.status == states.REQUEST and
               self.showRequest and

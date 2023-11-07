@@ -115,7 +115,8 @@ class Application(QApplication):
 
         if not os.path.exists(chat_log_directory):
             # None of the paths for logs exist, bailing out
-            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chat_log_directory, QMessageBox.Close)
+            QMessageBox.critical(None, "No path to Logs", "Unable to find the log files at:\n\n" + chat_log_directory +
+                                 "\n\nThe Spyglass Application will be terminated.", QMessageBox.Close)
             sys.exit(1)
 
         change_splash_text("setting local directory for cache and logging")

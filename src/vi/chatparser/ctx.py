@@ -6,9 +6,9 @@ class CTX:
     FORMAT_SHIP \
         = u"""<a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/{0}">{0}</a>"""
     FORMAT_PLAYER_NAME \
-        = u""" <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/{1}/">{0}</a> """
+        = u""" <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/{1}/">{0}</a>"""
     FORMAT_ALLIANCE_NAME \
-        = u""" <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/{1}/">{0}</a> """
+        = u""" <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/{1}/">{0}</a>"""
     FORMAT_SYSTEM = u"""<a style="color:#888880;font-weight:bold" href="mark_system/{0}">{1}</a>"""
     FORMAT_SYSTEM_IN_RERION = u"""<a style="color:#CC8800;font-weight:bold" href="mark_system/{0}">{1}</a>"""
     STATUS_CLEAR = {"CLEAR", "CLR", "CRL"}

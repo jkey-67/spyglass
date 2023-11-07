@@ -242,7 +242,7 @@ class Map(object):
             system_id = symbol_id[3:]
             try:
                 system_id = int(system_id)
-            except ValueError as e:
+            except (ValueError,):
                 continue
             for element in symbol.select(".sys"):
                 name = element.select("text")[0].text.strip()
@@ -257,7 +257,6 @@ class Map(object):
                 map_coordinates["center_y"] = (map_coordinates["y"] + (map_coordinates["height"] / 2.0))
                 try:
                     if symbol_id in uses.keys():
-                        keys = uses[symbol_id]
                         if uses[symbol_id].find("transform"):
                             transform = uses[symbol_id]["transform"]
                         else:
@@ -691,7 +690,7 @@ class System(object):
         self.systemId = systemId
         self.transform = "translate(0, 0)" if transform is None else transform
         self.cachedOffsetPoint = None
-        self._neighbours = set()
+        self.neighbours = set()
         self.__alarmDistances = set()
         self.statistics = {"jumps": "?", "shipkills": "?", "factionkills": "?", "podkills": "?"}
         self.currentStyle = ""
@@ -802,8 +801,8 @@ class System(object):
         Args:
             neighbourSystem(System):
         """
-        self._neighbours.add(neighbourSystem)
-        neighbourSystem._neighbours.add(self)
+        self.neighbours.add(neighbourSystem)
+        neighbourSystem.neighbours.add(self)
 
     def getNeighbours(self, distance=1):
         """
@@ -823,7 +822,7 @@ class System(object):
             current_distance += 1
             new_systems = []
             for system in systems.keys():
-                for neighbour in system._neighbours:
+                for neighbour in system.neighbours:
                     if neighbour not in systems:
                         new_systems.append(neighbour)
             for newSystem in new_systems:
@@ -834,10 +833,10 @@ class System(object):
         """
             Removes the link between to neighboured systems
         """
-        if system in self._neighbours:
-            self._neighbours.remove(system)
-        if self in system._neighbours:
-            system._neigbours.remove(self)
+        if system in self.neighbours:
+            self.neighbours.remove(system)
+        if self in system.neighbours:
+            system.neigbours.remove(self)
 
     def setStatus(self, newStatus, alarm_time=datetime.datetime.utcnow()):
         if newStatus == states.ALARM:
@@ -965,10 +964,6 @@ class System(object):
                     cache_key = "_".join(("structure", "id", str(structure_id)))
                     cache = Cache()
                     cached_id = cache.getFromCache(cache_key, True)
-                    if cached_id:
-                        structure_data = json.loads(cached_id)
-                    else:
-                        structure_data = None
 
                     event_type = itm["event_type"]
                     if solar_system_id == self.systemId:

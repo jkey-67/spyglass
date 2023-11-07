@@ -29,6 +29,13 @@ import pygame
 import pygame._sdl2.audio as sdl2_audio
 
 try:
+    from PySide6.QtTextToSpeech import QTextToSpeech
+    QT_TEXT_TO_SPEECH_ENABLED = True
+except (Exception,):
+    QT_TEXT_TO_SPEECH_ENABLE = False
+    pass
+
+try:
     import pyttsx3
     PYTTSX3_ENABLED = True
 except (Exception,):
@@ -194,7 +201,6 @@ class SoundManager(metaclass=Singleton):
             val.set_volume(self.soundVolume / 100 * self.SNDVOL[key])
 
     def playSound(self, name="alarm", message="", abbreviatedMessage=""):
-
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviatedMessage != "":
                 if isinstance(self.speach_engine, pyttsx3.engine.Engine):

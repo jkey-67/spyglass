@@ -128,3 +128,23 @@ class TestIntel(unittest.TestCase):
         self.assertEqual(res, "poi", "Structure should be POI")
         res, data = evaluateClipboardData("OX-S7P » 8CN-CH - Speedway 2")
         self.assertEqual(res, "jumpbridge", "Structure should be jumpbridge")
+
+    def test_removeXmlData(self):
+        soup = BeautifulSoup('<a style="color:#28a5ed;font-weight:bold" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>', 'html.parser')
+        [s.extract() for s in soup(['href', 'br'])]
+        res = soup.getText()
+        http_start = res.find("http")
+        if http_start != -1:
+            http_end = res.find(" ", http_start)
+            substr = res[http_start:http_end]
+            res = res.replace(substr, "")
+        corp_start = res.find("<")
+        if corp_start != -1:
+            corp_end = res.find(" ", corp_start)
+            substr = res[corp_start:corp_end]
+            res = res.replace(substr, "")
+        res = res.replace("(", "from ")
+        res = res.replace(")", ", ")
+
+        print(res)
+

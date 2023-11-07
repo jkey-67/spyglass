@@ -56,7 +56,6 @@ class RegionChooser(QtWidgets.QDialog):
         text = str(self.ui.regionNameField.text())
         text = dotlan.convertRegionName(text)
         self.ui.regionNameField.setText(text)
-        correct = False
         try:
             url = dotlan.Map.DOTLAN_BASIC_URL.format(text)
             content = requests.get(url).text

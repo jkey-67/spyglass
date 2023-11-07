@@ -66,7 +66,6 @@ class StyledItemDelegatePlayers(QStyledItemDelegate):
                      index: Union[
                          QtCore.QModelIndex, QtCore.QPersistentModelIndex]) -> QtWidgets.QWidget:
         if index.column() == 1:
-            inx_data = index.data()
             itm = QtWidgets.QComboBox(parent)
             itm.setEditable(False)
             itm.setFrame(False)
@@ -87,7 +86,6 @@ class StyledItemDelegatePlayers(QStyledItemDelegate):
             super(StyledItemDelegatePlayers, self).setEditorData(editor, index)
 
     def setModelData(self, editor, model, index) -> None:
-        src_index = model.mapToSource(index)
         if editor.currentText() != index.data():
             inx_data = editor.currentText()
             inx_name = model.index(index.row(),0).data()

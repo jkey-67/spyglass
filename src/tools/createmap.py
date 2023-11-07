@@ -40,7 +40,6 @@ def checkArguments(args):
 
 
 def loadSvg(path):
-    content = None
     with open(path) as f:
         content = f.read()
     return BeautifulSoup(content)
@@ -85,7 +84,7 @@ def addJumpsToSvgFile(system, jumps, svg_template, use_cache=True):
 
 def addIceBeltsToSvgFile(system, svg_template, use_cache=True):
     for sysuse in svg_template.select("use"):
-        src = sysuse["system_id"]
+        sysuse["system_id"]
 
 
 def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
@@ -140,17 +139,16 @@ def updateSvgFile(filename):
         pass
     for sysuse in systemUses.select("use"):
         symbol_id = sysuse["id"]
-        system_id = symbol_id[3:]
-        sysuse.attrs["x"] = float(sysuse.attrs["x"]) + float(trans_map[0])
-        sysuse.attrs["y"] = float(sysuse.attrs["y"]) + float(trans_map[1])
+        sysuse.attrs["x"] = str(float(sysuse.attrs["x"]) + float(trans_map[0]))
+        sysuse.attrs["y"] = str(float(sysuse.attrs["y"]) + float(trans_map[1]))
         if sysuse.has_attr("transform"):
             trans_sys = sysuse.attrs["transform"][10:-1].split(",")
-            sysuse.attrs["x"] = float(sysuse.attrs["x"]) + float(trans_sys[0])
-            sysuse.attrs["y"] = float(sysuse.attrs["y"]) + float(trans_sys[1])
+            sysuse.attrs["x"] = str(float(sysuse.attrs["x"]) + float(trans_sys[0]))
+            sysuse.attrs["y"] = str(float(sysuse.attrs["y"]) + float(trans_sys[1]))
             del sysuse.attrs["transform"]
 
-        sysuse.attrs["x"] = round(float(sysuse.attrs["x"])/62.5)*62.5
-        sysuse.attrs["y"] = round(float(sysuse.attrs["y"])/35.0)*35.0
+        sysuse.attrs["x"] = str(round(float(sysuse.attrs["x"])/62.5)*62.5)
+        sysuse.attrs["y"] = str(round(float(sysuse.attrs["y"])/35.0)*35.0)
 
     for sysuse in systemUses.select("use"):
         symbol_id = sysuse["id"]
@@ -163,9 +161,7 @@ def updateSvgFile(filename):
 
 def svgFileToDot(filename):
     result = "graph Beziehungen {\n"
-    use_cache = True
     svg_template = loadSvg(filename)
-    jumps = svg_template.select("#jumps")[0]
     systemUses = svg_template.select("#sysuse")[0]
 
     for sysuse in systemUses.select("use"):
@@ -250,8 +246,8 @@ def createSvgFile(region_ids):
                 y = (float(systems_json["position"]["y"]) + float(system["position"]["y"])-y_min)/(y_max-y_min)*768*4
                 use_tag = svg_template.new_tag("use", height="30", id="sys{}".format(system_id), width="62.5")
                 use_tag["xlink:href"] = "#def{}".format(system_id)
-                use_tag["x"] = round(x/62.5)*62.5
-                use_tag["y"] = round(y/30.0)*30.0
+                use_tag["x"] = str(round(x/62.5)*62.5)
+                use_tag["y"] = str(round(y/30.0)*30.0)
                 systemUses.append(use_tag)
 
     for region_id in region_ids:
