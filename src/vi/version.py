@@ -1,2 +1,2 @@
-VERSION = "1.6.8"
+VERSION = "1.6.9"
 SNAPSHOT = False  # set to false when releasing
