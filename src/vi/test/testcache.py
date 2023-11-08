@@ -63,13 +63,13 @@ class TestCache(unittest.TestCase):
         self.assertIsNotNone(systems)
 
     def test_update_all_json_files(self):
-        use_outdated_cache = True
+        self.use_outdated_cache = False
         self.test_generateShipnames()
         self.test_generateRegions()
         self.test_generateConstellations()
-        use_outdated_cache = False
+        self.use_outdated_cache = False
         self.test_generateStargates()
-        use_outdated_cache = True
+        self.use_outdated_cache = True
 
     def test_generateShipnames(self):
         res = evegate.esiUniverseCategories(6, use_outdated=self.use_outdated_cache)
