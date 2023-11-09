@@ -693,7 +693,13 @@ class MainWindow(QtWidgets.QMainWindow):
             cache = Cache()
             index = self.ui.tableViewPOIs.model().mapToSource(self.ui.tableViewPOIs.indexAt(pos)).row()
             item = cache.getPOIAtIndex(index)
-            lps_ctx_menu = POIContextMenu()
+            if "solar_system_id" in item:
+                lps_ctx_menu = POIContextMenu(system_name=Universe.systemNameById(item["solar_system_id"]))
+            elif "system_id" in item:
+                lps_ctx_menu = POIContextMenu(system_name=Universe.systemNameById(item["system_id"]))
+            else:
+                lps_ctx_menu = POIContextMenu()
+
             lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
             if item and "destination_id" in item.keys():
@@ -771,7 +777,7 @@ class MainWindow(QtWidgets.QMainWindow):
         def showTheraContextMenu(pos):
             index = self.ui.tableViewThera.model().mapToSource(self.ui.tableViewThera.indexAt(pos)).row()
             item = self.ui.tableViewThera.model().sourceModel().thera_data[index]
-            lps_ctx_menu = TheraContextMenu()
+            lps_ctx_menu = TheraContextMenu(item["destinationSolarSystem"]["name"])
             lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
             if self.handleDestinationActions(res, item["wormholeDestinationSolarSystemId"]):
@@ -780,7 +786,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.tableViewThera.model().sourceModel().updateData()
                 return
             elif res == lps_ctx_menu.selectRegion:
-                self.markSystemOnMap(item["destinationSolarSystem"]["name"])
+                self.region_changed_by_system_id.emit(int(item["destinationSolarSystem"]["id"]))
                 return
 
         self.ui.tableViewThera.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -804,9 +810,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def showJBContextMenu(pos):
             cache = Cache()
+            inx_selected = self.ui.tableViewJBs.selectedIndexes()
+            items = dict()
+            for inx in inx_selected:
+                items[inx.row()] = cache.getJumpGatesAtIndex(inx.row())
             index = self.ui.tableViewJBs.model().mapToSource(self.ui.tableViewJBs.indexAt(pos)).row()
             item = cache.getJumpGatesAtIndex(index)
-            lps_ctx_menu = JumpBridgeContextMenu()
+            if item:
+                lps_ctx_menu = JumpBridgeContextMenu(item["src"], item["dst"])
+            else:
+                lps_ctx_menu = JumpBridgeContextMenu()
+
             lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewJBs.mapToGlobal(pos))
             if self.handleDestinationActions(res, item["id_src"]):
@@ -831,7 +845,24 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.jbs_changed.emit()
                     QApplication.processEvents()
                 return
-
+            elif res == lps_ctx_menu.selectRegionSrc:
+                items = dict()
+                inx_selected = self.ui.tableViewJBs.selectedIndexes()
+                for inx in inx_selected:
+                    items[inx.row()] = cache.getJumpGatesAtIndex(inx.row())
+                for item in items.values():
+                    if "src" in item:
+                        self.region_changed_by_system_id.emit( Universe.systemIdByName(item["src"]))
+                return
+            elif res == lps_ctx_menu.selectRegionDst:
+                items = dict()
+                inx_selected = self.ui.tableViewJBs.selectedIndexes()
+                for inx in inx_selected:
+                    items[inx.row()] = cache.getJumpGatesAtIndex(inx.row())
+                for item in items.values():
+                    if "dst" in item:
+                        self.region_changed_by_system_id.emit( Universe.systemIdByName(item["dst"]))
+                return
         self.ui.tableViewJBs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.ui.tableViewJBs.customContextMenuRequested.connect(showJBContextMenu)
 
@@ -854,7 +885,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableChars.setItemDelegate(self.tableViewPlayersDelegate)
         self.ui.tableChars.show()
         self.players_changed.connect(callOnCharsUpdate)
-        self.region_changed_by_system_id.connect(self.changeRegionBySystemID)
+        self.region_changed_by_system_id.connect(self.markSystemOnMap)
         def callOnSelChanged(name):
             evegate.setEsiCharName(name)
             self.rescanIntel()

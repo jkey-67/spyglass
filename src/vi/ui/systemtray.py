@@ -292,19 +292,30 @@ class MapContextMenu(QtWidgets.QMenu):
 
 
 class JumpBridgeContextMenu(QtWidgets.QMenu):
-    def __init__(self):
+    def __init__(self, src=None, dst=None):
         QtWidgets.QMenu.__init__(self)
         self.update = QAction("Update Jump Bridge Data")
         self.delete = QAction("Delete the Jump Bridge")
+        if src:
+            self.selectRegionSrc = QAction("Show System {} on map".format(src))
+        else:
+            self.selectRegionSrc = QAction("Show Source System on map")
+        if dst:
+            self.selectRegionDst = QAction("Show System {} on map".format(dst))
+        else:
+            self.selectRegionDst = QAction("Show Destination System on map")
         self.player_menu = PlayerContextMenu(Cache().getAPICharNames())
         self.insertMenu(None, self.player_menu)
+        self.addSeparator()
+        self.addAction(self.selectRegionSrc)
+        self.addAction(self.selectRegionDst)
         self.addSeparator()
         self.addAction(self.update)
         self.addAction(self.delete)
 
 
 class POIContextMenu(QtWidgets.QMenu):
-    def __init__(self, region_name=None):
+    def __init__(self, region_name=None, system_name=None):
         QtWidgets.QMenu.__init__(self)
         self.delete = QAction("Remove the selected POI")
         self.copy = QAction("Selected POI to clipboard")
@@ -313,18 +324,24 @@ class POIContextMenu(QtWidgets.QMenu):
         self.insertMenu(None, self.player_menu)
         self.addAction(self.copy)
         self.addAction(self.copy_all)
-        self.selectRegion = QAction("Select region on map")
+        if system_name:
+            self.selectRegion = QAction("Show System {} on map".format(system_name))
+        else:
+            self.selectRegion = QAction("Show System on map")
         self.addAction(self.selectRegion)
         self.addSeparator()
         self.addAction(self.delete)
 
 
 class TheraContextMenu(QtWidgets.QMenu):
-    def __init__(self):
+    def __init__(self, system_name=None):
         QtWidgets.QMenu.__init__(self)
         self.player_menu = PlayerContextMenu(Cache().getAPICharNames())
         self.insertMenu(None, self.player_menu)
-        self.selectRegion = QAction("Select region on map")
+        if system_name:
+            self.selectRegion = QAction("Show System {} on map".format(system_name))
+        else:
+            self.selectRegion = QAction("Show System on map")
         self.addAction(self.selectRegion)
         self.updateData = QAction("Update Thera Connections")
         self.addSeparator()

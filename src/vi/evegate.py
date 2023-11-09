@@ -181,7 +181,7 @@ def esiCharNameToId(char_name: str, use_outdated=False) -> Optional[int]:
                     if "name" in details.keys():
                         name_found = details["name"]
                         if name_found.lower() == char_name.lower():
-                            cache.putIntoCache(cache_key, idFound["id"], 60 * 60 * 24 * 365)
+                            cache.putIntoCache(cache_key, idFound["id"], secondUntilExpire(response) ) # 60 * 60 * 24 * 365
                             return idFound["id"]
                 else:
                     logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
@@ -299,6 +299,7 @@ def esiUniverseNames(ids: set, use_outdated=False):
                 for checked_id in api_check_ids:
                     cache_key = u"_".join(("name", "id", str(checked_id)))
                     if checked_id in data.keys():
+                        # todo check secondUntilExpire(response)
                         cache.putIntoCacheNoLock(cache_key, data[int(checked_id)], 60 * 60 * 24 * 365)
                 cache.con.commit()
         if len(api_check_ids) > 1000:
@@ -361,7 +362,8 @@ def getTypesIcon(type_id: int, size_image=64) -> Optional[bytearray]:
         url = "https://images.evetech.net/types/{id}/icon".format(id=type_id, size=size_image)
         response = getSession().get(url=url)
         if response.status_code == 200:
-            used_cache.putImageToIconCache(type_id, response.content)
+            # todo check secondUntilExpire(response)
+            used_cache.putImageToIconCache(type_id, response.content, secondUntilExpire(response))
             img = response.content
         else:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
@@ -473,7 +475,8 @@ def esiCharacters(char_id, use_outdated=False):
                 response.raise_for_status()
             char_info = response.json()
             # should be valid for up to three days
-            used_cache.putIntoCache(cache_key, response.text, 86400)
+            # todo check secondUntilExpire(response)
+            used_cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if e.response.status_code != 400:
@@ -575,7 +578,8 @@ def esiCharactersCorporationHistory(char_id, use_outdated=True):
                 logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
                 response.raise_for_status()
             corp_ids = response.json()
-            cache.putIntoCache(cache_key, response.text, 86400)
+            # todo check secondUntilExpire(response)
+            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if e.response.status_code != 400:
@@ -618,6 +622,7 @@ def esiUniverseSystem_jumps(use_outdated=False):
             resp = response.json()
             for row in resp:
                 jump_data[int(row["system_id"])] = int(row["ship_jumps"])
+            # todo check secondUntilExpire(response)
             cache.putIntoCache(cache_key, json.dumps(jump_data), secondUntilExpire(response))
         else:
             jump_data = json.loads(jump_data)
@@ -1031,7 +1036,8 @@ def esiSovereigntyCampaigns(use_outdated=False):
         if response.status_code != 200:
             logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, 60)  # 5 seconds from esi
+        # todo check secondUntilExpire(response)
+        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))  # 5 seconds from esi
         return response.json()
 
 
@@ -1762,7 +1768,8 @@ def esiCharactersStanding(char_name: str, use_outdated=False):
                 esiCharNameToId(char_name), token.access_token)
             response = getSession().get(url=url)
             if response.status_code == 200:
-                cache.putIntoCache(cache_key, response.text, 3600)
+                # todo check secondUntilExpire(response)
+                cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
                 return json.loads(response.text)
     return dict()
 
@@ -1867,5 +1874,5 @@ def dumpSpyglassDownloadStats():
 if __name__ == "__main__":
     Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-32.sqlite3"
     dumpSpyglassDownloadStats()
-
+    res = esiCharNameToId("Test 123")
     res = esiUniverseGetAllRegions()
