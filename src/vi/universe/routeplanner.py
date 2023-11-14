@@ -12,9 +12,47 @@ def Init_Universe_Graph():
     for itm in Universe.STARGATES:
         id_src = int(itm["system_id"])
         id_dst = int(itm["destination"]["system_id"])
-        g.add_edge(id_src, id_dst)
+        g.add_edge(id_src, id_dst, type="Gate")
+
+    # res = nx.kamada_kawai_layout(g)
 
     return g
+
+
+class Route(object):
+    """
+        Attributes:
+            info:str
+                Information text showing source destination and length of th route.
+
+            route:list
+                A list of system ids describing the route.
+
+            src_id:int
+                The source system id.
+
+            src_name:str
+                The source system name.
+
+            dst_id:int
+                The destination system id.
+
+            dst_name:
+                The destination system name.
+
+
+    """
+    def __init__(self, **kwargs):
+        self.info = ""  """ Information text"""
+        self.route = list()
+        self.src_id = None
+        self.src_name = None
+        self.dst_id = None
+        self.dst_name = None
+        self.__dict__.update(kwargs)
+
+    def applyRouteToChar(self, esi_char):
+        return
 
 
 class RoutPlanner(object):
@@ -24,15 +62,33 @@ class RoutPlanner(object):
         return
 
     @staticmethod
-    def findRouteByID(src_id, dst_id, use_ansi=False, use_thera=False):
+    def findRoute(**kwargs) -> Route:
         try:
             graph = RoutPlanner.UNIVERSE.copy()
+
+            use_ansi = 'use_ansi' in kwargs and kwargs['use_ansi']
+            use_thera = 'use_thera' in kwargs and kwargs['use_thera']
+
+            if 'src_name' in kwargs:
+                kwargs.update(src_id=Universe.systemIdByName(kwargs['src_name']))
+            elif 'src_id' in kwargs:
+                kwargs.update(src_name=Universe.systemNameById(kwargs['src_id']))
+            else:
+                raise RuntimeError("Define src_id= or src_name= to get a route.")
+
+            if 'dst_name' in kwargs:
+                kwargs.update(dst_id=Universe.systemIdByName(kwargs['dst_name']))
+            elif 'dst_id' in kwargs:
+                kwargs.update(dst_name=Universe.systemNameById(kwargs['dst_id']))
+            else:
+                raise RuntimeError("Define dst_id= or dst_name= to get a route.")
+
             if use_ansi:
                 for itm in cache.Cache().getJumpGates():
                     src = Universe.systemIdByName(itm[0])
                     dst = Universe.systemIdByName(itm[2])
                     if src is not None and dst is not None:
-                        graph.add_edge(src, dst)
+                        graph.add_edge(src, dst, type='Ansi')
                     else:
                         logging.info("Invalid jump bridge data")
 
@@ -40,31 +96,62 @@ class RoutPlanner(object):
                 for itm in cache.Cache().getThreaConnections():
                     id_src = itm["sourceSolarSystem"]["id"]
                     id_dst = itm["destinationSolarSystem"]["id"]
-                    graph.add_edge(id_src, id_dst)
+                    graph.add_edge(id_src, id_dst, type='Thera')
 
-            return nx.shortest_path(graph, source=src_id, target=dst_id)
-        except (Exception,):
-            return list()
+            path = nx.shortest_path(graph, source=kwargs['src_id'], target=kwargs['dst_id'])
+            attr = [dict(node=u, type=graph[u][v]['type']) for u, v in zip(path, path[1:])]
+            attr.append(dict(node=path[-1], type="System"))
+            kwargs.update(route=path)
+            kwargs.update(attr=attr)
+            kwargs.update(info="Route from {} to {} {} Jumps{}{}.".format(
+                kwargs['src_name'],
+                kwargs['dst_name'],
+                len(kwargs['route']),
+                ", using Ansiblex" if use_ansi else "",
+                ", using Thera" if use_thera else ""))
 
-    @staticmethod
-    def findRouteByName(src_name, dst_name, use_ansi=False, use_thera=False):
-        src_id = Universe.systemIdByName(src_name)
-        dst_id = Universe.systemIdByName(dst_name)
-        return RoutPlanner.findRouteByID(src_id, dst_id, use_ansi, use_thera)
+
+        except (Exception,) as e:
+            kwargs.update(info="Route not found, {}".format(e))
+            kwargs.update(route=list())
+
+        return Route(**kwargs)
 
 
 if __name__ == '__main__':
     from vi.evegate import checkTheraConnections
     checkTheraConnections()
-    res = RoutPlanner.findRouteByName('MJ-5F9', 'C3J0-O')
-    print('The shortest path : %s' %(res[::-1]))
-    res = RoutPlanner.findRouteByName('MJ-5F9', 'C3J0-O', use_ansi=True)
-    print('The shortest path : %s' %(res[::-1]))
-    res = RoutPlanner.findRouteByName('MJ-5F9', 'Thera', use_ansi=True, use_thera=True)
-    print('The shortest path : %s' %(res[::-1]))
-    res = RoutPlanner.findRouteByName('MJ-5F9', 'Thera', use_ansi=False)
-    print('The shortest path : %s' %(res[::-1]))
-    res = RoutPlanner.findRouteByName('MJ-5F9', 'Thera')
-    print('The shortest path : %s' %(res[::-1]))
 
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='C3J0-O')
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='C3J0-O', use_ansi=True)
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Thera', use_ansi=True, use_thera=True)
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Jita', use_ansi=False, use_thera=True)
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Jita', use_ansi=True, use_thera=True)
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Jita', use_ansi=True, use_thera=False)
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Jita', use_ansi=False, use_thera=False)
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Thera', use_ansi=False)
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Thera')
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9')
+    print('{} %s'.format(res.info) % (res.route[::-1]))
+
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name="Zarzakh")
+    print('{} %s'.format(res.info) % (res.route[::-1]))
 

@@ -15,7 +15,7 @@ from vi.clipboard import evaluateClipboardData
 
 
 class TestIntel(unittest.TestCase):
-    # Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
+    # Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     # cache_used = Cache()
     # evegate.setEsiCharName("nele McCool")
 

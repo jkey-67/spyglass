@@ -201,7 +201,7 @@ if __name__ == "__main__":
     mon = zkillMonitor(appl)
     #mon.startDisconnect()
     #mon.startConnect()
-    Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
+    Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     for res in Cache().getKillmails():
         mon.onNewTextMessage(res)
 

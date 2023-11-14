@@ -23,6 +23,7 @@ import json
 import time
 import parse
 import threading
+import os
 from vi.universe import Universe
 from vi.universe.routeplanner import RoutPlanner
 from PySide6.QtWidgets import QApplication
@@ -1816,7 +1817,7 @@ def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
                 "Pending version check, current version is {}.".format(checked)]
 
 
-def checkTheraConnections(system_name="1-7HVI", fetch_jump_route=True):
+def checkTheraConnections(system_name=None, fetch_jump_route=True):
     thera_connections = Cache().getThreaConnections()
     if len(thera_connections) == 0:
         req = "https://www.eve-scout.com/api/wormholes?systemSearch={}".format(system_name)
@@ -1825,18 +1826,16 @@ def checkTheraConnections(system_name="1-7HVI", fetch_jump_route=True):
             Cache().setThreaConnections(response.text)
             thera_connections = response.json()
 
-    if len(thera_connections):
+    if system_name and len(thera_connections):
         jump_pairs = listOfJumpGatePairs()
         src_id = Universe.systemIdByName(system_name)
         for thera_item in thera_connections:
             dst_id = thera_item["destinationSolarSystem"]["id"]
             if 31000920 != src_id and 31000920 != dst_id:
                 if fetch_jump_route:
-                    cons = len(RoutPlanner.findRouteByID(src_id, dst_id, use_ansi=True))
-                    thera_item["jumps"] = cons -1 if cons > 0 else 0
-        return thera_connections
-    else:
-        return []
+                    cons = len(RoutPlanner.findRoute(src_id=src_id, dst_id=dst_id, use_ansi=True).route)
+                    thera_item["jumps"] = cons-1 if cons > 0 else 0
+    return thera_connections
 
 
 def getSpyglassUpdateLink(ver=VERSION):
@@ -1872,7 +1871,8 @@ def dumpSpyglassDownloadStats():
 
 # The main application for testing
 if __name__ == "__main__":
-    Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-32.sqlite3"
+    Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     dumpSpyglassDownloadStats()
+    res = checkTheraConnections()
     res = esiCharNameToId("Test 123")
     res = esiUniverseGetAllRegions()

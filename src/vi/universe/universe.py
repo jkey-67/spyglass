@@ -56,6 +56,9 @@ class Universe(object):
         return Universe.UPPER_SYSTEM_NAMES
 
     @staticmethod
+    def systemById(system_id):
+        return next((sys for sys in Universe.SYSTEMS if sys["system_id"] == system_id), None)
+    @staticmethod
     def systemNameById(system_id):
         return next((sys["name"] for sys in Universe.SYSTEMS if sys["system_id"] == system_id), None)
 
@@ -66,6 +69,27 @@ class Universe(object):
     @staticmethod
     def shipNames():
         return Universe.SHIP_NAMES
+
+    @staticmethod
+    def regionByID(region_id):
+        return next((rgn for rgn in Universe.REGIONS if rgn["region_id"] == region_id), None)
+
+    @staticmethod
+    def constellationByID(const_id):
+        return next((const for const in Universe.CONSTELLATIONS if const["constellation_id"] == const_id), None)
+
+    @staticmethod
+    def stargatesBySystemID(system_id):
+        res = list()
+        for stargate in Universe.STARGATES:
+            if stargate["system_id"] == system_id:
+                res.append(stargate)
+        return res
+
+    @staticmethod
+    def stargateByID(stargate_id):
+        return next((stargate for stargate in Universe.STARGATES if stargate["stargate_id"] == stargate_id), None)
+
 
     @staticmethod
     def regionIDFromSystemID(system_id):

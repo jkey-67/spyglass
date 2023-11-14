@@ -91,6 +91,7 @@ def main():
     checkArguments(sys.argv)
     newSvg = concat(sys.argv[1], sys.argv[2])
     result = newSvg.body.next.prettify().encode("utf-8")
+    # Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     # with open("/home/jkeymer/projects/spyglass/src/vi/ui/res/mapdata/Wickedcreek_Scaldingpass.svg", "wb") as svgFile:
     #    svgFile.write(result);
     #    svgFile.close()

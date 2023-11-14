@@ -10,7 +10,7 @@ from vi.clipboard import evaluateClipboardData
 class TestCache(unittest.TestCase):
     use_outdated_cache = False
     curr_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "universe")
-    Cache.PATH_TO_CACHE = "/home/jkeymer/Documents/EVE/spyglass/cache-2.sqlite3"
+    Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     cache_used = Cache()
     evegate.setEsiCharName("nele McCool")
 
