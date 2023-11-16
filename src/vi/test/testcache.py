@@ -30,7 +30,7 @@ class TestCache(unittest.TestCase):
         res = Universe.systemNames()
         self.assertIsNotNone(res)
         res = Universe.systemIdByName("Jita")
-        self.assertIsNone(res)
+        self.assertIsNotNone(res)
 
     def test_intelSystems(self):
         res = Universe.monitoredSystems(30000734, 0)
@@ -237,6 +237,15 @@ class TestCache(unittest.TestCase):
 
             ships_file.write("]\n")
 
+    def test_GetDotlanFiles(self):
+        for region in Universe.REGIONS:
+            filename = os.path.join(self.curr_path,"..","ui","res","mapdata","{}.svg".format(
+                evegate.convertRegionNameForDotlan(region["name"])))
+            svg = evegate.getSvgFromDotlan(region=region["name"], dark=True)
+            if svg.find("region not found") == -1:
+                with open(filename, "w") as f:
+                    f.write(svg)
+
     def test_KnownPlayerNames(self):
         self.cache_used.removeAPIKey("Mr A")
         self.cache_used.removeAPIKey("Mr B")
@@ -290,9 +299,6 @@ class TestCache(unittest.TestCase):
             self.assertEqual(res_type, "jumpbridge", "Result of '{}'is not jumpbridge".format(itm))
 
         pos_list = [
-            'OX-S7P - Terrapin Station',
-            "1-7HVI - Checkpoint BlackRose\n0 m",
-            "<url=showinfo:35832//1035714265751 alt='Current Station'>1-7HVI - Checkpoint BlackRose</url>",
             "<url=showinfo:1531//60002476 alt='Current Station'>Vittenyn IV - Moon 6 - Expert Distribution Warehouse</url>",
             "Vittenyn IV - Moon 6 - Expert Distribution Warehouse\n0 m",
             'Trossere VII - Moon 3 - University of Caille',

@@ -193,6 +193,15 @@ class RegionObject(object):
         self.__dict__.update(kwargs)
 
 
+def systemsInSameConstellation(id_src, id_dst) -> bool:
+    return Universe.systemById(id_src)["constellation_id"] == Universe.systemById(id_dst)["constellation_id"]
+
+def systemsInSameRegion(id_src, id_dst) -> bool:
+
+    return Universe.constellationByID( Universe.systemById(id_src)["constellation_id"])["region_id"] ==\
+        Universe.constellationByID( Universe.systemById(id_dst)["constellation_id"])["region_id"]
+
+
 def createSvgFile(region_ids):
     use_cache = True
     map_template = os.path.join(os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata","MapTemplate.svg")
@@ -217,8 +226,9 @@ def createSvgFile(region_ids):
                 affected_systems.add(system_id)
                 for stargate_system in Universe.stargatesBySystemID(system_id):
                     affected_systems.add(stargate_system["destination"]["system_id"])
+        break
 
-    g = nx.Graph()
+    g = nx.DiGraph()
     initialpos = dict()
     fixed_pos = list()
     for system_id in affected_systems:
@@ -233,20 +243,31 @@ def createSvgFile(region_ids):
         subset = system["constellation_id"] if 'constellation_id' in system else -1
         g.add_node(system_id, subset=subset)
 
-        initialpos.update({system_id: (x_cur, y_cur, z_cur)})
+        initialpos.update({system_id: (x_cur, y_cur)})
         if region_id not in region_ids:
             fixed_pos.append(system_id)
 
     for itm in Universe.STARGATES:
         if itm["system_id"] in affected_systems and itm["destination"]["system_id"] in affected_systems:
+
             id_src = int(itm["system_id"])
             id_dst = int(itm["destination"]["system_id"])
-            g.add_edge(id_src, id_dst, type="Gate")
+            res =Universe.constellationByID(id_src)
+            res = Universe.systemById(id_src)
+            if systemsInSameConstellation(id_src, id_dst):
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.5)
+            elif systemsInSameRegion(id_src, id_dst):
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.3)
+            else:
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.1)
 
-    graph_positions = initialpos
+    #graph_positions = initialpos
 
-    #graph_positions = fruchterman_reingold_layout(g, dim=3, seed=0)
-    graph_positions = nx.spring_layout(g, dim=3, seed=7)
+    graph_positions =nx.spring_layout(g, k=0.14, seed=65535)
+    #graph_positions = nx.kamada_kawai_layout(g)
+    #graph_positions = nx.spring_layout(g, k=0.18, seed=61245)
+    #graph_positions = nx.spring_layout(g, k=0.2, weight='weight', seed=61245)
+    #graph_positions = nx.kamada_kawai_layout(g, weight='weight')
 
     x_max = None
     y_min = None
@@ -320,16 +341,16 @@ def createSvgFile(region_ids):
         sys_tag = svg_template.new_tag("symbol", id="def{}".format(system_id))
         sys_tag.append(a_tag)
         svg_template.defs.append(sys_tag)
-        x = graph_positions[system_id][0]*(svg_w-64)/width
-        y = graph_positions[system_id][1]*(svg_h-32)/height
+        x = graph_positions[system_id][0]*(svg_w-62.5)/width
+        y = graph_positions[system_id][1]*(svg_h-30)/height
         use_tag = svg_template.new_tag("use", height="30", id="sys{}".format(system_id), width="62.5")
         use_tag["xlink:href"] = "#def{}".format(system_id)
         if False:
             use_tag["x"] = str(round(x/62.5)*62.5)
             use_tag["y"] = str(round(y/30.0)*30.0)
         else:
-            use_tag["x"] = str(x) # str(round(x/62.5)*62.5)
-            use_tag["y"] = str(y) # str(round(y/30.0)*30.0)
+            use_tag["x"] = str(x)
+            use_tag["y"] = str(y)
 
         systemUses.append(use_tag)
 
@@ -360,6 +381,7 @@ def main():
                        Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Z-ENUD"))),
                        Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Jita"))),
                        Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("D-GTMI"))),
+                       Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("YKSC-A")))
                        ]: # Universe.REGIONS:
             region_name = region["name"]
             region_id = region["region_id"]

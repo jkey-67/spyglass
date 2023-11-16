@@ -1,0 +1,744 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg version="1.1"
+     id="svgdoc"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1024" height="768"
+     viewBox="0 0 1024 768"
+     style="background: #111111"
+     onload="init(evt)"
+>
+
+
+<style type="text/css">
+<![CDATA[
+/* jumps */
+.j	{ stroke: #bbbbbb; stroke-width: 1; }
+.jc	{ stroke: #dd0000; stroke-width: 1; }
+.jr	{ stroke: #800080; stroke-width: 1; }
+.jx	{ stroke: #bbbbbb; stroke-width: 3; }
+.jxc	{ stroke: #dd0000; stroke-width: 3; }
+.jxr	{ stroke: #800080; stroke-width: 3; }
+.jb	{ stroke: #0000FF; stroke-width: 3; fill: none; }
+
+/* external system */
+.eh	{ stroke: #00B000; stroke-width: 1; fill: #333333; }
+.el	{ stroke: #F00000; stroke-width: 1; stroke-dasharray: 8, 4; fill: #333333; }
+.e	{ stroke: #cccccc; stroke-width: 1; fill: #333333; }
+.exh	{ stroke: #00B000; stroke-width: 2; fill: #333333; }
+.exl	{ stroke: #F00000; stroke-width: 2; stroke-dasharray: 8, 3; fill: #333333; }
+.ex	{ stroke: #cccccc; stroke-width: 2; fill: #333333; }
+
+/* external system text */
+.es	{ font-size: 9px; font-family: Arial, Helvetica, sans-serif; fill: #ffffff; }
+.er	{ font-weight: bold; font-size: 7px; font-family: verdana, Arial, sans-serif; fill: #dddddd; }
+
+/* system */
+.sh	{ stroke: #00B000; stroke-width: 1; }
+.sl	{ stroke: #F00000; stroke-width: 1; stroke-dasharray: 8, 3; }
+.s	{ stroke: #777777; stroke-width: 1; }
+.sc	{ stroke-width: 1.2; stroke-dasharray: 4, 3; }
+.sx	{ stroke-width: 2.5; }
+
+.scl	{ stroke: transparent; stroke-width: 2; fill: transparent; }
+
+/* system text */
+.ss	{ font-family: Arial, Helvetica, sans-serif; font-size: 9px; fill: #ffffff; }
+.st	{ font-weight: bold; font-size: 7px; font-family: verdana, Arial, sans-serif; fill: #cccccc; }
+.so	{ fill: #ff2222; }
+.i	{ stroke: #0080FF; stroke-width: 1; fill: none; }
+
+/* station */
+.o	{ fill: #000000; }
+.oc	{ fill: #0000FF; }
+.oa	{ fill: #FFDC00; }
+.og	{ fill: #00FF00; }
+.om	{ fill: #FF0000; }
+.o1	{ fill: #ffffff; stroke-width: 0.5; stroke: #888888; }
+.o2	{ fill: #ffffff; stroke-width: 0.5; stroke: #888888; }
+.oo	{ fill: none; stroke: #AAAAAA; stroke-width: 1; }
+
+/* station services */
+.v1	{ fill: #FF0000; }
+.v2	{ fill: #00FF00; }
+.v3	{ fill: #FFDC00; }
+.v4	{ fill: #0000FF; }
+
+/* legend */
+.lb	{ stroke-width: 1; stroke: #777777; fill: #222222; }
+.lbt	{ stroke-width: 1; stroke: #777777; fill: #222222; }
+.lt	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 12px; }
+.lc	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
+.l	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 10px; }
+
+/* highlight */
+.h	{ fill: none; stroke-width: 3; stroke: #FFFFFF; }
+.hw	{ fill: none; stroke-width: 2; stroke: #00AA00; }
+.hl	{ fill: none; stroke-width: 2; stroke: #F00000; }
+.hg	{ fill: none; stroke-width: 2; stroke: #00B000; }
+
+/* incursion */
+.inc	{ fill: url(#incBg); }
+.incs	{ fill: url(#incStBg); }
+
+/* contested */
+.con	{ fill: url(#conBg); }
+
+/* sov campaign triggered */
+.cam		{ fill: url(#camBg); }
+.cam-active	{ fill: url(#camActiveBg); }
+]]>
+</style>
+
+<g id="map">
+<g id="legend">
+
+</g>
+
+<defs>
+  <symbol id="def31002142">
+    <a xlink:href="http://evemaps.dotlan.net/system/J115418" class="sys link-5-31002142" target="_top">
+      <rect id="rect31002142" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J115418</text>
+      <text id="txt31002142" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002138">
+    <a xlink:href="http://evemaps.dotlan.net/system/J131549" class="sys link-5-31002138" target="_top">
+      <rect id="rect31002138" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J131549</text>
+      <text id="txt31002138" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002134">
+    <a xlink:href="http://evemaps.dotlan.net/system/J115520" class="sys link-5-31002134" target="_top">
+      <rect id="rect31002134" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J115520</text>
+      <text id="txt31002134" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002136">
+    <a xlink:href="http://evemaps.dotlan.net/system/J115933" class="sys link-5-31002136" target="_top">
+      <rect id="rect31002136" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J115933</text>
+      <text id="txt31002136" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002139">
+    <a xlink:href="http://evemaps.dotlan.net/system/J205517" class="sys link-5-31002139" target="_top">
+      <rect id="rect31002139" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J205517</text>
+      <text id="txt31002139" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002137">
+    <a xlink:href="http://evemaps.dotlan.net/system/J133529" class="sys link-5-31002137" target="_top">
+      <rect id="rect31002137" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J133529</text>
+      <text id="txt31002137" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002141">
+    <a xlink:href="http://evemaps.dotlan.net/system/J102853" class="sys link-5-31002141" target="_top">
+      <rect id="rect31002141" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J102853</text>
+      <text id="txt31002141" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002135">
+    <a xlink:href="http://evemaps.dotlan.net/system/J100919" class="sys link-5-31002135" target="_top">
+      <rect id="rect31002135" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J100919</text>
+      <text id="txt31002135" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002143">
+    <a xlink:href="http://evemaps.dotlan.net/system/J155040" class="sys link-5-31002143" target="_top">
+      <rect id="rect31002143" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J155040</text>
+      <text id="txt31002143" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002140">
+    <a xlink:href="http://evemaps.dotlan.net/system/J220546" class="sys link-5-31002140" target="_top">
+      <rect id="rect31002140" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J220546</text>
+      <text id="txt31002140" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002144">
+    <a xlink:href="http://evemaps.dotlan.net/system/J172937" class="sys link-5-31002144" target="_top">
+      <rect id="rect31002144" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J172937</text>
+      <text id="txt31002144" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002176">
+    <a xlink:href="http://evemaps.dotlan.net/system/J133553" class="sys link-5-31002176" target="_top">
+      <rect id="rect31002176" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J133553</text>
+      <text id="txt31002176" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002177">
+    <a xlink:href="http://evemaps.dotlan.net/system/J115422" class="sys link-5-31002177" target="_top">
+      <rect id="rect31002177" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J115422</text>
+      <text id="txt31002177" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002173">
+    <a xlink:href="http://evemaps.dotlan.net/system/J212203" class="sys link-5-31002173" target="_top">
+      <rect id="rect31002173" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J212203</text>
+      <text id="txt31002173" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002172">
+    <a xlink:href="http://evemaps.dotlan.net/system/J142349" class="sys link-5-31002172" target="_top">
+      <rect id="rect31002172" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J142349</text>
+      <text id="txt31002172" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002145">
+    <a xlink:href="http://evemaps.dotlan.net/system/J122757" class="sys link-5-31002145" target="_top">
+      <rect id="rect31002145" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J122757</text>
+      <text id="txt31002145" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002171">
+    <a xlink:href="http://evemaps.dotlan.net/system/J134024" class="sys link-5-31002171" target="_top">
+      <rect id="rect31002171" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J134024</text>
+      <text id="txt31002171" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002170">
+    <a xlink:href="http://evemaps.dotlan.net/system/J110841" class="sys link-5-31002170" target="_top">
+      <rect id="rect31002170" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J110841</text>
+      <text id="txt31002170" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002175">
+    <a xlink:href="http://evemaps.dotlan.net/system/J131747" class="sys link-5-31002175" target="_top">
+      <rect id="rect31002175" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J131747</text>
+      <text id="txt31002175" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002174">
+    <a xlink:href="http://evemaps.dotlan.net/system/J124942" class="sys link-5-31002174" target="_top">
+      <rect id="rect31002174" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J124942</text>
+      <text id="txt31002174" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002169">
+    <a xlink:href="http://evemaps.dotlan.net/system/J111818" class="sys link-5-31002169" target="_top">
+      <rect id="rect31002169" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J111818</text>
+      <text id="txt31002169" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002164">
+    <a xlink:href="http://evemaps.dotlan.net/system/J104218" class="sys link-5-31002164" target="_top">
+      <rect id="rect31002164" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J104218</text>
+      <text id="txt31002164" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002185">
+    <a xlink:href="http://evemaps.dotlan.net/system/J214006" class="sys link-5-31002185" target="_top">
+      <rect id="rect31002185" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J214006</text>
+      <text id="txt31002185" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002167">
+    <a xlink:href="http://evemaps.dotlan.net/system/J101343" class="sys link-5-31002167" target="_top">
+      <rect id="rect31002167" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J101343</text>
+      <text id="txt31002167" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002178">
+    <a xlink:href="http://evemaps.dotlan.net/system/J103448" class="sys link-5-31002178" target="_top">
+      <rect id="rect31002178" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J103448</text>
+      <text id="txt31002178" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002165">
+    <a xlink:href="http://evemaps.dotlan.net/system/J115308" class="sys link-5-31002165" target="_top">
+      <rect id="rect31002165" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J115308</text>
+      <text id="txt31002165" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002168">
+    <a xlink:href="http://evemaps.dotlan.net/system/J105135" class="sys link-5-31002168" target="_top">
+      <rect id="rect31002168" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J105135</text>
+      <text id="txt31002168" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002184">
+    <a xlink:href="http://evemaps.dotlan.net/system/J101912" class="sys link-5-31002184" target="_top">
+      <rect id="rect31002184" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J101912</text>
+      <text id="txt31002184" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002166">
+    <a xlink:href="http://evemaps.dotlan.net/system/J140418" class="sys link-5-31002166" target="_top">
+      <rect id="rect31002166" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J140418</text>
+      <text id="txt31002166" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002179">
+    <a xlink:href="http://evemaps.dotlan.net/system/J161301" class="sys link-5-31002179" target="_top">
+      <rect id="rect31002179" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J161301</text>
+      <text id="txt31002179" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002182">
+    <a xlink:href="http://evemaps.dotlan.net/system/J114537" class="sys link-5-31002182" target="_top">
+      <rect id="rect31002182" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J114537</text>
+      <text id="txt31002182" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002181">
+    <a xlink:href="http://evemaps.dotlan.net/system/J172125" class="sys link-5-31002181" target="_top">
+      <rect id="rect31002181" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J172125</text>
+      <text id="txt31002181" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002183">
+    <a xlink:href="http://evemaps.dotlan.net/system/J134440" class="sys link-5-31002183" target="_top">
+      <rect id="rect31002183" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J134440</text>
+      <text id="txt31002183" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002180">
+    <a xlink:href="http://evemaps.dotlan.net/system/J130334" class="sys link-5-31002180" target="_top">
+      <rect id="rect31002180" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J130334</text>
+      <text id="txt31002180" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002159">
+    <a xlink:href="http://evemaps.dotlan.net/system/J112042" class="sys link-5-31002159" target="_top">
+      <rect id="rect31002159" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J112042</text>
+      <text id="txt31002159" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002160">
+    <a xlink:href="http://evemaps.dotlan.net/system/J105719" class="sys link-5-31002160" target="_top">
+      <rect id="rect31002160" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J105719</text>
+      <text id="txt31002160" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002158">
+    <a xlink:href="http://evemaps.dotlan.net/system/J142110" class="sys link-5-31002158" target="_top">
+      <rect id="rect31002158" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J142110</text>
+      <text id="txt31002158" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002499">
+    <a xlink:href="http://evemaps.dotlan.net/system/J143605" class="sys link-5-31002499" target="_top">
+      <rect id="rect31002499" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J143605</text>
+      <text id="txt31002499" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002163">
+    <a xlink:href="http://evemaps.dotlan.net/system/J213226" class="sys link-5-31002163" target="_top">
+      <rect id="rect31002163" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J213226</text>
+      <text id="txt31002163" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002161">
+    <a xlink:href="http://evemaps.dotlan.net/system/J101556" class="sys link-5-31002161" target="_top">
+      <rect id="rect31002161" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J101556</text>
+      <text id="txt31002161" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002162">
+    <a xlink:href="http://evemaps.dotlan.net/system/J230047" class="sys link-5-31002162" target="_top">
+      <rect id="rect31002162" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J230047</text>
+      <text id="txt31002162" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002156">
+    <a xlink:href="http://evemaps.dotlan.net/system/J143626" class="sys link-5-31002156" target="_top">
+      <rect id="rect31002156" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J143626</text>
+      <text id="txt31002156" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002157">
+    <a xlink:href="http://evemaps.dotlan.net/system/J161737" class="sys link-5-31002157" target="_top">
+      <rect id="rect31002157" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J161737</text>
+      <text id="txt31002157" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002186">
+    <a xlink:href="http://evemaps.dotlan.net/system/J235108" class="sys link-5-31002186" target="_top">
+      <rect id="rect31002186" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J235108</text>
+      <text id="txt31002186" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002189">
+    <a xlink:href="http://evemaps.dotlan.net/system/J141728" class="sys link-5-31002189" target="_top">
+      <rect id="rect31002189" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J141728</text>
+      <text id="txt31002189" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002188">
+    <a xlink:href="http://evemaps.dotlan.net/system/J125641" class="sys link-5-31002188" target="_top">
+      <rect id="rect31002188" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J125641</text>
+      <text id="txt31002188" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002155">
+    <a xlink:href="http://evemaps.dotlan.net/system/J154152" class="sys link-5-31002155" target="_top">
+      <rect id="rect31002155" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J154152</text>
+      <text id="txt31002155" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002187">
+    <a xlink:href="http://evemaps.dotlan.net/system/J124538" class="sys link-5-31002187" target="_top">
+      <rect id="rect31002187" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J124538</text>
+      <text id="txt31002187" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002190">
+    <a xlink:href="http://evemaps.dotlan.net/system/J100616" class="sys link-5-31002190" target="_top">
+      <rect id="rect31002190" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J100616</text>
+      <text id="txt31002190" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002193">
+    <a xlink:href="http://evemaps.dotlan.net/system/J114041" class="sys link-5-31002193" target="_top">
+      <rect id="rect31002193" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J114041</text>
+      <text id="txt31002193" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002192">
+    <a xlink:href="http://evemaps.dotlan.net/system/J151300" class="sys link-5-31002192" target="_top">
+      <rect id="rect31002192" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J151300</text>
+      <text id="txt31002192" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002191">
+    <a xlink:href="http://evemaps.dotlan.net/system/J204350" class="sys link-5-31002191" target="_top">
+      <rect id="rect31002191" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J204350</text>
+      <text id="txt31002191" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002490">
+    <a xlink:href="http://evemaps.dotlan.net/system/J221356" class="sys link-5-31002490" target="_top">
+      <rect id="rect31002490" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J221356</text>
+      <text id="txt31002490" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002146">
+    <a xlink:href="http://evemaps.dotlan.net/system/J100759" class="sys link-5-31002146" target="_top">
+      <rect id="rect31002146" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J100759</text>
+      <text id="txt31002146" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002128">
+    <a xlink:href="http://evemaps.dotlan.net/system/J125254" class="sys link-5-31002128" target="_top">
+      <rect id="rect31002128" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J125254</text>
+      <text id="txt31002128" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002504">
+    <a xlink:href="http://evemaps.dotlan.net/system/J125657" class="sys link-5-31002504" target="_top">
+      <rect id="rect31002504" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J125657</text>
+      <text id="txt31002504" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002127">
+    <a xlink:href="http://evemaps.dotlan.net/system/J135301" class="sys link-5-31002127" target="_top">
+      <rect id="rect31002127" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J135301</text>
+      <text id="txt31002127" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002126">
+    <a xlink:href="http://evemaps.dotlan.net/system/J162753" class="sys link-5-31002126" target="_top">
+      <rect id="rect31002126" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J162753</text>
+      <text id="txt31002126" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002147">
+    <a xlink:href="http://evemaps.dotlan.net/system/J145416" class="sys link-5-31002147" target="_top">
+      <rect id="rect31002147" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J145416</text>
+      <text id="txt31002147" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002129">
+    <a xlink:href="http://evemaps.dotlan.net/system/J145320" class="sys link-5-31002129" target="_top">
+      <rect id="rect31002129" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J145320</text>
+      <text id="txt31002129" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002154">
+    <a xlink:href="http://evemaps.dotlan.net/system/J140514" class="sys link-5-31002154" target="_top">
+      <rect id="rect31002154" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J140514</text>
+      <text id="txt31002154" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002152">
+    <a xlink:href="http://evemaps.dotlan.net/system/J104537" class="sys link-5-31002152" target="_top">
+      <rect id="rect31002152" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J104537</text>
+      <text id="txt31002152" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002148">
+    <a xlink:href="http://evemaps.dotlan.net/system/J152034" class="sys link-5-31002148" target="_top">
+      <rect id="rect31002148" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J152034</text>
+      <text id="txt31002148" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002153">
+    <a xlink:href="http://evemaps.dotlan.net/system/J162047" class="sys link-5-31002153" target="_top">
+      <rect id="rect31002153" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J162047</text>
+      <text id="txt31002153" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002150">
+    <a xlink:href="http://evemaps.dotlan.net/system/J123235" class="sys link-5-31002150" target="_top">
+      <rect id="rect31002150" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J123235</text>
+      <text id="txt31002150" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002149">
+    <a xlink:href="http://evemaps.dotlan.net/system/J125544" class="sys link-5-31002149" target="_top">
+      <rect id="rect31002149" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J125544</text>
+      <text id="txt31002149" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002130">
+    <a xlink:href="http://evemaps.dotlan.net/system/J103116" class="sys link-5-31002130" target="_top">
+      <rect id="rect31002130" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J103116</text>
+      <text id="txt31002130" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002133">
+    <a xlink:href="http://evemaps.dotlan.net/system/J153919" class="sys link-5-31002133" target="_top">
+      <rect id="rect31002133" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J153919</text>
+      <text id="txt31002133" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002131">
+    <a xlink:href="http://evemaps.dotlan.net/system/J120437" class="sys link-5-31002131" target="_top">
+      <rect id="rect31002131" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J120437</text>
+      <text id="txt31002131" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002151">
+    <a xlink:href="http://evemaps.dotlan.net/system/J151204" class="sys link-5-31002151" target="_top">
+      <rect id="rect31002151" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J151204</text>
+      <text id="txt31002151" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def31002132">
+    <a xlink:href="http://evemaps.dotlan.net/system/J100252" class="sys link-5-31002132" target="_top">
+      <rect id="rect31002132" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">J100252</text>
+      <text id="txt31002132" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+
+
+  <symbol id="defCampaign" width="85" height="46">
+    <rect x="0" y="0" width="85" height="46" class="cam" />
+  </symbol>
+  <symbol id="defCampaignActive" width="85" height="46">
+    <rect x="0" y="0" width="85" height="46" class="cam-active" />
+  </symbol>
+  <radialGradient id="conBg">
+    <stop offset="50%" stop-color="#FFA0FF"/>
+    <stop offset="95%" stop-color="#FFA0FF" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="camBg">
+    <stop offset="30%" stop-color="#FF8800" stop-opacity="1"/>
+    <stop offset="95%" stop-color="#FF8800" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="camActiveBg">
+    <stop offset="40%" stop-color="#FF0000" stop-opacity="1"/>
+    <stop offset="95%" stop-color="#FF0000" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="incBg">
+    <stop offset="50%" stop-color="#AFCE00"/>
+    <stop offset="100%" stop-color="#AFCE00" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="incStBg">
+    <stop offset="50%" stop-color="#808000"/>
+    <stop offset="100%" stop-color="#808000" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
+
+<g id="glow">
+
+
+</g>
+
+<g id="campaigns"></g>
+
+<g id="jumps">
+
+</g>
+
+<g id="sysuse">
+<use id="sys31002142" x="51" y="730" width="62.5" height="30" xlink:href="#def31002142" />
+<use id="sys31002138" x="51" y="730" width="62.5" height="30" xlink:href="#def31002138" />
+<use id="sys31002134" x="51" y="730" width="62.5" height="30" xlink:href="#def31002134" />
+<use id="sys31002136" x="51" y="730" width="62.5" height="30" xlink:href="#def31002136" />
+<use id="sys31002139" x="51" y="730" width="62.5" height="30" xlink:href="#def31002139" />
+<use id="sys31002137" x="51" y="730" width="62.5" height="30" xlink:href="#def31002137" />
+<use id="sys31002141" x="51" y="730" width="62.5" height="30" xlink:href="#def31002141" />
+<use id="sys31002135" x="51" y="730" width="62.5" height="30" xlink:href="#def31002135" />
+<use id="sys31002143" x="57" y="730" width="62.5" height="30" xlink:href="#def31002143" />
+<use id="sys31002140" x="61" y="730" width="62.5" height="30" xlink:href="#def31002140" />
+<use id="sys31002144" x="91" y="730" width="62.5" height="30" xlink:href="#def31002144" />
+<use id="sys31002176" x="92" y="730" width="62.5" height="30" xlink:href="#def31002176" />
+<use id="sys31002177" x="92" y="730" width="62.5" height="30" xlink:href="#def31002177" />
+<use id="sys31002173" x="153" y="730" width="62.5" height="30" xlink:href="#def31002173" />
+<use id="sys31002172" x="162" y="730" width="62.5" height="30" xlink:href="#def31002172" />
+<use id="sys31002145" x="183" y="730" width="62.5" height="30" xlink:href="#def31002145" />
+<use id="sys31002171" x="183" y="730" width="62.5" height="30" xlink:href="#def31002171" />
+<use id="sys31002170" x="184" y="730" width="62.5" height="30" xlink:href="#def31002170" />
+<use id="sys31002175" x="199" y="730" width="62.5" height="30" xlink:href="#def31002175" />
+<use id="sys31002174" x="218" y="730" width="62.5" height="30" xlink:href="#def31002174" />
+<use id="sys31002169" x="259" y="730" width="62.5" height="30" xlink:href="#def31002169" />
+<use id="sys31002164" x="279" y="730" width="62.5" height="30" xlink:href="#def31002164" />
+<use id="sys31002185" x="285" y="730" width="62.5" height="30" xlink:href="#def31002185" />
+<use id="sys31002167" x="312" y="730" width="62.5" height="30" xlink:href="#def31002167" />
+<use id="sys31002178" x="314" y="730" width="62.5" height="30" xlink:href="#def31002178" />
+<use id="sys31002165" x="316" y="730" width="62.5" height="30" xlink:href="#def31002165" />
+<use id="sys31002168" x="340" y="730" width="62.5" height="30" xlink:href="#def31002168" />
+<use id="sys31002184" x="345" y="730" width="62.5" height="30" xlink:href="#def31002184" />
+<use id="sys31002166" x="350" y="730" width="62.5" height="30" xlink:href="#def31002166" />
+<use id="sys31002179" x="377" y="730" width="62.5" height="30" xlink:href="#def31002179" />
+<use id="sys31002182" x="391" y="730" width="62.5" height="30" xlink:href="#def31002182" />
+<use id="sys31002181" x="406" y="730" width="62.5" height="30" xlink:href="#def31002181" />
+<use id="sys31002183" x="418" y="730" width="62.5" height="30" xlink:href="#def31002183" />
+<use id="sys31002180" x="422" y="730" width="62.5" height="30" xlink:href="#def31002180" />
+<use id="sys31002159" x="443" y="730" width="62.5" height="30" xlink:href="#def31002159" />
+<use id="sys31002160" x="493" y="730" width="62.5" height="30" xlink:href="#def31002160" />
+<use id="sys31002158" x="546" y="730" width="62.5" height="30" xlink:href="#def31002158" />
+<use id="sys31002499" x="568" y="730" width="62.5" height="30" xlink:href="#def31002499" />
+<use id="sys31002163" x="582" y="730" width="62.5" height="30" xlink:href="#def31002163" />
+<use id="sys31002161" x="587" y="730" width="62.5" height="30" xlink:href="#def31002161" />
+<use id="sys31002162" x="593" y="730" width="62.5" height="30" xlink:href="#def31002162" />
+<use id="sys31002156" x="628" y="730" width="62.5" height="30" xlink:href="#def31002156" />
+<use id="sys31002157" x="637" y="730" width="62.5" height="30" xlink:href="#def31002157" />
+<use id="sys31002186" x="659" y="730" width="62.5" height="30" xlink:href="#def31002186" />
+<use id="sys31002189" x="661" y="730" width="62.5" height="30" xlink:href="#def31002189" />
+<use id="sys31002188" x="664" y="730" width="62.5" height="30" xlink:href="#def31002188" />
+<use id="sys31002155" x="668" y="730" width="62.5" height="30" xlink:href="#def31002155" />
+<use id="sys31002187" x="676" y="730" width="62.5" height="30" xlink:href="#def31002187" />
+<use id="sys31002190" x="709" y="730" width="62.5" height="30" xlink:href="#def31002190" />
+<use id="sys31002193" x="727" y="730" width="62.5" height="30" xlink:href="#def31002193" />
+<use id="sys31002192" x="739" y="730" width="62.5" height="30" xlink:href="#def31002192" />
+<use id="sys31002191" x="740" y="730" width="62.5" height="30" xlink:href="#def31002191" />
+<use id="sys31002490" x="768" y="730" width="62.5" height="30" xlink:href="#def31002490" />
+<use id="sys31002146" x="781" y="730" width="62.5" height="30" xlink:href="#def31002146" />
+<use id="sys31002128" x="813" y="730" width="62.5" height="30" xlink:href="#def31002128" />
+<use id="sys31002504" x="815" y="730" width="62.5" height="30" xlink:href="#def31002504" />
+<use id="sys31002127" x="881" y="730" width="62.5" height="30" xlink:href="#def31002127" />
+<use id="sys31002126" x="902" y="730" width="62.5" height="30" xlink:href="#def31002126" />
+<use id="sys31002147" x="914" y="730" width="62.5" height="30" xlink:href="#def31002147" />
+<use id="sys31002129" x="917" y="730" width="62.5" height="30" xlink:href="#def31002129" />
+<use id="sys31002154" x="920" y="730" width="62.5" height="30" xlink:href="#def31002154" />
+<use id="sys31002152" x="973" y="730" width="62.5" height="30" xlink:href="#def31002152" />
+<use id="sys31002148" x="973" y="730" width="62.5" height="30" xlink:href="#def31002148" />
+<use id="sys31002153" x="973" y="730" width="62.5" height="30" xlink:href="#def31002153" />
+<use id="sys31002150" x="973" y="730" width="62.5" height="30" xlink:href="#def31002150" />
+<use id="sys31002149" x="973" y="730" width="62.5" height="30" xlink:href="#def31002149" />
+<use id="sys31002130" x="973" y="730" width="62.5" height="30" xlink:href="#def31002130" />
+<use id="sys31002133" x="973" y="730" width="62.5" height="30" xlink:href="#def31002133" />
+<use id="sys31002131" x="973" y="730" width="62.5" height="30" xlink:href="#def31002131" />
+<use id="sys31002151" x="973" y="730" width="62.5" height="30" xlink:href="#def31002151" />
+<use id="sys31002132" x="973" y="730" width="62.5" height="30" xlink:href="#def31002132" />
+
+</g>
+
+<g id="highlights">
+
+</g>
+
+<g id="notes"></g>
+
+<g id="standings"></g>
+
+</g>
+<g id="controls" style="display: none;">
+  <a xlink:title="Zoom In"><image id="zoom_in" x="5" y="5" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/magnifier_zoom_in.png" style="cursor: pointer;"/></a>
+  <a xlink:title="Zoom Out"><image id="zoom_out" x="5" y="23" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/magnifier_zoom_out.png" style="cursor: pointer;"/></a>
+  <a xlink:title="Enable Mousewheel Support"><image id="wheel_on" x="5" y="42" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/mouse_add.png" style="cursor: pointer;"/> </a>
+  <a xlink:title="Disable Mousewheel Support"><image id="wheel_off" x="5" y="42" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/mouse_delete.png" style="cursor: pointer; display: none;"/></a>
+</g>
+
+
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript"><![CDATA[
+
+function init(E) {
+	SVGMap.init(E);
+}
+
+]]></script>
+
+
+</svg>

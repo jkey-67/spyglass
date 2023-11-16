@@ -1852,6 +1852,51 @@ def getSpyglassUpdateLink(ver=VERSION):
         return None
 
 
+def convertRegionNameForDotlan(name: str) -> str:
+    """
+        Converts a (system)name to the format that dotlan uses
+    """
+    converted = []
+    next_upper = False
+
+    for index, char in enumerate(name):
+        if index == 0:
+            converted.append(char.upper())
+        else:
+            if char in (u" ", u"_"):
+                char = "_"
+                next_upper = True
+            else:
+                if next_upper:
+                    char = char.upper()
+                else:
+                    char = char.lower()
+                next_upper = False
+            converted.append(char)
+    return u"".join(converted)
+
+
+def getSvgFromDotlan(region: str, dark: bool = True) -> str:
+    """
+    Gets the svg map from dotlan
+
+    Args:
+        region(str): name or the region space will be converted to _ url is lower
+
+    Returns:
+        The loaded svg map as text.
+    """
+    if dark:
+        url = u"https://evemaps.dotlan.net/svg/{0}.dark.svg".format(convertRegionNameForDotlan(region))
+    else:
+        url = u"https://evemaps.dotlan.net/svg/{0}.svg".format(convertRegionNameForDotlan(region))
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.text
+    else:
+        response.raise_for_status()
+
+
 def dumpSpyglassDownloadStats():
 
     req = "https://api.github.com/repos/jkey-67/spyglass/releases"

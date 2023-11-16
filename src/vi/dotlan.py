@@ -46,7 +46,7 @@ class Map(object):
         The map including all information from dotlan
     """
     # todo : dark.svgs should follow stylesheet
-    DOTLAN_BASIC_URL = u"https://evemaps.dotlan.net/svg/{0}.dark.svg"
+
     styles = Styles()
 
     @property
@@ -87,11 +87,11 @@ class Map(object):
             region_to_load = convertRegionName(self.region)
 
         # Get map from dotlan if not in the cache
-        svg = cache.getFromCache("map_{}".format(region_to_load)) if svgFile is None else svgFile
-
-        if svg is None or svg.startswith("region not found"):
+        # svg = cache.getFromCache("map_{}".format(region_to_load)) if svgFile is None else svgFile
+        """
+            if svg is None or svg.startswith("region not found"):
             try:
-                svg = self._getSvgFromDotlan(region_to_load)
+                svg = evegate.getSvgFromDotlan(region_to_load)
                 if not svg or svg.startswith("region not found"):
                     region_to_load = "Providence"
                     svg = self._getSvgFromDotlan("providence")
@@ -108,9 +108,9 @@ class Map(object):
                         "without the map.\n\nRemember the site for possible " \
                         "updates: https://github.com/Crypta-Eve/spyglass".format(type(e), str(e))
                     raise DotlanException(t)
-
+        """
         # Create soup from the svg
-        self.soup = BeautifulSoup(svg, features="html.parser")
+        self.soup = BeautifulSoup(svgFile, features="html.parser")
         for scr in self.soup.findAll('script'):
             scr.extract()
         for scr in self.soup.select('#controls'):
@@ -466,19 +466,6 @@ class Map(object):
                 stop_system = self.systemsById[int(parts[2])]
                 start_system.addNeighbour(stop_system)
 
-    def _getSvgFromDotlan(self, region: str) -> str:
-        """
-        Gets the svg map from dotlan
-
-        Args:
-            region(str): name or the region space will be converted to _ url is lower
-
-        Returns:
-            The loaded svg map as text.
-        """
-        url = self.DOTLAN_BASIC_URL.format(region).replace(" ", "_").lower()
-        content = getRequest(url).text
-        return content
 
     def addSystemStatistics(self, statistics):
         """
@@ -995,30 +982,6 @@ class System(object):
     def pruneMessage(self, message):
         if message in self.messages:
             self.messages.remove(message)
-
-
-def convertRegionName(name):
-    """
-        Converts a (system)name to the format that dotland uses
-    """
-    converted = []
-    next_upper = False
-
-    for index, char in enumerate(name):
-        if index == 0:
-            converted.append(char.upper())
-        else:
-            if char in (u" ", u"_"):
-                char = "_"
-                next_upper = True
-            else:
-                if next_upper:
-                    char = char.upper()
-                else:
-                    char = char.lower()
-                next_upper = False
-            converted.append(char)
-    return u"".join(converted)
 
 
 # this is for testing:

@@ -10,12 +10,38 @@ def _loadJsonFile(name):
     return res
 
 
+class Region(object):
+    def __init__(self, **kwargs):
+        self.constellations = list()
+        self.description = str()
+        self.name = str()
+        self.region_id = int()
+        self.__dict__.update(**kwargs)
+
+class Position(object):
+    def __init__(self, **kwargs):
+        self.x = float()
+        self.y = float()
+        self.z = float()
+        self.__dict__.update(**kwargs)
+class Constellation(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
+        self.constellation_id = kwargs["constellation_id"]
+        self.name = kwargs["name"]
+        self.position = Position(**{"position": kwargs["position"]})
+        self.region_id = self.region_id
+        self.systems = self.systems
+
+
 class Universe(object):
     curr_path = os.path.dirname(__file__)
-    STARGATES = _loadJsonFile(os.path.join(curr_path, "evestargates.json"))
-    CONSTELLATIONS = _loadJsonFile(os.path.join(curr_path, "eveconstellations.json"))
     REGIONS = _loadJsonFile(os.path.join(curr_path, "everegions.json"))
+    # REGIONNOBJ = [Region(**region) for region in REGIONS]
+    CONSTELLATIONS = _loadJsonFile(os.path.join(curr_path, "eveconstellations.json"))
+    # CONSTELLATIONSONJ = [Constellation(**constellation) for constellation in CONSTELLATIONS]
     SYSTEMS = _loadJsonFile(os.path.join(curr_path, "evesystems.json"))
+    STARGATES = _loadJsonFile(os.path.join(curr_path, "evestargates.json"))
     SYSTEM_NAMES = [sys["name"] for sys in SYSTEMS]
     UPPER_SYSTEM_NAMES = [sys["name"].upper() for sys in SYSTEMS]
     SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]
