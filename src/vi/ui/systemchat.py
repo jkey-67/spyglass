@@ -25,10 +25,12 @@ from PySide6.QtGui import QDesktopServices
 from vi import states
 from vi.ui import Ui_SystemChat
 from vi.ui.chatentrywidget import ChatEntryWidget
+from .chatentrywidget import ChatEntryItem
+
 
 class SystemChat(QtWidgets.QDialog):
     SYSTEM = 0
-    location_set = pyqtSignal(str,str)
+    location_set = pyqtSignal(str, str)
     repaint_needed = pyqtSignal()
 
     def __init__(self, parent, chatType, selector, chatEntries, knownPlayerNames):
@@ -60,12 +62,16 @@ class SystemChat(QtWidgets.QDialog):
             scrollToBottom = True
         entry = ChatEntryWidget(message)
         entry.ui.avatarLabel.setPixmap(avatarPixmap)
-        listWidgetItem = QtWidgets.QListWidgetItem(self.ui.chat)
+
+        listWidgetItem = ChatEntryItem(
+            sortkey=message.timestamp.strftime("%Y%m%d %H%M%S"),
+            listview=self.ui.chat)
+
         listWidgetItem.setSizeHint(entry.sizeHint())
         self.ui.chat.addItem(listWidgetItem)
         self.ui.chat.setItemWidget(listWidgetItem, entry)
         self.chatEntries.append(entry)
-        #entry.mark_system.connect(super(MainWindow,self.parent()).markSystemOnMap)
+
         if scrollToBottom:
             self.ui.chat.scrollToBottom()
 

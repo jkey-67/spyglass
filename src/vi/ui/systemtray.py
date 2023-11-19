@@ -115,7 +115,6 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.trayIcon = trayIcon
         self._buildMenu()
 
-
     def updateMenu(self, sys_name=None, rgn_name=None):
         self.currentSystem = sys_name
         if sys_name:
@@ -282,8 +281,8 @@ class MapContextMenu(QtWidgets.QMenu):
                 self.alarm_distance.emit(action.alarmDistance)
 
     def browserOpenDotlan(self, checked):
-            if self.currentSystem:
-                QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name))
+        if self.currentSystem:
+            QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name))
 
     def browserOpenZKillboard(self, checked):
         if self.currentSystem:
@@ -343,7 +342,7 @@ class TheraContextMenu(QtWidgets.QMenu):
         else:
             self.selectRegion = QAction("Show System on map")
         self.addAction(self.selectRegion)
-        self.updateData = QAction("Update Thera Connections")
+        self.updateData = QAction("Fetch data from EvE-Scout")
         self.addSeparator()
         self.addAction(self.updateData)
 
@@ -449,5 +448,5 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             # SoundManager().playSound("request", text)
         if not (title is None or text is None or icon):
             text = text.format(**locals())
-            self.showMessage(title, text, icon)
+            self.showMessage(title=title, msg=text, icon=icon)
 

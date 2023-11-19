@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>res/search.svg</file>
+    <file>res/down.svg</file>
     <file>res/apply.svg</file>
     <file>res/load.svg</file>
     <file>res/save.svg</file>
@@ -22,5 +24,6 @@
     <file>res/statistic.svg</file>
     <file>res/trash-box.svg</file>
     <file>res/zKillboard.svg</file>
+    <file>res/route.svg</file>
   </qresource>
 </RCC>

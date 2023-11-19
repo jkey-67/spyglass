@@ -1,38 +1,38 @@
 ###########################################################################
-#  Vintel - Visual Intel Chat Analyzer									  #
+#  Vintel - Visual Intel Chat Analyzer                                    #
 #  Copyright (C) 2014-15 Sebastian Meyer (sparrow.242.de+eve@gmail.com )  #
 #                                                                         #
-#  This program is free software: you can redistribute it and/or modify	  #
-#  it under the terms of the GNU General Public License as published by	  #
-#  the Free Software Foundation, either version 3 of the License, or	  #
-#  (at your option) any later version.									  #
+#  This program is free software: you can redistribute it and/or modify   #
+#  it under the terms of the GNU General Public License as published by   #
+#  the Free Software Foundation, either version 3 of the License, or      #
+#  (at your option) any later version.                                    #
 #                                                                         #
-#  This program is distributed in the hope that it will be useful,		  #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
-#  GNU General Public License for more details.							  #
+#  This program is distributed in the hope that it will be useful,        #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of         #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     See the       #
+#  GNU General Public License for more details.                           #
 #                                                                         #
 #                                                                         #
-#  You should have received a copy of the GNU General Public License	  #
-#  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
+#  You should have received a copy of the GNU General Public License      #
+#  along with this program.   If not, see <http://www.gnu.org/licenses/>. #
 ###########################################################################
 
 """ 12.02.2015
-	I know this is a little bit dirty, but I prefer to have all the functions
-	to parse the chat in this file together.
-	Wer are now work directly with the html-formatted text, which we use to
-	display it. We are using a HTML/XML-Parser to have the benefit, that we
-	can only work and analyze those text, that is still not on tags, because
-	all the text in tags was allready identified.
-	f.e. the ship_parser:
-		we call it from the chatparser and give them the rtext (richtext).
-		if the parser hits a shipname, it will modifiy the tree by creating
-		a new tag and replace the old text with it (calls tet_replace),
-		than it returns True.
-		The chatparser will call the function again until it return False
-		(None is False) otherwise.
-		We have to call the parser again after a hit, because a hit will change
-		the tree and so the original generator is not longer stable.
+    I know this is a little bit dirty, but I prefer to have all the functions
+    to parse the chat in this file together.
+    Wer are now work directly with the html-formatted text, which we use to
+    display it. We are using a HTML/XML-Parser to have the benefit, that we
+    can only work and analyze those text, that is still not on tags, because
+    all the text in tags was allready identified.
+    f.e. the ship_parser:
+    we call it from the chatparser and give them the rtext (richtext).
+    if the parser hits a shipname, it will modifiy the tree by creating
+    a new tag and replace the old text with it (calls tet_replace),
+    than it returns True.
+    The chatparser will call the function again until it return False
+    (None is False) otherwise.
+    We have to call the parser again after a hit, because a hit will change
+    the tree and so the original generator is not longer stable.
 """
 
 
@@ -100,7 +100,7 @@ def parsePlayerNames(rtext) -> bool:
         inx = 0
         while inx + 2 < len(tokens):
             if len(tokens) > 2:
-                search_text = "{} {} {}".format(tokens[inx], tokens[inx + 1] , tokens[inx + 2])
+                search_text = "{} {} {}".format(tokens[inx], tokens[inx + 1], tokens[inx + 2])
                 res, player_id = checkPlayerName(search_text)
                 if res == EXISTS:
                     textReplace(text, text.replace(search_text, CTX.FORMAT_PLAYER_NAME.format(search_text, player_id)))
@@ -199,8 +199,7 @@ def parseSystems(systems, rtext, systems_found) -> bool:
     """
     # todo:parse systems may run in a loop
 
-    system_names = Universe.systemNamesUpperCase() #  systems.keys()
-    # maps_system_name = [sys.upper() for sys in systems]
+    system_names = Universe.systemNamesUpperCase()
 
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:
@@ -287,8 +286,6 @@ def parseMessageForMap(systems_on_map, message: Message) -> Message:
         continue
 
     parseSystems(systems_on_map, rtext, message.affectedSystems)
-    #while parseSystems(systems_on_map, rtext, systems):
-    #    continue
 
     for system in message.affectedSystems:
         if system in systems_on_map:
@@ -366,7 +363,7 @@ def parseLocal(path, char_name, line) -> Message:
     if message.user in CTX.EVE_SYSTEM:
         if ":" in message.plainText:
             message.user = char_name
-            message.affectedSystems = [message.plainText.split(":")[1].strip().replace("*", "")]
+            message.affectedSystems = [message.plainText.split("*")[0].split(":")[1].strip()]
             message.status = states.LOCATION
         else:
             # We could not determine if the message was system-change related

@@ -108,6 +108,7 @@ class MapStatisticsThread(QThread):
         QThread.__init__(self)
         self.queue = queue.Queue(maxsize=10)
         self.active = True
+        self._fetchLocations = True
 
     def requestSovereignty(self):
         self.queue.put(["sovereignty"])
@@ -116,7 +117,11 @@ class MapStatisticsThread(QThread):
         self.queue.put(["statistics"])
 
     def requestLocations(self):
-        self.queue.put(["location"])
+        if self._fetchLocations:
+            self.queue.put(["location"])
+
+    def fetchLocation(self, fetch=True):
+        self._fetchLocations = fetch
 
     def run(self):
         while self.active:

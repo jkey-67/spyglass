@@ -18,13 +18,15 @@
 ###########################################################################
 import logging
 import os
+from locale import format
+
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox, QFileDialog
 from PySide6.QtCore import Signal as pyqtSignal
 from vi.ui import Ui_JumpbridgeChooser
 from vi import evegate
 from vi.cache import Cache
-
+from vi.universe import Universe
 
 class JumpbridgeChooser(QtWidgets.QDialog):
     set_jumpbridge_url = pyqtSignal(str)
@@ -89,19 +91,41 @@ class JumpbridgeChooser(QtWidgets.QDialog):
 
     def exportFileName(self):
         save_path = QFileDialog.getSaveFileName(self,
-                                           caption="Select JB Text File to export",
-                                           dir=os.path.join(os.path.expanduser("~")))[0]
+                                                caption="Select JB Text File to export",
+                                                dir=os.path.join(os.path.expanduser("~")))[0]
         if save_path == "":
             return
 
-        query = "SELECT src, dst FROM jumpbridge"
+        query = "SELECT id_src, src, dst FROM jumpbridge"
         gates = Cache().con.execute(query, ()).fetchall()
+        query = "SELECT id_dst, dst, src FROM jumpbridge"
+        gates = gates + Cache().con.execute(query, ()).fetchall()
 
+        def rgn_name_of_system(system_name):
+            return Universe.regionNameFromSystemID(Universe.systemIdByName(system_name[1]))
+        gates.sort(key=rgn_name_of_system)
         if gates is not None:
             try:
                 with open(save_path, "w") as gf:
+                    region_name = None
                     for gate in gates:
-                        gf.write("{} » {}".format(gate[0], gate[1])+"\n")
+
+                        def get_structure_id(input_id):
+                            if input_id is None:
+                                structure_id = 0
+                            else:
+                                if input_id < 1000000000000:
+                                    structure_id = 0
+                                else:
+                                    structure_id = input_id
+                            return structure_id
+
+                        region_name_curr = rgn_name_of_system(gate)
+                        if region_name is not region_name_curr:
+                            region_name = region_name_curr
+                            gf.write("\n\n# {}\n\n".format(region_name_curr))
+                        gf.write("{} {} --> {}".format(get_structure_id(gate[0]), gate[1], gate[2]) + "\n")
+
                     gf.close()
                 logging.info("Export of all jumpbridge to file '{}' succeeded.".format(save_path))
             except Exception as e:
@@ -110,8 +134,8 @@ class JumpbridgeChooser(QtWidgets.QDialog):
 
     def importFileName(self):
         path = self.fileDialog.getOpenFileName(None,
-                                           caption="Select JB Text File to export",
-                                           dir=os.path.join(os.path.expanduser("~")))[0]
+                                               caption="Select JB Text File to export",
+                                               dir=os.path.join(os.path.expanduser("~")))[0]
         if str(path) != "":
             self.ui.urlField.setText(str(path))
 

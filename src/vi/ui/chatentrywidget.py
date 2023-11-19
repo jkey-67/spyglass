@@ -29,6 +29,19 @@ from vi.ui import Ui_ChatEntry
 from vi.chatparser.message import Message
 
 
+class ChatEntryItem(QtWidgets.QListWidgetItem):
+
+    def __init__(self, sortkey, **kwargs):
+        self.sortkey = sortkey
+        QtWidgets.QListWidgetItem.__init__(self, **kwargs)
+
+    def __lt__(self, other):
+        if hasattr(other, "sortkey"):
+            return self.sortkey < other.sortkey
+        else:
+            return False
+
+
 class ChatEntryWidget(QtWidgets.QWidget):
     TEXT_SIZE = 11
     DIM_IMG = 64
@@ -69,10 +82,11 @@ class ChatEntryWidget(QtWidgets.QWidget):
 
     def updateText(self):
         time = datetime.datetime.strftime(self.message.timestamp, "%H:%M:%S")
-        text = u"<small>{time} - <b>{user}</b> - <i>{room}</i></small><br>{text}".format(user=self.message.user,
-                                                                                         room=self.message.roomName,
-                                                                                         time=time,
-                                                                                         text=self.message.guiText.rstrip("\r\n").lstrip("\r\n"))
+        text = u"<small>{time} - <b>{user}</b> - <i>{room}</i></small><br>{text}".format(
+            user=self.message.user,
+            room=self.message.roomName,
+            time=time,
+            text=self.message.guiText.rstrip("\r\n").lstrip("\r\n"))
         self.ui.textLabel.setText(text)
 
     def updateAvatar(self, avatar_data) -> bool:

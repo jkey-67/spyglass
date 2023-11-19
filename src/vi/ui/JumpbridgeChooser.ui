@@ -50,7 +50,7 @@
       <item>
        <widget class="QToolButton" name="cancelButton">
         <property name="toolTip">
-         <string>Apply changes</string>
+         <string>Apply the changes and close dialog.</string>
         </property>
         <property name="text">
          <string>Apply</string>
@@ -83,7 +83,7 @@
       <item>
        <widget class="QToolButton" name="deleteAllJumpBridgeButton">
         <property name="toolTip">
-         <string>Generate the list uf jumpbridges online</string>
+         <string>Clears all Junp Briidge data.</string>
         </property>
         <property name="text">
          <string>Generate </string>
@@ -192,7 +192,11 @@
            <number>3</number>
           </property>
           <item>
-           <widget class="QLineEdit" name="urlField"/>
+           <widget class="QLineEdit" name="urlField">
+            <property name="toolTip">
+             <string>URL or filename of jumpbridge import file, that should be imported during the starting of the application.</string>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="fileChooser">
@@ -217,7 +221,9 @@
           <item>
            <widget class="QToolButton" name="saveButton">
             <property name="toolTip">
-             <string>Export the current Jump Bridge set to a text file</string>
+             <string>Select a filename for the export of the current Jump Bridge system
+as asingle text file.
+The format is  : StructureD --&gt; System-&gt;System.</string>
             </property>
             <property name="text">
              <string>Export</string>
@@ -251,9 +257,8 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;The line contains the first system, the connection between the systems and the second system. Between the three parts there has to be a space.&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600; font-style:italic;&quot;&gt;Examples:&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;	SystemA &amp;lt;-&amp;gt; SystemB&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;	ID SystemA --&amp;gt; SystemB&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;	SystemA » SystemB&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;	StructureID|0 SystemID --&amp;gt; SystemID&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;	SystemID » SystemID&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If selected, all jumpbridges will be drawn on map as bezier lines in different shades fo green.&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Write the system names exactly as they are written in the maps.&lt;/p&gt;

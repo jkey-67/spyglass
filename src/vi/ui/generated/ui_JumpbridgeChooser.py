@@ -149,11 +149,11 @@ class Ui_JumpbridgeChooser(object):
     def retranslateUi(self, JumpbridgeChooser):
         JumpbridgeChooser.setWindowTitle(QCoreApplication.translate("JumpbridgeChooser", u"Jumpbridge Data", None))
 #if QT_CONFIG(tooltip)
-        self.cancelButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Apply changes", None))
+        self.cancelButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Apply the changes and close dialog.", None))
 #endif // QT_CONFIG(tooltip)
         self.cancelButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Apply", None))
 #if QT_CONFIG(tooltip)
-        self.deleteAllJumpBridgeButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Generate the list uf jumpbridges online", None))
+        self.deleteAllJumpBridgeButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Clears all Junp Briidge data.", None))
 #endif // QT_CONFIG(tooltip)
         self.deleteAllJumpBridgeButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Generate ", None))
 #if QT_CONFIG(tooltip)
@@ -161,11 +161,16 @@ class Ui_JumpbridgeChooser(object):
 #endif // QT_CONFIG(tooltip)
         self.generateJumpBridgeButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Generate ", None))
 #if QT_CONFIG(tooltip)
+        self.urlField.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"URL or filename of jumpbridge import file, that should be imported during the starting of the application.", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
         self.fileChooser.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Set the import file name or define the import URL", None))
 #endif // QT_CONFIG(tooltip)
         self.fileChooser.setText(QCoreApplication.translate("JumpbridgeChooser", u"Import File Name / URL", None))
 #if QT_CONFIG(tooltip)
-        self.saveButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Export the current Jump Bridge set to a text file", None))
+        self.saveButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Select a filename for the export of the current Jump Bridge system\n"
+"as asingle text file.\n"
+"The format is  : StructureD --> System->System.", None))
 #endif // QT_CONFIG(tooltip)
         self.saveButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Export", None))
         self.formatInfoField.setHtml(QCoreApplication.translate("JumpbridgeChooser", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -182,19 +187,18 @@ class Ui_JumpbridgeChooser(object):
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600; font-style:italic;\">Examples:<"
                         "/span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	SystemA &lt;-&gt; SystemB</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	ID SystemA --&gt; SystemB</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	SystemA \u00bb SystemB</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	StructureID|0 SystemID --&gt; SystemID</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">	SystemID \u00bb SystemID</p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">If selected, all jumpbridges will be drawn on map as bezier lines in different shades fo green.</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Write the system names exactly as they"
-                        " are written in the maps.</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Don't forget the space in between the system names and the jumpbridge!</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Write the system names exactly as they are written in the maps.</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-"
+                        "indent:0px;\">Don't forget the space in between the system names and the jumpbridge!</p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Generate jump bridge:</span></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Generating the jumpbridges may take a while, received data will be cached internally and can be interrupted and continued. For some reasons, the received jumpbridges data may be not accurate.</p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0;"
-                        " text-indent:0px;\">Especially esi data sets for systems with heavy fights inside can provide several jumpbridges for only one target system.</p></body></html>", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Especially esi data sets for systems with heavy fights inside can provide several jumpbridges for only one target system."
+                        "</p></body></html>", None))
         self.label.setText(QCoreApplication.translate("JumpbridgeChooser", u"Select the jump bridge data file or URL for automated updates on startup", None))
     # retranslateUi
 

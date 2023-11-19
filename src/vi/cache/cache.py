@@ -227,12 +227,12 @@ class Cache(object):
             data = from_blob(founds[0][0])
             return data
 
-    def putImageToIconCache(self, icon_id: int, data):
+    def putImageToIconCache(self, icon_id: int, data, expire: int = 365*24*60*60) -> None:
         """ Put the icon of an item into the iconcache table
 
         Args:
             icon_id(int):Key of interests
-
+            expire(int):expire in seconds from now
         Args:
               data:Picture data to be inserted as blob
         """
@@ -247,7 +247,7 @@ class Cache(object):
             else:
                 data = to_blob(data)
                 query = "INSERT INTO iconcache (id, icon, modified, maxage) VALUES (?, ?, ?,?)"
-                self.con.execute(query, (icon_id, data, time.time(), 365*24*60*60))
+                self.con.execute(query, (icon_id, data, time.time(), expire))
             self.con.commit()
 
     def getImageFromIconCache(self, icon_id: int) -> Optional[bytes]:
@@ -286,7 +286,8 @@ class Cache(object):
                 query = "UPDATE avatars SET json = ?, modified = ? ,player_id = ?, alliance_id = ?  WHERE charname = ?"
                 self.con.execute(query, (json_txt, time.time(), player_name, player_id, alliance_id))
             else:
-                query = "INSERT INTO avatars (charname, json, modified, player_id, alliance_id, maxage) VALUES (?, ?, ?, ?, ?, ?)"
+                query = "INSERT INTO avatars (charname, json, modified, player_id, alliance_id, maxage) "\
+                        "VALUES (?, ?, ?, ?, ?, ?)"
                 self.con.execute(query, (player_name, json_txt, time.time(), player_id, alliance_id, 48*24*60*60))
             self.con.commit()
 
@@ -674,10 +675,10 @@ class Cache(object):
             self.con.commit()
 
     def setThreaConnections(self, data):
-        self.putIntoCache("Thera_Connections", data, 60)
+        self.putIntoCache("Eve_Scout_Public_Signatures", data, 60)
 
     def getThreaConnections(self):
-        data = self.getFromCache("Thera_Connections")
+        data = self.getFromCache("Eve_Scout_Public_Signatures",outdated=True)
         if data is not None:
             return json.loads(data)
         else:
@@ -730,7 +731,8 @@ class Cache(object):
             self.con.execute("DELETE FROM killmails WHERE datetime(modified+maxage,'unixepoch') < datetime()")
             self.con.commit()
 
-    def putKillmailtoCache(self, killmail_id, system_id, region_id, json_txt, modified=time.time(), maxage=48*60*60) -> None:
+    def putKillmailtoCache(self, killmail_id, system_id, region_id,
+                           json_txt, modified=time.time(), maxage=48*60*60) -> None:
         """
             Puts a zKillboard notification into the database
         Args:
@@ -746,7 +748,8 @@ class Cache(object):
         """
         with Cache.SQLITE_WRITE_LOCK:
             self.con.execute("DELETE FROM killmails WHERE datetime(modified+maxage,'unixepoch') < datetime()")
-            query = "INSERT OR IGNORE INTO killmails (id, system_id, region_id, json, modified, maxage) VALUES (?,?,?,?,?,?);"
+            query = "INSERT OR IGNORE INTO killmails (id, system_id, region_id, json, modified, maxage) " \
+                    "VALUES (?,?,?,?,?,?);"
             self.con.execute(query, (killmail_id, system_id, region_id, json_txt, modified, maxage)).fetchall()
             self.con.commit()
 

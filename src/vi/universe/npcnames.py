@@ -14,9 +14,15 @@ NPCNAMES = {
      500013: 'InterBus',
      500014: 'ORE',
      500015: 'Thukker Tribe',
-     500016: 'Sisters of EVE',
+     500016: 'SOE',
      500017: 'The Society',
      500018: "Mordu's Legion",
      500019: "Sansha's",
      500020: 'Serpentis',
-     500026: 'Triglavian'}
+     500024: "Drifters",
+     500025: "Rogue Drones",
+     500026: 'Triglavian',
+     500027: "EDENCOM",
+     500021: "Unknown",
+     500028: "AIR",
+     500029: "Deathless"}

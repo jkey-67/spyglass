@@ -1,8 +1,8 @@
 <p align="center">
-  <img align="middle" src="https://raw.githubusercontent.com/jkey-67/spyglass/master/src/vi/ui/res/logo_splash.png">
+  <img align="middle" src="./src/vi/ui/res/logo_splash.png">
 </p>
 
-# Welcome To EVE Spyglass 1.6
+# Welcome To EVE Spyglass 1.7
 
 EVE Spyglass is an intel visualisation and alarm system for [EVE Online](http://www.eveonline.com). This too gathers information from in game chat channels and presents the data on a [dotlan](http://evemaps.dotlan.net/map/Catch#npc24) generated map. The map is highlighted in real time as players report intel in monitored chat channels.
 
@@ -10,7 +10,7 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
 
 ## Screenshot
 
-![image](https://user-images.githubusercontent.com/78883927/181164561-8e81cc23-46a9-4127-a75e-090887a4bddc.png)
+![image](./img/2023-12-08 18-40-06.png)
 
 ## Features
 ### 1.6.0
@@ -35,16 +35,20 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
 
 ### 1.6.1
  - You can see the alliance ticker for all systems under sovereignty of a player alliance.
- - During startup, the software automatically double check for a new version ready to download. If there is an update available four your version, you will get a button start the download on screen. You can check for new version manually, try [double check latest release](https://github.com/jkey-67/spyglass/releases/latest)  
- - If you copy the name of the jump bridge in game, the connection is automatically added into the database, the software will remove all pairs with the same source or destination system. 
+ - During startup, the software automatically double check for a new version ready to download. If there is an update available four your version, you will get a button start the download on screen. You can check for new version manually, try [double check latest release](https://github.com/jkey-67/spyglass/releases/latest)
 
- ### 1.6.2
+
+ - If you copy the name of the jump bridge in game, the connection is automatically added into the database, the software will remove all pairs with the same source or destination system.
+
+
+
+### 1.6.2
  - list of POI added, you can use the list items to set the destination
  - now you can refresh and delete the Ansiblex jump gates from inside Spyglass
  - the registered chars can be switched from Spyglass
  - fixing ESI search changes
- 
- ### 1.6.3
+
+### 1.6.3
  - using QT6 with PySide6 now (QtTextToSpeech is still missing)
  - preset of statistic and jump connections now work
  - using pyside6-uic for ui files
@@ -54,13 +58,13 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - use online state and position for registered characters on startup and intel rescan 
  - The text in the POI List can be edited now
 
- ### 1.6.4
+### 1.6.4
  - filewatcher now use only files changed after downtime
  - reload of intel now use the lift of files from the filewatcher
  - processing of chat entries now run separated from the map
  - using clipboard with Photon UI improved
 
- ### 1.6.5
+### 1.6.5
  - The navigation context menus now allow to select the api char
  - Adding some icons, update of Thera connection on button
  - Now QDesktopServices is used to show web pages
@@ -79,38 +83,46 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - bug fixes to improve stability
 
 ### 1.6.8
- - alliances with access to the intel channels will be marked as friendly  
- - now using the [zKillboard websockets](https://github.com/zKillboard/zKillboard/wiki/Websocket) as source for intel if victim or attacker is part of an alliance which is marked as friendly     
+ - alliances with access to the intel channels will be marked as friendly
+ - now using the [zKillboard websockets](https://github.com/zKillboard/zKillboard/wiki/Websocket) as source for intel if victim or attacker is part of an alliance which is marked as friendly
  - calculation of the path length now includes jump bridges
- - the intel status is displayed in transparent tool window on hover  
+ - the intel status is displayed in transparent tool window on hover
  - bug fixes for the sqlite database
- - bug fixes inaccessible chars after removing of API users 
+ - bug fixes inaccessible chars after removing of API users
 
 ### 1.6.9
- - bug fixes corrupt maps names in cache  
- - spoken notification for zKillbord are now much shorter  
- - now region can be change from POI and Thera context menu
+ - bug fixes corrupt maps names in cache
+ - spoken notification for zKillbord are now much shorter
+ - now region can be changed from POI and Thera context menu
+
+### 1.7.0
+ - fixing corrupted maps when dotlan returns 503 error during the map update
+ - region Yasna Zakh added to maps
+ - new ships from 14 November 2013 update added to database
+ - now the software now sorts the intel chat by datetime
+ - Regions can now be selected by system names
+ - regions can now be change easy by combobox
+ - the public part of the EvE-Scout Backend API v2 2.1.0 is now used to handle Thera and Turnur system. [ESAPI](https://api.eve-scout.com/ui/#overview)
 
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
 The following access rights will be use
- - esi-ui.write_waypoint.v1 
- - esi-universe.read_structures.v1 
- - esi-search.search_structures.v1 
- - esi-location.read_online.v1 
+ - esi-ui.write_waypoint.v1
+ - esi-universe.read_structures.v1
+ - esi-search.search_structures.v1
+ - esi-location.read_online.v1
  - esi-location.read_location.v1
 
-
-### API access enables 
+### API access enables
 
  - the right button context menu to set waypoints and destinations in game directly form inside EVE Syglass.
- - filling the jump bridge data from online structures  
+ - filling the jump bridge data from online structures
  - using the POI Table to set destination in game
  - monitoring login state and current solar system for registered characters
 
 ### API access monitoring and removal
-Please remember to manage your access to all [third-party-applications](https://community.eveonline.com/support/third-party-applications)  
+Please remember to manage your access to all [third-party-applications](https://community.eveonline.com/support/third-party-applications)
 
 ## Intel Rescan
 
@@ -140,7 +152,7 @@ https://pypi.org/project/beautifulsoup4/
 - Requests
 https://pypi.org/project/requests/
 - parse
-https://pypi.org/project/parse/ 
+https://pypi.org/project/parse/
 - espeakng (awaiting QtTextToSpeech)
 https://pypi.org/project/espeakng/
 - networkx
@@ -150,8 +162,10 @@ Optional use the Windows installer https://github.com/espeak-ng/espeak-ng/releas
 
 Please look to the file requirements.txt for the list off dependencies.
 
-You need an installed and configured python with pip and git installed.  
-To start EVE Spyglass, open a console checkout sources and dependencies and start it.    
+You need an installed and configured python with pip and git installed.
+
+To start EVE Spyglass, open a console checkout sources and dependencies and start it.
+
 `win> git clone https://github.com/jkey-67/spyglass.git`
 
 `win> cd spyglass\src`

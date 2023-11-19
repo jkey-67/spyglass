@@ -27,7 +27,7 @@ from logging.handlers import RotatingFileHandler
 from PySide6 import QtGui, QtWidgets, QtCore
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtSql import QSqlDatabase
-
+from PySide6.QtGui import Qt
 from vi import version
 from vi.ui import viui, systemtray
 from vi.cache import cache
@@ -65,7 +65,7 @@ class Application(QApplication):
             font.setPixelSize(60)
             font.setBold(True)
             painter.save()
-            painter.setPen(QtGui.Qt.red)
+            painter.setPen(Qt.red)
             painter.setFont(font)
             painter.rotate(30.0)
             painter.drawText(200, 0, "Snapshot Version")
@@ -78,7 +78,7 @@ class Application(QApplication):
         def change_splash_text(txt):
             logging.info(txt)
             if self.splash and len(txt):
-                self.splash.showMessage("   {}".format(txt), QtCore.Qt.AlignLeft, QtGui.QColor(0x808000))
+                self.splash.showMessage("   {}".format(txt), Qt.AlignLeft, QtGui.QColor(0x808000))
 
         chat_log_directory = ""
         if len(sys.argv) > 1:
@@ -122,10 +122,10 @@ class Application(QApplication):
         change_splash_text("setting local directory for cache and logging")
 
         spyglass_dir = os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)), "spyglass")
-        zkillMonitor.MONITORING_PATH = \
-            os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)),
-                         "spyglass",
-                         datetime.datetime.strftime(datetime.datetime.utcnow(), "zKillboard_daily_logfile_%Y%m%d.txt"))
+        zkillMonitor.MONITORING_PATH = os.path.join(chat_log_directory,
+                                                    datetime.datetime.strftime(
+                                                        datetime.datetime.utcnow(),
+                                                        "zKillboard_daily_logfile_%Y%m%d.txt"))
 
         if not os.path.exists(spyglass_dir):
             os.mkdir(spyglass_dir)

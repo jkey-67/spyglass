@@ -6,7 +6,7 @@ VSVersionInfo(
   ffi=FixedFileInfo(
 # filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
 # Set not needed items to zero 0.
-filevers=(1, 6, 9, 0),
+filevers=(1, 6, 10, 0),
 # Contains a bitmask that specifies the valid bits 'flags'r
 mask=0x3f,
 # Contains a bitmask that specifies the Boolean attributes of the file.
@@ -21,7 +21,7 @@ fileType=0x1,
 # 0x0 - the function is not defined for this fileType
 subtype=0x0,
 # Creation date and time stamp.
-date=(08,19)
+date=(08, 19),
 ),
   kids=[
 StringFileInfo(
@@ -30,12 +30,12 @@ StringFileInfo(
     u'040904B0',
     [StringStruct(u'CompanyName', u'Crypta Tech'),
     StringStruct(u'FileDescription', u'spyglass'),
-    StringStruct(u'FileVersion', u'1.6.9'),
+    StringStruct(u'FileVersion', u'1.6.10'),
     StringStruct(u'InternalName', u'Spyglass'),
     StringStruct(u'LegalCopyright', u'Copyright (c) Crypta Electrica'),
     StringStruct(u'OriginalFilename', u'spyglass.exe'),
     StringStruct(u'ProductName', u'Spyglass'),
-    StringStruct(u'ProductVersion', u'1.6.9')])
+    StringStruct(u'ProductVersion', u'1.6.10')])
   ]), 
 VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
   ]

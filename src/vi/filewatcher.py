@@ -18,6 +18,7 @@
 ###########################################################################
 import logging
 import os
+import sys
 import stat
 import time
 import datetime
@@ -31,8 +32,8 @@ There is a problem with the QFIleWatcher on Windows and the log
 files from EVE.
 The first implementation (now FileWatcher_orig) works fine on Linux, but
 on Windows it seems ther is something buffered. Only a file-operation on
-the watched directory another event there, which tirggers the OS to
-reread the files informations, trigger the QFileWatcher.
+the watched directory another event there, which triggers the OS to
+reread the files information, trigger the QFileWatcher.
 So here is a workaround implementation.
 We use here also a QFileWatcher, only to the directory. It will notify it
 if a new file was created. We watch only the newest (last 24h), not all!
@@ -49,15 +50,27 @@ class FileWatcher(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.path = path
         self.files = {}
-        self.updateWatchedFiles()
-        self.fileWatcher = QtCore.QFileSystemWatcher()
+        self.fileWatcher = QtCore.QFileSystemWatcher(self)
         self.fileWatcher.directoryChanged.connect(self.directoryChanged)
+        self.fileWatcher.fileChanged.connect(self.fileChanged)
         self.fileWatcher.addPath(path)
-        self.active = True
+        self.updateWatchedFiles()
+        self.active = sys.platform.startswith("win32")
+
+    def fileChanged(self, file_name):
+        with FileWatcher.FILE_LOCK:
+            path_stat = os.stat(file_name)
+            size_file = self.files[file_name]
+            if not stat.S_ISREG(path_stat.st_mode):
+                return
+            if size_file < path_stat.st_size:
+                logging.debug("Update file {}".format(file_name))
+                self.files[file_name] = path_stat.st_size
+                self.file_change.emit(file_name, False)
 
     def directoryChanged(self, path_name):
         with FileWatcher.FILE_LOCK:
-            self.updateWatchedFiles()
+            self.updateWatchedFiles(path_name)
 
     def run(self):
         while self.active:
@@ -91,7 +104,7 @@ class FileWatcher(QtCore.QThread):
         target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
         return target.timestamp()
 
-    def updateWatchedFiles(self):
+    def updateWatchedFiles(self, path_name=None):
         """
         Updates the list of monitored file, all Fleet and Alliance chats and files with mdate, earlier then the last
         downtime, will be ignored by default.
@@ -100,7 +113,6 @@ class FileWatcher(QtCore.QThread):
             None: modifies the file member
         """
         path = self.path
-        files_in_dir = {}
         last_downtime = self.lastDowntime()
         for f in os.listdir(path):
             try:
@@ -114,11 +126,11 @@ class FileWatcher(QtCore.QThread):
                 if [elem for elem in FileWatcher.files_to_ignore if (elem in f)]:
                     logging.debug("Ignor file {}, found black listed token in filename.".format(f))
                     continue
-                files_in_dir[full_path] = self.files.get(full_path, 0)
+                self.addMonitorFile(full_path)
+
             except Exception as e:
                 logging.error(e)
-        self.files = files_in_dir
 
     def addMonitorFile(self, filename):
-        self.files[filename]=0
+        self.files[filename] = 0
         self.fileWatcher.addPath(filename)

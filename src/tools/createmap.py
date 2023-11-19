@@ -24,14 +24,9 @@ import os
 import sys
 
 import networkx as nx
-import numpy
-from math import sqrt
 from bs4 import BeautifulSoup
 from vi import evegate
 from vi.universe import Universe
-from vi.dotlan import convertRegionName
-
-from layout import fruchterman_reingold_layout, kamada_kawai_layout
 
 sys.path.append('../')
 
@@ -65,7 +60,7 @@ def is_different_constellation(src, dst):
 missing_sys = list()
 
 
-def addJumpsToSvgFile(system, jumps, svg_template, use_cache=True):
+def addJumpsToSvgFile(system, jumps, svg_template):
     if "stargates" in system:
         for gate_id in system["stargates"]:
             gates = Universe.stargateByID(gate_id)
@@ -75,7 +70,14 @@ def addJumpsToSvgFile(system, jumps, svg_template, use_cache=True):
             src_pos = svg_template.find(id="sys{}".format(str(src)))
             dst_pos = svg_template.find(id="sys{}".format(str(dst)))
             if src_pos and dst_pos and revert is None:
-                line_tag = svg_template.new_tag("line", id="j-{}-{}".format(src, dst), x1=float(src_pos["x"])+31.25, y1=float(src_pos["y"])+15,x2=float(dst_pos["x"])+31.25, y2=float(dst_pos["y"])+15,)
+                line_tag = svg_template.new_tag(
+                    "line",
+                    id="j-{}-{}".format(src, dst),
+                    x1=float(src_pos["x"])+31.25,
+                    y1=float(src_pos["y"])+15,
+                    x2=float(dst_pos["x"])+31.25,
+                    y2=float(dst_pos["y"])+15)
+
                 src_system = Universe.systemById(src)
                 dst_system = Universe.systemById(dst)
                 if is_diffrent_region(src_system, dst_system):
@@ -87,11 +89,6 @@ def addJumpsToSvgFile(system, jumps, svg_template, use_cache=True):
                 jumps.append(line_tag)
             elif dst_pos is None:
                 missing_sys.append(dst)
-
-
-def addIceBeltsToSvgFile(system, svg_template, use_cache=True):
-    for sysuse in svg_template.select("use"):
-        sysuse["system_id"]
 
 
 def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
@@ -120,7 +117,7 @@ def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
         sys_tag.append(a_tag)
         svg_template.defs.append(sys_tag)
         x = x + 62.5
-        y = 0
+        y = y + 0
         use_tag = svg_template.new_tag("use", height="30", id="sys{}".format(system_id), width="62.5")
         use_tag["xlink:href"] = "#def{}".format(system_id)
         use_tag["x"] = round(x / 62.5) * 62.5
@@ -145,7 +142,6 @@ def updateSvgFile(filename):
     except (Exception,):
         pass
     for sysuse in systemUses.select("use"):
-        symbol_id = sysuse["id"]
         sysuse.attrs["x"] = str(float(sysuse.attrs["x"]) + float(trans_map[0]))
         sysuse.attrs["y"] = str(float(sysuse.attrs["y"]) + float(trans_map[1]))
         if sysuse.has_attr("transform"):
@@ -161,7 +157,7 @@ def updateSvgFile(filename):
         symbol_id = sysuse["id"]
         system_id = symbol_id[3:]
         system = evegate.esiUniverseSystems(system_id, use_cache)
-        addJumpsToSvgFile(system, jumps, svg_template, use_cache)
+        addJumpsToSvgFile(system, jumps, svg_template)
 
     return svg_template
 
@@ -189,37 +185,47 @@ def svgFileToDot(filename):
 
 
 class RegionObject(object):
+    """
+    Region of eve online
+
+    Attributes:
+        constellations (list): A list of constellations identifiers as list of int.
+        name  (str): The name of the region.
+        region_id (int): The identifier of the region as int.
+    """
     def __init__(self, **kwargs):
+
+        self.constellations = list()
+        self.name = str()
+        self.region_id = int()
         self.__dict__.update(kwargs)
+        pass
 
 
 def systemsInSameConstellation(id_src, id_dst) -> bool:
     return Universe.systemById(id_src)["constellation_id"] == Universe.systemById(id_dst)["constellation_id"]
 
+
 def systemsInSameRegion(id_src, id_dst) -> bool:
 
-    return Universe.constellationByID( Universe.systemById(id_src)["constellation_id"])["region_id"] ==\
-        Universe.constellationByID( Universe.systemById(id_dst)["constellation_id"])["region_id"]
+    return Universe.constellationByID(Universe.systemById(id_src)["constellation_id"])["region_id"] ==\
+        Universe.constellationByID(Universe.systemById(id_dst)["constellation_id"])["region_id"]
 
 
 def createSvgFile(region_ids):
     use_cache = True
-    map_template = os.path.join(os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata","MapTemplate.svg")
+    map_template = os.path.join(
+        os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata", "MapTemplate.svg")
     svg_template = loadSvg(map_template)
 
     jumps = svg_template.select("#jumps")[0]
     systemUses = svg_template.select("#sysuse")[0]
 
-    x_max = None
-    y_min = None
-    y_max = None
-    x_min = None
-
     affected_systems = set()
     region_name = ""
     for region_id in region_ids:
         region_used = RegionObject(**Universe.regionByID(region_id))
-        region_name = region_name + region_used.name if region_name =="" else region_name + ", " + region_used.name
+        region_name = region_name + region_used.name if region_name == "" else region_name + ", " + region_used.name
         for const_id in region_used.constellations:
             constellation_used = Universe.constellationByID(const_id)
             for system_id in constellation_used["systems"]:
@@ -238,7 +244,7 @@ def createSvgFile(region_ids):
         constellation_used = Universe.constellationByID(system["constellation_id"])
         x_cur = constellation_used["position"]["x"] + system["position"]["x"]
         y_cur = constellation_used["position"]["y"] + system["position"]["y"]
-        z_cur = constellation_used["position"]["z"] + system["position"]["z"]
+        # z_cur = constellation_used["position"]["z"] + system["position"]["z"]
 
         subset = system["constellation_id"] if 'constellation_id' in system else -1
         g.add_node(system_id, subset=subset)
@@ -252,22 +258,21 @@ def createSvgFile(region_ids):
 
             id_src = int(itm["system_id"])
             id_dst = int(itm["destination"]["system_id"])
-            res =Universe.constellationByID(id_src)
-            res = Universe.systemById(id_src)
             if systemsInSameConstellation(id_src, id_dst):
-                g.add_edge(id_src, id_dst, type="Gate", weight=0.5)
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.8)
             elif systemsInSameRegion(id_src, id_dst):
-                g.add_edge(id_src, id_dst, type="Gate", weight=0.3)
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.05)
             else:
-                g.add_edge(id_src, id_dst, type="Gate", weight=0.1)
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.0001)
+                pass
 
-    #graph_positions = initialpos
+    # graph_positions = initialpos
 
-    graph_positions =nx.spring_layout(g, k=0.14, seed=65535)
-    #graph_positions = nx.kamada_kawai_layout(g)
-    #graph_positions = nx.spring_layout(g, k=0.18, seed=61245)
-    #graph_positions = nx.spring_layout(g, k=0.2, weight='weight', seed=61245)
-    #graph_positions = nx.kamada_kawai_layout(g, weight='weight')
+    graph_positions = nx.spring_layout(g, k=0.11, seed=0)
+    # graph_positions = nx.kamada_kawai_layout(g)
+    # graph_positions = nx.spring_layout(g, k=0.15, seed=61245)
+    # graph_positions = nx.spring_layout(g, k=0.2, weight='weight', seed=61245)
+    # graph_positions = nx.kamada_kawai_layout(g, weight='weight')
 
     x_max = None
     y_min = None
@@ -300,7 +305,6 @@ def createSvgFile(region_ids):
         graph_positions.update(
             {system_id: (graph_positions[system_id][0] - x_min, graph_positions[system_id][1] - y_min)})
 
-
     for system_id in affected_systems:
         system = Universe.systemById(system_id)
         constellation_used = Universe.constellationByID(system["constellation_id"])
@@ -311,7 +315,14 @@ def createSvgFile(region_ids):
         a_tag["region"] = region_id
         a_tag["class"] = "sys link-5-{}".format(system_id)
         if region_id in region_ids:
-            sys_rect = svg_template.new_tag("rect", height="22", id="rect{}".format(system_id), rx="11", ry="11", width="50", x="4", y="3.5")
+            sys_rect = svg_template.new_tag("rect",
+                                            height="22",
+                                            id="rect{}".format(system_id),
+                                            rx="11",
+                                            ry="11",
+                                            width="50",
+                                            x="4",
+                                            y="3.5")
             sys_rect["class"] = "s"
             sys_text = svg_template.new_tag("text", x="28", y="14")
             sys_text["class"] = "ss"
@@ -322,7 +333,11 @@ def createSvgFile(region_ids):
             sys_text_id["text-anchor"] = "middle"
             sys_text_id.string = "ORE"
         else:
-            sys_rect = svg_template.new_tag("rect", height="22", id="rect{}".format(system_id), width="50", x="4", y="3.5")
+            sys_rect = svg_template.new_tag("rect",
+                                            height="22",
+                                            id="rect{}".format(system_id),
+                                            width="50",
+                                            x="4", y="3.5")
             sys_rect["class"] = "e"
             sys_text = svg_template.new_tag("text", x="28", y="14")
             sys_text["class"] = "es"
@@ -345,9 +360,10 @@ def createSvgFile(region_ids):
         y = graph_positions[system_id][1]*(svg_h-30)/height
         use_tag = svg_template.new_tag("use", height="30", id="sys{}".format(system_id), width="62.5")
         use_tag["xlink:href"] = "#def{}".format(system_id)
-        if False:
+        if True:
             use_tag["x"] = str(round(x/62.5)*62.5)
-            use_tag["y"] = str(round(y/30.0)*30.0)
+            use_tag["y"] = str(y)
+            # use_tag["y"] = str(round(y/30.0)*30.0)
         else:
             use_tag["x"] = str(x)
             use_tag["y"] = str(y)
@@ -356,7 +372,7 @@ def createSvgFile(region_ids):
 
     for system_id in affected_systems:
         system = Universe.systemById(system_id)
-        addJumpsToSvgFile(system, jumps, svg_template, use_cache)
+        addJumpsToSvgFile(system, jumps, svg_template)
 
     svg_template.svg["width"] = str(svg_w)
     svg_template.svg["height"] = str(svg_h)
@@ -366,35 +382,36 @@ def createSvgFile(region_ids):
 
 
 def main():
-    base_path = os.path.join(os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata","generated")
+    base_path = os.path.join(
+        os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata", "generated")
 
     if False:  # create a dot file
-        result = svgFileToDot(os.path.join(base_path,"New_Combined-step_6.svg"))
-        with open(os.path.join(base_path,"Denci_Tactical.dot"), "wb") as svgFile:
+        result = svgFileToDot(os.path.join(base_path, "New_Combined-step_6.svg"))
+        with open(os.path.join(base_path, "Denci_Tactical.dot"), "wb") as svgFile:
             svgFile.write(result.encode("utf-8"))
             svgFile.close()
         return
 
     if True:
 
-        for region in [Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Zarzakh"))),
-                       Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Z-ENUD"))),
+        for region in [# Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Zarzakh"))),
+                       # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Z-ENUD"))),
                        Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Jita"))),
-                       Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("D-GTMI"))),
-                       Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("YKSC-A")))
-                       ]: # Universe.REGIONS:
+                       # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("D-GTMI"))),
+                       # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("YKSC-A")))
+                       ]:  # Universe.REGIONS:
             region_name = region["name"]
             region_id = region["region_id"]
             newSvg = createSvgFile(list({region_id}))
             result = newSvg.encode("utf-8")
-            fname = "{}.svg".format(convertRegionName(region_name))
+            fname = "{}.svg".format(evegate.convertRegionNameForDotlan(region_name))
             with open(os.path.join(base_path, fname), "wb") as svgFile:
                 svgFile.write(result)
                 svgFile.close()
         return
 
-        #system_id = Universe.systemIdByName("Jita" )
-        #system_id = Universe.systemIdByName("Zarzakh")
+        # system_id = Universe.systemIdByName("Jita" )
+        # system_id = Universe.systemIdByName("Zarzakh")
         system_id = Universe.systemIdByName("Z-ENUD")
         system_id = Universe.systemIdByName('1M7-RK')
         rgn_name = Universe.regionNameFromSystemID(Universe.systemIdByName("Zarzakh"))
@@ -402,7 +419,7 @@ def main():
         catch_id = Universe.regionIDFromSystemID(30001168)
         newSvg = createSvgFile(list({rgn_id, catch_id}))
         result = newSvg.prettify().encode("utf-8")
-        fname = "{}.svg".format(convertRegionName(rgn_name))
+        fname = "{}.svg".format(evegate.convertRegionNameForDotlan(rgn_name))
         with open(os.path.join(base_path, fname), "wb") as svgFile:
             svgFile.write(result)
             svgFile.close()

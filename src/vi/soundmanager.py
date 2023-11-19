@@ -194,7 +194,7 @@ class SoundManager(metaclass=Singleton):
     def setUseSpokenNotifications(self, new_value):
         self.useSpokenNotifications = new_value
 
-    def setSoundVolume(self, newValue:int):
+    def setSoundVolume(self, newValue: int):
         self.soundVolume = max(0, min(100, newValue))
         Cache().putIntoCache("soundsetting.volume", self.soundVolume)
         for key, val in self.EFFECT.items():

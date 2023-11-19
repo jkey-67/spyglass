@@ -1,5 +1,5 @@
 class CTX:
-    EVE_SYSTEM = ("EVE-System", "EVE System", "Système EVE", "Система EVE")
+    EVE_SYSTEM = (u"EVE-System", u"EVE System", u"Système EVE", u"Система EVE", u'EVE システム', u'EVE星系', u'이브 시스템')
     CHARS_TO_IGNORE = ("*", "?", ",", "!", ".", "^")
     WORDS_TO_IGNORE = ("IN", "IS", "AS", "AT", "NV", "ESS", "GATE", "HOSTILE")
     FORMAT_URL = u"""<a style="color:#28a5ed;font-weight:bold" href="link/{0}">{0}</a>"""
