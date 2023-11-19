@@ -18,64 +18,41 @@
 ###########################################################################
 
 import os
-import logging
-import requests
 
 from vi.cache import Cache
 from PySide6 import QtWidgets
 from PySide6 import QtCore
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtWidgets import QMessageBox
 from vi.ui import Ui_RegionChooser
-from vi import evegate, dotlan
-from vi.resources import resourcePathExists
+from vi.universe import Universe
 
 
 class RegionChooser(QtWidgets.QDialog):
     new_region_chosen = pyqtSignal(str)
 
-    def __init__(self, parent):
+    def __init__(self, parent, region_name: str):
         QtWidgets.QDialog.__init__(self, parent)
         self.ui = Ui_RegionChooser()
         self.ui.setupUi(self)
-
-        self.strList = QtWidgets.QCompleter(
-            ["{}".format(name) for key, name in evegate.esiUniverseNames(evegate.esiUniverseGetAllRegions()).items()],
-            parent=self)
-
+        self.list_of_reagion_names = sorted([region["name"] for region in Universe.REGIONS])
+        self.strList = QtWidgets.QCompleter(self.list_of_reagion_names, parent=self)
         self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.ui.regionNameField.addItems(self.list_of_reagion_names)
         self.ui.regionNameField.setCompleter(self.strList)
+        self.ui.regionNameField.setCurrentText(region_name)
+        self.ui.regionNameField.currentIndexChanged.connect(self.indexChanged)
         self.ui.saveButton.clicked.connect(self.saveClicked)
-        cache = Cache()
-        region_name = cache.getFromCache("region_name")
-        if not region_name:
-            region_name = u"Providence"
-        self.ui.regionNameField.setText(region_name)
+
+    def indexChanged(self, index: int):
+        region_name = str(self.ui.regionNameField.currentText())
+        if region_name in self.list_of_reagion_names:
+            self.new_region_chosen.emit(region_name)
 
     def saveClicked(self):
-        text = str(self.ui.regionNameField.text())
-        text = dotlan.convertRegionName(text)
-        self.ui.regionNameField.setText(text)
-        try:
-            url = dotlan.Map.DOTLAN_BASIC_URL.format(text)
-            content = requests.get(url).text
-            if u"not found" in content:
-                try:
-                    correct = resourcePathExists(os.path.join("vi", "ui", "res", "mapdata", "{0}.svg".format(text)))
-                except Exception as e:
-                    logging.error(e)
-                    correct = False
-                if not correct:
-                    QMessageBox.warning(self, u"No such region!", u"I can't find a region called '{0}'".format(text))
-            else:
-                correct = True
-        except Exception as e:
-            QMessageBox.critical(self, u"Something went wrong!", u"Error while testing existing '{0}'".format(str(e)))
-            logging.error(e)
-            correct = False
-        if correct:
-            Cache().putIntoCache("region_name", text, 60 * 60 * 24 * 365)
+        region_name = str(self.ui.regionNameField.currentText())
+        if region_name in self.list_of_reagion_names:
+            self.new_region_chosen.emit(region_name)
             self.accept()
-            self.new_region_chosen.emit(text)
+
 
 

@@ -11,8 +11,8 @@ def main():
         line = line[:line.find(">")+1]
 
     line = line + " " + sys.argv[1] + "\n"
-    with open(PATH, "a") as f:
-        f.write(line.encode("utf-16"))
+    with open(PATH, "a", encoding='utf-16') as f:
+        f.write(line)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@
 
 from parse import parse
 import vi.evegate as evegate
+from vi.universe import Universe
 
 
 def evaluateClipboardData(content):
@@ -56,42 +57,17 @@ def evaluateClipboardData(content):
     if jump_bridge_text is None:
         jump_bridge_text = parse('{src} {p1} --> {dst} {p2}', content)
 
+    if jump_bridge_text is None:
+        jump_bridge_text = parse('{structure_id} {src} --> {dst}', content)
+
     if jump_bridge_text and len(jump_bridge_text.named) > 2:
-        jb_data = dict()
-        if evegate.esiCharName() and False:
-            structure = evegate.esiSearch(
-                esi_char_name=evegate.esiCharName(),
-                search_text="{} » {}".format(jump_bridge_text["src"], jump_bridge_text["dst"]),
-                search_category=evegate.category.structure)
-            if structure:
-                jb_data["src"] = jump_bridge_text["src"]
-                jb_data["dst"] = jump_bridge_text["dst"]
-                jb_data["id_src"] = structure["structure"][0]
-                if len(structure["structure"]) > 1:
-                    jb_data["id_dst"] = structure["structure"][1]
-                else:
-                    jb_data["id_dst"] = None
-
-                jb_data["json_src"] = evegate.esiUniverseStructure(
-                    esi_char_name=evegate.esiCharName(),
-                    structure_id=structure["structure"][0])
-                if len(structure["structure"]) > 1:
-                    jb_data["json_dst"] = evegate.esiUniverseStructure(
-                        esi_char_name=evegate.esiCharName(),
-                        structure_id=structure["structure"][1])
-                else:
-                    jb_data["json_dst"] = None
-                return ["jumpbridge", jb_data]
+        if jump_bridge_text.named["src"].upper() in Universe.SYSTEM_IDS_BY_UPPER_NAME and \
+                jump_bridge_text.named["dst"].upper() in Universe.SYSTEM_IDS_BY_UPPER_NAME:
+            if "structure_id" in jump_bridge_text and jump_bridge_text["structure_id"] != 0:
+                jump_bridge_text.named["id_src"] = jump_bridge_text["structure_id"]
             else:
-                jump_bridge_text.named["id_src"] = None
-                jump_bridge_text.named["id_dst"] = None
-                jump_bridge_text.named["json_src"] = None
-                jump_bridge_text.named["json_dst"] = None
-                return ["jumpbridge", jump_bridge_text.named]
-
-        else:
-            jump_bridge_text.named["id_src"] = None
-            jump_bridge_text.named["id_dst"] = None
+                jump_bridge_text.named["id_src"] = Universe.systemIdByName(jump_bridge_text["src"])
+            jump_bridge_text.named["id_dst"] = Universe.systemIdByName(jump_bridge_text["dst"])
             jump_bridge_text.named["json_src"] = None
             jump_bridge_text.named["json_dst"] = None
             return ["jumpbridge", jump_bridge_text.named]

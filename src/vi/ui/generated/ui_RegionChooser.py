@@ -15,8 +15,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QDialog, QHBoxLayout, QLabel,
-    QLineEdit, QSizePolicy, QToolButton, QVBoxLayout,
+from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QHBoxLayout,
+    QLabel, QSizePolicy, QToolButton, QVBoxLayout,
     QWidget)
 import resource_rc
 
@@ -24,45 +24,35 @@ class Ui_RegionChooser(object):
     def setupUi(self, RegionChooser):
         if not RegionChooser.objectName():
             RegionChooser.setObjectName(u"RegionChooser")
-        RegionChooser.resize(385, 101)
+        RegionChooser.resize(440, 73)
         self.verticalLayout = QVBoxLayout(RegionChooser)
-        self.verticalLayout.setSpacing(3)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(3, 3, 3, 3)
-        self.verticalLayout_2 = QVBoxLayout()
-        self.verticalLayout_2.setSpacing(3)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.verticalLayout_2.setContentsMargins(3, 3, 3, 3)
         self.label = QLabel(RegionChooser)
         self.label.setObjectName(u"label")
         self.label.setTextFormat(Qt.PlainText)
         self.label.setWordWrap(True)
 
-        self.verticalLayout_2.addWidget(self.label)
+        self.verticalLayout.addWidget(self.label)
 
-
-        self.verticalLayout.addLayout(self.verticalLayout_2)
-
-        self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setSpacing(3)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(3, 3, 3, 3)
-        self.regionNameField = QLineEdit(RegionChooser)
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.regionNameField = QComboBox(RegionChooser)
         self.regionNameField.setObjectName(u"regionNameField")
+        self.regionNameField.setEditable(True)
 
-        self.horizontalLayout_2.addWidget(self.regionNameField)
-
-
-        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.horizontalLayout.addWidget(self.regionNameField)
 
         self.saveButton = QToolButton(RegionChooser)
         self.saveButton.setObjectName(u"saveButton")
         icon = QIcon()
         icon.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.saveButton.setIcon(icon)
-        self.saveButton.setIconSize(QSize(24, 24))
+        self.saveButton.setIconSize(QSize(21, 21))
 
-        self.verticalLayout.addWidget(self.saveButton)
+        self.horizontalLayout.addWidget(self.saveButton)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout)
 
 
         self.retranslateUi(RegionChooser)

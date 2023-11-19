@@ -2,6 +2,7 @@ import PyInstaller
 import PyInstaller.__main__
 import os
 
+
 def instFiles():
     """
         generate the linux installer

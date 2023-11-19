@@ -1,5 +1,6 @@
 import unittest
 import os
+import timeit
 from vi.cache import Cache
 import vi.evegate as evegate
 from vi.universe import Universe
@@ -8,7 +9,7 @@ from vi.clipboard import evaluateClipboardData
 
 
 class TestCache(unittest.TestCase):
-    use_outdated_cache = False
+    use_outdated_cache = True
     curr_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "universe")
     Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     cache_used = Cache()
@@ -33,6 +34,7 @@ class TestCache(unittest.TestCase):
         self.assertIsNotNone(res)
 
     def test_intelSystems(self):
+        # timeit.Timer()
         res = Universe.monitoredSystems(30000734, 0)
         self.assertIn(30000734, res)
         res = Universe.monitoredSystems(30000734, 1)
@@ -63,11 +65,10 @@ class TestCache(unittest.TestCase):
         self.assertIsNotNone(systems)
 
     def test_update_all_json_files(self):
-        self.use_outdated_cache = False
+        self.use_outdated_cache = True
         self.test_generateShipnames()
         self.test_generateRegions()
         self.test_generateConstellations()
-        self.use_outdated_cache = False
         self.test_generateStargates()
         self.use_outdated_cache = True
 
@@ -239,12 +240,21 @@ class TestCache(unittest.TestCase):
 
     def test_GetDotlanFiles(self):
         for region in Universe.REGIONS:
-            filename = os.path.join(self.curr_path,"..","ui","res","mapdata","{}.svg".format(
+            filename = os.path.join(self.curr_path, "..", "ui", "res", "mapdata", "{}.svg".format(
                 evegate.convertRegionNameForDotlan(region["name"])))
             svg = evegate.getSvgFromDotlan(region=region["name"], dark=True)
             if svg.find("region not found") == -1:
                 with open(filename, "w") as f:
                     f.write(svg)
+
+    def test_generateNPCNames(self):
+        factions = dict()
+        with open(os.path.join(self.curr_path, "blal.py"), "w") as f:
+            f.write("NPCNAMES = {")
+            for faction in evegate.esiGetFactions():
+                factions.update({faction["faction_id"]: {"name": faction["name"]}})
+                f.write('{} : "{}",\n'.format(faction["faction_id"], faction["name"]))
+            f.write("}\n")
 
     def test_KnownPlayerNames(self):
         self.cache_used.removeAPIKey("Mr A")
@@ -329,7 +339,7 @@ class TestCache(unittest.TestCase):
         self.assertTrue("inventory_types" in res.keys(), "Missing inventory type")
         res = evegate.esiUniverseIds({"Bifrost"})
         self.assertTrue("inventory_types" in res.keys(), "Missing inventory type")
-        res = evegate.esiUniverseNames([37480])
+        res = evegate.esiUniverseNames({37480, 37480})
         self.assertTrue(res[37480] == "Bifrost", "Missing inventory type Bifrost")
         res = evegate.esiImageEvetechNet(1350114619, evegate.evetech_image.characters, 32)
         self.assertIsNotNone(res)

@@ -28,7 +28,7 @@ from .parser_functions import parseLocal
 
 # Names the local chat logs could start with (depends on l10n of the client)
 
-LOCAL_NAMES = ("Local", "Lokal", str("\u041B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439"))
+LOCAL_NAMES = ("Local", "Lokal", str("\u041B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439"), u'지역', u'ローカル')
 
 
 class ChatParser(object):

@@ -88,7 +88,7 @@ class StyledItemDelegatePlayers(QStyledItemDelegate):
     def setModelData(self, editor, model, index) -> None:
         if editor.currentText() != index.data():
             inx_data = editor.currentText()
-            inx_name = model.index(index.row(),0).data()
+            inx_name = model.index(index.row(), 0).data()
             used_player_names = self.cache.getActivePlayerNames()
             if inx_data == "Yes":
                 used_player_names.add(inx_name)

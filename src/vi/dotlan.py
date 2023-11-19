@@ -22,11 +22,10 @@
 ###########################################################################
 
 import math
-from requests import get as getRequest
-from os import path
 import datetime
 import logging
 import json
+from os import path
 from bs4 import BeautifulSoup
 from vi import states
 from vi.cache.cache import Cache
@@ -65,8 +64,8 @@ class Map(object):
 
         return str(self.soup)
 
-    def __init__(self, region,
-                 svgFile=None,
+    def __init__(self,
+                 svgFile,
                  setJumpMapsVisible=False,
                  setSatisticsVisible=False,
                  setSystemStatistic=None,
@@ -74,41 +73,12 @@ class Map(object):
                  setCampaignsSystems=None,
                  setIncursionSystems=None,
                  setPlayerSovereignty=None):
-        self.region = region
+
         self.width = 1024   # default size
         self.height = 768   # default size
-        cache = Cache()
         self.outdatedCacheError = None
         self._jumpMapsVisible = setJumpMapsVisible
         self._statisticsVisible = setSatisticsVisible
-        if self.region == "Providencecatch" or self.region == "Providence-catch-compact":
-            region_to_load = convertRegionName("providence-catch")
-        else:
-            region_to_load = convertRegionName(self.region)
-
-        # Get map from dotlan if not in the cache
-        # svg = cache.getFromCache("map_{}".format(region_to_load)) if svgFile is None else svgFile
-        """
-            if svg is None or svg.startswith("region not found"):
-            try:
-                svg = evegate.getSvgFromDotlan(region_to_load)
-                if not svg or svg.startswith("region not found"):
-                    region_to_load = "Providence"
-                    svg = self._getSvgFromDotlan("providence")
-                else:
-                    cache.putIntoCache("map_{}".format(region_to_load), svg, 24 * 60 * 60)
-            except Exception as e:
-                self.outdatedCacheError = e
-                svg = cache.getFromCache("map_{}".format(region_to_load))
-                if not svg or svg.startswith("region not found"):
-                    t = "No Map in cache, nothing from dotlan. Must give up " \
-                        "because this happened:\n{0} {1}\n\nThis could be a " \
-                        "temporary problem (like dotlan is not reachable), or " \
-                        "everything went to hell. Sorry. This makes no sense " \
-                        "without the map.\n\nRemember the site for possible " \
-                        "updates: https://github.com/Crypta-Eve/spyglass".format(type(e), str(e))
-                    raise DotlanException(t)
-        """
         # Create soup from the svg
         self.soup = BeautifulSoup(svgFile, features="html.parser")
         for scr in self.soup.findAll('script'):
@@ -119,14 +89,7 @@ class Map(object):
         for tag in self.soup.findAll(attrs={"onload": True}):
             del (tag["onload"])
 
-        if "compact" in self.region:
-            scale = 0.9
-        elif "tactical" in self.region:
-            scale = 1.5
-        else:
-            scale = 1.0
-
-        self.systems = self._extractSystemsFromSoup(self.soup, scale)
+        self.systems = self._extractSystemsFromSoup(self.soup, 1.0)
 
         self.systemsById = {}
         for system in self.systems.values():
@@ -139,7 +102,7 @@ class Map(object):
         self._extractSizeFromSoup(self.soup)
         self._prepareSvg(self.soup)
         self._connectNeighbours()
-        self.jumpBridges = cache.getJumpGates()
+        self.jumpBridges = []
         self.marker = self.soup.select("#select_marker")[0]
 
         if setSystemStatistic:
@@ -466,7 +429,6 @@ class Map(object):
                 stop_system = self.systemsById[int(parts[2])]
                 start_system.addNeighbour(stop_system)
 
-
     def addSystemStatistics(self, statistics):
         """
         Appyes the statistic values to the systems
@@ -514,7 +476,6 @@ class Map(object):
         color_count = 0
         for bridge in jumpbridgesData:
             sys1 = bridge[0]
-            connection = bridge[1]
             sys2 = bridge[2]
             one_systems_on_map = sys1 in self.systems or sys2 in self.systems
             both_systems_on_map = sys1 in self.systems and sys2 in self.systems
@@ -552,7 +513,8 @@ class Map(object):
                 line["stroke-width"] = str(2)
                 line["opacity"] = "0.8"
             else:
-                source_system = self.systems[sys1] if sys1 in self.systems else self.systems[sys2] if sys2 in self.systems else None
+                source_system = self.systems[sys1] \
+                    if sys1 in self.systems else self.systems[sys2] if sys2 in self.systems else None
                 destination_name = sys2 if sys1 in self.systems else sys1
                 if source_system is None:
                     continue
@@ -622,7 +584,7 @@ class Map(object):
     def debugWriteSoup(self):
         svg_data = self.soup.prettify("utf-8")
         try:
-            file_name = path.expanduser("~/projects/spyglass/src/{}.svg".format(self.region))
+            file_name = path.expanduser("~/projects/spyglass/src/debug_out.svg")
             with open(file_name, "wb") as svgFile:
                 svgFile.write(svg_data)
                 svgFile.close()
@@ -657,7 +619,7 @@ class System(object):
     UNKNOWN_COLOR = styles.getCommons()["unknown_colour"]
     CLEAR_COLOR = CLEAR_COLORS[0][1]
 
-    def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId, ticker="npc"):
+    def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId, ticker="-?-"):
         self.status = states.UNKNOWN
         self.name = name
         self.ticker = ticker
@@ -831,15 +793,19 @@ class System(object):
             if "stopwatch" not in self.secondLine["class"]:
                 self.secondLine["class"].append("stopwatch")
             self.setBackgroundColor(self.ALARM_COLOR)
-            self.firstLine["style"] = self.SYSTEM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
-            self.secondLine["style"] = self.ALARM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
+            self.firstLine["style"] = self.SYSTEM_STYLE.format(
+                self.textInv.getTextColourFromBackground(self.backgroundColor))
+            self.secondLine["style"] = self.ALARM_STYLE.format(
+                self.textInv.getTextColourFromBackground(self.backgroundColor))
         elif newStatus == states.CLEAR:
             self.lastAlarmTimestamp = alarm_time.timestamp()
             self.setBackgroundColor(self.CLEAR_COLOR)
             if "stopwatch" not in self.secondLine["class"]:
                 self.secondLine["class"].append("stopwatch")
-            self.firstLine["style"] = self.SYSTEM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
-            self.secondLine["style"] = self.ALARM_STYLE.format(self.textInv.getTextColourFromBackground(self.backgroundColor))
+            self.firstLine["style"] = self.SYSTEM_STYLE.format(
+                self.textInv.getTextColourFromBackground(self.backgroundColor))
+            self.secondLine["style"] = self.ALARM_STYLE.format(
+                self.textInv.getTextColourFromBackground(self.backgroundColor))
         elif newStatus == states.UNKNOWN:
             self.setBackgroundColor(self.UNKNOWN_COLOR)
             # second line in the rects is reserved for the clock
@@ -898,11 +864,12 @@ class System(object):
             minutes = int(math.floor(alarm_time / 60))
             seconds = int(alarm_time - minutes * 60)
 
+            self.secondLineFlash = not self.secondLineFlash
             if self.secondLineFlash:
                 self.secondLine.string = "{m:02d}:{s:02d}".format(m=minutes, s=seconds, ticker=self.ticker)
             else:
                 self.secondLine.string = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
-            self.secondLineFlash = not self.secondLineFlash
+
         else:
             self.secondLine.string = self.ticker
 
@@ -929,8 +896,8 @@ class System(object):
                      '''<span style=" font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>'''\
                      '''<br/><span style=" font-weight:600; color:#e01b24;">{systemstats}</span>'''
 
-                     # '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''\
-                     # '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''\
+                     #  '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''
+                     #  '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''
 
         if self.__hasIncursion:
             if self.__isStaging:
@@ -946,11 +913,6 @@ class System(object):
                 for itm in campaign_data:
                     start_time = itm["start_time"]
                     solar_system_id = itm["solar_system_id"]
-                    structure_id = itm["structure_id"]
-
-                    cache_key = "_".join(("structure", "id", str(structure_id)))
-                    cache = Cache()
-                    cached_id = cache.getFromCache(cache_key, True)
 
                     event_type = itm["event_type"]
                     if solar_system_id == self.systemId:
@@ -977,17 +939,9 @@ class System(object):
 
     def clearIntel(self):
         self.messages.clear()
-        self.setStatus( states.UNKNOWN )
+        self.setStatus(states.UNKNOWN)
 
     def pruneMessage(self, message):
         if message in self.messages:
             self.messages.remove(message)
-
-
-# this is for testing:
-if __name__ == "__main__":
-    svg_map = Map("providence")
-    s = map.systems["I7S-1S"]
-    s.setStatus(states.ALARM)
-    logging.error(map.svg)
 

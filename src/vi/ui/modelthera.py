@@ -33,62 +33,32 @@ class TableModelThera(QAbstractTableModel):
         self.system_name = system_name
         self.thera_data = checkTheraConnections(system_name)
         self.model_display_list = [
-            # {"Out ID": ["id"]},
-            {"Sig In": ["wormholeDestinationSignatureId"]},
-            {"Sig Out": ["signatureId"]},
+            # {"created_at": ["created_at"]},
+            # {"Created by ID": ["created_by_id"]},
+            # {"Created by name": ["created_by_name"]},
+            # {"updated_at": ["updated_at"]},
+            # {"updated_by_id": ["updated_by_id"]},
+            # {"completed_at": ["completed_at"]},
+            # {"completed_by_id": ["completed_by_id"]},
+            # {"completed_by_name": ["completed_by_name"]},
+            # {"completed": ["completed"]},
+            {"Sig In": ["in_signature"]},
+            {"Sig Out": ["out_signature"]},
             {"Jumps": ["jumps"]},
-            {"Region": ["destinationSolarSystem", "region", "name"]},
-            # {"Status": ["status"]},
-            {"System": ["destinationSolarSystem", "name"]},
-            {"Security": ["destinationSolarSystem", "security"]},
-            # {"lys": ["lightyears"]},
-            # {"Destination Constellation ID": ["destinationSolarSystem", "constellationID"]},
-            # {"Destination Region ID": ["destinationSolarSystem", "regionId"]},
-            # {"Out Type": ["type"]},
-            # {"Mass": ["wormholeMass"]},
-            # {"EOL": ["wormholeEol"]},
-            {"Estimated EOL": ["wormholeEstimatedEol"]}
-            # {"Created": ["createdAt"]},
-            # {"Updated": ["updatedAt"]},
-            # {"Deleted": ["deletedAt"]},
-            # {"Created by": ["createdBy"]},
-            # {"Created by ID": ["createdById"]},
-            # {"Deleted": ["deletedBy"]},
-            # {"In Type": ["wormholeSourceWormholeTypeId"]},
-            # {"Out Type": ["wormholeDestinationWormholeTypeId"]},
-            # {"System ID": ["solarSystemId"]},
-            # {"wormholeDestinationSolarSystemId": ["wormholeDestinationSolarSystemId"]},
-            # {"Source WH Type": ["sourceWormholeType"]},
-            # {"Source WH ID": ["sourceWormholeType", "id"]},
-            # {"Source WH Name": ["sourceWormholeType", "name"]},
-            # {"": ["sourceWormholeType", "src"]},
-            # {"": ["sourceWormholeType", "dest"]},
-            # {"": ["sourceWormholeType", "lifetime"]},
-            # {"": ["sourceWormholeType", "jumpMass"]},
-            # {"": ["sourceWormholeType", "maxMass"]},
-            # {"": ["destinationWormholeType", "id"]},
-            # {"": ["destinationWormholeType", "name"]},
-            # {"": ["destinationWormholeType", "src"]},
-            # {"": ["destinationWormholeType", "dest"]},
-            # {"": ["destinationWormholeType", "lifetime"]},
-            # {"": ["destinationWormholeType", "jumpMass"]},
-            # {"": ["destinationWormholeType", "maxMass"]},
-            # {"Source ID": ["sourceSolarSystem", "id"]},
-            # {"Source Name": ["sourceSolarSystem", "name"]},
-            # {"Source Name": ["sourceSolarSystem", "constellationID"]},
-            # {"Source Security": ["sourceSolarSystem", "security"]},
-            # {"Source Region ID": ["sourceSolarSystem", "regionId"]},
-            # {"Source Region ID": ["sourceSolarSystem", "region", "id"]},
-            # {"Source Region Name": ["sourceSolarSystem", "region", "name"]},
-            # {"Destination System ID": ["destinationSolarSystem", "id"]},
-            # {"Destination ID": ["destinationSolarSystem", "region", "id"]},
-            # {"Destination": ["destinationSolarSystem", "region", "name"]},
-
-            #{"Out Sig": ["signatureId"]},
-            #{"In Sig": ["wormholeDestinationSignatureId"]},
-            #{"System": ["destinationSolarSystem", "name"]},
-            #{"Region": ["destinationSolarSystem", "region", "name"]},
-            #{"Security": ["destinationSolarSystem", "security"]}
+            {"Region": ["in_region_name"]},
+            {"System": ["in_system_name"]},
+            {"Estimated EOL": ["expires_at"]},
+            # {"wh_exits_outward": ["wh_exits_outward"]},
+            # {"wh_type": ["wh_type"]},
+            {"Max ship size": ["max_ship_size"]},
+            {"Remaining hours": ["remaining_hours"]},
+            # {"signature_type":  ["signature_type"]},
+            # {"out_system_id": ["out_system_id"]},
+            {"out_system_name":  ["out_system_name"]},
+            # {"in_system_id":  ["in_system_id"]},
+            # {"in_system_class":  ["in_system_class"]},
+            {"ID": ["id"]},
+            {"Comment": ["comment"]}
         ]
 
     def updateData(self, system_name=None):
@@ -113,28 +83,24 @@ class TableModelThera(QAbstractTableModel):
             sel_item_dict = self.model_display_list[index.column()]
             sel_item_key = list(self.model_display_list[index.column()].keys())[0]
             for value_list_txt in sel_item_dict[sel_item_key]:
-                sel_item = sel_item[value_list_txt]
+                if value_list_txt in sel_item:
+                    sel_item = sel_item[value_list_txt]
             return sel_item
 
         elif role == PySide6.QtCore.Qt.ForegroundRole:
             sel_item = self.thera_data[index.row()]
-            match index.column():
-                case 0:
-                    if sel_item["wormholeEol"] == "stable":
-                        return PySide6.QtGui.QColor(0, 198, 0)
-                    elif sel_item["wormholeEol"] == "critical":
-                        return PySide6.QtGui.QColor(198, 0, 0)
-                    else:
-                        return None
-                case 1:
-                    if sel_item["wormholeEol"] == "stable":
-                        return PySide6.QtGui.QColor(0, 198, 0)
-                    elif sel_item["wormholeEol"] == "critical":
-                        return PySide6.QtGui.QColor(198, 0, 0)
-                    else:
-                        return None
-                case _:
-                    return None
+            if index.column() == 0:
+                if sel_item["remaining_hours"] > 2:
+                    return PySide6.QtGui.QColor(0, 198, 0)
+                else:
+                    return PySide6.QtGui.QColor(198, 0, 0)
+            elif index.column() == 1:
+                if sel_item["remaining_hours"] > 2:
+                    return PySide6.QtGui.QColor(0, 198, 0)
+                else:
+                    return PySide6.QtGui.QColor(198, 0, 0)
+            else:
+                return None
         return None
 
     def index(self, row: int, column: int, parent: Union[QModelIndex, QPersistentModelIndex] = ...) -> QModelIndex:

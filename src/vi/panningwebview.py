@@ -52,7 +52,7 @@ class PanningWebView(QWidget):
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
-    def setContent(self, cnt ):
+    def setContent(self, cnt):
         if self.scrolling:
             return False
         if not self.svgRenderer.load(cnt):
@@ -104,7 +104,7 @@ class PanningWebView(QWidget):
 
     def zoomIn(self, pos=None):
         if pos is None:
-            pos = QtCore.QPointF(self.size().width()/2.0,self.size().height()/2.0)
+            pos = QtCore.QPointF(self.size().width()/2.0, self.size().height()/2.0)
 
         elem_ori = self.mapPosFromPos(pos)
         self.setZoomFactor(self.zoom * (1.0+self.ZOOM_WHEEL))

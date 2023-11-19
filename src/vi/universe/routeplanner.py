@@ -4,10 +4,11 @@ import networkx as nx
 from vi.cache import cache
 from vi.universe import Universe
 
+
 def Init_Universe_Graph():
     g = nx.Graph()
-    for itm in Universe.SYSTEMS:
-        g.add_node(int(itm["system_id"]), system=itm)
+    for key, itm in Universe.SYSTEMS.items():
+        g.add_node(key, system=itm)
 
     for itm in Universe.STARGATES:
         id_src = int(itm["system_id"])
@@ -24,6 +25,9 @@ class Route(object):
         Attributes:
             info:str
                 Information text showing source destination and length of th route.
+
+            attr:list
+                A list of system ids and additional info describing the route.
 
             route:list
                 A list of system ids describing the route.
@@ -44,15 +48,13 @@ class Route(object):
     """
     def __init__(self, **kwargs):
         self.info = ""  """ Information text"""
+        self.attr = list()
         self.route = list()
         self.src_id = None
         self.src_name = None
         self.dst_id = None
         self.dst_name = None
         self.__dict__.update(kwargs)
-
-    def applyRouteToChar(self, esi_char):
-        return
 
 
 class RoutPlanner(object):
@@ -94,13 +96,13 @@ class RoutPlanner(object):
 
             if use_thera:
                 for itm in cache.Cache().getThreaConnections():
-                    id_src = itm["sourceSolarSystem"]["id"]
-                    id_dst = itm["destinationSolarSystem"]["id"]
+                    id_src = itm["in_system_id"]
+                    id_dst = itm["out_system_id"]
                     graph.add_edge(id_src, id_dst, type='Thera')
 
             path = nx.shortest_path(graph, source=kwargs['src_id'], target=kwargs['dst_id'])
-            attr = [dict(node=u, type=graph[u][v]['type']) for u, v in zip(path, path[1:])]
-            attr.append(dict(node=path[-1], type="System"))
+            attr = [dict(node=u, type=graph[u][v]['type'], name=Universe.systemNameById(u)) for u, v in zip(path, path[1:])]
+            attr.append(dict(node=path[-1], type="System", name=Universe.systemNameById(path[-1])))
             kwargs.update(route=path)
             kwargs.update(attr=attr)
             kwargs.update(info="Route from {} to {} {} Jumps{}{}.".format(
@@ -109,7 +111,6 @@ class RoutPlanner(object):
                 len(kwargs['route']),
                 ", using Ansiblex" if use_ansi else "",
                 ", using Thera" if use_thera else ""))
-
 
         except (Exception,) as e:
             kwargs.update(info="Route not found, {}".format(e))
@@ -125,7 +126,12 @@ if __name__ == '__main__':
     res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='C3J0-O')
     print('{} %s'.format(res.info) % (res.route[::-1]))
 
-    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='C3J0-O', use_ansi=True)
+    res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Todaki', use_ansi=True, use_thera=True)
+    for sys in res.attr:
+        if sys["name"] != "Thera" and (sys["type"] == "Gate" or sys["type"] == "Ansi"):
+            continue
+        print('{} {}'.format(sys["name"], sys["type"]))
+
     print('{} %s'.format(res.info) % (res.route[::-1]))
 
     res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name='Thera', use_ansi=True, use_thera=True)

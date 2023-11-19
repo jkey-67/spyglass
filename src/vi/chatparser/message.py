@@ -28,14 +28,14 @@ class Message(object):
     def __init__(self,
                  room: str,
                  message: str,
-                 systems: list = list()):
-        self.roomName = room                                # chatroom the message was posted
-        self.affectedSystems = systems                      # list of systems mentioned in the message
-        self.timestamp = Message.lineToDatetime(message)    # time stamp of the massage
-        self.user = Message.lineToUserName(message)         # user who posted the message
-        self.plainText = Message.lineToMessageText(message) # plain text of the message, as posted
-        self.status = states.UNKNOWN                        # status related to the message
-        self.guiText = ""                                   # the messages text to be displayed on the GUI
+                 systems: list = []):
+        self.roomName = room                                 # chatroom the message was posted
+        self.affectedSystems = systems                       # list of systems mentioned in the message
+        self.timestamp = Message.lineToDatetime(message)     # time stamp of the massage
+        self.user = Message.lineToUserName(message)          # user who posted the message
+        self.plainText = Message.lineToMessageText(message)  # plain text of the message, as posted
+        self.status = states.UNKNOWN                         # status related to the message
+        self.guiText = ""                                    # the messages text to be displayed on the GUI
 
         # if you add the message to a widget, please add it to widgets
         self.widgets = []
@@ -58,6 +58,7 @@ class Message(object):
     @property
     def simpleText(self):
         return Message.lineToMessageText(self.plainText)
+
     @staticmethod
     def lineToDatetime(line):
         # finding the timestamp
@@ -71,7 +72,6 @@ class Message(object):
                 return datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ")
             except ValueError:
                 return None
-
 
     @staticmethod
     def lineToUserName(line):
