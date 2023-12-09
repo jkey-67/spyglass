@@ -2044,8 +2044,7 @@ def dumpSpyglassDownloadStats():
         return None
 
 
-
-def genereate_universe_constellation_names():
+def genereate_universe_constellation_names(use_outdated=True):
     systems = esiUniverseAllSystems()
     with open("universe/constellationnames.py", "w", encoding="utf-8")as out_file:
         print("Constellation generation started ...")
@@ -2054,7 +2053,7 @@ def genereate_universe_constellation_names():
         for constellation_id in esiUniverseAllConstellations():
             constellation_id_by_name = dict()
             for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
-                res = esiUniverseConstellations(constellation_id, lang=lang)
+                res = esiUniverseConstellations(constellation_id, lang=lang, use_outdated=use_outdated)
                 constellation_id_by_name[res["name"]] = res["constellation_id"]
 
             for key, data in set(constellation_id_by_name.items()):
@@ -2063,39 +2062,37 @@ def genereate_universe_constellation_names():
         out_file.write('}\n')
         print("Constellation generation done.")
 
-def genereate_universe_system_names():
+
+def genereate_universe_system_names(use_outdated=True):
     session = Session()
     systems = esiUniverseAllSystems()
-    with open("universe/systemnames-utf16.json", "w", encoding="utf-16-le")as out_file:
-        print("Region generation systems ...")
-        # for system_id in [30001377, 30000140, 30000141, 30000142, 30000143, 30000144]:  # esiUniverseAllSystems():
-        for system_id in [ 30000140 ]:  # esiUniverseAllSystems():
-        # for system_id in esiUniverseAllSystems():
-            print("System {}.".format(system_id))
+    with open("universe/systemnames.json", "w", encoding="utf-8")as out_file:
+        out_file.write(u'{\n')
+        for system_id in esiUniverseAllSystems():
             systems_id_by_name = dict()
-            # for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
-            for lang in ("zh",):
-                res = esiUniverseSystems(system_id, lang=lang, use_cache=False)
-                systems_id_by_name[res["name"]] = {"lang": lang, "system_id": res["system_id"]}
+            for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
+                res = esiUniverseSystems(system_id, lang=lang, use_cache=True, use_outdated=use_outdated)
+                systems_id_by_name[res["name"]] = res["system_id"]
 
-            #for key, data in set(systems_id_by_name.items()):
-            #    out_file.write(u'   "{}": {},\n'.format(key, json.dumps(data)))
-            out_file.write(u"{}\n".format(json.dumps(systems_id_by_name, indent=4)))
+            for key, data in set(systems_id_by_name.items()):
+               out_file.write(u'   "{}": {},\n'.format(key, json.dumps(data)))
+            # out_file.write(u"{}\n".format(json.dumps(systems_id_by_name, indent=4)))
             out_file.flush()
-
+        out_file.write(u'}\n\n')
         print("Region generation systems done.")
 
-def generate_universe_region_names():
+
+def generate_universe_region_names(use_outdated=True):
 
     with open("universe/regionnames.py", "w", encoding="UTF-8")as out_file:
         print("Region generation started ...")
         out_file.write('# this file is auto generated, do not edit.\n')
         out_file.write('REGION_IDS_BY_NAME = {\n')
-        for region_id in esiUniverseNames(esiUniverseGetAllRegions()):
+        for region_id in esiUniverseNames(esiUniverseGetAllRegions(), use_outdated=use_outdated):
             region_id_by_name = dict()
             print( "Region id  {}".format(region_id))
             for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
-                res = esiUniverseRegions(region_id, lang=lang)
+                res = esiUniverseRegions(region_id, lang=lang, use_outdated=use_outdated)
                 region_id_by_name[res["name"]] = res["region_id"]
                 pass
 
@@ -2117,7 +2114,7 @@ if __name__ == "__main__":
     res = ESAPIListPublicObservationsRecords()
 
     res = checkTheraConnections()
-    ord1 = ord(u'마')
+    ord1 = ord(U'마')
     ord2 = ord(u'마')
     ord3 = ord('마')
 
@@ -2125,17 +2122,19 @@ if __name__ == "__main__":
     ch2 = chr(0x4e4c)
     res0 = b"\u739b\u4e4c\u7eb3\u65af".decode("utf-16-le")
     res1 = b"\u739b\u4e4c\u7eb3\u65af".decode("utf-16")
-    res11 = b"\u739b\u4e4c\u7eb3\u65af".decode("utf-8")
+    res11 = b"\u739b\u4e4c\u7eb3\u65af".decode("utf-16").encode("utf8")
+    res12 = res11.decode("utf8")
     res2 = u"\u739b\u4e4c\u7eb3\u65af"
     res3 = u"마우라시".encode("utf-8")
     res4 = u"마우라시".encode("utf-16")
     res5 = u"마우라시".encode("utf-16-le")
+    res6 = Universe.systemIdByName("JITA")
+    res7 = Universe.systemIdByName("JITA")
+    res8 = Universe.systemIdByName("ニューカルダリ")
+    res9 = Universe.systemIdByName(b'\u65b0\u52a0\u8fbe\u91cc'.decode("utf-16le"))
     genereate_universe_system_names()
-    # res = Universe.systemIdByName("JITA")
-    # res = Universe.systemIdByName("JITA")
-    # res = Universe.systemIdByName("ニューカルダリ")
-    # generate_universe_region_names()
-    # genereate_universe_constellation_names()
+    generate_universe_region_names()
+    genereate_universe_constellation_names()
 
     # Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     # dumpSpyglassDownloadStats()

@@ -73,10 +73,15 @@ class ChatParser(object):
         # We only need those which name is in the rooms-list
         # EvE names the file like room_20210210_223941_1350114619.txt, so we don't need
         # the last 31 chars
-        no_id_str = filename[:filename.rindex("_")]
-        no_time_str = no_id_str[:no_id_str.rindex("_")]
-        return no_time_str[:no_time_str.rindex("_")]
-          
+        try:
+            no_id_str = filename[:filename.rindex("_")]
+            no_time_str = no_id_str[:no_id_str.rindex("_")]
+            if no_time_str == -1:
+                return None
+            return no_time_str[:no_time_str.rindex("_")]
+        except (Exception,):
+            return None
+
     def _fetchFileChanges(self, path):
         """
             updates the data like number of lines and user and room name for a give path and return the content
@@ -89,6 +94,8 @@ class ChatParser(object):
         """
         filename = os.path.basename(path)
         roomname = self.roomNameFromFileName(filename)
+        if roomname is None:
+            return None, None
         try:
             with open(path, "r", encoding='utf-16-le') as f:
                 content = f.read()

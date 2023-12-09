@@ -77,19 +77,19 @@ class zkillMonitor(QObject):
     @staticmethod
     def _writeHeader():
         if not os.path.exists(zkillMonitor.MONITORING_PATH):
-            with open(zkillMonitor.MONITORING_PATH, "w") as fp:
-                fp.write("\n")
-                fp.write("\n")
-                fp.write("\n")
-                fp.write("---------------------------------------------------------------\n")
-                fp.write("Channel ID: zKillboard\n")
-                fp.write("Channel Name: zKillboard\n")
-                fp.write("---------------------------------------------------------------\n")
-                fp.write("Websocket listen to url wss://zkillboard.com/websocket/\n")
-                fp.write("---------------------------------------------------------------\n")
-                fp.write("\n")
-                fp.write("\n")
-                fp.write("\n")
+            with open(zkillMonitor.MONITORING_PATH, "wt", encoding="utf-16-le") as fp:
+                fp.write(u'\ufeff\n')
+                fp.write(u"\ufeff\n")
+                fp.write(u"\ufeff\n")
+                fp.write(u"\ufeff---------------------------------------------------------------\n")
+                fp.write(u"\ufeffChannel ID: zKillboard\n")
+                fp.write(u"\ufeffChannel Name: zKillboard\n")
+                fp.write(u"\ufeff---------------------------------------------------------------\n")
+                fp.write(u"\ufeffWebsocket listen to url wss://zkillboard.com/websocket/\n")
+                fp.write(u"---------------------------------------------------------------\n")
+                fp.write(u"\ufeff\n")
+                fp.write(u"\ufeff\n")
+                fp.write(u"\ufeff\n")
 
     def onNewTextMessage(self, text):
         """
@@ -104,8 +104,8 @@ class zkillMonitor(QObject):
         if self.logKillAsIntel(kill_data):
             kill_string = self.getIntelString(kill_data)
             self._writeHeader()
-            with open(zkillMonitor.MONITORING_PATH, "a", encoding='utf-16-le') as fp:
-                fp.write(kill_string)
+            with open(zkillMonitor.MONITORING_PATH, "at", encoding='utf-16-le') as fp:
+                fp.write('\ufeff'+kill_string)
 
     @staticmethod
     def logKillmail(kill_data):

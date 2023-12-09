@@ -19,6 +19,47 @@ class TestIntel(unittest.TestCase):
     # cache_used = Cache()
     # evegate.setEsiCharName("nele McCool")
 
+    def test_zh_change_local(self):
+        message = parser_functions.parseLocal(path="", char_name="", line=u"﻿[ 2023.12.09 08:09:32 ] EVE系统 > 频道更换为本地：撒了库瓦*")
+        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertIn(u'撒了库瓦', message.affectedSystems, "System 撒了库瓦 should be detected.")
+
+    def test_jp_change_local(self):
+        message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 10:45:29 ] EVE システム > チャンネル名が ローカル : ニューカルダリ* に変更されました")
+        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertIn(u'ニューカルダリ', message.affectedSystems, "System ニューカルダリ should be detected.")
+
+    def test_ko_change_local(self):
+        message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 10:49:22 ] 이브 시스템 > 지역 : 조사메토* 채널로 변경")
+        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertIn(u'조사메토', message.affectedSystems, "System 조사메토 should be detected.")
+
+    def test_de_change_local(self):
+        message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 10:55:14 ] EVE-System > Chatkanal geändert zu Lokal: Josameto*")
+        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
+
+    def test_en_change_local(self):
+        message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 11:08:14 ] EVE System > Channel changed to Local : Josameto")
+        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertIn(u'Josameto', message.affectedSystems, "System 撒了库瓦 should be detected.")
+
+    def test_fr_change_local(self):
+        message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 11:16:24 ] Système EVE > Canal changé en Local : Josameto*")
+        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
+
+    def test_rus_change_local(self):
+        message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 11:18:36 ] Система EVE > Канал изменен на Локальный: Josameto*")
+        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
+
+    def test_es_change_local(self):
+        message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 11:21:00 ] Sistema EVE > El canal ha cambiado a Local: Josameto*.")
+        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
+
+
     def test_mesage_parser_with(self):
 
         all_systems = Map("providence").systems
@@ -147,4 +188,3 @@ class TestIntel(unittest.TestCase):
         res = res.replace(")", ", ")
 
         print(res)
-

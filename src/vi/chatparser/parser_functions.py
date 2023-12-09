@@ -361,9 +361,13 @@ def parseLocal(path, char_name, line) -> Message:
     message = Message(room="Local", message=line)
 
     if message.user in CTX.EVE_SYSTEM:
-        if ":" in message.plainText:
+        if u':' in message.plainText:
             message.user = char_name
             message.affectedSystems = [message.plainText.split("*")[0].split(":")[1].strip()]
+            message.status = states.LOCATION
+        elif u'：' in message.plainText:
+            message.user = char_name
+            message.affectedSystems = [message.plainText.split("*")[0].split(u'：')[1].strip()]
             message.status = states.LOCATION
         else:
             # We could not determine if the message was system-change related
