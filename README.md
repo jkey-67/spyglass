@@ -10,7 +10,9 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
 
 ## Screenshot
 
-![image](./img/2023-12-08 18-40-06.png)
+<p align="center">
+  <img align="middle" src="./img/2023-12-08 18-40-06.png">
+</p>
 
 ## Features
 ### 1.6.0
@@ -103,6 +105,7 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - Regions can now be selected by system names
  - regions can now be change easy by combobox
  - the public part of the EvE-Scout Backend API v2 2.1.0 is now used to handle Thera and Turnur system. [ESAPI](https://api.eve-scout.com/ui/#overview)
+ - fix detection local change for local zh, es, ko and jp 
 
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
