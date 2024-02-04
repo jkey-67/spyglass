@@ -28,6 +28,8 @@ from bs4 import BeautifulSoup
 from vi import evegate
 from vi.universe import Universe
 
+CREATE_DOT_FILE = False
+ROUND_POSITION = True
 sys.path.append('../')
 
 
@@ -93,7 +95,7 @@ def addJumpsToSvgFile(system, jumps, svg_template):
 
 def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
     for system_id in systems:
-        systemUses = svg_template.select("#sysuse")[0]
+        system_uses = svg_template.select("#sysuse")[0]
         system = evegate.esiUniverseSystems(system_id, use_cache)
         a_tag = svg_template.new_tag("a")
         a_tag["xlink:href"] = "http://evemaps.dotlan.net/system/{}".format(system["name"])
@@ -122,14 +124,14 @@ def addSystemToSvg(svg_template, systems, x=0, y=0, use_cache=True):
         use_tag["xlink:href"] = "#def{}".format(system_id)
         use_tag["x"] = round(x / 62.5) * 62.5
         use_tag["y"] = round(y / 30.0) * 30.0
-        systemUses.append(use_tag)
+        system_uses.append(use_tag)
 
 
 def updateSvgFile(filename):
     use_cache = True
     svg_template = loadSvg(filename)
     jumps = svg_template.select("#jumps")[0]
-    systemUses = svg_template.select("#sysuse")[0]
+    system_uses = svg_template.select("#sysuse")[0]
 
     jumps.clear()
     # return svg_template
@@ -141,7 +143,7 @@ def updateSvgFile(filename):
         del the_map.attrs["transform"]
     except (Exception,):
         pass
-    for sysuse in systemUses.select("use"):
+    for sysuse in system_uses.select("use"):
         sysuse.attrs["x"] = str(float(sysuse.attrs["x"]) + float(trans_map[0]))
         sysuse.attrs["y"] = str(float(sysuse.attrs["y"]) + float(trans_map[1]))
         if sysuse.has_attr("transform"):
@@ -153,7 +155,7 @@ def updateSvgFile(filename):
         sysuse.attrs["x"] = str(round(float(sysuse.attrs["x"])/62.5)*62.5)
         sysuse.attrs["y"] = str(round(float(sysuse.attrs["y"])/35.0)*35.0)
 
-    for sysuse in systemUses.select("use"):
+    for sysuse in system_uses.select("use"):
         symbol_id = sysuse["id"]
         system_id = symbol_id[3:]
         system = evegate.esiUniverseSystems(system_id, use_cache)
@@ -165,9 +167,9 @@ def updateSvgFile(filename):
 def svgFileToDot(filename):
     result = "graph Beziehungen {\n"
     svg_template = loadSvg(filename)
-    systemUses = svg_template.select("#sysuse")[0]
+    system_uses = svg_template.select("#sysuse")[0]
 
-    for sysuse in systemUses.select("use"):
+    for sysuse in system_uses.select("use"):
         itm_id = sysuse["xlink:href"]
         name = svg_template.select(itm_id)[0]
         sysname = name.text[10:16]
@@ -213,13 +215,12 @@ def systemsInSameRegion(id_src, id_dst) -> bool:
 
 
 def createSvgFile(region_ids):
-    use_cache = True
     map_template = os.path.join(
         os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata", "MapTemplate.svg")
     svg_template = loadSvg(map_template)
 
     jumps = svg_template.select("#jumps")[0]
-    systemUses = svg_template.select("#sysuse")[0]
+    system_uses = svg_template.select("#sysuse")[0]
 
     affected_systems = set()
     region_name = ""
@@ -360,15 +361,14 @@ def createSvgFile(region_ids):
         y = graph_positions[system_id][1]*(svg_h-30)/height
         use_tag = svg_template.new_tag("use", height="30", id="sys{}".format(system_id), width="62.5")
         use_tag["xlink:href"] = "#def{}".format(system_id)
-        if True:
+        if ROUND_POSITION:
             use_tag["x"] = str(round(x/62.5)*62.5)
             use_tag["y"] = str(y)
-            # use_tag["y"] = str(round(y/30.0)*30.0)
         else:
             use_tag["x"] = str(x)
             use_tag["y"] = str(y)
 
-        systemUses.append(use_tag)
+        system_uses.append(use_tag)
 
     for system_id in affected_systems:
         system = Universe.systemById(system_id)
@@ -385,7 +385,7 @@ def main():
     base_path = os.path.join(
         os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata", "generated")
 
-    if False:  # create a dot file
+    if CREATE_DOT_FILE:  # create a dot file
         result = svgFileToDot(os.path.join(base_path, "New_Combined-step_6.svg"))
         with open(os.path.join(base_path, "Denci_Tactical.dot"), "wb") as svgFile:
             svgFile.write(result.encode("utf-8"))
@@ -402,8 +402,8 @@ def main():
                        ]:  # Universe.REGIONS:
             region_name = region["name"]
             region_id = region["region_id"]
-            newSvg = createSvgFile(list({region_id}))
-            result = newSvg.encode("utf-8")
+            new_svg = createSvgFile(list({region_id}))
+            result = new_svg.encode("utf-8")
             fname = "{}.svg".format(evegate.convertRegionNameForDotlan(region_name))
             with open(os.path.join(base_path, fname), "wb") as svgFile:
                 svgFile.write(result)
@@ -417,15 +417,15 @@ def main():
         rgn_name = Universe.regionNameFromSystemID(Universe.systemIdByName("Zarzakh"))
         rgn_id = Universe.regionIDFromSystemID(system_id)
         catch_id = Universe.regionIDFromSystemID(30001168)
-        newSvg = createSvgFile(list({rgn_id, catch_id}))
-        result = newSvg.prettify().encode("utf-8")
+        new_svg = createSvgFile(list({rgn_id, catch_id}))
+        result = new_svg.prettify().encode("utf-8")
         fname = "{}.svg".format(evegate.convertRegionNameForDotlan(rgn_name))
         with open(os.path.join(base_path, fname), "wb") as svgFile:
             svgFile.write(result)
             svgFile.close()
         return
-        newSvg = updateSvgFile(os.path.join(base_path, fname))
-        result = newSvg.prettify().encode("utf-8")
+        new_svg = updateSvgFile(os.path.join(base_path, fname))
+        result = new_svg.prettify().encode("utf-8")
         with open(os.path.join(base_path, fname), "wb") as svgFile:
             svgFile.write(result)
             svgFile.close()

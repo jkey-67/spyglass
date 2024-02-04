@@ -25,7 +25,7 @@ from vi.ui import Ui_ChatroomsChooser
 
 class ChatroomChooser(QtWidgets.QDialog):
     rooms_changed = pyqtSignal(list)
-    DEFAULT_ROOM_MANES = [u"Bean-Intel", u"zKillboard"]
+    DEFAULT_ROOM_MANES = [u"Bean-Intel", u"zKillboard", u"INTEL DRONE'S"]
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
@@ -37,7 +37,6 @@ class ChatroomChooser(QtWidgets.QDialog):
         if not room_names:
             room_names = u','.join(ChatroomChooser.DEFAULT_ROOM_MANES)
         self.ui.roomnamesField.setPlainText(room_names)
-        # self.setWindowFlags(Qt.Popup)
 
     def saveClicked(self):
         text = str(self.ui.roomnamesField.toPlainText())
@@ -47,6 +46,3 @@ class ChatroomChooser(QtWidgets.QDialog):
 
     def setDefaults(self):
         self.ui.roomnamesField.setPlainText(u','.join(ChatroomChooser.DEFAULT_ROOM_MANES))
-
-
-

@@ -1,15 +1,9 @@
-import datetime
 import unittest
-import os
-from vi.cache import Cache
-import vi.evegate as evegate
-from vi.dotlan import Map, System
+from vi.dotlan import Map
 from vi.chatparser import parser_functions
 from vi.chatparser.message import Message
 from bs4 import BeautifulSoup
-from vi import states
-from vi.universe import Universe
-import json
+from vi.states import States
 
 from vi.clipboard import evaluateClipboardData
 
@@ -21,42 +15,42 @@ class TestIntel(unittest.TestCase):
 
     def test_zh_change_local(self):
         message = parser_functions.parseLocal(path="", char_name="", line=u"﻿[ 2023.12.09 08:09:32 ] EVE系统 > 频道更换为本地：撒了库瓦*")
-        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'撒了库瓦', message.affectedSystems, "System 撒了库瓦 should be detected.")
 
     def test_jp_change_local(self):
         message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 10:45:29 ] EVE システム > チャンネル名が ローカル : ニューカルダリ* に変更されました")
-        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'ニューカルダリ', message.affectedSystems, "System ニューカルダリ should be detected.")
 
     def test_ko_change_local(self):
         message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 10:49:22 ] 이브 시스템 > 지역 : 조사메토* 채널로 변경")
-        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'조사메토', message.affectedSystems, "System 조사메토 should be detected.")
 
     def test_de_change_local(self):
         message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 10:55:14 ] EVE-System > Chatkanal geändert zu Lokal: Josameto*")
-        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
 
     def test_en_change_local(self):
         message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 11:08:14 ] EVE System > Channel changed to Local : Josameto")
-        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'Josameto', message.affectedSystems, "System 撒了库瓦 should be detected.")
 
     def test_fr_change_local(self):
         message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 11:16:24 ] Système EVE > Canal changé en Local : Josameto*")
-        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
 
     def test_rus_change_local(self):
         message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 11:18:36 ] Система EVE > Канал изменен на Локальный: Josameto*")
-        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
 
     def test_es_change_local(self):
         message = parser_functions.parseLocal(path="", char_name=u"", line=u"﻿[ 2023.12.09 11:21:00 ] Sistema EVE > El canal ha cambiado a Local: Josameto*.")
-        self.assertEqual(message.status, states.LOCATION, "System change should be detected.")
+        self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
 
 
@@ -64,19 +58,19 @@ class TestIntel(unittest.TestCase):
 
         all_systems = Map("providence").systems
         system = all_systems.get("18-GZM")
-        self.assertTrue(system.status != states.ALARM, "System 18-GSM status not alarm failed.")
+        self.assertTrue(system.status != States.ALARM, "System 18-GSM status not alarm failed.")
         region_name = [sys.upper() for sys in all_systems]
         msg = Message(room="", message="[2023.08.12 13:33:22 ]Ian McCool> 18-GZM Kesteri Patrouette nv")
         res = parser_functions.parseMessageForMap(all_systems, msg)
-        self.assertTrue(system.status == states.ALARM, "System 18-GSM status alarm failed.")
+        self.assertTrue(system.status == States.ALARM, "System 18-GSM status alarm failed.")
 
         msg = Message(room="", message="[2023.08.12 13:33:23 ]Ian McCool> Jita clr")
         res = parser_functions.parseMessageForMap(all_systems, msg)
-        self.assertTrue(system.status == states.ALARM, "System 18-GSM status alarm failed.")
+        self.assertTrue(system.status == States.ALARM, "System 18-GSM status alarm failed.")
 
         msg = Message(room="", message="[2023.08.12 13:33:23 ]Ian McCool> 18-GZM clr")
         res = parser_functions.parseMessageForMap(all_systems, msg)
-        self.assertTrue(system.status == states.CLEAR, "System 18-GSM status clear failed.")
+        self.assertTrue(system.status == States.CLEAR, "System 18-GSM status clear failed.")
 
     def test_system_parser_with_camel_case(self):
         all_systems = Map("providence").systems
@@ -103,7 +97,7 @@ class TestIntel(unittest.TestCase):
         if res_systems:
             for item in res_systems:
                 self.assertEqual("18-GZM", item.name, "System name '18-GZM' not fetched correct as 18-GZM")
-                self.assertEqual(states.UNKNOWN, item.status, "System state for '18-GZM' not fetched correct as UNKNOWN")
+                self.assertEqual(States.UNKNOWN, item.status, "System state for '18-GZM' not fetched correct as UNKNOWN")
 
         formatted_text = u"<rtext>{0}</rtext>".format("juk clr")
         soup = BeautifulSoup(formatted_text, 'html.parser')

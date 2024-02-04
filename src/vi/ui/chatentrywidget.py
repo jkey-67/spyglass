@@ -31,13 +31,19 @@ from vi.chatparser.message import Message
 
 class ChatEntryItem(QtWidgets.QListWidgetItem):
 
-    def __init__(self, sortkey, **kwargs):
-        self.sortkey = sortkey
+    def __init__(self, key, **kwargs):
+        """
+            Initialize the chat entry with sort key
+        Args:
+            key: sorting key for list ordering
+            **kwargs:
+        """
         QtWidgets.QListWidgetItem.__init__(self, **kwargs)
+        self.key = key
 
     def __lt__(self, other):
-        if hasattr(other, "sortkey"):
-            return self.sortkey < other.sortkey
+        if hasattr(other, "key") and self.key:
+            return self.key < other.key
         else:
             return False
 
@@ -96,7 +102,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
             avatar_data: blob of the image
 
         Returns:
-            False: if no image voud be loaded from the blob
+            False: if no image could be loaded from the blob
         """
         if type(avatar_data) is QImage:
             image = avatar_data
@@ -120,8 +126,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
             # self = None
         return True
 
-    def changeFontSize(self, newSize):
+    def changeFontSize(self, size):
         font = self.ui.textLabel.font()
-        font.setPointSize(newSize)
+        font.setPointSize(size)
         self.ui.textLabel.setFont(font)
-

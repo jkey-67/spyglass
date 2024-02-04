@@ -21,13 +21,9 @@ from typing import Union
 from PySide6.QtGui import *
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QStyledItemDelegate
-
-from vi import evegate
-
-from vi.cache.cache import Cache
 from PySide6.QtSql import QSqlQueryModel
+from vi.cache.cache import Cache
 
 
 class TableModelPlayers(QSqlQueryModel):
@@ -47,20 +43,6 @@ class StyledItemDelegatePlayers(QStyledItemDelegate):
     def __init__(self, parent=None):
         super(StyledItemDelegatePlayers, self).__init__(parent)
         self.cache = Cache()
-
-    def paint(self, painter, option, index):
-        super(StyledItemDelegatePlayers, self).paint(painter, option, index)
-        return
-        painter.save()
-        if index.column() == 0:
-            type_id = index.data()
-            type_data = evegate.getTypesIcon(type_id)
-            img = QImage.fromData(type_data)
-            painter.setClipRect(option.rect)
-            painter.drawImage(option.rect.topLeft(), img)
-        else:
-            super(StyledItemDelegatePlayers, self).paint(painter, option, index)
-        painter.restore()
 
     def createEditor(self, parent: QtWidgets.QWidget, option: QtWidgets.QStyleOptionViewItem,
                      index: Union[

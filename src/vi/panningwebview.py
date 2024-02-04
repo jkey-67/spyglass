@@ -197,5 +197,6 @@ class PanningWebView(QWidget):
 
     def event(self, event) -> bool:
         if event.type() == QEvent.ToolTip:
-            return self.tooltipAtMapPosition(event.globalPos(), self.mapPosFromEvent(event))
+            event.ignore()
+            return True
         return super(PanningWebView, self).event(event)

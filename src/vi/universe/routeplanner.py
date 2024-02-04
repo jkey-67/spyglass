@@ -15,8 +15,6 @@ def Init_Universe_Graph():
         id_dst = int(itm["destination"]["system_id"])
         g.add_edge(id_src, id_dst, type="Gate")
 
-    # res = nx.kamada_kawai_layout(g)
-
     return g
 
 
@@ -101,7 +99,8 @@ class RoutPlanner(object):
                     graph.add_edge(id_src, id_dst, type='Thera')
 
             path = nx.shortest_path(graph, source=kwargs['src_id'], target=kwargs['dst_id'])
-            attr = [dict(node=u, type=graph[u][v]['type'], name=Universe.systemNameById(u)) for u, v in zip(path, path[1:])]
+            attr = [dict(node=u, type=graph[u][v]['type'],
+                         name=Universe.systemNameById(u)) for u, v in zip(path, path[1:])]
             attr.append(dict(node=path[-1], type="System", name=Universe.systemNameById(path[-1])))
             kwargs.update(route=path)
             kwargs.update(attr=attr)
@@ -160,4 +159,3 @@ if __name__ == '__main__':
 
     res = RoutPlanner.findRoute(src_name='MJ-5F9', dst_name="Zarzakh")
     print('{} %s'.format(res.info) % (res.route[::-1]))
-

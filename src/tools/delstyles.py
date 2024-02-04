@@ -56,8 +56,8 @@ def main():
         sys.exit(1)
     path = sys.argv[1]
     source = readSvg(path)
-    withoutStyle = deleteStylesFromSvg(source)
-    result = withoutStyle.body.next.prettify().encode("utf-8")
+    without_style = deleteStylesFromSvg(source)
+    result = without_style.body.next.prettify().encode("utf-8")
     print(result)
 
 

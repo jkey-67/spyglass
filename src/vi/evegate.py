@@ -45,6 +45,7 @@ import base64
 import hashlib
 import secrets
 from typing import Optional
+from enum import Enum
 from eve_api_key import CLIENTS_API_KEY
 from vi.cache.cache import Cache
 from vi.version import VERSION
@@ -273,7 +274,7 @@ def esiUniverseNames(ids: set, use_outdated=False, lang="en"):
 
     # something already in the cache?
     for checked_id in ids:
-        cache_key = u"_".join(("name", "id", str(checked_id),lang))
+        cache_key = u"_".join(("name", "id", str(checked_id), lang))
         name = cache.getFromCache(cache_key, use_outdated)
         if name:
             data[checked_id] = name
@@ -300,19 +301,19 @@ def esiUniverseNames(ids: set, use_outdated=False, lang="en"):
             # and writing into cache
             with Cache() as cache:
                 for checked_id in api_check_ids:
-                    cache_key = u"_".join(("name", "id", str(checked_id),lang))
+                    cache_key = u"_".join(("name", "id", str(checked_id), lang))
                     if checked_id in data.keys():
                         # todo check secondUntilExpire(response)
                         cache.putIntoCacheNoLock(cache_key, data[int(checked_id)], 60 * 60 * 24 * 365)
                 cache.con.commit()
         if len(api_check_ids) > 1000:
-            return esiUniverseNames(ids, use_outdated,lang=lang)
+            return esiUniverseNames(ids, use_outdated, lang=lang)
     except Exception as e:
         logging.error("Exception during idsToNames: %s", e)
     return data
 
 
-class evetech_image:
+class EvetechImage(Enum):
     alliances = ["alliances", "logo"]
     characters = ["characters", "portrait"]
     types_icon = ["types", "icon"]
@@ -1221,7 +1222,8 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
                 set_of_all_factions.add(sov["faction_id"])
                 npc_sov[str(sov["system_id"])] = sov
 
-        alliance_ids = set([player_sov[itm]["alliance_id"] for itm in player_sov if "alliance_id" in player_sov[itm].keys()])
+        alliance_ids = set([player_sov[itm]["alliance_id"]
+                            for itm in player_sov if "alliance_id" in player_sov[itm].keys()])
         for alliance_id in alliance_ids:
             esiAlliances(alliance_id)
         for sov in player_sov.values():
@@ -1277,7 +1279,7 @@ def countCheckGates(gates):
                 gate.links = gate.links+1
 
 
-class category:
+class Category(Enum):
     agent = "agent"
     alliance = "alliance"
     character = "character"
@@ -1313,14 +1315,14 @@ def esiSearch(esi_char_name: str, search_text, search_category: str, search_stri
         return {}
 
 
-def getAllJumpGates(nameChar: str, systemName="", systemNameDst="",
+def getAllJumpGates(name_char: str, system_name_src="", system_name_dst="",
                     callback=None, use_outdated=False) -> Optional[list]:
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
-    if nameChar is None:
+    if name_char is None:
         logging.error("getAllJumpGates needs the eve-online api account.")
         return None
-    token = checkTokenTimeLine(getTokenOfChar(nameChar))
+    token = checkTokenTimeLine(getTokenOfChar(name_char))
     if token is None:
         logging.error("getAllJumpGates needs the eve-online api account.")
         return None
@@ -1329,8 +1331,8 @@ def getAllJumpGates(nameChar: str, systemName="", systemNameDst="",
           "datasource=tranquility&categories=structure&search={src}%20%C2%BB%20{dst}&token={tok}".format(
                 id=token.CharacterID,
                 tok=token.access_token,
-                src=systemName,
-                dst=systemNameDst)
+                src=system_name_src,
+                dst=system_name_dst)
     response = getSession().get(url=url)
     if response.status_code != 200:
         logging.error(response.reason)
@@ -1346,14 +1348,14 @@ def getAllJumpGates(nameChar: str, systemName="", systemNameDst="",
             if id_structure in processed:
                 continue
             json_src = esiUniverseStructure(
-                esi_char_name=nameChar, structure_id=id_structure, use_outdated=use_outdated)
+                esi_char_name=name_char, structure_id=id_structure, use_outdated=use_outdated)
             if json_src is None:
                 continue
             jump_bridge_text = parse.parse("{src} » {dst} - {info}", json_src["name"])
             structure = esiSearch(
-                esi_char_name=nameChar,
+                esi_char_name=name_char,
                 search_text="{} » {}".format(jump_bridge_text["src"], jump_bridge_text["dst"]),
-                search_category=category.structure)
+                search_category=Category.structure)
 
             if "structure" not in structure.keys():
                 Cache().putJumpGate(
@@ -1378,10 +1380,10 @@ def getAllJumpGates(nameChar: str, systemName="", systemNameDst="",
                 processed.append(structure_id)
 
             json_src = esiUniverseStructure(
-                esi_char_name=nameChar,
+                esi_char_name=name_char,
                 structure_id=structure["structure"][0])
             json_dst = esiUniverseStructure(
-                esi_char_name=nameChar,
+                esi_char_name=name_char,
                 structure_id=structure["structure"][cnt_structures-1])
 
             Cache().putJumpGate(
@@ -2075,7 +2077,7 @@ def genereate_universe_system_names(use_outdated=True):
                 systems_id_by_name[res["name"]] = res["system_id"]
 
             for key, data in set(systems_id_by_name.items()):
-               out_file.write(u'   "{}": {},\n'.format(key, json.dumps(data)))
+                out_file.write(u'   "{}": {},\n'.format(key, json.dumps(data)))
             # out_file.write(u"{}\n".format(json.dumps(systems_id_by_name, indent=4)))
             out_file.flush()
         out_file.write(u'}\n\n')
@@ -2090,7 +2092,7 @@ def generate_universe_region_names(use_outdated=True):
         out_file.write('REGION_IDS_BY_NAME = {\n')
         for region_id in esiUniverseNames(esiUniverseGetAllRegions(), use_outdated=use_outdated):
             region_id_by_name = dict()
-            print( "Region id  {}".format(region_id))
+            print("Region id  {}".format(region_id))
             for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
                 res = esiUniverseRegions(region_id, lang=lang, use_outdated=use_outdated)
                 region_id_by_name[res["name"]] = res["region_id"]
@@ -2106,41 +2108,7 @@ def generate_universe_region_names(use_outdated=True):
 # The main application for testing
 if __name__ == "__main__":
     session = getSession()
-
-    res = ESAPIRoteToHighSec("mj-5f9")
-    res = ESAPIListSystems(u"마우라")
-    res = ESAPIListPublicSignatures()
-    res = ESAPIListWormholeTypes()
-    res = ESAPIListPublicObservationsRecords()
-
-    res = checkTheraConnections()
-    ord1 = ord(U'마')
-    ord2 = ord(u'마')
-    ord3 = ord('마')
-
-    ch1 = chr(0x739b)
-    ch2 = chr(0x4e4c)
-    res0 = b"\u739b\u4e4c\u7eb3\u65af".decode("utf-16-le")
-    res1 = b"\u739b\u4e4c\u7eb3\u65af".decode("utf-16")
-    res11 = b"\u739b\u4e4c\u7eb3\u65af".decode("utf-16").encode("utf8")
-    res12 = res11.decode("utf8")
-    res2 = u"\u739b\u4e4c\u7eb3\u65af"
-    res3 = u"마우라시".encode("utf-8")
-    res4 = u"마우라시".encode("utf-16")
-    res5 = u"마우라시".encode("utf-16-le")
-    res6 = Universe.systemIdByName("JITA")
-    res7 = Universe.systemIdByName("JITA")
-    res8 = Universe.systemIdByName("ニューカルダリ")
-    res9 = Universe.systemIdByName(b'\u65b0\u52a0\u8fbe\u91cc'.decode("utf-16le"))
-    genereate_universe_system_names()
-    generate_universe_region_names()
-    genereate_universe_constellation_names()
-
-    # Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
-    # dumpSpyglassDownloadStats()
-    # res = checkTheraConnections()
-    # res = esiCharNameToId("Test 123")
-    # res = esiUniverseGetAllRegions()
-
-
-
+    dumpSpyglassDownloadStats()
+    # genereate_universe_system_names()
+    # generate_universe_region_names()
+    # genereate_universe_constellation_names()

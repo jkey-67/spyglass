@@ -678,7 +678,7 @@ class Cache(object):
         self.putIntoCache("Eve_Scout_Public_Signatures", data, 60)
 
     def getThreaConnections(self):
-        data = self.getFromCache("Eve_Scout_Public_Signatures",outdated=True)
+        data = self.getFromCache("Eve_Scout_Public_Signatures", outdated=True)
         if data is not None:
             return json.loads(data)
         else:

@@ -21,10 +21,12 @@ import datetime
 import os
 import logging
 
-from vi import states
+from typing import Optional
+from vi.states import States
+from vi.dotlan import System
 from .message import Message
-from .parser_functions import parseMessageForMap
-from .parser_functions import parseLocal
+from .parser_functions import parseLocal, parseMessageForMap
+from .line_parser import lineToDatetime
 
 # Names the local chat logs could start with (depends on l10n of the client)
 
@@ -131,11 +133,11 @@ class ChatParser(object):
         self.fileData[path]["lines"] = len(lines)
         return lines, prev_lines
 
-    def _lineToMessage(self, line, room_name, systems_on_map):
+    def _lineToMessage(self, line, room_name, systems_on_map: dict[str, System]) -> Optional[Message]:
         if room_name not in self.rooms:
             return None
 
-        timestamp = Message.lineToDatetime(line)
+        timestamp = lineToDatetime(line)
         if timestamp is None:
             return None
 
@@ -148,7 +150,7 @@ class ChatParser(object):
 
         # May happen if someone plays > 1 account
         if message in self.knownMessages:
-            message.status = states.IGNORE
+            message.status = States.IGNORE
             logging.debug("Ignore {} Room:{}".format(line, room_name))
             return message
         # Parse new message only  if needed
@@ -156,7 +158,7 @@ class ChatParser(object):
         self.knownMessages.append(message)
         return message
 
-    def fileModified(self, path, systems_on_map, rescan=False):
+    def fileModified(self, path, systems_on_map: dict[str, System], rescan=False) -> list[Message]:
         messages = []
         if path in self.ignoredPaths:
             return []
@@ -184,12 +186,14 @@ class ChatParser(object):
                                                                     "timestamp": datetime.datetime(1970, 1, 1, 0, 0, 0,
                                                                                                    0)}
                     message = parseLocal(path, monitored_character_name, line)
-                    if message.status is states.LOCATION:
+                    if message.status is States.LOCATION:
                         if message.timestamp > self.locations[monitored_character_name]["timestamp"]:
-                            self.locations[monitored_character_name]["system"] = message.affectedSystems[0]
-                            self.locations[monitored_character_name]["timestamp"] = message.timestamp
+                            for system in message.affectedSystems:
+                                self.locations[monitored_character_name]["system"] = system
+                                self.locations[monitored_character_name]["timestamp"] = message.timestamp
+                                break
                         else:
-                            message.status = states.IGNORE
+                            message.status = States.IGNORE
 
                         messages.append(message)
                 else:

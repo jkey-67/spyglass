@@ -1,11 +1,10 @@
-import datetime
 import json
 import logging
 import os.path
 import time
 
 from PySide6.QtCore import QUrl, QObject, QTimer
-from PySide6.QtWebSockets import QWebSocket, QWebSocketProtocol
+from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Signal as pyqtSignal
 
@@ -18,7 +17,7 @@ from vi.chatparser.ctx import CTX
 # see https://github.com/zKillboard/zKillboard/wiki
 
 
-class zkillMonitor(QObject):
+class Zkillmonitor(QObject):
     status_killmail = pyqtSignal(bool)
     new_killmail = pyqtSignal(Message)
     MONITORING_PATH = "zkillMonitor.log"
@@ -76,8 +75,8 @@ class zkillMonitor(QObject):
 
     @staticmethod
     def _writeHeader():
-        if not os.path.exists(zkillMonitor.MONITORING_PATH):
-            with open(zkillMonitor.MONITORING_PATH, "wt", encoding="utf-16-le") as fp:
+        if not os.path.exists(Zkillmonitor.MONITORING_PATH):
+            with open(Zkillmonitor.MONITORING_PATH, "wt", encoding="utf-16-le") as fp:
                 fp.write(u'\ufeff\n')
                 fp.write(u"\ufeff\n")
                 fp.write(u"\ufeff\n")
@@ -104,7 +103,7 @@ class zkillMonitor(QObject):
         if self.logKillAsIntel(kill_data):
             kill_string = self.getIntelString(kill_data)
             self._writeHeader()
-            with open(zkillMonitor.MONITORING_PATH, "at", encoding='utf-16-le') as fp:
+            with open(Zkillmonitor.MONITORING_PATH, "at", encoding='utf-16-le') as fp:
                 fp.write('\ufeff'+kill_string)
 
     @staticmethod
@@ -184,7 +183,7 @@ class zkillMonitor(QObject):
             True if to be logged else False
         """
         blue_alliances = Cache().getAllianceBlue()
-        if zkillMonitor.LOG_VICTIM:
+        if Zkillmonitor.LOG_VICTIM:
             victim = kill_data["victim"]
             if "character_id" in victim.keys():
                 if "alliance_id" in victim.keys():
@@ -192,7 +191,7 @@ class zkillMonitor(QObject):
                     if alliance_id in blue_alliances:
                         return True
 
-        if zkillMonitor.LOG_ATTACKES:
+        if Zkillmonitor.LOG_ATTACKES:
             for attacker in kill_data["attackers"]:
                 if "alliance_id" in attacker.keys():
                     alliance_id = attacker["alliance_id"]
@@ -205,7 +204,7 @@ class zkillMonitor(QObject):
 # The main application for testing
 if __name__ == "__main__":
     appl = QApplication()
-    mon = zkillMonitor(appl)
+    mon = Zkillmonitor(appl)
     # mon.startDisconnect()
     # mon.startConnect()
     Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")

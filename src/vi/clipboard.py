@@ -117,7 +117,7 @@ def evaluateClipboardData(content):
             structure_search = evegate.esiSearch(
                 esi_char_name=evegate.esiCharName(),
                 search_text="{} - {}".format(info["sys"], info["name"]),
-                search_category=evegate.category.structure)
+                search_category=evegate.Category.structure)
             if "structure" in structure_search:
                 structure_info = evegate.esiUniverseStructure(
                     esi_char_name=evegate.esiCharName(),
@@ -129,7 +129,7 @@ def evaluateClipboardData(content):
             station_search = evegate.esiSearch(
                 esi_char_name=evegate.esiCharName(),
                 search_text="{} - {}".format(info["sys"], info["name"]),
-                search_category=evegate.category.station)
+                search_category=evegate.Category.station)
             if "station" in station_search:
                 station_info = evegate.esiUniverseStations(
                     station_id=station_search["station"][0])

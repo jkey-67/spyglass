@@ -21,7 +21,7 @@ import time
 import logging
 import queue
 import os
-from PySide6.QtCore import QThread
+from PySide6.QtCore import QThread, QRunnable, QThreadPool
 from PySide6.QtCore import Signal as pyqtSignal
 from vi import evegate
 from vi.cache.cache import Cache
@@ -39,56 +39,56 @@ class AvatarFindThread(QThread):
         self.queue = queue.Queue()
         self.active = True
 
-    def addChatEntry(self, chatEntry, clearCache=False):
+    def addChatEntry(self, chat_entry, clear_cache=False):
         try:
-            if clearCache:
+            if clear_cache:
                 cache = Cache()
-                cache.removeAvatar(chatEntry.message.user)
+                cache.removeAvatar(chat_entry.message.user)
 
             # Enqeue the data to be picked up in run()
-            self.queue.put(chatEntry)
+            self.queue.put(chat_entry)
         except Exception as e:
             logging.error("Error in AvatarFindThread: %s", e)
 
     def run(self):
-        lastCall = 0
+        last_call = 0
         wait = 500  # time between 2 requests in ms
         while True:
             try:
                 # Block waiting for addChatEntry() to enqueue something
-                chatEntry = self.queue.get()
+                chat_entry = self.queue.get()
                 if not self.active:
                     return
-                charname = chatEntry.message.user
+                user = chat_entry.message.user
 
-                logging.debug("AvatarFindThread getting avatar for %s" % charname)
+                logging.debug("AvatarFindThread getting avatar for %s" % user)
                 avatar = None
 
-                if avatar is None and charname == "SPYGLASS":
+                if avatar is None and user == "SPYGLASS":
                     with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
 
                 if avatar is None:
-                    avatar = Cache().getImageFromAvatar(charname)
+                    avatar = Cache().getImageFromAvatar(user)
                     if avatar:
-                        logging.debug("AvatarFindThread found cached avatar for %s" % charname)
+                        logging.debug("AvatarFindThread found cached avatar for %s" % user)
 
                 if avatar is None:
-                    diffLastCall = time.time() - lastCall
-                    if diffLastCall < wait:
-                        time.sleep((wait - diffLastCall) / 1000.0)
-                    evegate.esiCharactersPublicInfo(charname)
-                    avatar = evegate.esiCharactersPortrait(charname)
-                    lastCall = time.time()
+                    diff_last_call = time.time() - last_call
+                    if diff_last_call < wait:
+                        time.sleep((wait - diff_last_call) / 1000.0)
+                    evegate.esiCharactersPublicInfo(user)
+                    avatar = evegate.esiCharactersPortrait(user)
+                    last_call = time.time()
                     if avatar is None:
-                        Cache().removeAvatar(charname)
+                        Cache().removeAvatar(user)
                     else:
-                        Cache().putImageToAvatar(charname, avatar)
+                        Cache().putImageToAvatar(user, avatar)
                 if avatar:
-                    logging.debug("AvatarFindThread emit avatar_update for %s" % charname)
-                    self.avatar_update.emit(chatEntry, avatar)
+                    logging.debug("AvatarFindThread emit avatar_update for %s" % user)
+                    self.avatar_update.emit(chat_entry, avatar)
                 else:
-                    logging.warning("AvatarFindThread unable to find avatar for %s" % charname)
+                    logging.warning("AvatarFindThread unable to find avatar for %s" % user)
             except Exception as e:
                 logging.error("Error in AvatarFindThread : %s", e)
 
@@ -96,6 +96,61 @@ class AvatarFindThread(QThread):
         self.active = False
         self.queue.put(None)
         QThread.quit(self)
+
+
+class FetchSovereignty(QRunnable):
+
+    def __init__(self, notifier):
+        QRunnable.__init__(self)
+        self.notifier_signal = notifier
+
+    def run(self):
+        statistics_data = dict({"result": "pending"})
+        try:
+            statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=True, show_npc=True)
+            statistics_data["structures"] = evegate.esiSovereigntyStructures()
+            logging.info("Sovereignty data updated succeeded.")
+        except Exception as e:
+            logging.error("Unable to fetch sovereignty update: %s", e)
+            statistics_data["result"] = "error"
+            statistics_data["text"] = str(e)
+        self.notifier_signal.emit(statistics_data)
+
+
+class FetchStatistic(QRunnable):
+    def __init__(self, notifier):
+        QRunnable.__init__(self)
+        self.notifier_signal = notifier
+
+    def run(self):
+        statistics_data = dict({"result": "pending"})
+        try:
+            statistics_data["statistics"] = evegate.esiUniverseSystem_jumps(use_outdated=False)
+            statistics_data["incursions"] = evegate.esiIncursions(use_outdated=False)
+            statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(use_outdated=False)
+            logging.info("Statistic data updated succeeded.")
+        except Exception as e:
+            logging.error("Unable to fetch statistic update: %s", e)
+            statistics_data["result"] = "error"
+            statistics_data["text"] = str(e)
+        self.notifier_signal.emit(statistics_data)
+
+
+class FetchLocation(QRunnable):
+    def __init__(self, notifier):
+        QRunnable.__init__(self)
+        self.notifier_signal = notifier
+
+    def run(self):
+        statistics_data = dict({"result": "pending"})
+        try:
+            statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
+            logging.info("Fetching the characters location succeeded.")
+        except Exception as e:
+            logging.error("Fetching the characters location failed: %s", e)
+            statistics_data["result"] = "error"
+            statistics_data["text"] = str(e)
+        self.notifier_signal.emit(statistics_data)
 
 
 class MapStatisticsThread(QThread):
@@ -111,14 +166,20 @@ class MapStatisticsThread(QThread):
         self._fetchLocations = True
 
     def requestSovereignty(self):
-        self.queue.put(["sovereignty"])
+        runner = FetchSovereignty(self.statistic_data_update)
+        QThreadPool.globalInstance().start(runner)
+        # self.queue.put(["sovereignty"])
 
     def requestStatistics(self):
-        self.queue.put(["statistics"])
+        runner = FetchStatistic(self.statistic_data_update)
+        QThreadPool.globalInstance().start(runner)
+        # self.queue.put(["statistics"])
 
     def requestLocations(self):
         if self._fetchLocations:
-            self.queue.put(["location"])
+            runner = FetchLocation(self.statistic_data_update)
+            QThreadPool.globalInstance().start(runner)
+            # self.queue.put(["location"])
 
     def fetchLocation(self, fetch=True):
         self._fetchLocations = fetch

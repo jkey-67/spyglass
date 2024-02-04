@@ -1,6 +1,5 @@
 import unittest
 import os
-import timeit
 from vi.cache import Cache
 import vi.evegate as evegate
 from vi.universe import Universe
@@ -42,7 +41,7 @@ class TestCache(unittest.TestCase):
         self.assertIn(30000730, res)
         self.assertIn(30000732, res)
         self.assertIn(30000735, res)
-        res = Universe.monitoredSystems(30000734, 12)
+        # res = Universe.monitoredSystems(30000734, 12)
         res = Universe.monitoredSystems(12331, 1)
         self.assertIsNone(res)
 
@@ -51,7 +50,8 @@ class TestCache(unittest.TestCase):
             res = json.load(fp)
             ids = {30000734: {"dist": 0}}
             for distance in range(0, 3):
-                for i in [{sys["destination"]["system_id"]:{"dist": distance+1}}for sys in res if sys["system_id"] in ids.keys()]:
+                for i in [{sys["destination"]["system_id"]: {"dist": distance+1}}
+                          for sys in res if sys["system_id"] in ids.keys()]:
                     for key in list(i.keys()):
                         if key not in ids.keys():
                             ids.update(i)
@@ -81,7 +81,6 @@ class TestCache(unittest.TestCase):
             eol_txt = "\n        "
             ships_file.write(eol_txt)
             curr_len = len(eol_txt)
-            cnt = 6
             first_entry = True
             for itm in res["groups"]:
                 res = evegate.esiUniverseGroups(itm, use_outdated=self.use_outdated_cache)
@@ -113,7 +112,6 @@ class TestCache(unittest.TestCase):
             eol_txt = "\n        "
             ships_file.write(eol_txt)
             curr_len = len(eol_txt)
-            cnt = 6
             first_entry = True
             for itm in res:
                 res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
@@ -142,7 +140,6 @@ class TestCache(unittest.TestCase):
             eol_txt = "\n        "
             ships_file.write(eol_txt)
             curr_len = len(eol_txt)
-            cnt = 6
             first_entry = True
             for itm in res:
                 res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
@@ -174,7 +171,6 @@ class TestCache(unittest.TestCase):
             eol_txt = "\n        "
             ships_file.write(eol_txt)
             curr_len = len(eol_txt)
-            cnt = 6
             first_entry = True
             for itm in res:
                 res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
@@ -208,7 +204,7 @@ class TestCache(unittest.TestCase):
             eol_txt = "\n        "
             ships_file.write(eol_txt)
             curr_len = len(eol_txt)
-            cnt = 6
+
             first_entry = True
             for itm in res:
                 res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
@@ -309,7 +305,8 @@ class TestCache(unittest.TestCase):
             self.assertEqual(res_type, "jumpbridge", "Result of '{}'is not jumpbridge".format(itm))
 
         pos_list = [
-            "<url=showinfo:1531//60002476 alt='Current Station'>Vittenyn IV - Moon 6 - Expert Distribution Warehouse</url>",
+            "<url=showinfo:1531//60002476 alt='Current Station'>Vittenyn IV - Moon 6" 
+            " - Expert Distribution Warehouse</url>",
             "Vittenyn IV - Moon 6 - Expert Distribution Warehouse\n0 m",
             'Trossere VII - Moon 3 - University of Caille',
             "Jita IV - Moon 4 - Caldari Navy Assembly Plant"
@@ -341,7 +338,7 @@ class TestCache(unittest.TestCase):
         self.assertTrue("inventory_types" in res.keys(), "Missing inventory type")
         res = evegate.esiUniverseNames({37480, 37480})
         self.assertTrue(res[37480] == "Bifrost", "Missing inventory type Bifrost")
-        res = evegate.esiImageEvetechNet(1350114619, evegate.evetech_image.characters, 32)
+        res = evegate.esiImageEvetechNet(1350114619, evegate.EvetechImage.characters, 32)
         self.assertIsNotNone(res)
         res = evegate.esiGetCharsOnlineStatus()
         self.assertIsNotNone(res)

@@ -21,12 +21,40 @@
 # Holding the states for messages here                                    #
 ###########################################################################
 
-IGNORE = 'ignore'
-UNKNOWN = 'unknown'
-NOT_CHANGE = 'no change'
-CLEAR = 'clear'
-ALARM = 'alarm'
-REQUEST = 'request'
-LOCATION = 'location'
-KOS_STATUS_REQUEST = 'kos request'
-SOUND_TEST = 'soundtest'
+from enum import Enum
+
+
+class States(Enum):
+    """
+    IGNORE:
+        Do not process the message.
+
+    NOT_CHANGE:
+        Don't change anything.
+
+    CLEAR:
+        State is clear, system was tagged as clr or clear.
+
+    ALARM:
+        State is alarm, system was tagged as red +10 clr or a character name.
+
+    REQUEST:
+        A status update is required.
+
+    LOCATION:
+        A characters location was changed
+
+    SOUND_TEST:
+        Beep or say 'testing sound test'
+
+    UNKNOWN:
+        Initial value, not initialized jet.
+    """
+    IGNORE = 'ignore'
+    UNKNOWN = 'unknown'
+    NOT_CHANGE = 'no change'
+    CLEAR = 'clear'
+    ALARM = 'alarm'
+    REQUEST = 'request'
+    LOCATION = 'location'
+    SOUND_TEST = 'sound-test'

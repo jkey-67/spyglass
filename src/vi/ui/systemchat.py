@@ -22,7 +22,7 @@ import datetime
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QDesktopServices
-from vi import states
+from vi.states import States
 from vi.ui import Ui_SystemChat
 from vi.ui.chatentrywidget import ChatEntryWidget
 from .chatentrywidget import ChatEntryItem
@@ -33,22 +33,22 @@ class SystemChat(QtWidgets.QDialog):
     location_set = pyqtSignal(str, str)
     repaint_needed = pyqtSignal()
 
-    def __init__(self, parent, chatType, selector, chatEntries, knownPlayerNames):
+    def __init__(self, parent, chat_type, selector, chat_entries, known_player_names):
         QtWidgets.QDialog.__init__(self, parent)
         self.ui = Ui_SystemChat()
         self.ui.setupUi(self)
         self.chatType = 0
         self.selector = selector
         self.chatEntries = []
-        for entry in chatEntries:
+        for entry in chat_entries:
             self.addChatEntry(entry)
-        titleName = ""
+        title_name = ""
         if self.chatType == SystemChat.SYSTEM:
-            titleName = self.selector.name
+            title_name = self.selector.name
             self.system = selector
-        for name in knownPlayerNames:
+        for name in known_player_names:
             self.ui.playerNamesBox.addItem(name)
-        self.setWindowTitle("Chat for {0}".format(titleName))
+        self.setWindowTitle("Chat for {0}".format(title_name))
         self.ui.closeButton.clicked.connect(self.closeDialog)
         self.ui.alarmButton.clicked.connect(self.setSystemAlarm)
         self.ui.clearButton.clicked.connect(self.setSystemClear)
@@ -56,31 +56,31 @@ class SystemChat(QtWidgets.QDialog):
         self.ui.openzKillboard.clicked.connect(self.openzKillboard)
         self.ui.dotlanButton.clicked.connect(self.openDotlan)
 
-    def _addMessageToChat(self, message, avatarPixmap):
-        scrollToBottom = False
+    def _addMessageToChat(self, message, avatar_pixmap):
+        scroll_to_bottom = False
         if self.ui.chat.verticalScrollBar().value() == self.ui.chat.verticalScrollBar().maximum():
-            scrollToBottom = True
+            scroll_to_bottom = True
         entry = ChatEntryWidget(message)
-        entry.ui.avatarLabel.setPixmap(avatarPixmap)
+        entry.ui.avatarLabel.setPixmap(avatar_pixmap)
 
-        listWidgetItem = ChatEntryItem(
-            sortkey=message.timestamp.strftime("%Y%m%d %H%M%S"),
+        list_widget_item = ChatEntryItem(
+            key=message.timestamp.strftime("%Y%m%d %H%M%S"),
             listview=self.ui.chat)
 
-        listWidgetItem.setSizeHint(entry.sizeHint())
-        self.ui.chat.addItem(listWidgetItem)
-        self.ui.chat.setItemWidget(listWidgetItem, entry)
+        list_widget_item.setSizeHint(entry.sizeHint())
+        self.ui.chat.addItem(list_widget_item)
+        self.ui.chat.setItemWidget(list_widget_item, entry)
         self.chatEntries.append(entry)
 
-        if scrollToBottom:
+        if scroll_to_bottom:
             self.ui.chat.scrollToBottom()
 
     def addChatEntry(self, entry):
         if self.chatType == SystemChat.SYSTEM:
             message = entry.message
-            avatarPixmap = entry.ui.avatarLabel.pixmap()
+            avatar_pixmap = entry.ui.avatarLabel.pixmap()
             if self.selector in message.affectedSystems:
-                self._addMessageToChat(message, avatarPixmap)
+                self._addMessageToChat(message, avatar_pixmap)
 
     def openDotlan(self):
         url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
@@ -94,20 +94,18 @@ class SystemChat(QtWidgets.QDialog):
         char = str(self.ui.playerNamesBox.currentText())
         self.location_set.emit(char, self.system.name)
 
-    def newAvatarAvailable(self, charname, avatarData):
+    def newAvatarAvailable(self, avatar_name, avatar_data):
         for entry in self.chatEntries:
-            if entry.message.user == charname:
-                entry.updateAvatar(avatarData)
+            if entry.message.user == avatar_name:
+                entry.updateAvatar(avatar_data)
 
     def setSystemAlarm(self):
-        self.system.setStatus(states.ALARM, datetime.datetime.utcnow())
+        self.system.setStatus(States.ALARM, datetime.datetime.utcnow())
         self.repaint_needed.emit()
 
     def setSystemClear(self):
-        self.system.setStatus(states.CLEAR, datetime.datetime.utcnow())
+        self.system.setStatus(States.CLEAR, datetime.datetime.utcnow())
         self.repaint_needed.emit()
 
     def closeDialog(self):
         self.accept()
-
-

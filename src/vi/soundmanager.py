@@ -194,25 +194,25 @@ class SoundManager(metaclass=Singleton):
     def setUseSpokenNotifications(self, new_value):
         self.useSpokenNotifications = new_value
 
-    def setSoundVolume(self, newValue: int):
-        self.soundVolume = max(0, min(100, newValue))
+    def setSoundVolume(self, new_value: int):
+        self.soundVolume = max(0, min(100, new_value))
         Cache().putIntoCache("soundsetting.volume", self.soundVolume)
         for key, val in self.EFFECT.items():
             val.set_volume(self.soundVolume / 100 * self.SNDVOL[key])
 
-    def playSound(self, name="alarm", message="", abbreviatedMessage=""):
+    def playSound(self, name="alarm", message="", abbreviated_message=""):
         if self.soundAvailable and self.soundActive:
-            if self.useSpokenNotifications and abbreviatedMessage != "":
+            if self.useSpokenNotifications and abbreviated_message != "":
                 if isinstance(self.speach_engine, pyttsx3.engine.Engine):
                     SayThread.soundVolume = self.soundVolume / 100.0
-                    SayThread(args=abbreviatedMessage)
+                    SayThread(args=abbreviated_message)
 
                 elif isinstance(self.speach_engine, Speaker):
                     self.speach_engine.amplitude = self.soundVolume
-                    self.speach_engine.say(abbreviatedMessage)
+                    self.speach_engine.say(abbreviated_message)
                 else:
                     self.speach_engine.setProperty('volume', self.soundVolume/100.0)
-                    self.speach_engine.say(abbreviatedMessage)
+                    self.speach_engine.say(abbreviated_message)
             elif name in self.EFFECT.keys() and self.EFFECT[name] is not None:
                 self.EFFECT[name].fadeout(125)
                 self.EFFECT[name].play()
@@ -227,4 +227,3 @@ class SoundManager(metaclass=Singleton):
             if effect:
                 effect.stop()
         pygame.mixer.quit()
-

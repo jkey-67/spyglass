@@ -17,9 +17,6 @@
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
 
-import os
-
-from vi.cache import Cache
 from PySide6 import QtWidgets
 from PySide6 import QtCore
 from PySide6.QtCore import Signal as pyqtSignal
@@ -34,10 +31,10 @@ class RegionChooser(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self, parent)
         self.ui = Ui_RegionChooser()
         self.ui.setupUi(self)
-        self.list_of_reagion_names = sorted([region["name"] for region in Universe.REGIONS])
-        self.strList = QtWidgets.QCompleter(self.list_of_reagion_names, parent=self)
+        self.list_of_region_names = sorted([region["name"] for region in Universe.REGIONS])
+        self.strList = QtWidgets.QCompleter(self.list_of_region_names, parent=self)
         self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.ui.regionNameField.addItems(self.list_of_reagion_names)
+        self.ui.regionNameField.addItems(self.list_of_region_names)
         self.ui.regionNameField.setCompleter(self.strList)
         self.ui.regionNameField.setCurrentText(region_name)
         self.ui.regionNameField.currentIndexChanged.connect(self.indexChanged)
@@ -45,14 +42,11 @@ class RegionChooser(QtWidgets.QDialog):
 
     def indexChanged(self, index: int):
         region_name = str(self.ui.regionNameField.currentText())
-        if region_name in self.list_of_reagion_names:
+        if region_name in self.list_of_region_names:
             self.new_region_chosen.emit(region_name)
 
     def saveClicked(self):
         region_name = str(self.ui.regionNameField.currentText())
-        if region_name in self.list_of_reagion_names:
+        if region_name in self.list_of_region_names:
             self.new_region_chosen.emit(region_name)
             self.accept()
-
-
-

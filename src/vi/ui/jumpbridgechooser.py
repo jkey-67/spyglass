@@ -18,7 +18,6 @@
 ###########################################################################
 import logging
 import os
-from locale import format
 
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox, QFileDialog
@@ -27,6 +26,7 @@ from vi.ui import Ui_JumpbridgeChooser
 from vi import evegate
 from vi.cache import Cache
 from vi.universe import Universe
+
 
 class JumpbridgeChooser(QtWidgets.QDialog):
     set_jumpbridge_url = pyqtSignal(str)
@@ -130,7 +130,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
                 logging.info("Export of all jumpbridge to file '{}' succeeded.".format(save_path))
             except Exception as e:
                 logging.error(e)
-                QMessageBox.critical(None, "Export  jump bridge data failed", "Error: {0}".format(str(e)))
+                QMessageBox.critical(self, "Export  jump bridge data failed", "Error: {0}".format(str(e)))
 
     def importFileName(self):
         path = self.fileDialog.getOpenFileName(None,

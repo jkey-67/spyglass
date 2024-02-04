@@ -38,9 +38,10 @@
 
 from vi.evegate import checkPlayerName, EXISTS
 from vi.universe import Universe
+from vi.states import States
+from vi.dotlan import System
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString
-from vi import states
 from .message import Message
 from .ctx import CTX
 
@@ -134,13 +135,13 @@ def parseStatus(rtext):
             upper_text = upper_text.replace(char, " ")
         upper_words = set(upper_text.split())
         if (len(upper_words & CTX.STATUS_CLEAR) > 0) and not original_text.endswith("?"):
-            return states.CLEAR
+            return States.CLEAR
         elif len(upper_words & CTX.STATUS_STATUS) > 0:
-            return states.REQUEST
+            return States.REQUEST
         elif "?" in original_text:
-            return states.REQUEST
+            return States.REQUEST
         elif text.strip().upper() in CTX.STATUS_BLUE:
-            return states.CLEAR
+            return States.CLEAR
 
 
 def parseShips(rtext) -> bool:
@@ -266,48 +267,6 @@ def parseSystems(systems, rtext, systems_found) -> bool:
     return False
 
 
-def parseMessageForMap(systems_on_map, message: Message) -> Message:
-    """
-        Parse the massage based on the current systems an text
-    Args:
-        systems_on_map:
-        message:
-
-    Returns:
-
-    """
-    original_text = message.plainText
-    formatted_text = u"<rtext>{0}</rtext>".format(original_text)
-    soup = BeautifulSoup(formatted_text, 'html.parser')
-    rtext = soup.select("rtext")[0]
-    message.affectedSystems = set()
-
-    while parseUrls(rtext):
-        continue
-
-    parseSystems(systems_on_map, rtext, message.affectedSystems)
-
-    for system in message.affectedSystems:
-        if system in systems_on_map:
-            while parsePlayerNames(rtext):
-                continue
-
-    while parseShips(rtext):
-        continue
-
-    parsed_status = parseStatus(rtext)
-    message.status = parsed_status if parsed_status is not None else states.ALARM
-
-    message.guiText = str(rtext)
-    message.original_text = original_text
-
-    for system in message.affectedSystems:
-        system.messages.append(message)
-        system.status = message.status
-
-    return message
-
-
 def parseUrls(rtext) -> bool:
     """Patch text format into an existing  http/https link found in a message.
     Args:
@@ -343,18 +302,19 @@ def parseUrls(rtext) -> bool:
             return True
 
 
-def parseLocal(path, char_name, line) -> Message:
+def parseLocal(path: str, char_name: str, line: str) -> Message:
     """
         Parse a local file for a change of th current system.
     Args:
         path: the name of the monitored file
         char_name: the players  name which is assigned to the pathname
-        line: the new line of text to be parsed
+        line: str
+            the new line out of the intel text file to be parsed now
 
     Returns:
         Message Object which hold the information regarding the change of the system
             user: holds the name of the character
-            status : if states.LOCATION a change of the system is required
+            status : if States.LOCATION a change of the system is required
             affectedSystems: a list holding the name of the system
 
     """
@@ -363,16 +323,59 @@ def parseLocal(path, char_name, line) -> Message:
     if message.user in CTX.EVE_SYSTEM:
         if u':' in message.plainText:
             message.user = char_name
-            message.affectedSystems = [message.plainText.split("*")[0].split(":")[1].strip()]
-            message.status = states.LOCATION
+            message.affectedSystems = [message.plainText.split("*")[0].split(u':')[1].strip()]
+            message.status = States.LOCATION
         elif u'：' in message.plainText:
             message.user = char_name
             message.affectedSystems = [message.plainText.split("*")[0].split(u'：')[1].strip()]
-            message.status = states.LOCATION
+            message.status = States.LOCATION
         else:
             # We could not determine if the message was system-change related
             message.affectedSystems.clear()
-            message.status = states.IGNORE
+            message.status = States.IGNORE
     else:
-        message.status = states.IGNORE
+        message.status = States.IGNORE
     return message
+
+
+def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> Message:
+    """
+        Parse the massage based on the current systems an text
+    Args:
+        systems_on_map:
+        message:
+
+    Returns:
+
+    """
+    original_text = message.plainText
+    formatted_text = u"<rtext>{0}</rtext>".format(original_text)
+    soup = BeautifulSoup(formatted_text, 'html.parser')
+    rtext = soup.select("rtext")[0]
+    message.affectedSystems = set()
+
+    while parseUrls(rtext):
+        continue
+
+    parseSystems(systems_on_map, rtext, message.affectedSystems)
+
+    for system in message.affectedSystems:
+        if system in systems_on_map:
+            while parsePlayerNames(rtext):
+                continue
+
+    while parseShips(rtext):
+        continue
+
+    parsed_status = parseStatus(rtext)
+    message.status = parsed_status if parsed_status is not None else States.ALARM
+
+    message.guiText = str(rtext)
+    message.original_text = original_text
+
+    for system_name in message.affectedSystems:
+        system_name.messages.append(message)
+        system_name.status = message.status
+
+    return message
+

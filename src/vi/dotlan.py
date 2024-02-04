@@ -27,7 +27,7 @@ import logging
 import json
 from os import path
 from bs4 import BeautifulSoup
-from vi import states
+from vi.states import States
 from vi.cache.cache import Cache
 from vi.ui.styles import Styles, TextInverter
 
@@ -65,22 +65,22 @@ class Map(object):
         return str(self.soup)
 
     def __init__(self,
-                 svgFile,
-                 setJumpMapsVisible=False,
-                 setSatisticsVisible=False,
-                 setSystemStatistic=None,
-                 setJumpBridges=None,
-                 setCampaignsSystems=None,
-                 setIncursionSystems=None,
-                 setPlayerSovereignty=None):
+                 svg_file,
+                 set_jump_maps_visible=False,
+                 set_statistic_visible=False,
+                 set_system_statistic=None,
+                 set_jump_bridges=None,
+                 set_campaigns_systems=None,
+                 set_incursion_systems=None,
+                 set_player_sovereignty=None):
 
         self.width = 1024   # default size
         self.height = 768   # default size
         self.outdatedCacheError = None
-        self._jumpMapsVisible = setJumpMapsVisible
-        self._statisticsVisible = setSatisticsVisible
+        self._jumpMapsVisible = set_jump_maps_visible
+        self._statisticsVisible = set_statistic_visible
         # Create soup from the svg
-        self.soup = BeautifulSoup(svgFile, features="html.parser")
+        self.soup = BeautifulSoup(svg_file, features="html.parser")
         for scr in self.soup.findAll('script'):
             scr.extract()
         for scr in self.soup.select('#controls'):
@@ -105,16 +105,16 @@ class Map(object):
         self.jumpBridges = []
         self.marker = self.soup.select("#select_marker")[0]
 
-        if setSystemStatistic:
-            self.addSystemStatistics(setSystemStatistic)
-        if setJumpBridges:
-            self.setJumpbridges(setJumpBridges)
-        if setCampaignsSystems:
-            self.setCampaignsSystems(setCampaignsSystems)
-        if setIncursionSystems:
-            self.setIncursionSystems(setIncursionSystems)
-        if setPlayerSovereignty:
-            self.setSystemSovereignty(setPlayerSovereignty)
+        if set_system_statistic:
+            self.addSystemStatistics(set_system_statistic)
+        if set_jump_bridges:
+            self.setJumpbridges(set_jump_bridges)
+        if set_campaigns_systems:
+            self.setCampaignsSystems(set_campaigns_systems)
+        if set_incursion_systems:
+            self.setIncursionSystems(set_incursion_systems)
+        if set_player_sovereignty:
+            self.setSystemSovereignty(set_player_sovereignty)
 
     def setIncursionSystems(self, incursions):
         """
@@ -132,9 +132,9 @@ class Map(object):
             has_boss = incursion["has_boss"]
             for sys_id, sys in self.systemsById.items():
                 if sys_id in lst_system_ids:
-                    sys.setIncursion(hasIncursion=sys_id in lst_system_ids,
-                                     isStaging=sys_id == staging_solar_system_id,
-                                     hasBoss=has_boss)
+                    sys.setIncursion(has_incursion=sys_id in lst_system_ids,
+                                     is_staging=sys_id == staging_solar_system_id,
+                                     has_boss=has_boss)
 
     def setCampaignsSystems(self, lst_system_ids):
         """
@@ -447,14 +447,14 @@ class Map(object):
                 system.setStatistics(None)
         self.updateStatisticsVisibility()
 
-    def setJumpbridges(self, jumpbridgesData):
+    def setJumpbridges(self, jumpbridges_data):
         """
             Adding the jumpbridges to the map soup; format of data:
             tuples with at least 3 values (sys1, connection, sys2) connection is <->
         """
         # todo:disable jbs during init
         self.jumpBridges = []
-        if jumpbridgesData is None:
+        if jumpbridges_data is None:
             self.jumpBridges = []
             return
         soup = self.soup
@@ -474,7 +474,7 @@ class Map(object):
             return
 
         color_count = 0
-        for bridge in jumpbridgesData:
+        for bridge in jumpbridges_data:
             sys1 = bridge[0]
             sys2 = bridge[2]
             one_systems_on_map = sys1 in self.systems or sys2 in self.systems
@@ -619,24 +619,24 @@ class System(object):
     UNKNOWN_COLOR = styles.getCommons()["unknown_colour"]
     CLEAR_COLOR = CLEAR_COLORS[0][1]
 
-    def __init__(self, name, svgElement, mapSoup, mapCoordinates, transform, systemId, ticker="-?-"):
-        self.status = states.UNKNOWN
+    def __init__(self, name, svg_element, map_soup, map_coordinates, transform, system_id, ticker="-?-"):
+        self.status = States.UNKNOWN
         self.name = name
         self.ticker = ticker
-        self.svgElement = svgElement
-        self.mapSoup = mapSoup
-        self.origSvgElement = svgElement
-        self.rect = svgElement.select("rect")[0]
-        self.firstLine = svgElement.select("text")[0]
-        self.secondLine = svgElement.select("text")[1]
+        self.svgElement = svg_element
+        self.mapSoup = map_soup
+        self.origSvgElement = svg_element
+        self.rect = svg_element.select("rect")[0]
+        self.firstLine = svg_element.select("text")[0]
+        self.secondLine = svg_element.select("text")[1]
         self.secondLineFlash = False
         self.lastAlarmTimestamp = 0
         self.messages = []
-        self.setStatus(states.UNKNOWN)
+        self.setStatus(States.UNKNOWN)
         self.__locatedCharacters = []
         self.backgroundColor = self.styles.getCommons()["bg_colour"]
-        self.mapCoordinates = mapCoordinates
-        self.systemId = systemId
+        self.mapCoordinates = map_coordinates
+        self.systemId = system_id
         self.transform = "translate(0, 0)" if transform is None else transform
         self.cachedOffsetPoint = None
         self.neighbours = set()
@@ -699,23 +699,23 @@ class System(object):
             camp_node.decompose()
         self.__hasCampaigns = campaigns
 
-    def setIncursion(self, hasIncursion: bool = False, isStaging: bool = False, hasBoss: bool = False):
+    def setIncursion(self, has_incursion: bool = False, is_staging: bool = False, has_boss: bool = False):
         id_name = self.name + u"_incursion"
-        if hasIncursion and not self.__hasIncursion:
+        if has_incursion and not self.__hasIncursion:
             curr_node = self.mapSoup.find(id=id_name)
             if curr_node is None:
                 coords = self.mapCoordinates
                 new_tag = self.mapSoup.new_tag("rect", x=coords["x"]-10, y=coords["y"]-8, width=coords["width"]+16,
                                                height=coords["height"]+16, id=id_name, rx=12, ry=12,
-                                               fill="url(#incStBg)" if hasBoss else "url(#incBg)")
+                                               fill="url(#incStBg)" if has_boss else "url(#incBg)")
                 jumps = self.mapSoup.select("#jumps")[0]
                 jumps.insert(0, new_tag)
-        elif not hasIncursion and self.__hasIncursion:
+        elif not has_incursion and self.__hasIncursion:
             camp_node = self.mapSoup.find(id=id_name)
             camp_node.decompose()
-        self.__hasIncursion = hasIncursion
-        self.__isStaging = isStaging
-        self.__hasIncursionBoss = hasBoss
+        self.__hasIncursion = has_incursion
+        self.__isStaging = is_staging
+        self.__hasIncursionBoss = has_boss
 
     def setBackgroundColor(self, color):
         for rect in self.svgElement("rect"):
@@ -743,15 +743,15 @@ class System(object):
                     logging.critical("Error in removeLocatedCharacter  {0}".format(str(e)))
                     pass
 
-    def addNeighbour(self, neighbourSystem):
+    def addNeighbour(self, neighbour_system):
         """
             Add a neighbour system to this system
             neighbour_system: a system (not a system's name!)
         Args:
-            neighbourSystem(System):
+            neighbour_system(System):
         """
-        self.neighbours.add(neighbourSystem)
-        neighbourSystem.neighbours.add(self)
+        self.neighbours.add(neighbour_system)
+        neighbour_system.neighbours.add(self)
 
     def getNeighbours(self, distance=1):
         """
@@ -787,8 +787,8 @@ class System(object):
         if self in system.neighbours:
             system.neigbours.remove(self)
 
-    def setStatus(self, newStatus, alarm_time=datetime.datetime.utcnow()):
-        if newStatus == states.ALARM:
+    def setStatus(self, new_status, alarm_time=datetime.datetime.utcnow()):
+        if new_status == States.ALARM:
             self.lastAlarmTimestamp = alarm_time.timestamp()
             if "stopwatch" not in self.secondLine["class"]:
                 self.secondLine["class"].append("stopwatch")
@@ -797,7 +797,7 @@ class System(object):
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
             self.secondLine["style"] = self.ALARM_STYLE.format(
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
-        elif newStatus == states.CLEAR:
+        elif new_status == States.CLEAR:
             self.lastAlarmTimestamp = alarm_time.timestamp()
             self.setBackgroundColor(self.CLEAR_COLOR)
             if "stopwatch" not in self.secondLine["class"]:
@@ -806,7 +806,7 @@ class System(object):
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
             self.secondLine["style"] = self.ALARM_STYLE.format(
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
-        elif newStatus == states.UNKNOWN:
+        elif new_status == States.UNKNOWN:
             self.setBackgroundColor(self.UNKNOWN_COLOR)
             # second line in the rects is reserved for the clock
             self.secondLineFlash = False
@@ -814,8 +814,8 @@ class System(object):
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
             self.secondLine["style"] = self.ALARM_STYLE.format(
                 self.textInv.getTextColourFromBackground(self.backgroundColor))
-        if newStatus not in (states.NOT_CHANGE, states.REQUEST):  # unknown not affect system status
-            self.status = newStatus
+        if new_status not in (States.NOT_CHANGE, States.REQUEST):  # unknown not affect system status
+            self.status = new_status
 
     def setStatistics(self, statistics):
         if self.svgtext is not None:
@@ -831,7 +831,7 @@ class System(object):
             self.updateStyle()
 
         alarm_time = datetime.datetime.utcnow().timestamp() - self.lastAlarmTimestamp
-        if self.status == states.ALARM:
+        if self.status == States.ALARM:
             for maxDiff, alarmColour, lineColour in self.ALARM_COLORS:
                 if alarm_time < maxDiff:
                     if self.backgroundColor != alarmColour:
@@ -842,7 +842,7 @@ class System(object):
                         self.updateLineColour()
                     last_cycle = False
                     break
-        elif self.status == states.CLEAR:
+        elif self.status == States.CLEAR:
             for maxDiff, clearColour, lineColour in self.CLEAR_COLORS:
                 if alarm_time < maxDiff:
                     if self.backgroundColor != clearColour:
@@ -854,10 +854,10 @@ class System(object):
                     last_cycle = False
                     break
 
-        if self.status in (states.ALARM, states.CLEAR):
+        if self.status in (States.ALARM, States.CLEAR):
             if last_cycle:
                 self.secondLineFlash = False
-                self.status = states.UNKNOWN
+                self.status = States.UNKNOWN
                 self.setBackgroundColor(self.UNKNOWN_COLOR)
                 self.updateLineColour()
 
@@ -874,9 +874,9 @@ class System(object):
             self.secondLine.string = self.ticker
 
     def updateLineColour(self):
-        lineColour = self.textInv.getTextColourFromBackground(self.backgroundColor)
-        self.firstLine["style"] = self.SYSTEM_STYLE.format(lineColour)
-        self.secondLine["style"] = self.ALARM_STYLE.format(lineColour)
+        line_colour = self.textInv.getTextColourFromBackground(self.backgroundColor)
+        self.firstLine["style"] = self.SYSTEM_STYLE.format(line_colour)
+        self.secondLine["style"] = self.ALARM_STYLE.format(line_colour)
 
     def updateStyle(self):
         for i in range(5):
@@ -886,7 +886,7 @@ class System(object):
         self.UNKNOWN_COLOR = self.styles.getCommons()["unknown_colour"]
         self.CLEAR_COLOR = self.styles.getCommons()["clear_colour"]
         self.setBackgroundColor(self.UNKNOWN_COLOR)
-        self.status = states.UNKNOWN
+        self.status = States.UNKNOWN
         line_colour = self.textInv.getTextColourFromBackground(self.backgroundColor)
         self.firstLine["style"] = self.SYSTEM_STYLE.format(line_colour)
         self.secondLine["style"] = self.ALARM_STYLE.format(line_colour)
@@ -896,8 +896,8 @@ class System(object):
                      '''<span style=" font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>'''\
                      '''<br/><span style=" font-weight:600; color:#e01b24;">{systemstats}</span>'''
 
-                     #  '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''
-                     #  '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''
+        # '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''
+        # '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''
 
         if self.__hasIncursion:
             if self.__isStaging:
@@ -917,13 +917,13 @@ class System(object):
                     event_type = itm["event_type"]
                     if solar_system_id == self.systemId:
                         if event_type == "tcu_defense":
-                            format_src = format_src + '''<br/><span style=" font-weight:600; color:#c00000;">TCU {}</span>'''.format(start_time)
+                            format_src = (format_src + '<br/><span style=" font-weight:600; color:#c00000;">TCU {}</span>'.format(start_time))
                         if event_type == "ihub_defense":
-                            format_src = format_src + '''<br/><span style=" font-weight:600; color:#c00000;">IHUB {}</span>'''.format(start_time)
+                            format_src = format_src + '<br/><span style=" font-weight:600; color:#c00000;">IHUB {}</span>'.format(start_time)
                         if event_type == "station_defense":
-                            format_src = format_src + '''<br/><span style=" font-weight:600; color:#c00000;">Defense Events {}</span>'''.format(start_time)
+                            format_src = format_src + '<br/><span style=" font-weight:600; color:#c00000;">Defense Events {}</span>'.format(start_time)
                         if event_type == "station_freeport":
-                            format_src = format_src + '''<br/><span style=" font-weight:600; color:#c00000;">Freeport Events {}</span>'''.format(start_time)
+                            format_src = format_src + '<br/><span style=" font-weight:600; color:#c00000;">Freeport Events {}</span>'.format(start_time)
 
         res = format_src.format(
             system=self.name,
@@ -939,9 +939,8 @@ class System(object):
 
     def clearIntel(self):
         self.messages.clear()
-        self.setStatus(states.UNKNOWN)
+        self.setStatus(States.UNKNOWN)
 
     def pruneMessage(self, message):
         if message in self.messages:
             self.messages.remove(message)
-

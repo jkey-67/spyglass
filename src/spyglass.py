@@ -24,7 +24,7 @@ import logging
 import traceback
 import datetime
 from logging.handlers import RotatingFileHandler
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtSql import QSqlDatabase
 from PySide6.QtGui import Qt
@@ -34,7 +34,7 @@ from vi.cache import cache
 from vi.ui.styles import Styles
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
-from vi.zkillboard import zkillMonitor
+from vi.zkillboard import Zkillmonitor
 
 
 def exceptHook(exception_type, exception_value, traceback_object):
@@ -122,7 +122,7 @@ class Application(QApplication):
         change_splash_text("setting local directory for cache and logging")
 
         spyglass_dir = os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)), "spyglass")
-        zkillMonitor.MONITORING_PATH = os.path.join(chat_log_directory,
+        Zkillmonitor.MONITORING_PATH = os.path.join(chat_log_directory,
                                                     datetime.datetime.strftime(
                                                         datetime.datetime.utcnow(),
                                                         "zKillboard_daily_logfile_%Y%m%d.txt"))

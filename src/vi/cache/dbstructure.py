@@ -28,52 +28,52 @@ condition = if TRUE the query qull be executed
 databaseUpdates = []
 
 
-def updateDatabase(oldVersion, con):
+def updateDatabase(old_version, con):
     """ Changes for the database-structure should be added here,
         or added to added_database_updates
         con = the database connection
     """
     queries = []
-    if oldVersion < 1:
+    if old_version < 1:
         queries += ["CREATE TABLE IF NOT EXISTS version (version INT);", "INSERT INTO version (version) VALUES (1)"]
-    if oldVersion < 2:
+    if old_version < 2:
         queries += ["CREATE TABLE playernames (charname VARCHAR PRIMARY KEY, status INT, modified INT)",
                     "CREATE TABLE avatars (charname VARCHAR PRIMARY KEY, data  BLOB, modified INT)",
                     "UPDATE version SET version = 2"]
-    if oldVersion < 3:
+    if old_version < 3:
         queries += ["CREATE TABLE cache (key VARCHAR PRIMARY KEY, data BLOB, modified INT, maxage INT)",
                     "UPDATE version SET version = 3"]
 
-    if oldVersion < 4:
+    if old_version < 4:
         queries += ["CREATE TABLE jumpbridge (src VARCHAR PRIMARY KEY, dst VARCHAR, id_src INT, id_dst INT, used INT,"
                     "modified INT, maxage INT)",
                     "UPDATE version SET version = 4"]
 
-    if oldVersion < 5:
+    if old_version < 5:
         queries += ["CREATE TABLE players (id INT PRIMARY KEY, name VARCHAR, key VARCHAR, active INT, max_age INT)",
                     "UPDATE version SET version = 5"]
 
-    if oldVersion < 6:
+    if old_version < 6:
         queries += ["CREATE TABLE pointofinterest  (id INT PRIMARY KEY, type INT, name VARCHAR, json VARCHAR )",
                     "UPDATE version SET version = 6"]
 
-    if oldVersion < 7:
+    if old_version < 7:
         queries += ["ALTER TABLE jumpbridge add COLUMN json_src",
                     "ALTER TABLE jumpbridge add COLUMN json_dst",
                     "UPDATE version SET version = 7"]
 
-    if oldVersion < 8:
+    if old_version < 8:
         queries += ["ALTER TABLE players add COLUMN modified INT;",
                     "ALTER TABLE players add COLUMN system_id INT;",
                     "ALTER TABLE players add COLUMN intel_range INT;",
                     "DROP TABLE IF EXISTS playernames;",
                     "UPDATE players SET modified = {};".format(time.time()),
                     "UPDATE version SET version = 8"]
-    if oldVersion < 9:
+    if old_version < 9:
         queries += ["ALTER TABLE players add COLUMN online INT;",
                     "UPDATE version SET version = 9"]
 
-    if oldVersion < 10:
+    if old_version < 10:
         queries += ["ALTER TABLE avatars add COLUMN player_id INT;",
                     "ALTER TABLE avatars add COLUMN alliance_id INT;",
                     "ALTER TABLE avatars add COLUMN json VARCHAR;",
@@ -85,7 +85,7 @@ def updateDatabase(oldVersion, con):
                     "DELETE FROM cache WHERE key LIKE 'ids_dicts_%' OR key LIKE 'system_tmp%';",
                     "ALTER TABLE players RENAME COLUMN max_age TO maxage;",
                     "UPDATE version SET version = 10"]
-    if oldVersion < 11:
+    if old_version < 11:
         queries += ["DELETE FROM cache WHERE key LIKE 'map_%';",
                     "CREATE TABLE map (id INT PRIMARY KEY, dotlan VARCHAR, native VARCHAR, modified INT, maxage INT);",
                     "UPDATE version SET version = 11"]
