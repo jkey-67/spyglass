@@ -1,12 +1,14 @@
 import unittest
-from vi.dotlan import Map
 from vi.chatparser import parser_functions
 from vi.chatparser.message import Message
 from bs4 import BeautifulSoup
 from vi.states import States
-
+from vi.dotlan import Map
 from vi.clipboard import evaluateClipboardData
+from vi.evegate import getSvgFromDotlan
 
+SVG_SYSTEM_USED = getSvgFromDotlan(region="providence", dark=True)
+ALL_SYSTEMS_FROM_SVG = Map(SVG_SYSTEM_USED).systems
 
 class TestIntel(unittest.TestCase):
     # Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
@@ -56,43 +58,40 @@ class TestIntel(unittest.TestCase):
 
     def test_mesage_parser_with(self):
 
-        all_systems = Map("providence").systems
-        system = all_systems.get("18-GZM")
+        system = ALL_SYSTEMS_FROM_SVG.get("18-GZM")
         self.assertTrue(system.status != States.ALARM, "System 18-GSM status not alarm failed.")
-        region_name = [sys.upper() for sys in all_systems]
+        region_name = [sys.upper() for sys in ALL_SYSTEMS_FROM_SVG]
         msg = Message(room="", message="[2023.08.12 13:33:22 ]Ian McCool> 18-GZM Kesteri Patrouette nv")
-        res = parser_functions.parseMessageForMap(all_systems, msg)
+        res = parser_functions.parseMessageForMap(ALL_SYSTEMS_FROM_SVG, msg)
         self.assertTrue(system.status == States.ALARM, "System 18-GSM status alarm failed.")
 
         msg = Message(room="", message="[2023.08.12 13:33:23 ]Ian McCool> Jita clr")
-        res = parser_functions.parseMessageForMap(all_systems, msg)
+        res = parser_functions.parseMessageForMap(ALL_SYSTEMS_FROM_SVG, msg)
         self.assertTrue(system.status == States.ALARM, "System 18-GSM status alarm failed.")
 
         msg = Message(room="", message="[2023.08.12 13:33:23 ]Ian McCool> 18-GZM clr")
-        res = parser_functions.parseMessageForMap(all_systems, msg)
+        res = parser_functions.parseMessageForMap(ALL_SYSTEMS_FROM_SVG, msg)
         self.assertTrue(system.status == States.CLEAR, "System 18-GSM status clear failed.")
 
     def test_system_parser_with_camel_case(self):
-        all_systems = Map("providence").systems
-        region_name = [sys.upper() for sys in all_systems]
+        region_name = [sys.upper() for sys in ALL_SYSTEMS_FROM_SVG]
         formatted_text = u"<rtext>{0}</rtext>".format("Dital clr")
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems = set()
-        parser_functions.parseSystems(all_systems, rtext, res_systems)
+        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
         self.assertFalse(res_systems == set(), "System name 'Dital' not fetched correct as Dital")
         if res_systems:
             for item in res_systems:
                 self.assertEqual("Dital", item.name, "System name 'Dital' not fetched correct as Dital")
 
     def test_system_parser_two_system_one_read_one_clr(self):
-        all_systems = Map("providence").systems
-        region_name = [sys.upper() for sys in all_systems]
+        region_name = [sys.upper() for sys in ALL_SYSTEMS_FROM_SVG]
         formatted_text = u"<rtext>{0}</rtext>".format("18-GZM +6")
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems = set()
-        parser_functions.parseSystems(all_systems, rtext, res_systems)
+        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
         self.assertFalse(res_systems == set(), "System name '18-GZM' not fetched correct as 18-GZM")
         if res_systems:
             for item in res_systems:
@@ -103,53 +102,49 @@ class TestIntel(unittest.TestCase):
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems_two = set()
-        parser_functions.parseSystems(all_systems, rtext, res_systems_two)
+        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems_two)
 
         self.assertTrue(res_systems_two == set(), "System name 'Juk' not fetched correct as empty set")
 
     def test_system_parser_with_upper_case(self):
-        all_systems = Map("providence").systems
         formatted_text = u"<rtext>{0}</rtext>".format("DITAL clr")
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems = set()
-        parser_functions.parseSystems(all_systems, rtext, res_systems)
+        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
         self.assertFalse(res_systems == set(), "System name 'DITAL' not fetched correct as Dital")
         if res_systems:
             for item in res_systems:
                 self.assertEqual("Dital", item.name, "System name 'DITAL' not fetched correct as Dital")
 
     def test_system_parser_with_start_case(self):
-        all_systems = Map("providence").systems
         formatted_text = u"<rtext>{0}</rtext>".format("Dital* clr")
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems = set()
-        parser_functions.parseSystems(all_systems, rtext, res_systems)
+        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
         self.assertFalse(res_systems == set(), "System name 'Dital*' not fetched correct as Dital")
         if res_systems:
             for item in res_systems:
                 self.assertEqual("Dital", item.name, "System name 'Dital*' not fetched correct as Dital")
 
     def test_system_parser_with_segment_case(self):
-        all_systems = Map("providence").systems
         formatted_text = u"<rtext>{0}</rtext>".format("TXJ clear")
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems = set()
-        parser_functions.parseSystems(all_systems, rtext, res_systems)
+        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
         self.assertFalse(res_systems == set(), "System name 'TXJ' not fetched correct as TXJ-II")
         if res_systems:
             for item in res_systems:
                 self.assertEqual("TXJ-II", item.name, "System name 'TXJ' not fetched correct as TXJ-II")
 
     def test_system_parser_ship_names(self):
-        all_systems = Map("providence").systems
         formatted_text = u"<rtext>{0}</rtext>".format("TXJ Anna Succubus")
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems = set()
-        parser_functions.parseSystems(all_systems, rtext, res_systems)
+        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
         self.assertFalse(res_systems == set(), "System name 'TXJ' not fetched correct as TXJ-II")
         if res_systems:
             for item in res_systems:
