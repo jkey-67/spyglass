@@ -110,6 +110,7 @@ class FetchSovereignty(QRunnable):
             statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=True, show_npc=True)
             statistics_data["structures"] = evegate.esiSovereigntyStructures()
             logging.info("Sovereignty data updated succeeded.")
+            statistics_data["result"] = "ok"
         except Exception as e:
             logging.error("Unable to fetch sovereignty update: %s", e)
             statistics_data["result"] = "error"
@@ -129,6 +130,7 @@ class FetchStatistic(QRunnable):
             statistics_data["incursions"] = evegate.esiIncursions(use_outdated=False)
             statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(use_outdated=False)
             logging.info("Statistic data updated succeeded.")
+            statistics_data["result"] = "ok"
         except Exception as e:
             logging.error("Unable to fetch statistic update: %s", e)
             statistics_data["result"] = "error"
@@ -146,6 +148,7 @@ class FetchLocation(QRunnable):
         try:
             statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
             logging.info("Fetching the characters location succeeded.")
+            statistics_data["result"] = "ok"
         except Exception as e:
             logging.error("Fetching the characters location failed: %s", e)
             statistics_data["result"] = "error"

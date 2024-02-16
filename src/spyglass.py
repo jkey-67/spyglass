@@ -76,7 +76,7 @@ class Application(QApplication):
         QApplication.processEvents()
 
         def change_splash_text(txt):
-            logging.info(txt)
+            # logging.info(txt)
             if self.splash and len(txt):
                 self.splash.showMessage("   {}".format(txt), Qt.AlignLeft, QtGui.QColor(0x808000))
 

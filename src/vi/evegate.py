@@ -1419,7 +1419,7 @@ def writeGatesToFile(gates, filename="jb.txt"):
             d_t_s = "{} » {}".format(gate.dst_system_name, gate.src_system_name)
             if s_t_d not in gates_list and d_t_s not in gates_list:
                 gf.write("{} {} {} {} ({} {})\n".format(
-                    s_t_d, gate.systemId, gate.structureId, gate.ownerId, gate.links, gate.paired))
+                    s_t_d, gate.system_id, gate.structureId, gate.ownerId, gate.links, gate.paired))
                 gates_list.append(s_t_d)
         gf.close()
 

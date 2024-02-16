@@ -39,7 +39,7 @@
 from vi.evegate import checkPlayerName, EXISTS
 from vi.universe import Universe
 from vi.states import States
-from vi.dotlan import System
+from vi.system import System, ALL_SYSTEMS
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString
 from .message import Message
@@ -187,11 +187,11 @@ def isCharName(name) -> bool:
     return res == EXISTS
 
 
-def parseSystems(systems, rtext, systems_found) -> bool:
+def parseSystems(systems_on_map, rtext, systems_found) -> bool:
     """
     Parse a message for system names
     Args:
-        systems: systems to be monitored
+        systems_on_map: systems to be monitored
         rtext: message to be parsed
         systems_found(set): systems found
 
@@ -240,12 +240,10 @@ def parseSystems(systems, rtext, systems_found) -> bool:
                 continue
             match_system_id = Universe.systemIdByName(word)
             if match_system_id:  # - direct hit on name
-                match_system_name = Universe.systemNameById(match_system_id)
-                if match_system_name in systems.keys():
-                    systems_found.add(systems[match_system_name])  # of the system?
-                    formatted_text = formatSystem(text, word, match_system_name, True)
-                else:
-                    formatted_text = formatSystem(text, word, match_system_name, False)
+                matched_system_name = Universe.systemNameById(match_system_id)
+                systems_found.add(ALL_SYSTEMS[match_system_id])  # of the system?
+                system_on_map = matched_system_name in systems_on_map.keys()
+                formatted_text = formatSystem(text, word, matched_system_name, system_on_map)
                 textReplace(text, formatted_text)
                 return True
             elif 3 < len(upper_word) < 5:  # - upperWord < 4 chars.
@@ -253,12 +251,10 @@ def parseSystems(systems, rtext, systems_found) -> bool:
                     if system.startswith(upper_word):
                         match_system_id = Universe.systemIdByName(system)
                         if match_system_id:  # - direct hit on name
-                            match_system_name = Universe.systemNameById(match_system_id)
-                            if match_system_name in systems.keys():
-                                systems_found.add(systems[match_system_name])  # of the system?
-                                formatted_text = formatSystem(text, word, match_system_name, True)
-                            else:
-                                formatted_text = formatSystem(text, word, match_system_name, False)
+                            matched_system_name = Universe.systemNameById(match_system_id)
+                            systems_found.add(ALL_SYSTEMS[match_system_id])  # of the system?
+                            system_on_map = matched_system_name in systems_on_map.keys()
+                            formatted_text = formatSystem(text, word, matched_system_name, system_on_map)
                             textReplace(text, formatted_text)
                             return True
 
@@ -360,7 +356,7 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
     parseSystems(systems_on_map, rtext, message.affectedSystems)
 
     for system in message.affectedSystems:
-        if system in systems_on_map:
+        if system.name in systems_on_map.keys():
             while parsePlayerNames(rtext):
                 continue
 
@@ -373,9 +369,9 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
     message.guiText = str(rtext)
     message.original_text = original_text
 
-    for system_name in message.affectedSystems:
-        system_name.messages.append(message)
-        system_name.status = message.status
+    for system in message.affectedSystems:
+        system.messages.append(message)
+        system.setStatus(message.status, message.timestamp)
 
     return message
 

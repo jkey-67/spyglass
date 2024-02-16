@@ -87,7 +87,7 @@ class SystemChat(QtWidgets.QDialog):
         QDesktopServices.openUrl(url)
 
     def openzKillboard(self):
-        url = "https://zkillboard.com/system/{system}/".format(system=self.system.systemId)
+        url = "https://zkillboard.com/system/{system}/".format(system=self.system.system_id)
         QDesktopServices.openUrl(url)
 
     def locationSet(self):

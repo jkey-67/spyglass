@@ -99,7 +99,7 @@ class ActionPackage(QObject):
     def browserOpenZKillboard(self, checked):
         if self.currentSystem:
             QDesktopServices.openUrl(
-                "https://zkillboard.com/system/{}".format(self.currentSystem.systemId))
+                "https://zkillboard.com/system/{}".format(self.currentSystem.system_id))
 
 
 class TrayContextMenu(QtWidgets.QMenu):
@@ -287,7 +287,7 @@ class MapContextMenu(QtWidgets.QMenu):
     def browserOpenZKillboard(self, checked):
         if self.currentSystem:
             QDesktopServices.openUrl(
-                "https://zkillboard.com/system/{}".format(self.currentSystem.systemId))
+                "https://zkillboard.com/system/{}".format(self.currentSystem.system_id))
 
 
 class JumpBridgeContextMenu(QtWidgets.QMenu):

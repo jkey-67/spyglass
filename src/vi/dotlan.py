@@ -27,7 +27,8 @@ import logging
 from os import path
 from bs4 import BeautifulSoup
 from vi.ui.styles import Styles
-from vi.system import System
+from vi.system import System, ALL_SYSTEMS
+from vi.universe import Universe
 
 JB_COLORS = ("66CD00", "7CFC00", "7CFC00", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
              "90EE90", "8FBC8F", "20B2AA", "2E8B57", "808000", "6B8E23")
@@ -47,12 +48,18 @@ class Map(object):
     styles = Styles()
 
     @property
-    def svg(self):
-        # Re-render all systems
+    def is_dirty(self):
         for system in self.systems.values():
-            system.update()
+            if system.is_dirty:
+                return True
+        return False
 
+    @property
+    def svg(self):
         # Update the marker, the marker should be visible for 20s
+        for system in self.systems.values():
+            if system.is_dirty:
+                system.updateSVG()
         if float(self.marker["opacity"]) > 0.0:
             delta = datetime.datetime.utcnow().timestamp() - float(self.marker["activated"])
             new_opacity = (1.0-delta/20.0)
@@ -62,16 +69,36 @@ class Map(object):
 
         return str(self.soup)
 
+    @staticmethod
+    def setIncursionSystems(incursions):
+        """
+        Mark all incursion systems on the current map
+        Args:
+            incursions(list(int)): list of system ids
+
+        Returns:
+            None
+
+        """
+        for incursion in incursions:
+            lst_system_ids = incursion["infested_solar_systems"]
+            staging_solar_system_id = incursion["staging_solar_system_id"]
+            has_boss = incursion["has_boss"]
+            for sys_id in lst_system_ids:
+                sys = ALL_SYSTEMS[sys_id]
+                sys.setIncursion(has_incursion=sys_id in lst_system_ids,
+                                 is_staging=sys_id == staging_solar_system_id,
+                                 has_boss=has_boss)
+
     def __init__(self,
+                 region_name,
                  svg_file,
                  set_jump_maps_visible=False,
                  set_statistic_visible=False,
-                 set_system_statistic=None,
-                 set_jump_bridges=None,
-                 set_campaigns_systems=None,
-                 set_incursion_systems=None,
-                 set_player_sovereignty=None):
+                 set_jump_bridges=None):
 
+        self.region_name = region_name
+        self.region_id = Universe.regionIdByName(region_name)
         self.width = 1024   # default size
         self.height = 768   # default size
         self.outdatedCacheError = None
@@ -90,51 +117,22 @@ class Map(object):
         self.systems = self._extractSystemsFromSoup(self.soup, 1.0)
 
         self.systemsById = {}
-        for system in self.systems.values():
-            self.systemsById[system.systemId] = system
-
         self.systemsByName = {}
         for system in self.systems.values():
+            self.systemsById[system.system_id] = system
             self.systemsByName[system.name] = system
 
         self._extractSizeFromSoup(self.soup)
         self._prepareSvg(self.soup)
-        self._connectNeighbours()
         self.jumpBridges = []
         self.marker = self.soup.select("#select_marker")[0]
 
-        if set_system_statistic:
-            self.addSystemStatistics(set_system_statistic)
         if set_jump_bridges:
             self.setJumpbridges(set_jump_bridges)
-        if set_campaigns_systems:
-            self.setCampaignsSystems(set_campaigns_systems)
-        if set_incursion_systems:
-            self.setIncursionSystems(set_incursion_systems)
-        if set_player_sovereignty:
-            self.setSystemSovereignty(set_player_sovereignty)
 
-    def setIncursionSystems(self, incursions):
-        """
-        Mark all incursion systems on the current map
-        Args:
-            incursions(list(int)): list of system ids
 
-        Returns:
-            None
-
-        """
-        for incursion in incursions:
-            lst_system_ids = incursion["infested_solar_systems"]
-            staging_solar_system_id = incursion["staging_solar_system_id"]
-            has_boss = incursion["has_boss"]
-            for sys_id, sys in self.systemsById.items():
-                if sys_id in lst_system_ids:
-                    sys.setIncursion(has_incursion=sys_id in lst_system_ids,
-                                     is_staging=sys_id == staging_solar_system_id,
-                                     has_boss=has_boss)
-
-    def setCampaignsSystems(self, lst_system_ids):
+    @staticmethod
+    def setCampaignsSystems(lst_system_ids):
         """
         Marks all campaign systems on map
         Args:
@@ -143,8 +141,8 @@ class Map(object):
         Returns:
             None
         """
-        if lst_system_ids is not None:
-            for sys_id, sys in self.systemsById.items():
+        if lst_system_ids:
+            for sys_id, sys in ALL_SYSTEMS.items():
                 sys.setCampaigns(sys_id in lst_system_ids)
 
     def _extractSizeFromSoup(self, soup):
@@ -222,22 +220,27 @@ class Map(object):
                             transform = uses[symbol_id]["transform"]
                         else:
                             transform = None
-                        systems[name] = System(name, element, self.soup, map_coordinates, transform, system_id)
+                        system = ALL_SYSTEMS[system_id]
+                        system.applySVG(
+                            svg_element=element,
+                            map_soup=self.soup,
+                            map_coordinates=map_coordinates,
+                            svg_transform=transform)
+                        systems[name] = system
                     else:
                         logging.error("System {} not found.".format(name))
 
                 except KeyError:
                     logging.critical("Unable to prepare system {}.".format(name))
                     pass
-
         return systems
 
-    def setSystemSovereignty(self, systems_stats):
-        for sys_id, sys in self.systemsById.items():
-            sid = str(sys_id)
-            if sid in systems_stats:
-                if "ticker" in systems_stats[sid]:
-                    sys.ticker = systems_stats[sid]["ticker"]
+    @staticmethod
+    def setSystemSovereignty(systems_stats):
+        for system_id, sys_stats in systems_stats.items():
+            if "ticker" in sys_stats:
+                sys = ALL_SYSTEMS[int(system_id)]
+                sys.ticker = sys_stats["ticker"]
 
     @staticmethod
     def _prepareGradients(soup: BeautifulSoup):
@@ -355,6 +358,14 @@ class Map(object):
             defs.insert(0, grad_inc_st_bg)
             defs.insert(0, grad_con_bg)
 
+    def render(self, painter):
+        for system in self.systems.values():
+            system.renderBackground(painter, self.region_id)
+        for system in self.systems.values():
+            system.renderConnections(painter, self.region_id, self.systems)
+        for system in self.systems.values():
+            system.renderSystem(painter, self.region_id)
+
     def _prepareSvg(self, soup):
         svg = soup.select("svg")[0]
         svg.attrs = {key: value for key, value in svg.attrs.items() if key not in ["style", "onmousedown", "viewbox"]}
@@ -398,28 +409,13 @@ class Map(object):
             jumps = list()
 
         # Set up the tags for system statistics
-        for systemId, system in self.systemsById.items():
+        for system in self.systemsById.values():
             jumps.append(system.updateSVGText(soup))
 
-    def _connectNeighbours(self):
-        """
-            This will find all neighbours of the systems and connect them.
-            It takes a look at all the jumps on the map and gets the system under
-            which the line ends
+        self.updateStatisticsVisibility()
 
-        Remark:
-            Marking is based on the #jumps svg entries
-        """
-        for jump in self.soup.select("#jumps")[0].select(".j,.jc,.jr"):
-            if "jumpbridge" in jump["class"]:
-                continue
-            parts = jump["id"].split("-")
-            if parts[0] == "j":
-                start_system = self.systemsById[int(parts[1])]
-                stop_system = self.systemsById[int(parts[2])]
-                start_system.addNeighbour(stop_system)
-
-    def addSystemStatistics(self, statistics):
+    @staticmethod
+    def addSystemStatistics(statistics):
         """
         Appyes the statistic values to the systems
         Args:
@@ -429,13 +425,8 @@ class Map(object):
 
         """
         if statistics is not None:
-            for systemId, system in self.systemsById.items():
-                if systemId in statistics.keys():
-                    system.setStatistics(statistics[systemId])
-        else:
-            for system in self.systemsById.values():
-                system.setStatistics(None)
-        self.updateStatisticsVisibility()
+            for system_id, data in statistics.items():
+                ALL_SYSTEMS[system_id].setStatistics(data)
 
     def setJumpbridges(self, jumpbridges_data):
         """
@@ -481,7 +472,7 @@ class Map(object):
             if both_systems_on_map:
                 system_one = self.systems[sys1]
                 system_two = self.systems[sys2]
-                self.jumpBridges.append([system_one.systemId, system_two.systemId])
+                self.jumpBridges.append([system_one.system_id, system_two.system_id])
                 system_one_coords = system_one.mapCoordinates
                 system_two_coords = system_two.mapCoordinates
                 system_one_offset_point = system_one.getTransformOffsetPoint()
@@ -574,8 +565,12 @@ class Map(object):
 
     def debugWriteSoup(self):
         svg_data = self.soup.prettify("utf-8")
+        for system in self.systems.values():
+            if system.is_dirty:
+                system.updateSVG()
         try:
-            file_name = path.expanduser("~/projects/spyglass/src/debug_out.svg")
+            file_name = path.expanduser("~/projects/spyglass/src/vi/ui/res/mapdata_processed/{}.svg".format(self.region_name))
+
             with open(file_name, "wb") as svgFile:
                 svgFile.write(svg_data)
                 svgFile.close()

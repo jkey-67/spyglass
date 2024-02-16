@@ -69,6 +69,9 @@ from vi.ui import Ui_MainWindow, Ui_EVESpyInfo, Ui_SoundSetup
 from vi.chatparser.message import Message
 
 from vi.zkillboard import Zkillmonitor
+
+from vi.system import ALL_SYSTEMS
+
 """
  Timer intervals
 """
@@ -218,6 +221,7 @@ class MainWindow(QtWidgets.QMainWindow):
     current_system_changed = pyqtSignal(str)
 
     def __init__(self, pat_to_logfile, tray_icon, update_splash=None):
+
         def update_splash_window_info(string):
             if update_splash:
                 update_splash(string)
@@ -226,6 +230,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         QtWidgets.QMainWindow.__init__(self)
         self.cache = Cache()
+        self.dotlan_maps = dict()
+        self.dotlan = None
         region_name = self.cache.getFromCache("region_name")
         self.blockSignals(True)
         self.ui = Ui_MainWindow()
@@ -250,7 +256,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.connectToEveOnline.setIcon(icon)
         self.ui.connectToEveOnline.setIconSize(QtCore.QSize(163, 38))
         self.ui.connectToEveOnline.setFlat(False)
-        self.dotlan = None
         self.setWindowTitle(
             "EVE-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
         self.taskbarIconQuiescent = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
@@ -314,7 +319,11 @@ class MainWindow(QtWidgets.QMainWindow):
                         "Spyglass is running to remedy this."
             QMessageBox.warning(self, "Known Characters not Found", info_text)
 
+        update_splash_window_info("Prepare region maps")
+        self.prepareMaps(lambda region_name, percent: update_splash_window_info("Caching region ({perc}%) {rgn}".format(rgn=region_name, perc=percent)))
+
         update_splash_window_info("Update player names")
+
 
         if self.invertWheel is None:
             self.invertWheel = False
@@ -322,6 +331,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
         self._addPlayerMenu()
         self.players_changed.connect(self._addPlayerMenu)
+
 
         # Set up user's intel rooms
         update_splash_window_info("Set up user's intel rooms")
@@ -370,17 +380,19 @@ class MainWindow(QtWidgets.QMainWindow):
         update_splash_window_info("Update chat parser")
 
         self.chatparser = ChatParser(self.pathToLogs, self.room_names, self.intelTimeGroup.intelTime)
-
+        update_splash_window_info("Setup worker threads")
         self._setupThreads()
-
+        update_splash_window_info("Setup UI")
         self._wireUpUIConnections()
+        update_splash_window_info("Recall cached settings")
         self._recallCachedSettings()
 
         self._startStatisticTimer()
+        update_splash_window_info("Fetch data from eve-scout.com")
         self._wireUpDatabaseViews()
 
         self.blockSignals(False)
-
+        update_splash_window_info("Start all worker threads")
         self._startThreads()
         self.changeRegionByName(region_name=region_name)
         self.updateSidePanel()
@@ -408,11 +420,12 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.info(update_avail[1])
             update_splash_window_info(update_avail[1])
             self.ui.updateAvail.hide()
-        update_splash_window_info("Rescan the intel files.")
+        update_splash_window_info("EVE-Syp perform an initial scan of all intel files.")
+        self.rescanIntel()
         update_splash_window_info("Initialisation succeeded.")
 
     @property
-    def systems(self):
+    def systems_on_map(self):
         return self.dotlan.systems
 
     @property
@@ -605,7 +618,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             Returns: true if the mouse is above a system, else false
             """
-            for _, system in self.systems.items():
+            for system in self.systems_on_map.values():
                 val = system.mapCoordinates
                 rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
                 if rc.contains(pos):
@@ -617,7 +630,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.mapView.hoveCheck = hoveCheck
 
         def doubleClicked(pos: QPoint):
-            for name, system in self.systems.items():
+            for name, system in self.systems_on_map.items():
                 val = system.mapCoordinates
                 rc = QtCore.QRectF(val["x"],
                                    val["y"],
@@ -1066,7 +1079,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_system = self.trayIcon.contextMenu().currentSystem
         if selected_system is None:
             return
-        self.changeRegionBySystemID(selected_system.systemId)
+        self.changeRegionBySystemID(selected_system.system_id)
 
     def focusMapOnSystem(self, system_id: int):
         """sets the system defined by the id to the focus of the map
@@ -1099,7 +1112,6 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.cache.putIntoCache("region_name", region_name)
         self.setupMap()
-        self.rescanIntel()
         if system_id is not None:
             self.focusMapOnSystem(system_id)
         else:
@@ -1158,25 +1170,49 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 return svg
 
+    def prepareMaps(self, callback = None):
+        return
+        akt = 0
+        total = len(Universe.REGIONS)
+        for region in Universe.REGIONS:
+            region_name = region["name"]
+            if callback:
+                akt = akt + 1
+                callback(region_name, int(akt/total*100))
+                if akt > 1:
+                    return
+            if region_name in self.dotlan_maps:
+                self.dotlan = self.dotlan_maps[region_name]
+            else:
+                svg = self.loadSVGMapFile(self.cache, region_name)
+                if svg is None:
+                    continue
+                self.dotlan_maps[region_name] = self.dotlan = dotlan.Map(
+                    region_name=region_name,
+                    svg_file=svg,
+                    set_jump_maps_visible=self.ui.jumpbridgesButton.isChecked(),
+                    set_statistic_visible=self.ui.statisticsButton.isChecked(),
+                    set_jump_bridges=self.mapJumpGates)
+
     def setupMap(self):
         logging.debug("setupMap started...")
         region_name = self.cache.getFromCache("region_name")
         if not region_name:
             region_name = "Providence"
 
-        svg = self.loadSVGMapFile(self.cache, region_name)
-        if svg is None:
-            return
-
-        self.dotlan = dotlan.Map(
-            svg_file=svg,
-            set_jump_maps_visible=self.ui.jumpbridgesButton.isChecked(),
-            set_statistic_visible=self.ui.statisticsButton.isChecked(),
-            set_system_statistic=self.mapStatisticCache,
-            set_campaigns_systems=self.mapCampaigns,
-            set_incursion_systems=self.mapIncursions,
-            set_player_sovereignty=self.mapSovereignty,
-            set_jump_bridges=self.mapJumpGates)
+        if False and region_name in self.dotlan_maps:
+            self.dotlan = self.dotlan_maps[region_name]
+        else:
+            svg = self.loadSVGMapFile(self.cache, region_name)
+            if svg is None:
+                return
+            self.dotlan_maps[region_name] = self.dotlan = dotlan.Map(
+                region_name=region_name,
+                svg_file=svg,
+                set_jump_maps_visible=self.ui.jumpbridgesButton.isChecked(),
+                set_statistic_visible=self.ui.statisticsButton.isChecked(),
+                set_jump_bridges=self.mapJumpGates)
+            self.dotlan = self.dotlan_maps[region_name]
 
         if self.dotlan.outdatedCacheError:
             e = self.dotlan.outdatedCacheError
@@ -1445,8 +1481,8 @@ class MainWindow(QtWidgets.QMainWindow):
             None
         """
         system_name = str(url.path().split("/")[-1])
-        if system_name in self.systems:
-            system = self.systems[system_name]
+        if system_name in self.systems_on_map:
+            system = self.systems_on_map[system_name]
             sc = SystemChat(self, SystemChat.SYSTEM, system, self.chatEntries, self.knownPlayerNames)
             self.chat_message_added.connect(sc.addChatEntry)
             self.avatar_loaded.connect(sc.newAvatarAvailable)
@@ -1465,11 +1501,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
         if type(system_name) is str:
-            if system_name in self.systems.keys():
-                curr_sys = self.systems[system_name]
+            if system_name in self.systems_on_map.keys():
+                curr_sys = self.systems_on_map[system_name]
                 curr_sys.mark()
                 self.updateMapView()
-                self.focusMapOnSystem(curr_sys.systemId)
+                self.focusMapOnSystem(curr_sys.system_id)
             else:
                 self.statisticsThread.fetchLocation(fetch=False)
                 self.changeRegionBySystemID(Universe.systemIdByName(system_name))
@@ -1478,7 +1514,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 curr_sys = self.systemsById[system_name]
                 curr_sys.mark()
                 self.updateMapView()
-                self.focusMapOnSystem(curr_sys.systemId)
+                self.focusMapOnSystem(curr_sys.system_id)
             else:
                 self.statisticsThread.fetchLocation(fetch=False)
                 self.changeRegionBySystemID(system_name)
@@ -1499,11 +1535,11 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns:
             None:
         """
-        for system in self.systems.values():
+        for system in ALL_SYSTEMS.values():
             system.removeLocatedCharacter(char_name)
 
         logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
-        if system_name not in self.systems:
+        if system_name not in self.systems_on_map:
             if change_region:   # and char_name in self.monitoredPlayerNames:
                 try:
                     system_id = Universe.systemIdByName(system_name)
@@ -1515,20 +1551,18 @@ class MainWindow(QtWidgets.QMainWindow):
                     logging.error(e)
                     pass
 
-        if not system_name == "?" and system_name in self.systems:
-            self.systems[system_name].addLocatedCharacter(char_name)
+        if not system_name == "?" and system_name in self.systems_on_map:
+            self.systems_on_map[system_name].addLocatedCharacter(char_name)
             if evegate.esiCheckCharacterToken(char_name):
-                self.focusMapOnSystem(self.systems[str(system_name)].systemId)
+                self.focusMapOnSystem(self.systems_on_map[str(system_name)].system_id)
                 self.current_system_changed.emit(str(system_name))
         self.updateMapView()
 
     def updateMapView(self):
         try:
-            new_content = self.dotlan.svg
-            if self.currContent != new_content:
+            if self.dotlan and self.dotlan.is_dirty:
                 self.mapTimer.stop()
-                if self.ui.mapView.setContent(QByteArray(new_content.encode('utf-8'))):
-                    self.currContent = new_content
+                self.ui.mapView.setContent(self.dotlan)
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
         except Exception as e:
             logging.error("Error updateMapView failed: {0}".format(str(e)))
@@ -1740,7 +1774,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def clearIntelChat(self):
         try:
-            for system in self.dotlan.systems.values():
+            for system in ALL_SYSTEMS.values():
                 system.clearIntel()
         except Exception as e:
             logging.error(e)
@@ -1762,7 +1796,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
         try:
-
             now = time.mktime(currentEveTime().timetuple())
             for row in range(self.ui.chatListWidget.count()):
                 chat_list_widget_item = self.ui.chatListWidget.item(0)
@@ -1772,7 +1805,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.chatEntries.remove(chat_entry_widget)
                     self.ui.chatListWidget.takeItem(0)
                     try:
-                        for system in self.dotlan.systems.values():
+                        for _, system in enumerate(message.affectedSystems):
                             system.pruneMessage(message)
                     except Exception as e:
                         logging.error(e)
@@ -1934,7 +1967,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def logFileChanged(self, path, rescan=False):
         locale_to_set = dict()
-        messages = self.chatparser.fileModified(path, self.systems, rescan)
+        messages = self.chatparser.fileModified(path, self.systems_on_map, rescan)
         for message in messages:
             if message.status == States.LOCATION:
                 locale_to_set[message.user] = message.affectedSystems
@@ -1945,11 +1978,7 @@ class MainWindow(QtWidgets.QMainWindow):
                  For each system that was mentioned in the message, check for alarm distance to the current system
                  and alarm if within alarm distance.
                 """
-                systems_on_map = self.systems
                 for system in message.affectedSystems:
-                    system_name = system.name
-                    if system_name in systems_on_map.keys():
-                        systems_on_map[system_name].setStatus(message.status, message.timestamp)
                     is_alarm = message.status == States.ALARM
                     if is_alarm and message.user not in self.knownPlayerNames:
                         alarm_distance = self.alarmDistance if is_alarm else 0
@@ -1977,7 +2006,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def systemUnderMouse(self, pos: QPoint) -> Optional[dotlan.System]:
         """returns the name of the system under the mouse pointer
         """
-        for name, system in self.systems.items():
+        for system in self.systems_on_map.values():
             val = system.mapCoordinates
             rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
             if rc.contains(pos):
@@ -1995,12 +2024,12 @@ class MainWindow(QtWidgets.QMainWindow):
         map_ctx_menu.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
         map_ctx_menu.quitAction.triggered.connect(self.trayIcon.quit)
         map_ctx_menu.changeRegion.triggered.connect(
-            lambda: self.changeRegionBySystemID(selected_system.systemId))
+            lambda: self.changeRegionBySystemID(selected_system.system_id))
         map_ctx_menu.alarm_distance.connect(self.changeAlarmDistance)
         map_ctx_menu.setStyleSheet(Styles.getStyle())
 
         if selected_system:
-            selected_region_name = Universe.regionNameFromSystemID(selected_system.systemId)
+            selected_region_name = Universe.regionNameFromSystemID(selected_system.system_id)
             map_ctx_menu.updateMenu(sys_name=selected_system,
                                     rgn_name=selected_region_name,
                                     alarm_distance=self.alarmDistance)
@@ -2008,7 +2037,7 @@ class MainWindow(QtWidgets.QMainWindow):
             map_ctx_menu.updateMenu(alarm_distance=self.alarmDistance)
         res = map_ctx_menu.exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
         if selected_system:
-            if self.handleDestinationActions(res, selected_system.systemId):
+            if self.handleDestinationActions(res, selected_system.system_id):
                 return
             elif res == map_ctx_menu.clearJumpGate:
                 self.cache.clearJumpGate(selected_system.name)

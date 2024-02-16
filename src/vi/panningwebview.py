@@ -19,12 +19,11 @@
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
 
-from PySide6.QtGui import QPainter, QResizeEvent, QWheelEvent, QMouseEvent
-from PySide6 import QtCore, QtSvg
+from PySide6.QtGui import QPainter, QResizeEvent, QWheelEvent, QMouseEvent, QTransform
+from PySide6 import QtCore
 
 from PySide6.QtCore import QPoint, QPointF
 from PySide6.QtCore import Qt, QEvent
-import logging
 
 
 class PanningWebView(QWidget):
@@ -34,9 +33,11 @@ class PanningWebView(QWidget):
 
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__(parent)
+        self.content = None
+        self.transform = QTransform()
         self.zoom = 1.0
         self.wheel_dir = 1.0
-        self.imgSize = QtCore.QSize(1024, 768)
+        self.imgSize = QtCore.QSizeF(1024.0, 768.0)
         self.pressed = False
         self.scrolling = False
         self.positionMousePress = None
@@ -46,20 +47,13 @@ class PanningWebView(QWidget):
         self.scrollPos = QPointF(0.0, 0.0)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.setMouseTracking(True)
-        self.svgRenderer = QtSvg.QSvgRenderer()
-        self.svgRenderer.setAspectRatioMode(Qt.KeepAspectRatioByExpanding)
-        self.svgRenderer.repaintNeeded.connect(self.update)
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
     def setContent(self, cnt):
         if self.scrolling:
             return False
-        if not self.svgRenderer.load(cnt):
-            logging.error("error during parse of svg data")
-        self.setImgSize(self.svgRenderer.defaultSize())
-        self.svgRenderer.setFramesPerSecond(0)
-        self.svgRenderer.setAspectRatioMode(Qt.KeepAspectRatio)
+        self.content = cnt
         return True
 
     def setImgSize(self, new_size: QtCore.QSize):
@@ -71,12 +65,12 @@ class PanningWebView(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        if self.svgRenderer:
-
-            rect = QtCore.QRectF(-self.scrollPos.x(), -self.scrollPos.y(),
-                                 self.svgRenderer.defaultSize().width() * self.zoom,
-                                 self.svgRenderer.defaultSize().height() * self.zoom)
-            self.svgRenderer.render(painter, rect)
+        if self.content:
+            self.transform.reset()
+            self.transform.translate(-self.scrollPos.x(), -self.scrollPos.y())
+            self.transform.scale(self.zoom, self.zoom)
+            painter.setTransform(self.transform)
+            self.content.render(painter)
 
     def setZoomFactor(self, zoom):
         if zoom > 8:
