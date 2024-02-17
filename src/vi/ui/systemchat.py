@@ -17,12 +17,9 @@
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
 
-import datetime
-
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QDesktopServices
-from vi.states import States
 from vi.ui import Ui_SystemChat
 from vi.ui.chatentrywidget import ChatEntryWidget
 from .chatentrywidget import ChatEntryItem
@@ -100,11 +97,11 @@ class SystemChat(QtWidgets.QDialog):
                 entry.updateAvatar(avatar_data)
 
     def setSystemAlarm(self):
-        self.system.setStatus(States.ALARM, datetime.datetime.utcnow())
+        # self.system.setStatus(States.ALARM, datetime.datetime.utcnow())
         self.repaint_needed.emit()
 
     def setSystemClear(self):
-        self.system.setStatus(States.CLEAR, datetime.datetime.utcnow())
+        # self.system.setStatus(States.CLEAR, datetime.datetime.utcnow())
         self.repaint_needed.emit()
 
     def closeDialog(self):

@@ -21,8 +21,6 @@
 # Little lib and tool to get the map and information from dotlan		  #
 ###########################################################################
 
-import math
-import datetime
 import logging
 from os import path
 from bs4 import BeautifulSoup
@@ -53,21 +51,6 @@ class Map(object):
             if system.is_dirty:
                 return True
         return False
-
-    @property
-    def svg(self):
-        # Update the marker, the marker should be visible for 20s
-        for system in self.systems.values():
-            if system.is_dirty:
-                system.updateSVG()
-        if float(self.marker["opacity"]) > 0.0:
-            delta = datetime.datetime.utcnow().timestamp() - float(self.marker["activated"])
-            new_opacity = (1.0-delta/20.0)
-            if new_opacity < 0:
-                new_opacity = 0.0
-            self.marker["opacity"] = str(new_opacity)
-
-        return str(self.soup)
 
     @staticmethod
     def setIncursionSystems(incursions):
@@ -104,16 +87,9 @@ class Map(object):
         self.outdatedCacheError = None
         self._jumpMapsVisible = set_jump_maps_visible
         self._statisticsVisible = set_statistic_visible
+
         # Create soup from the svg
         self.soup = BeautifulSoup(svg_file, features="html.parser")
-        for scr in self.soup.findAll('script'):
-            scr.extract()
-        for scr in self.soup.select('#controls'):
-            scr.extract()
-
-        for tag in self.soup.findAll(attrs={"onload": True}):
-            del (tag["onload"])
-
         self.systems = self._extractSystemsFromSoup(self.soup, 1.0)
 
         self.systemsById = {}
@@ -123,13 +99,11 @@ class Map(object):
             self.systemsByName[system.name] = system
 
         self._extractSizeFromSoup(self.soup)
-        self._prepareSvg(self.soup)
         self.jumpBridges = []
-        self.marker = self.soup.select("#select_marker")[0]
+        self.marker = 0.0
 
         if set_jump_bridges:
             self.setJumpbridges(set_jump_bridges)
-
 
     @staticmethod
     def setCampaignsSystems(lst_system_ids):
@@ -212,20 +186,13 @@ class Map(object):
                     except KeyError:
                         map_coordinates[keyname] = 0
 
-                map_coordinates["center_x"] = (map_coordinates["x"] + 1.0+56.0/2.0)  # (mapCoordinates["width"] / 2.0))
+                map_coordinates["center_x"] = (map_coordinates["x"] + 1.0+56.0/2.0)
                 map_coordinates["center_y"] = (map_coordinates["y"] + (map_coordinates["height"] / 2.0))
                 try:
                     if symbol_id in uses.keys():
-                        if uses[symbol_id].find("transform"):
-                            transform = uses[symbol_id]["transform"]
-                        else:
-                            transform = None
                         system = ALL_SYSTEMS[system_id]
                         system.applySVG(
-                            svg_element=element,
-                            map_soup=self.soup,
-                            map_coordinates=map_coordinates,
-                            svg_transform=transform)
+                            map_coordinates=map_coordinates)
                         systems[name] = system
                     else:
                         logging.error("System {} not found.".format(name))
@@ -360,60 +327,16 @@ class Map(object):
 
     def render(self, painter):
         for system in self.systems.values():
+            system.updateSVG()
             system.renderBackground(painter, self.region_id)
+
         for system in self.systems.values():
             system.renderConnections(painter, self.region_id, self.systems)
+            system.renderJumpBridges(painter, self.region_id, self.systems)
+            system.renderWormHoles(painter, self.region_id, self.systems)
+
         for system in self.systems.values():
-            system.updateSVG()
             system.renderSystem(painter, self.region_id)
-
-    def _prepareSvg(self, soup):
-        svg = soup.select("svg")[0]
-        svg.attrs = {key: value for key, value in svg.attrs.items() if key not in ["style", "onmousedown", "viewbox"]}
-        if self.styles.getCommons()["change_lines"]:
-            for line in soup.select("line"):
-                line["class"] = "j"
-
-        # remove the box below the legend
-        auto_rc = svg.find("rect", {"class", "lbt"})
-        if auto_rc:
-            auto_rc.decompose()
-
-        # Current system marker ellipse
-        group = soup.new_tag("g", id="select_marker", opacity="1.0", activated="0", transform="translate(0, 0)")
-        ellipse = soup.new_tag("ellipse", cx="0", cy="0", rx="56", ry="28", style="fill:#462CFF")
-        group.append(ellipse)
-
-        self._prepareGradients(soup)
-
-        # The giant cross-hairs
-        for coord in ((0, -10000), (-10000, 0), (10000, 0), (0, 10000)):
-            line = soup.new_tag("line", x1=coord[0], y1=coord[1], x2="0", y2="0", style="stroke:#462CFF")
-            group.append(line)
-        svg.insert(0, group)
-
-        svg_map = svg.select("#map")
-
-        for defs in svg.select("defs"):
-            for tag in defs.select("a"):
-                tag.attrs = {key: value for key, value in tag.attrs.items() if key not in ["target", "xlink:href"]}
-                tag.name = "a"
-
-        for defs in svg.select("defs"):
-            for symbol in defs.select("symbol"):
-                if symbol:
-                    symbol.name = "g"
-                    svg_map.insert(0, symbol)
-        try:
-            jumps = soup.select("#jumps")[0]
-        except (Exception,):
-            jumps = list()
-
-        # Set up the tags for system statistics
-        for system in self.systemsById.values():
-            jumps.append(system.updateSVGText(soup))
-
-        self.updateStatisticsVisibility()
 
     @staticmethod
     def addSystemStatistics(statistics):
@@ -434,111 +357,28 @@ class Map(object):
             Adding the jumpbridges to the map soup; format of data:
             tuples with at least 3 values (sys1, connection, sys2) connection is <->
         """
-        # todo:disable jbs during init
-        self.jumpBridges = []
-        if jumpbridges_data is None:
-            self.jumpBridges = []
-            return
-        soup = self.soup
-        for bridge in soup.select(".jumpbridge"):
-            bridge.decompose()
 
-        for bridge in soup.select(".ansitext"):
-            bridge.decompose()
+        for system in ALL_SYSTEMS.values():
+            system.jumpBridges = set()
 
-        for ice_rect in soup.find_all("rect", {"class": "i"}):
-            ice_rect.decompose()
-
-        jumps = soup.select("#jumps")
-        if jumps is not None:
-            jumps = soup.select("#jumps")[0]
-        else:
-            return
-
-        color_count = 0
         for bridge in jumpbridges_data:
-            sys1 = bridge[0]
-            sys2 = bridge[2]
-            one_systems_on_map = sys1 in self.systems or sys2 in self.systems
-            both_systems_on_map = sys1 in self.systems and sys2 in self.systems
+            sys1 = ALL_SYSTEMS[Universe.systemIdByName(bridge[0])]
+            sys2 = ALL_SYSTEMS[Universe.systemIdByName(bridge[2])]
+            sys1.jumpBridges.add(sys2)
+            sys2.jumpBridges.add(sys1)
 
-            if not one_systems_on_map:
-                continue
+        self.updateJumpbridgesVisibility()
 
-            if color_count > len(JB_COLORS) - 1:
-                color_count = 0
-            jb_color = JB_COLORS[color_count]
-            color_count += 1
-            # Construct the line, color it and add it to the jumps
-            if both_systems_on_map:
-                system_one = self.systems[sys1]
-                system_two = self.systems[sys2]
-                self.jumpBridges.append([system_one.system_id, system_two.system_id])
-                system_one_coords = system_one.mapCoordinates
-                system_two_coords = system_two.mapCoordinates
-                system_one_offset_point = system_one.getTransformOffsetPoint()
-                system_two_offset_point = system_two.getTransformOffsetPoint()
+    def setTheraConnections(self, theraConnextions):
+        for system in ALL_SYSTEMS.values():
+            system.theraWormholes = set()
 
-                x1 = system_one_coords["center_x"] + system_one_offset_point[0]
-                y1 = system_one_coords["center_y"] + system_one_offset_point[1]
-                x2 = system_two_coords["center_x"] + system_two_offset_point[0]
-                y2 = system_two_coords["center_y"] + system_two_offset_point[1]
-                dx = (x2 - x1) / 2.0
-                dy = (y2 - y1) / 2.0
-                offset = 0.4 * math.sqrt(dx*dx+dy*dy)
-                angle = math.atan2(dy, dx) - math.pi / 2.0
-                mx = x1 + dx + offset * math.cos(angle)
-                my = y1 + dy + offset * math.sin(angle)
+        for bridge in theraConnextions:
+            sys1 = ALL_SYSTEMS[Universe.systemIdByName(bridge[0])]
+            sys2 = ALL_SYSTEMS[Universe.systemIdByName(bridge[2])]
+            sys1.jumpBridges.add(sys2)
+            sys2.jumpBridges.add(sys1)
 
-                line = soup.new_tag("path", d="M{} {} Q {} {} {} {}".format(x1, y1, mx, my, x2, y2),
-                                    visibility="hidden", fill="none", style="stroke:#{0}".format(jb_color))
-                line["stroke-width"] = str(2)
-                line["opacity"] = "0.8"
-            else:
-                system_one = self.systems[sys1] \
-                    if sys1 in self.systems else self.systems[sys2] if sys2 in self.systems else None
-
-                destination_name = sys2 if sys1 in self.systems else sys1
-                if system_one is None:
-                    continue
-                system_one_coords = system_one.mapCoordinates
-                system_two_coords = system_one.mapCoordinates
-
-                system_one_offset_point = system_one.getTransformOffsetPoint()
-                system_two_offset_point = system_one.getTransformOffsetPoint()
-
-                x1 = system_one_coords["center_x"] + system_one_offset_point[0]
-                y1 = system_one_coords["center_y"] + system_one_offset_point[1]
-                x2 = system_two_coords["center_x"] + system_two_offset_point[0] + 30
-                y2 = system_two_coords["center_y"] + system_two_offset_point[1] - 15
-                dx = (x2 - x1) / 2.0
-                dy = (y2 - y1) / 2.0
-                offset = 0.4 * math.sqrt(dx*dx+dy*dy)
-                angle = math.atan2(dy, dx) - math.pi / 2.0
-                mx = x1 + dx + offset * math.cos(angle)
-                my = y1 + dy + offset * math.sin(angle)
-                # jbColor = "80c080"
-                line = soup.new_tag("path", d="M{} {} Q {} {} {} {}".format(x1, y1, mx, my, x2, y2),
-                                    visibility="hidden", fill="none", text="", style="stroke:#{0}".format(jb_color))
-                line["stroke-width"] = "1"
-                line["opacity"] = "0.8"
-
-                text = soup.new_tag("text")
-                text["class"] = "ansitext"
-                text["x"] = "{}".format(0)
-                text["y"] = "{}".format(0)
-                text["fill"] = "#{0}".format(jb_color)
-                text.string = destination_name
-                text["text-anchor"] = "middle"
-                text["alignment-baseline"] = "ideographic"
-                text["fill-opacity"] = "0.8"
-                text["font-size"] = "6px"
-                text["transform"] = "translate({},{}) rotate(40)".format(x2, y2)
-                jumps.append(text)
-
-            line["class"] = "jumpbridge"
-
-            jumps.insert(0, line)
         self.updateJumpbridgesVisibility()
 
     def updateStatisticsVisibility(self):
@@ -551,11 +391,8 @@ class Map(object):
         return self._statisticsVisible
 
     def updateJumpbridgesVisibility(self):
-        value = "visible" if self._jumpMapsVisible else "hidden"
-        for line in self.soup.select(".jumpbridge"):
-            line["visibility"] = value
-        for text in self.soup.select(".ansitext"):
-            text["visibility"] = value
+        for system in self.systems.values():
+            system.is_jumpbridges_visible = self._jumpMapsVisible
 
     def changeJumpbridgesVisibility(self, selected: bool) -> bool:
         self._jumpMapsVisible = selected
@@ -569,7 +406,6 @@ class Map(object):
                 system.updateSVG()
         try:
             file_name = path.expanduser("~/projects/spyglass/src/vi/ui/res/mapdata_processed/{}.svg".format(self.region_name))
-
             with open(file_name, "wb") as svgFile:
                 svgFile.write(svg_data)
                 svgFile.close()

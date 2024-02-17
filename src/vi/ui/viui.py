@@ -75,7 +75,7 @@ from vi.system import ALL_SYSTEMS
 """
  Timer intervals
 """
-MAP_UPDATE_INTERVAL_MSEC = 500
+MAP_UPDATE_INTERVAL_MSEC = 250
 CLIPBOARD_CHECK_INTERVAL_MSEC = 125
 
 
@@ -324,14 +324,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         update_splash_window_info("Update player names")
 
-
         if self.invertWheel is None:
             self.invertWheel = False
         self.ui.actionInvertMouseWheel.triggered.connect(self.wheelDirChanged)
         self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
         self._addPlayerMenu()
         self.players_changed.connect(self._addPlayerMenu)
-
 
         # Set up user's intel rooms
         update_splash_window_info("Set up user's intel rooms")
@@ -619,9 +617,7 @@ class MainWindow(QtWidgets.QMainWindow):
             Returns: true if the mouse is above a system, else false
             """
             for system in self.systems_on_map.values():
-                val = system.mapCoordinates
-                rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
-                if rc.contains(pos):
+                if system.mapCoordinates.contains(pos):
                     if not QtWidgets.QToolTip.isVisible():
                         QtWidgets.QToolTip.showText(global_pos, system.getTooltipText(), self)
                     return True
@@ -631,12 +627,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def doubleClicked(pos: QPoint):
             for name, system in self.systems_on_map.items():
-                val = system.mapCoordinates
-                rc = QtCore.QRectF(val["x"],
-                                   val["y"],
-                                   val["width"],
-                                   val["height"])
-                if rc.contains(pos):
+                if system.mapCoordinates.contains(pos):
                     self.mapLinkClicked(QtCore.QUrl("map_link/{0}".format(name)))
                     break
         self.ui.mapView.doubleClicked = doubleClicked
@@ -1090,9 +1081,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if system_id in self.systemsById:
             selected_system = self.systemsById[system_id]
             view_center = self.ui.mapView.size() / 2
-            pt_system = QPointF(selected_system.mapCoordinates["center_x"]
+            pt_system = QPointF(selected_system.mapCoordinates.center().x()
                                 * self.ui.mapView.zoom-view_center.width(),
-                                selected_system.mapCoordinates["center_y"]
+                                selected_system.mapCoordinates.center().y()
                                 * self.ui.mapView.zoom-view_center.height())
             self.ui.mapView.setScrollPosition(pt_system)
 
@@ -1170,7 +1161,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 return svg
 
-    def prepareMaps(self, callback = None):
+    def prepareMaps(self, callback=None):
         return
         akt = 0
         total = len(Universe.REGIONS)
@@ -1535,10 +1526,12 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns:
             None:
         """
+        system_id = Universe.systemIdByName(system_name)
         for system in ALL_SYSTEMS.values():
             system.removeLocatedCharacter(char_name)
-
         logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
+        ALL_SYSTEMS[system_id].addLocatedCharacter(char_name)
+
         if system_name not in self.systems_on_map:
             if change_region:   # and char_name in self.monitoredPlayerNames:
                 try:
@@ -2007,9 +2000,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """returns the name of the system under the mouse pointer
         """
         for system in self.systems_on_map.values():
-            val = system.mapCoordinates
-            rc = QtCore.QRectF(val["x"], val["y"], val["width"], val["height"])
-            if rc.contains(pos):
+            if system.mapCoordinates.contains(pos):
                 return system
         return None
 

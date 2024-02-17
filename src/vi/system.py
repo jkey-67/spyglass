@@ -23,7 +23,6 @@
 
 import math
 import datetime
-import logging
 import json
 
 from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF
@@ -83,10 +82,10 @@ class System(object):
     ALARM_STYLE = "font-family: Arial, Helvetica, sans-serif; font-size: 7px; fill: {};"
 
     ALARM_BASE_T = 60  # set 1 for testing
-    ALARM_COLORS = [(ALARM_BASE_T * 5,  "#FF0000", "#FFFFFF"),
-                    (ALARM_BASE_T * 10, "#FF9B0F", "#FFFFFF"),
-                    (ALARM_BASE_T * 15, "#FFFA0F", "#000000"),
-                    (ALARM_BASE_T * 20, "#FFFDA2", "#000000"),
+    ALARM_COLORS = [(ALARM_BASE_T * 5,  "#d00000", "#FFFFFF"),
+                    (ALARM_BASE_T * 10, "#D09B0F", "#FFFFFF"),
+                    (ALARM_BASE_T * 15, "#D0FA0F", "#000000"),
+                    (ALARM_BASE_T * 20, "#D0FDA2", "#000000"),
                     (0,       "#FFFFFF", "#000000")]
 
     CLEAR_COLORS = [(ALARM_BASE_T * 5,  "#00FF00", "#000000"),
@@ -103,17 +102,19 @@ class System(object):
     ELEMENT_HEIGHT = 30
 
     def __init__(self, name, system_id, ticker="-?-"):
-        self.status = States.UNKNOWN
         self.name = name
         self.system_id = system_id
         self.region_id = Universe.regionIDFromSystemID(system_id)
         system_data = Universe.systemById(self.system_id)
         self.constellation_id = system_data["constellation_id"]
         self.ticker = ticker
-        self.messages = []
+        self._system_messages = []
+        self.jumpBridges = set()
+        self.theraWormholes = set()
         self.backgroundColor = self.UNKNOWN_COLOR
         self.center = QPointF()
         self.rect = QRectF(0.0, 0.0, 64.0, 32.0)
+        self.marker = 0.0
 
         self.is_statistics_visible = True
         self.is_jumpbridges_visible = True
@@ -126,18 +127,13 @@ class System(object):
         self.is_statistic_dirty = True
         self.is_located_char_dirty = False
 
-        self._svg_element = None
-        self._map_soup = None
+        self._status = None
         self._first_line = self.name
         self._second_line = ""
         self._second_line_flash = False
         self._last_alarm_timestamp = 0
         self._locatedCharacters = []
-        self._map_coordinates = None
-        self._transform = None
-        self._cachedOffsetPoint = None
         self._neighbours = None
-        self._currentStyle = ""
         self._hasCampaigns = False
         self._hasIncursion = False
         self._hasIceBelt = False
@@ -146,7 +142,45 @@ class System(object):
         self._hasThera = False
         self._svg_text_string = "stats n/a"
         self._alarm_seconds = 0
+
+    @property
+    def status(self):
+        """
+        Laze evaluated status for the system, background and second line flash is adjusted.
+        Returns:
+            The status of the system States.UNKNOWN, States.ALARM or States.CLEAR
+        """
+        if self._status is None:
+            if len(self._system_messages):
+                msg = self._system_messages[-1]
+                self._last_alarm_timestamp = msg.timestamp.timestamp()
+                self._status = msg.status
+            else:
+                self._status = States.UNKNOWN
+            if self._status == States.ALARM:
+                self.setBackgroundColor(self.ALARM_COLOR)
+            elif self._status == States.CLEAR:
+                self.setBackgroundColor(self.CLEAR_COLOR)
+            elif self._status == States.UNKNOWN:
+                self.setBackgroundColor(self.UNKNOWN_COLOR)
+                self._second_line_flash = False
+
+        return self._status
+
     def renderConnections(self, painter: QPainter, current_region_id, systems):
+        """
+        Renders the connections in between the systems
+        Args:
+            painter:
+                QPainter to use
+            current_region_id:
+                id of current region
+            systems: dict of all systems, key is system name
+
+        Returns:
+            None
+
+        """
         painter.setPen(QColor("#ffc0c0c0"))
         for system in self.neighbours:
             if system.name in systems.keys():
@@ -160,8 +194,104 @@ class System(object):
                 painter.drawLine(QLineF(self.center, system.center))
                 painter.setPen(Qt.NoPen)
 
+    def renderWormHoles(self, painter: QPainter, current_region_id, systems):
+        if not self.is_jumpbridges_visible:
+            return
+        for system in self.theraWormholes:
+            if system.name in systems.keys():
+                if self.region_id == current_region_id:
+                    if self.constellation_id == system.constellation_id:
+                        painter.setPen(QColor("#40ffd700"))
+                    else:
+                        painter.setPen(QColor("#40ffd700"))
+                else:
+                    painter.setPen(QColor("#40ffd700"))
+                if self.name < system.name:
+                    pos_a = self.rect.center()
+                    pos_b = system.rect.center()
+                else:
+                    pos_b = self.rect.center()
+                    pos_a = system.rect.center()
+
+                dx = (pos_b.x() - pos_a.x())/2.0
+                dy = (pos_b.y() - pos_a.y())/2.0
+                offset = 0.4 * math.sqrt(dx*dx+dy*dy)
+                angle = math.atan2(dy, dx) - math.pi / 2.0
+                pos_m = QPointF(pos_a.x() + dx + offset * math.cos(angle), pos_a.y() + dy + offset * math.sin(angle))
+                path = QPainterPath()
+                path.moveTo(pos_a)
+                path.cubicTo(pos_m, pos_b, pos_b)
+                painter.drawPath(path)
+            else:
+                painter.setPen(QColor("#80ffd700"))
+                pos_a = self.rect.center()
+                pos_b = self.rect.center()+QPointF(20, -20)
+                dx = (pos_b.x() - pos_a.x())/2.0
+                dy = (pos_b.y() - pos_a.y())/2.0
+                offset = 0.4 * math.sqrt(dx*dx+dy*dy)
+                angle = math.atan2(dy, dx) - math.pi / 2.0
+                pos_m = QPointF(pos_a.x() + dx + offset * math.cos(angle), pos_a.y() + dy + offset * math.sin(angle))
+                path = QPainterPath()
+                path.moveTo(pos_a)
+                path.cubicTo(pos_m, pos_b, pos_b)
+                painter.drawPath(path)
+                old_translate = painter.transform().__copy__()
+                painter.translate(pos_b.x(), pos_b.y())
+                painter.rotate(+30)
+                painter.setFont(QFont("Arial", self.ELEMENT_HEIGHT / 8 * 1.5))
+                painter.drawText(QRectF(-30.0, -10.0, 60.0, 10.0), Qt.AlignCenter, system.name)
+                painter.setTransform(old_translate)
+
+    def renderJumpBridges(self, painter: QPainter, current_region_id, systems):
+        if not self.is_jumpbridges_visible:
+            return
+        for system in self.jumpBridges:
+            if system.name in systems.keys():
+                if self.region_id == current_region_id:
+                    if self.constellation_id == system.constellation_id:
+                        painter.setPen(QColor("#407cfc00"))
+                    else:
+                        painter.setPen(QColor("#407cfc00"))
+                else:
+                    painter.setPen(QColor("#407cfc00"))
+                if self.name < system.name:
+                    pos_a = self.rect.center()
+                    pos_b = system.rect.center()
+                else:
+                    pos_b = self.rect.center()
+                    pos_a = system.rect.center()
+
+                dx = (pos_b.x() - pos_a.x())/2.0
+                dy = (pos_b.y() - pos_a.y())/2.0
+                offset = 0.4 * math.sqrt(dx*dx+dy*dy)
+                angle = math.atan2(dy, dx) - math.pi / 2.0
+                pos_m = QPointF(pos_a.x() + dx + offset * math.cos(angle), pos_a.y() + dy + offset * math.sin(angle))
+                path = QPainterPath()
+                path.moveTo(pos_a)
+                path.cubicTo(pos_m, pos_b, pos_b)
+                painter.drawPath(path)
+            else:
+                painter.setPen(QColor("#807cfc00"))
+                pos_a = self.rect.center()
+                pos_b = self.rect.center()+QPointF(20, -20)
+                dx = (pos_b.x() - pos_a.x())/2.0
+                dy = (pos_b.y() - pos_a.y())/2.0
+                offset = 0.4 * math.sqrt(dx*dx+dy*dy)
+                angle = math.atan2(dy, dx) - math.pi / 2.0
+                pos_m = QPointF(pos_a.x() + dx + offset * math.cos(angle), pos_a.y() + dy + offset * math.sin(angle))
+                path = QPainterPath()
+                path.moveTo(pos_a)
+                path.cubicTo(pos_m, pos_b, pos_b)
+                painter.drawPath(path)
+                old_translate = painter.transform().__copy__()
+                painter.translate(pos_b.x(), pos_b.y())
+                painter.rotate(+30)
+                painter.setFont(QFont("Arial", self.ELEMENT_HEIGHT / 8 * 1.5))
+                painter.drawText(QRectF(-30.0, -10.0, 60.0, 10.0), Qt.AlignCenter, system.name)
+                painter.setTransform(old_translate)
+
     def renderBackground(self, painter: QPainter, current_region_id):
-        rc_out_back = self.rect.__copy__().marginsAdded(QMargins(20,20,20,20))
+        rc_out_back = self.rect.__copy__().marginsAdded(QMargins(20, 20, 20, 20))
         delta_h = self.ELEMENT_HEIGHT / 2
         delta_w = self.ELEMENT_WIDTH / 2
         if self._hasIncursion:
@@ -187,7 +317,7 @@ class System(object):
             gradient.setColorAt(0.6, QColor("#00ff0000"))
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
-            path.addRoundedRect(rc_out_back.x(),rc_out_back.y(),rc_out_back.width(),rc_out_back.height(), delta_h, delta_h)
+            path.addRoundedRect(rc_out_back.x(), rc_out_back.y(), rc_out_back.width(), rc_out_back.height(), delta_h, delta_h)
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
@@ -206,6 +336,21 @@ class System(object):
             painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
 
+        if self.marker > datetime.datetime.utcnow().timestamp():
+            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
+            marker_color = QColor("#6495ed")
+            marker_color.setAlphaF((self.marker-datetime.datetime.utcnow().timestamp())/10.0)
+
+            gradient.setColorAt(0.0, marker_color)
+            gradient.setColorAt(0.6, QColor("#006495ed"))
+            painter.setPen(Qt.NoPen)
+            path = QPainterPath()
+            path.addEllipse(rc_out_back.x(), rc_out_back.y(), rc_out_back.width(), rc_out_back.height())
+            gradient.setCenter(rc_out_back.center().x(), rc_out_back.center().y())
+            painter.fillPath(path, QBrush(gradient))
+            painter.drawPath(path)
+            painter.setBrush(Qt.NoBrush)
+
     def renderSystem(self, painter: QPainter, current_region_id):
         """
         Renders the system to a painter
@@ -217,11 +362,10 @@ class System(object):
 
         """
         delta_h = self.ELEMENT_HEIGHT / 8
-        rc_out = self.rect.__copy__().marginsAdded(QMargins(-2,-2,-2,-2))
+        rc_out = self.rect.__copy__().marginsAdded(QMargins(-2, -2, -2, -2))
         painter.setBrush(QBrush(self.backgroundColor))
-        painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
         if self.region_id == current_region_id:
-            painter.setPen(QPen(QColor("#FFFFFFFF")))
+            painter.setPen(QPen(QColor("#FFc0c0c0")))
             path = QPainterPath()
             path.addRoundedRect(rc_out, 12, 12)
             painter.fillPath(path, QBrush(self.UNKNOWN_COLOR))
@@ -229,7 +373,7 @@ class System(object):
         else:
             painter.setPen(QPen(QColor("#c71585")))
             painter.drawRect(rc_out)
-        painter.setPen(QPen(QColor("#FFFFFF")))
+        painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
         painter.setFont(QFont("Arial", delta_h*2))
         painter.drawText(rc_out, Qt.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
 
@@ -243,62 +387,36 @@ class System(object):
             painter.setBrush(Qt.NoBrush)
 
     @property
-    def mapCoordinates(self):
-        return self._map_coordinates
+    def mapCoordinates(self) -> QRectF:
+        return self.rect
 
     @property
     def is_dirty(self):
         return self.is_mark_dirty or self.is_background_dirty or self.is_incursion_dirty or self.is_status_dirty \
             or self.is_campaign_dirty or self.is_statistic_dirty or self.is_located_char_dirty or self._second_line_flash
 
-    def applySVG(self, svg_element, map_soup, map_coordinates, svg_transform=None):
-        self._svg_element = svg_element
-        self._map_soup = map_soup
-        self._map_coordinates = map_coordinates
-        self._transform = "translate(0, 0)" if svg_transform is None else svg_transform
-        self.center = QPointF(map_coordinates["center_x"], map_coordinates["center_y"])
-        self.rect = QRectF(map_coordinates["x"],
-                           map_coordinates["y"],
+    def applySVG(self, map_coordinates):
+        """
+        Gathers the working rectangle from the
+        Args:
+            map_coordinates:
+
+        Returns:
+
+        """
+        self.rect = QRectF(map_coordinates["x"]*1.2,
+                           map_coordinates["y"]*1.2,
                            map_coordinates["width"],
                            map_coordinates["height"])
-        self.rect.setWidth(self.ELEMENT_WIDTH)
-        self.rect.setHeight(self.ELEMENT_HEIGHT)
-
-    def getTransformOffsetPoint(self):
-        if not self._cachedOffsetPoint:
-            if self._transform:
-                # Convert data in the form 'transform(0,0)' to a list of two floats
-                point_string = self._transform[9:].strip('()').split(',')
-                self._cachedOffsetPoint = [float(point_string[0]), float(point_string[1])]
-            else:
-                self._cachedOffsetPoint = [0.0, 0.0]
-        return self._cachedOffsetPoint
+        self.center = self.rect.center()
 
     def mark(self):
         self.is_mark_dirty = True
-        marker = self._map_soup.select("#select_marker")[0]
-        offset_point = self.getTransformOffsetPoint()
-        x = self._map_coordinates["center_x"] + offset_point[0]
-        y = self._map_coordinates["center_y"] + offset_point[1]
-        marker["transform"] = "translate({x},{y})".format(x=x, y=y)
-        marker["opacity"] = "1.0"
-        marker["activated"] = datetime.datetime.utcnow().timestamp()
+        self.marker = datetime.datetime.utcnow().timestamp() + 10.0
 
     def addLocatedCharacter(self, char_name):
-        id_name = self.name + u"_loc"
-        was_located = bool(self._locatedCharacters)
         if char_name not in self._locatedCharacters:
             self._locatedCharacters.append(char_name)
-
-        if self._map_soup:
-            if not was_located:
-                coordinates = self._map_coordinates
-                new_tag = self._map_soup.new_tag(
-                    "rect", x=coordinates["x"]-10, y=coordinates["y"]-8,
-                    width=coordinates["width"]+16, height=coordinates["height"]+16, id=id_name,
-                    rx=12, ry=12, fill="url(#grad_located)")
-                jumps = self._map_soup.select("#jumps")[0]
-                jumps.insert(0, new_tag)
 
     def setCampaigns(self, campaigns: bool):
         self.is_campaign_dirty = True
@@ -320,19 +438,9 @@ class System(object):
             characters.append(char)
         return characters
 
-    def removeLocatedCharacter(self, charname):
-        id_name = self.name + u"_loc"
-        if charname in self._locatedCharacters:
-            self._locatedCharacters.remove(charname)
-            if not self._locatedCharacters:
-                try:
-                    elem = self._map_soup.find(id=id_name)
-                    if elem is not None:
-                        logging.debug("removeLocatedCharacter {0} Decompose {1}".format(charname, str(elem)))
-                        elem.decompose()
-                except Exception as e:
-                    logging.critical("Error in removeLocatedCharacter  {0}".format(str(e)))
-                    pass
+    def removeLocatedCharacter(self, char_name):
+        if char_name in self._locatedCharacters:
+            self._locatedCharacters.remove(char_name)
 
     @property
     def neighbours(self):
@@ -374,21 +482,28 @@ class System(object):
                 systems[newSystem] = {"distance": current_distance}
         return systems
 
-    def setStatus(self, new_status, alarm_time=datetime.datetime.utcnow()):
-        self.is_status_dirty = True
-        if new_status not in (States.NOT_CHANGE, States.REQUEST):  # unknown not affect system status
-            self.status = new_status
-        if self.status == States.ALARM:
-            self._last_alarm_timestamp = alarm_time.timestamp()
-            self.setBackgroundColor(self.ALARM_COLOR)
-        elif self.status == States.CLEAR:
-            self._last_alarm_timestamp = alarm_time.timestamp()
-            self.setBackgroundColor(self.CLEAR_COLOR)
-        elif self.status == States.UNKNOWN:
-            self.setBackgroundColor(self.UNKNOWN_COLOR)
-            self._second_line_flash = False
+    def setStatus(self, message) -> None:
+        """
+        Appends a new message to the system
+        Args:
+            message:
 
-    def setStatistics(self, statistics):
+        Returns:
+            None
+        """
+        self._system_messages.append(message)
+        self._status = None
+        self.is_status_dirty = True
+
+    def setStatistics(self, statistics : dict) -> None:
+        """
+        Sets the statistic information as dict, jumps, factionkills, shipkills and podkills will be used as keys
+        Args:
+            statistics:
+
+        Returns:
+
+        """
         self.is_statistic_dirty = True
         if statistics is None:
             self._svg_text_string = "stats n/a"
@@ -397,10 +512,6 @@ class System(object):
 
     def updateSVG(self):
         last_cycle = True
-        if self._currentStyle is not self.styles.currentStyle:
-            self._currentStyle = self.styles.currentStyle
-            self.updateStyle()
-
         alarm_time = datetime.datetime.utcnow().timestamp() - self._last_alarm_timestamp
         if self.status == States.ALARM:
             for maxDiff, alarmColour, lineColour in self.ALARM_COLORS:
@@ -418,7 +529,6 @@ class System(object):
         if self.status in (States.ALARM, States.CLEAR):
             if last_cycle:
                 self._second_line_flash = False
-                self.status = States.UNKNOWN
                 self.backgroundColor = self.UNKNOWN_COLOR
 
             minutes = int(math.floor(alarm_time / 60))
@@ -433,10 +543,6 @@ class System(object):
         else:
             self._second_line =self.ticker
 
-    def _apply_line_colour_to_svg(self):
-        if self._svg_element:
-            line_colour = self.textInv.getTextColourFromBackground(self.backgroundColor)
-
     def updateStyle(self):
         for i in range(5):
             self.ALARM_COLORS[i] = (self.ALARM_COLORS[i][0], self.styles.getCommons()["alarm_colours"][i],
@@ -445,12 +551,6 @@ class System(object):
         self.UNKNOWN_COLOR = self.styles.getCommons()["unknown_colour"]
         self.CLEAR_COLOR = self.styles.getCommons()["clear_colour"]
         self.setBackgroundColor(self.UNKNOWN_COLOR)
-        self.status = States.UNKNOWN
-
-        if self._svg_element:
-            line_colour = self.textInv.getTextColourFromBackground(self.backgroundColor)
-
-
 
     def getTooltipText(self):
         format_src = '''<span style=" font-weight:600; color:#e5a50a;">{system}</span>''' \
@@ -494,28 +594,18 @@ class System(object):
             zkillinfo=""
         )
 
-        for msg in self.messages:
+        for msg in self._system_messages:
             res = res + "<br/>" + msg.guiText
         return res
 
     def clearIntel(self):
-        self.messages.clear()
-        self.setStatus(States.UNKNOWN)
+        self._system_messages.clear()
+        self._status = None
 
     def pruneMessage(self, message):
-        if message in self.messages:
-            self.messages.remove(message)
-
-    def updateSVGText(self, soup) -> str:
-        coordinates = self._map_coordinates
-        style = "text-anchor:middle;font-size:7;font-weight:normal;font-family:Arial;"
-        self._svg_text = soup.new_tag("text", x=coordinates["center_x"], y=coordinates["y"] + coordinates["height"] + 2,
-                                      fill="blue", style=style, visibility="hidden", transform=self._transform)
-        self._svg_text["id"] = "stats_" + str(self.system_id)
-        self._svg_text["class"] = "statistics"
-        self._svg_text.string = self._svg_text_string
-        return self._svg_text
-
+        if message in self._system_messages:
+            self._system_messages.remove(message)
+            self._status = None
 
 def _InitAllSystemsA():
     for system_id, sys in Universe.SYSTEMS.items():

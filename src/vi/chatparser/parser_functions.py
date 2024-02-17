@@ -370,8 +370,6 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
     message.original_text = original_text
 
     for system in message.affectedSystems:
-        system.messages.append(message)
-        system.setStatus(message.status, message.timestamp)
+        system.setStatus(message=message)
 
     return message
-

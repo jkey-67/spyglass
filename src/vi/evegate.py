@@ -1345,6 +1345,9 @@ def getAllJumpGates(name_char: str, system_name_src="", system_name_dst="",
         if callback and not callback(len(structs["structure"]), process):
             return gates
         for id_structure in structs["structure"]:
+            process = process + 1
+            if callback and not callback(len(structs["structure"]), process):
+                break
             if id_structure in processed:
                 continue
             json_src = esiUniverseStructure(
@@ -1402,10 +1405,7 @@ def getAllJumpGates(name_char: str, system_name_src="", system_name_dst="",
                 gates.append(
                     JumpBridge(name=json_dst["name"], system_id=json_dst["solar_system_id"],
                                structure_id=structure["structure"][cnt_structures - 1], owner_id=json_dst["owner_id"]))
-
             process = process + 1
-            if callback and not callback(len(structs["structure"]), process):
-                break
 
     countCheckGates(gates)
     return gates
@@ -1560,7 +1560,7 @@ def esiUniverseGetAllRegions(use_outdated=False) -> Optional[set]:
             return None
 
 
-def esiUniverseConstellations(constellation_id: int, use_outdated=False,lang="en"):
+def esiUniverseConstellations(constellation_id: int, use_outdated=False, lang="en"):
     cache_key = "_".join(("universe", "constellations", str(constellation_id), lang))
     cache = Cache()
     cached_id = cache.getFromCache(cache_key, use_outdated)
@@ -2047,7 +2047,7 @@ def dumpSpyglassDownloadStats():
 
 
 def genereate_universe_constellation_names(use_outdated=True):
-    systems = esiUniverseAllSystems()
+    esiUniverseAllSystems()
     with open("universe/constellationnames.py", "w", encoding="utf-8")as out_file:
         print("Constellation generation started ...")
         out_file.write('# this file is auto generated, do not edit.\n')

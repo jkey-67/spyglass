@@ -96,6 +96,8 @@ class TextInverter:
     def getTextColourFromBackground(colour):
         if colour[0] == '#':
             colour = colour[1:]
+        if len(colour) == 8:
+            colour = colour[2:]
         red = int(colour[0:2], 16)
         green = int(colour[2:4], 16)
         blue = int(colour[4:6], 16)
@@ -105,7 +107,7 @@ class TextInverter:
         if perc < 0.5:
             return "#000000"
         else:
-            return "#FFFFFF"
+            return "#c0c0c0"
 
 
 if __name__ == "__main__":

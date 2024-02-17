@@ -163,7 +163,8 @@ class Universe(object):
     def regionIDFromSystemID(system_id):
         if system_id in Universe.SYSTEMS:
             constellation_id = Universe.SYSTEMS[system_id]["constellation_id"]
-            return next((sys["region_id"] for sys in Universe.CONSTELLATIONS if sys["constellation_id"] == constellation_id), None)
+            return next((sys["region_id"] for sys in Universe.CONSTELLATIONS \
+                         if sys["constellation_id"] == constellation_id), None)
         else:
             return None
 
