@@ -364,6 +364,7 @@ class Map(object):
         for system in self.systems.values():
             system.renderConnections(painter, self.region_id, self.systems)
         for system in self.systems.values():
+            system.updateSVG()
             system.renderSystem(painter, self.region_id)
 
     def _prepareSvg(self, soup):
@@ -541,10 +542,8 @@ class Map(object):
         self.updateJumpbridgesVisibility()
 
     def updateStatisticsVisibility(self):
-        value = "visible" if self._statisticsVisible else "hidden"
-        for line in self.soup.select(".statistics"):
-            line["visibility"] = value
-            line["fill"] = "red"
+        for system in self.systems.values():
+            system.is_statistics_visible = self._statisticsVisible
 
     def changeStatisticsVisibility(self, selected: bool) -> bool:
         self._statisticsVisible = selected

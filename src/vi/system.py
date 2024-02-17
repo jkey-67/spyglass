@@ -99,6 +99,9 @@ class System(object):
     UNKNOWN_COLOR = styles.getCommons()["unknown_colour"]
     CLEAR_COLOR = CLEAR_COLORS[0][1]
 
+    ELEMENT_WIDTH = 62.5
+    ELEMENT_HEIGHT = 30
+
     def __init__(self, name, system_id, ticker="-?-"):
         self.status = States.UNKNOWN
         self.name = name
@@ -112,6 +115,9 @@ class System(object):
         self.center = QPointF()
         self.rect = QRectF(0.0, 0.0, 64.0, 32.0)
 
+        self.is_statistics_visible = True
+        self.is_jumpbridges_visible = True
+
         self.is_mark_dirty = False
         self.is_background_dirty = True
         self.is_incursion_dirty = True
@@ -119,11 +125,11 @@ class System(object):
         self.is_campaign_dirty = True
         self.is_statistic_dirty = True
         self.is_located_char_dirty = False
+
         self._svg_element = None
         self._map_soup = None
-        self._rect = None
-        self._first_line = None
-        self._second_line = None
+        self._first_line = self.name
+        self._second_line = ""
         self._second_line_flash = False
         self._last_alarm_timestamp = 0
         self._locatedCharacters = []
@@ -134,17 +140,12 @@ class System(object):
         self._currentStyle = ""
         self._hasCampaigns = False
         self._hasIncursion = False
-        self._hasIcebelt = False
+        self._hasIceBelt = False
         self._isStaging = False
         self._hasIncursionBoss = False
         self._hasThera = False
-        self._svg_text = None
         self._svg_text_string = "stats n/a"
-
-
-    def fillEllipse(self, painter: QPainter, rect):
-        pass
-
+        self._alarm_seconds = 0
     def renderConnections(self, painter: QPainter, current_region_id, systems):
         painter.setPen(QColor("#ffc0c0c0"))
         for system in self.neighbours:
@@ -161,9 +162,10 @@ class System(object):
 
     def renderBackground(self, painter: QPainter, current_region_id):
         rc_out_back = self.rect.__copy__().marginsAdded(QMargins(20,20,20,20))
-
+        delta_h = self.ELEMENT_HEIGHT / 2
+        delta_w = self.ELEMENT_WIDTH / 2
         if self._hasIncursion:
-            gradient = QRadialGradient(self.rect.center(), 60)
+            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30ffd700"))
             if self._hasIncursionBoss:
                 gradient.setColorAt(0.5, QColor("#10ff4500"))
@@ -172,38 +174,37 @@ class System(object):
                 gradient.setColorAt(0.6, QColor("#00ffd700"))
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
-            path.addRoundedRect(rc_out_back.x(),rc_out_back.y(),rc_out_back.width(),rc_out_back.height(), 18, 18)
-            for i in range(-30,30,5):
+            path.addRoundedRect(rc_out_back.x(), rc_out_back.y(), rc_out_back.width(), rc_out_back.height(), delta_h, delta_h)
+
+            for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)
-            painter.setBrush(QBrush())
+            painter.setBrush(Qt.NoBrush)
         if self._hasCampaigns:
-            gradient = QRadialGradient(self.rect.center(),60)
+            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30ff0000"))
             gradient.setColorAt(0.6, QColor("#00ff0000"))
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
-            path.addRoundedRect(rc_out_back.x(),rc_out_back.y(),rc_out_back.width(),rc_out_back.height(), 16, 16)
-            for i in range(-30,30,5):
+            path.addRoundedRect(rc_out_back.x(),rc_out_back.y(),rc_out_back.width(),rc_out_back.height(), delta_h, delta_h)
+            for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
-            painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)
-            painter.setBrush(QBrush())
+            painter.setBrush(Qt.NoBrush)
         if bool(self._locatedCharacters):
-            gradient = QRadialGradient(self.rect.center(),60)
+            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30800080"))
             gradient.setColorAt(0.6, QColor("#00800080"))
-            painter.setPen(QPen(QColor()))
+            painter.setPen(Qt.NoPen)
             path = QPainterPath()
-            path.addRoundedRect(rc_out_back.x(),rc_out_back.y(),rc_out_back.width(),rc_out_back.height(), 16, 16)
-            for i in range(-30,30,5):
+            path.addRoundedRect(rc_out_back.x(), rc_out_back.y(), rc_out_back.width(), rc_out_back.height(), delta_h, delta_h)
+            for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
-            painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)
-            painter.setBrush(QBrush())
+            painter.setBrush(Qt.NoBrush)
 
     def renderSystem(self, painter: QPainter, current_region_id):
         """
@@ -215,8 +216,10 @@ class System(object):
         Returns:
 
         """
-        rc_out = self.rect.__copy__()
-        painter.setBrush(QBrush(self.UNKNOWN_COLOR))
+        delta_h = self.ELEMENT_HEIGHT / 8
+        rc_out = self.rect.__copy__().marginsAdded(QMargins(-2,-2,-2,-2))
+        painter.setBrush(QBrush(self.backgroundColor))
+        painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
         if self.region_id == current_region_id:
             painter.setPen(QPen(QColor("#FFFFFFFF")))
             path = QPainterPath()
@@ -227,15 +230,17 @@ class System(object):
             painter.setPen(QPen(QColor("#c71585")))
             painter.drawRect(rc_out)
         painter.setPen(QPen(QColor("#FFFFFF")))
-        painter.setFont(QFont("Arial", 8.0))
-        painter.drawText(rc_out, Qt.AlignCenter,  "{}\n{}".format(self.name, self.ticker))
-        rc_out.translate(0.0, 32.0)
-        rc_out.setHeight(10.0)
+        painter.setFont(QFont("Arial", delta_h*2))
+        painter.drawText(rc_out, Qt.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
 
-        painter.setFont(QFont("Arial", 6.0))
-        painter.setPen(QPen(QColor("#80FF0000")))
-        painter.drawText(rc_out, Qt.AlignCenter, self._svg_text_string)
-        painter.setBrush(Qt.NoBrush)
+        if self.is_statistics_visible:
+            rc_out.translate(0.0, rc_out.height())
+            rc_out.setHeight(delta_h*2)
+
+            painter.setFont(QFont("Arial", delta_h*1.5))
+            painter.setPen(QPen(QColor("#80FF0000")))
+            painter.drawText(rc_out, Qt.AlignCenter, self._svg_text_string)
+            painter.setBrush(Qt.NoBrush)
 
     @property
     def mapCoordinates(self):
@@ -244,21 +249,20 @@ class System(object):
     @property
     def is_dirty(self):
         return self.is_mark_dirty or self.is_background_dirty or self.is_incursion_dirty or self.is_status_dirty \
-            or self.is_campaign_dirty or self.is_statistic_dirty or self.is_located_char_dirty
+            or self.is_campaign_dirty or self.is_statistic_dirty or self.is_located_char_dirty or self._second_line_flash
 
     def applySVG(self, svg_element, map_soup, map_coordinates, svg_transform=None):
         self._svg_element = svg_element
         self._map_soup = map_soup
         self._map_coordinates = map_coordinates
-        self._rect = svg_element.select("rect")[0]
-        self._first_line = svg_element.select("text")[0]
-        self._second_line = svg_element.select("text")[1]
         self._transform = "translate(0, 0)" if svg_transform is None else svg_transform
         self.center = QPointF(map_coordinates["center_x"], map_coordinates["center_y"])
         self.rect = QRectF(map_coordinates["x"],
                            map_coordinates["y"],
                            map_coordinates["width"],
                            map_coordinates["height"])
+        self.rect.setWidth(self.ELEMENT_WIDTH)
+        self.rect.setHeight(self.ELEMENT_HEIGHT)
 
     def getTransformOffsetPoint(self):
         if not self._cachedOffsetPoint:
@@ -300,59 +304,15 @@ class System(object):
         self.is_campaign_dirty = True
         self._hasCampaigns = campaigns
 
-    def _setCampaigns(self):
-        if self._map_soup and self.is_campaign_dirty:
-            id_name = self.name + u"_campaigns"
-            if self._hasCampaigns:
-                camp_node = self._map_soup.find(id=id_name)
-                if camp_node is None:
-                    coordinates = self._map_coordinates
-                    new_tag = self._map_soup.new_tag(
-                        "rect", x=coordinates["x"]-10, y=coordinates["y"]-8,
-                        width=coordinates["width"]+16, height=coordinates["height"]+16, id=id_name,
-                        rx=12, ry=12, fill="url(#camActiveBg)")
-                    jumps = self._map_soup.select("#jumps")[0]
-                    jumps.insert(0, new_tag)
-            else:
-                camp_node = self._map_soup.find(id=id_name)
-                if camp_node:
-                    camp_node.decompose()
-            self.is_campaign_dirty = False
-
     def setIncursion(self, has_incursion: bool = False, is_staging: bool = False, has_boss: bool = False):
         self.is_incursion_dirty = True
         self._hasIncursion = has_incursion
         self._isStaging = is_staging
         self._hasIncursionBoss = has_boss
 
-    def _setIncursion(self):
-        if self._map_soup and self.is_incursion_dirty:
-            id_name = self.name + u"_incursion"
-            if self._hasIncursion:
-                curr_node = self._map_soup.find(id=id_name)
-                if curr_node is None:
-                    coords = self._map_coordinates
-                    new_tag = self._map_soup.new_tag("rect", x=coords["x"] - 10, y=coords["y"] - 8, width=coords["width"] + 16,
-                                                     height=coords["height"]+16, id=id_name, rx=12, ry=12,
-                                                     fill="url(#incStBg)" if self._hasIncursionBoss else "url(#incBg)")
-                    jumps = self._map_soup.select("#jumps")[0]
-                    jumps.insert(0, new_tag)
-            else:
-                camp_node = self._map_soup.find(id=id_name)
-                if camp_node:
-                    camp_node.decompose()
-        self.is_incursion_dirty = False
-
     def setBackgroundColor(self, color):
         self.is_background_dirty = True
         self.backgroundColor = color
-
-    def _setBackgroundColor(self):
-        if self._svg_element and self.is_background_dirty:
-            for rect in self._svg_element("rect"):
-                if "location" not in rect.get("class", []) and "marked" not in rect.get("class", []):
-                    rect["style"] = "fill: {0};".format(self.backgroundColor)
-            self.is_background_dirty = False
 
     def getLocatedCharacters(self):
         characters = []
@@ -427,29 +387,6 @@ class System(object):
         elif self.status == States.UNKNOWN:
             self.setBackgroundColor(self.UNKNOWN_COLOR)
             self._second_line_flash = False
-        self._setStatus()
-
-    def _setStatus(self):
-        if self._second_line and self.is_status_dirty:
-            if self.status == States.ALARM:
-                if "stopwatch" not in self._second_line["class"]:
-                    self._second_line["class"].append("stopwatch")
-                self._first_line["style"] = self.SYSTEM_STYLE.format(
-                    self.textInv.getTextColourFromBackground(self.backgroundColor))
-                self._second_line["style"] = self.ALARM_STYLE.format(
-                    self.textInv.getTextColourFromBackground(self.backgroundColor))
-            elif self.status == States.CLEAR:
-                if "stopwatch" not in self._second_line["class"]:
-                    self._second_line["class"].append("stopwatch")
-                self._first_line["style"] = self.SYSTEM_STYLE.format(
-                    self.textInv.getTextColourFromBackground(self.backgroundColor))
-                self._second_line["style"] = self.ALARM_STYLE.format(
-                    self.textInv.getTextColourFromBackground(self.backgroundColor))
-            elif self.status == States.UNKNOWN:
-                self._first_line["style"] = self.SYSTEM_STYLE.format(
-                    self.textInv.getTextColourFromBackground(self.backgroundColor))
-                self._second_line["style"] = self.ALARM_STYLE.format(
-                    self.textInv.getTextColourFromBackground(self.backgroundColor))
 
     def setStatistics(self, statistics):
         self.is_statistic_dirty = True
@@ -458,71 +395,47 @@ class System(object):
         else:
             self._svg_text_string = "j-{jumps} f-{factionkills} s-{shipkills} p-{podkills}".format(**statistics)
 
-    def _setStatistics(self):
-        if self._svg_text and self.is_statistic_dirty:
-            self._svg_text.string = self._svg_text_string
-            self.is_statistic_dirty = False
-
     def updateSVG(self):
-        if self._svg_element:
-            self._setBackgroundColor()
-            self._setStatus()
-            self._setIncursion()
-            self._setCampaigns()
-            self._setStatistics()
+        last_cycle = True
+        if self._currentStyle is not self.styles.currentStyle:
+            self._currentStyle = self.styles.currentStyle
+            self.updateStyle()
 
-            last_cycle = True
-            if self._currentStyle is not self.styles.currentStyle:
-                self._currentStyle = self.styles.currentStyle
-                self.updateStyle()
+        alarm_time = datetime.datetime.utcnow().timestamp() - self._last_alarm_timestamp
+        if self.status == States.ALARM:
+            for maxDiff, alarmColour, lineColour in self.ALARM_COLORS:
+                if alarm_time < maxDiff:
+                    self.backgroundColor = alarmColour
+                    last_cycle = False
+                    break
+        elif self.status == States.CLEAR:
+            for maxDiff, clearColour, lineColour in self.CLEAR_COLORS:
+                if alarm_time < maxDiff:
+                    self.backgroundColor = clearColour
+                    last_cycle = False
+                    break
 
-            alarm_time = datetime.datetime.utcnow().timestamp() - self._last_alarm_timestamp
-            if self.status == States.ALARM:
-                for maxDiff, alarmColour, lineColour in self.ALARM_COLORS:
-                    if alarm_time < maxDiff:
-                        if self.backgroundColor != alarmColour:
-                            self.backgroundColor = alarmColour
-                            for rect in self._svg_element("rect"):
-                                if "location" not in rect.get("class", []) and "marked" not in rect.get("class", []):
-                                    rect["style"] = self.SYSTEM_STYLE.format(self.backgroundColor)
-                            self._apply_line_colour_to_svg()
-                        last_cycle = False
-                        break
-            elif self.status == States.CLEAR:
-                for maxDiff, clearColour, lineColour in self.CLEAR_COLORS:
-                    if alarm_time < maxDiff:
-                        if self.backgroundColor != clearColour:
-                            self.backgroundColor = clearColour
-                            for rect in self._svg_element("rect"):
-                                if "location" not in rect.get("class", []) and "marked" not in rect.get("class", []):
-                                    rect["style"] = self.SYSTEM_STYLE.format(self.backgroundColor)
-                            self._apply_line_colour_to_svg()
-                        last_cycle = False
-                        break
+        if self.status in (States.ALARM, States.CLEAR):
+            if last_cycle:
+                self._second_line_flash = False
+                self.status = States.UNKNOWN
+                self.backgroundColor = self.UNKNOWN_COLOR
 
-            if self.status in (States.ALARM, States.CLEAR):
-                if last_cycle:
-                    self._second_line_flash = False
-                    self.status = States.UNKNOWN
-                    self.setBackgroundColor(self.UNKNOWN_COLOR)
-                    self._apply_line_colour_to_svg()
-
-                minutes = int(math.floor(alarm_time / 60))
-                seconds = int(alarm_time - minutes * 60)
-
+            minutes = int(math.floor(alarm_time / 60))
+            seconds = int(alarm_time - minutes * 60)
+            if self._alarm_seconds != seconds:
+                self._alarm_seconds = seconds
                 self._second_line_flash = not self._second_line_flash
                 if self._second_line_flash:
-                    self._second_line.string = "{m:02d}:{s:02d}".format(m=minutes, s=seconds, ticker=self.ticker)
+                    self._second_line = "{m:02d}:{s:02d}".format(m=minutes, s=seconds, ticker=self.ticker)
                 else:
-                    self._second_line.string = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
-
-                self._second_line.string = self.ticker
+                    self._second_line = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
+        else:
+            self._second_line =self.ticker
 
     def _apply_line_colour_to_svg(self):
         if self._svg_element:
             line_colour = self.textInv.getTextColourFromBackground(self.backgroundColor)
-            self._first_line["style"] = self.SYSTEM_STYLE.format(line_colour)
-            self._second_line["style"] = self.ALARM_STYLE.format(line_colour)
 
     def updateStyle(self):
         for i in range(5):
@@ -536,8 +449,6 @@ class System(object):
 
         if self._svg_element:
             line_colour = self.textInv.getTextColourFromBackground(self.backgroundColor)
-            self._first_line["style"] = self.SYSTEM_STYLE.format(line_colour)
-            self._second_line["style"] = self.ALARM_STYLE.format(line_colour)
 
 
 

@@ -54,6 +54,7 @@ class PanningWebView(QWidget):
         if self.scrolling:
             return False
         self.content = cnt
+        self.update()
         return True
 
     def setImgSize(self, new_size: QtCore.QSize):
@@ -66,6 +67,7 @@ class PanningWebView(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         if self.content:
+            painter.setRenderHint(QPainter.Antialiasing)
             self.transform.reset()
             self.transform.translate(-self.scrollPos.x(), -self.scrollPos.y())
             self.transform.scale(self.zoom, self.zoom)
