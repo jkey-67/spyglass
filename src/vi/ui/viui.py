@@ -1203,6 +1203,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 set_jump_maps_visible=self.ui.jumpbridgesButton.isChecked(),
                 set_statistic_visible=self.ui.statisticsButton.isChecked(),
                 set_jump_bridges=self.mapJumpGates)
+            if self.dotlan:
+                self.dotlan.setTheraConnections(evegate.ESAPIListPublicSignatures())
+
             self.dotlan = self.dotlan_maps[region_name]
 
         if self.dotlan.outdatedCacheError:

@@ -115,6 +115,7 @@ class System(object):
         self.center = QPointF()
         self.rect = QRectF(0.0, 0.0, 64.0, 32.0)
         self.marker = 0.0
+        self.wormhole_info = list()
 
         self.is_statistics_visible = True
         self.is_jumpbridges_visible = True
@@ -164,7 +165,6 @@ class System(object):
             elif self._status == States.UNKNOWN:
                 self.setBackgroundColor(self.UNKNOWN_COLOR)
                 self._second_line_flash = False
-
         return self._status
 
     def renderConnections(self, painter: QPainter, current_region_id, systems):
@@ -195,17 +195,27 @@ class System(object):
                 painter.setPen(Qt.NoPen)
 
     def renderWormHoles(self, painter: QPainter, current_region_id, systems):
+        """
+        Renders the wormhole connections for Thera and Tumor
+        Args:
+            painter:
+            current_region_id:
+            systems:
+
+        Returns:
+
+        """
         if not self.is_jumpbridges_visible:
             return
         for system in self.theraWormholes:
             if system.name in systems.keys():
                 if self.region_id == current_region_id:
                     if self.constellation_id == system.constellation_id:
-                        painter.setPen(QColor("#40ffd700"))
+                        painter.setPen(QColor("#80ffd700"))
                     else:
-                        painter.setPen(QColor("#40ffd700"))
+                        painter.setPen(QColor("#80ffd700"))
                 else:
-                    painter.setPen(QColor("#40ffd700"))
+                    painter.setPen(QColor("#80ffd700"))
                 if self.name < system.name:
                     pos_a = self.rect.center()
                     pos_b = system.rect.center()
@@ -243,6 +253,16 @@ class System(object):
                 painter.setTransform(old_translate)
 
     def renderJumpBridges(self, painter: QPainter, current_region_id, systems):
+        """
+        Renders all jumpbridge connections
+        Args:
+            painter:
+            current_region_id:
+            systems:
+
+        Returns:
+
+        """
         if not self.is_jumpbridges_visible:
             return
         for system in self.jumpBridges:
@@ -254,6 +274,7 @@ class System(object):
                         painter.setPen(QColor("#407cfc00"))
                 else:
                     painter.setPen(QColor("#407cfc00"))
+                # sorting enabled to paint each paired connection AB and BA in the same way
                 if self.name < system.name:
                     pos_a = self.rect.center()
                     pos_b = system.rect.center()
@@ -291,6 +312,15 @@ class System(object):
                 painter.setTransform(old_translate)
 
     def renderBackground(self, painter: QPainter, current_region_id):
+        """
+        Renders th background for the map, _hasIncursion, _hasCampaigns, _locatedCharacters and marker will be handled
+        Args:
+            painter:
+            current_region_id:
+
+        Returns:
+
+        """
         rc_out_back = self.rect.__copy__().marginsAdded(QMargins(20, 20, 20, 20))
         delta_h = self.ELEMENT_HEIGHT / 2
         delta_w = self.ELEMENT_WIDTH / 2
@@ -388,24 +418,36 @@ class System(object):
 
     @property
     def mapCoordinates(self) -> QRectF:
+        """
+        Gathers the rectangle of the system in map coordinates
+        Returns:
+            QRectF of the system
+        """
         return self.rect
 
     @property
     def is_dirty(self):
+        """
+        Gathers the dirty flag of the system, a request to be repainted
+        Returns:
+
+        """
         return self.is_mark_dirty or self.is_background_dirty or self.is_incursion_dirty or self.is_status_dirty \
             or self.is_campaign_dirty or self.is_statistic_dirty or self.is_located_char_dirty or self._second_line_flash
 
-    def applySVG(self, map_coordinates):
+    def applySVG(self, map_coordinates: dict, scale: float = 1228./1024.):
         """
-        Gathers the working rectangle from the
+        Sets the working rectangle for the system, use x,y,width and height of the dict
         Args:
             map_coordinates:
+            scale:
+                Scaling factor for the distance in between the systems base on 1027x768 DotLan SVG Maps, the default is 1.2
 
         Returns:
 
         """
-        self.rect = QRectF(map_coordinates["x"]*1.2,
-                           map_coordinates["y"]*1.2,
+        self.rect = QRectF(map_coordinates["x"]*scale,
+                           map_coordinates["y"]*scale,
                            map_coordinates["width"],
                            map_coordinates["height"])
         self.center = self.rect.center()

@@ -369,15 +369,16 @@ class Map(object):
 
         self.updateJumpbridgesVisibility()
 
-    def setTheraConnections(self, theraConnextions):
+    def setTheraConnections(self, theraConnections):
         for system in ALL_SYSTEMS.values():
+            system.wormhole_info = list()
             system.theraWormholes = set()
 
-        for bridge in theraConnextions:
-            sys1 = ALL_SYSTEMS[Universe.systemIdByName(bridge[0])]
-            sys2 = ALL_SYSTEMS[Universe.systemIdByName(bridge[2])]
-            sys1.jumpBridges.add(sys2)
-            sys2.jumpBridges.add(sys1)
+        for connection in theraConnections:
+            sys1 = ALL_SYSTEMS[connection["in_system_id"]]
+            sys2 = ALL_SYSTEMS[connection["out_system_id"]]
+            sys1.theraWormholes.add(sys2)
+            sys1.wormhole_info.append(connection)
 
         self.updateJumpbridgesVisibility()
 
