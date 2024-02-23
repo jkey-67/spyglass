@@ -22,6 +22,7 @@
 ###########################################################################
 
 import logging
+from PySide6.QtCore import QRectF
 from os import path
 from bs4 import BeautifulSoup
 from vi.ui.styles import Styles
@@ -154,52 +155,18 @@ class Map(object):
         svg_width = 62.5
         svg_height = 30
         systems = {}
-        uses = {}
+
         for use in soup.select("use"):
-            use_id = use["xlink:href"][1:]
-            use.attrs["width"] = str(svg_width)
-            use.attrs["height"] = str(svg_height)
-            use.attrs["x"] = str(float(use.attrs["x"]) * scale)
-            use.attrs["y"] = str(float(use.attrs["y"]) * scale)
-            uses[use_id] = use
-
-        for use in soup.select("line"):
-            use.attrs["x1"] = str((float(use.attrs["x1"])-svg_width/2.0) * scale+svg_width/2.0)
-            use.attrs["y1"] = str((float(use.attrs["y1"])-svg_height/2.0) * scale+svg_height/2.0)
-            use.attrs["x2"] = str((float(use.attrs["x2"])-svg_width/2.0) * scale+svg_width/2.0)
-            use.attrs["y2"] = str((float(use.attrs["y2"])-svg_height/2.0) * scale+svg_height/2.0)
-
-        symbols = soup.select("symbol")
-        for symbol in symbols:
-            symbol_id = symbol["id"]
-            system_id = symbol_id[3:]
-            try:
-                system_id = int(system_id)
-            except (ValueError,):
-                continue
-            for element in symbol.select(".sys"):
-                name = element.select("text")[0].text.strip()
-                map_coordinates = {}
-                for keyname in ("x", "y", "width", "height"):
-                    try:
-                        map_coordinates[keyname] = float(uses[symbol_id][keyname])
-                    except KeyError:
-                        map_coordinates[keyname] = 0
-
-                map_coordinates["center_x"] = (map_coordinates["x"] + 1.0+56.0/2.0)
-                map_coordinates["center_y"] = (map_coordinates["y"] + (map_coordinates["height"] / 2.0))
-                try:
-                    if symbol_id in uses.keys():
-                        system = ALL_SYSTEMS[system_id]
-                        system.applySVG(
-                            map_coordinates=map_coordinates)
-                        systems[name] = system
-                    else:
-                        logging.error("System {} not found.".format(name))
-
-                except KeyError:
-                    logging.critical("Unable to prepare system {}.".format(name))
-                    pass
+            system_id = int(use["xlink:href"][4:])
+            if system_id in ALL_SYSTEMS:
+                system = ALL_SYSTEMS[system_id]
+                system.applySVG(
+                    map_coordinates=QRectF(
+                        float(use.attrs["x"]) * scale,
+                        float(use.attrs["y"]) * scale,
+                        svg_width,
+                        svg_height), scale=scale)
+                systems[system.name] = system
         return systems
 
     @staticmethod
@@ -325,7 +292,10 @@ class Map(object):
             defs.insert(0, grad_inc_st_bg)
             defs.insert(0, grad_con_bg)
 
-    def render(self, painter):
+    def renderLegend(self, painter):
+        System.renderLegend(painter, self.region_name)
+
+    def renderMap(self, painter):
         for system in self.systems.values():
             system.updateSVG()
             system.renderBackground(painter, self.region_id)
@@ -379,6 +349,7 @@ class Map(object):
             sys2 = ALL_SYSTEMS[connection["out_system_id"]]
             sys1.theraWormholes.add(sys2)
             sys1.wormhole_info.append(connection)
+            sys2.wormhole_info.append(connection)
 
         self.updateJumpbridgesVisibility()
 

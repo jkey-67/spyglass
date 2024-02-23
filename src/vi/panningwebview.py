@@ -28,8 +28,9 @@ from PySide6.QtCore import Qt, QEvent
 
 class PanningWebView(QWidget):
     ZOOM_WHEEL = 0.4
-    webViewScrolled = QtCore.Signal(bool)
-    webViewResized = QtCore.Signal()
+    webViewIsScrolling = QtCore.Signal(bool)
+    webViewUpdateScrollbars = QtCore.Signal()
+    webViewNavigateBackward = QtCore.Signal(bool)
 
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__(parent)
@@ -57,33 +58,30 @@ class PanningWebView(QWidget):
         self.update()
         return True
 
-    def setImgSize(self, new_size: QtCore.QSize):
-        self.imgSize = new_size
-
     def resizeEvent(self, event: QResizeEvent):
-        self.webViewResized.emit()
         super().resizeEvent(event)
+        self.webViewUpdateScrollbars.emit()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         if self.content:
             painter.setRenderHint(QPainter.Antialiasing)
-            self.transform.reset()
             self.transform.translate(-self.scrollPos.x(), -self.scrollPos.y())
             self.transform.scale(self.zoom, self.zoom)
             painter.setTransform(self.transform)
-            self.content.render(painter)
+            self.content.renderMap(painter)
+            self.transform.reset()
+            painter.setTransform(self.transform)
+            self.content.renderLegend(painter)
 
-    def setZoomFactor(self, zoom):
-        if zoom > 8:
-            zoom = 8
-        elif zoom < 0.5:
-            zoom = 0.5
+    def setZoomFactor(self, zoom : float):
+        if zoom > 12.:
+            zoom = 12
+        elif zoom < 0.25:
+            zoom = 0.25
         if self.zoom != zoom:
             self.zoom = zoom
-            self.webViewResized.emit()
-            if self.imgSize.isValid():
-                self.setImgSize(self.imgSize)
+            self.webViewUpdateScrollbars.emit()
             self.update()
 
     def zoomFactor(self):
@@ -92,10 +90,10 @@ class PanningWebView(QWidget):
     def scrollPosition(self) -> QPointF:
         return self.scrollPos
 
-    def setScrollPosition(self, pos: QPoint):
+    def setScrollPosition(self, pos: QPointF):
         if self.scrollPos != pos:
             self.scrollPos = pos
-            self.webViewResized.emit()
+            self.webViewUpdateScrollbars.emit()
         self.update()
 
     def zoomIn(self, pos=None):
@@ -131,6 +129,10 @@ class PanningWebView(QWidget):
                 QApplication.setOverrideCursor(QtCore.Qt.OpenHandCursor)
                 self.scrollMousePress = self.scrollPosition()
                 self.positionMousePress = mouse_event.pos()
+            elif mouse_event.buttons() == QtCore.Qt.ForwardButton:
+                self.webViewNavigateBackward.emit(False)
+            elif mouse_event.buttons() == QtCore.Qt.BackButton:
+                self.webViewNavigateBackward.emit(True)
 
     def mouseReleaseEvent(self, mouse_event: QMouseEvent):
         if self.scrolling:
@@ -139,7 +141,7 @@ class PanningWebView(QWidget):
             self.handIsClosed = False
             self.positionMousePress = None
             QApplication.restoreOverrideCursor()
-            self.webViewScrolled.emit(False)
+            self.webViewIsScrolling.emit(False)
             return
 
         if self.pressed:
@@ -180,7 +182,7 @@ class PanningWebView(QWidget):
         if self.pressed:
             self.pressed = False
             self.scrolling = True
-            self.webViewScrolled.emit(True)
+            self.webViewIsScrolling.emit(True)
             return
         if self.hoveCheck(mouse_event.globalPos(), self.mapPosFromEvent(mouse_event)):
             QApplication.setOverrideCursor(QtCore.Qt.PointingHandCursor)

@@ -1,10 +1,12 @@
 import unittest
 import os
+
 from vi.cache import Cache
 import vi.evegate as evegate
 from vi.universe import Universe
 import json
 from vi.clipboard import evaluateClipboardData
+from vi.redoundoqueue import RedoUndoQueue
 
 
 class TestCache(unittest.TestCase):
@@ -356,6 +358,34 @@ class TestCache(unittest.TestCase):
         self.assertIsNone(res)
         res = evegate.refreshToken(None)
         self.assertIsNone(res)
+
+    def test_region_queue(self):
+        dq = RedoUndoQueue()
+        self.assertEqual(dq.undo(), None)
+        dq.enqueue("A")
+        self.assertEqual(dq.pop(), "A")
+        dq.enqueue("A")
+        dq.enqueue("B")
+        dq.enqueue("C")
+        self.assertEqual(dq.undo(), "B")
+        self.assertEqual(dq.undo(), "A")
+        self.assertEqual(dq.redo(), "B")
+        self.assertEqual(dq.redo(), "C")
+        self.assertEqual(dq.redo(), "C")
+        self.assertEqual(dq.undo(), "B")
+        self.assertEqual(dq.undo(), "A")
+        self.assertEqual(dq.undo(), "A")
+        self.assertEqual(dq.undo(), "A")
+        self.assertEqual(dq.redo(), "B")
+        dq.enqueue("C")
+        dq.enqueue("D")
+        dq.enqueue("E")
+        dq.enqueue("F")
+
+        pass
+
+
+
 
 
 if __name__ == '__main__':

@@ -604,7 +604,7 @@ def getCurrentCorpForCharId(char_id, use_outdated=True) -> Optional[int]:
 
 
 def esiUniverseSystem_jumps(use_outdated=False):
-    """ Reads the information for all solarsystem from the EVE API
+    """ Reads the information for all solarsystem from the EVE API cached 3600 s
         Reads a dict like:
             systemid: "jumps", "shipkills", "factionkills", "podkills"
     """
@@ -991,7 +991,7 @@ def getRouteFromEveOnline(jumpgates, src, dst):
 
 
 def esiIncursions(use_outdated=False):
-    """builds a list of incursion dicts cached 300s
+    """builds a list of incursion dicts cached 300 s
     """
     cache = Cache()
     cache_key = "incursions"
@@ -1020,7 +1020,7 @@ def getIncursionSystemsIds(use_outdated=False):
 
 
 def esiSovereigntyCampaigns(use_outdated=False):
-    """builds a list of reinforced campaigns for IHUB  and TCU dicts cached 60s
+    """builds a list of reinforced campaigns for IHUB  and TCU dicts cached 60 s
     """
     cache = Cache()
     cache_key = "sovereignty_campaigns"

@@ -24,9 +24,11 @@ import parse
 
 from typing import Union
 from typing import Optional
+from collections import deque
 
 import vi.version
 from vi.universe import Universe
+from vi.system import System
 import logging
 from PySide6.QtGui import *
 from PySide6 import QtGui, QtCore, QtWidgets
@@ -46,6 +48,7 @@ from vi.cache.cache import Cache, currentEveTime
 from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread
+from vi.redoundoqueue import RedoUndoQueue
 from vi.ui.systemtray import TrayContextMenu
 from vi.ui.systemtray import JumpBridgeContextMenu
 from vi.ui.systemtray import MapContextMenu
@@ -232,8 +235,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cache = Cache()
         self.dotlan_maps = dict()
         self.dotlan = None
+        self.region_queue = RedoUndoQueue()
         region_name = self.cache.getFromCache("region_name")
         self.blockSignals(True)
+        self.region_stack = list()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         icon = QtGui.QIcon()
@@ -423,11 +428,11 @@ class MainWindow(QtWidgets.QMainWindow):
         update_splash_window_info("Initialisation succeeded.")
 
     @property
-    def systems_on_map(self):
+    def systems_on_map(self) -> dict[str, System]:
         return self.dotlan.systems
 
     @property
-    def systemsById(self):
+    def systemsById(self) -> dict[int, System]:
         return self.dotlan.systemsById
 
     @property
@@ -568,7 +573,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.jumpbridgeDataAction.triggered.connect(self.showJumpbridgeChooser)
         self.ui.rescanNowAction.triggered.connect(self.rescanIntel)
         self.ui.clearIntelAction.triggered.connect(self.clearIntelChat)
-        self.ui.mapView.webViewResized.connect(self.fixupScrollBars)
+        self.ui.mapView.webViewUpdateScrollbars.connect(self.fixupScrollBars)
+        self.ui.mapView.webViewNavigateBackward.connect(self.navigateBack)
         self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
 
         def indexChanged():
@@ -583,24 +589,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.region_changed.connect(
             lambda rgn_str: self.ui.regionNameField.setCurrentText(rgn_str))
 
-        def mapviewScrolled(scrolled):
-            if scrolled:
+        def mapviewIsScrolling(scrolled_active):
+            if scrolled_active:
                 self.mapTimer.stop()
             else:
+                curr_region_name = self.cache.getFromCache("region_name")
+                curr_pos = self.ui.mapView.scrollPosition()
+                curr_zoom = self.ui.mapView.zoomFactor()
+                self.region_queue.enqueue((curr_region_name, curr_pos, curr_zoom))
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
 
-        self.ui.mapView.webViewScrolled.connect(mapviewScrolled)
+        self.ui.mapView.webViewIsScrolling.connect(mapviewIsScrolling)
         self.ui.connectToEveOnline.clicked.connect(
             lambda:
                 self._updateKnownPlayerAndMenu(evegate.openWithEveonline(parent=self)))
 
-        def updateX(x):
+        def updateX(x: float):
             pos = self.ui.mapView.scrollPosition()
             pos.setX(x)
             self.ui.mapView.setScrollPosition(pos)
         self.ui.mapHorzScrollBar.valueChanged.connect(updateX)
 
-        def updateY(y):
+        def updateY(y: float):
             pos = self.ui.mapView.scrollPosition()
             pos.setY(y)
             self.ui.mapView.setScrollPosition(pos)
@@ -1087,13 +1097,28 @@ class MainWindow(QtWidgets.QMainWindow):
                                 * self.ui.mapView.zoom-view_center.height())
             self.ui.mapView.setScrollPosition(pt_system)
 
-    def changeRegionByName(self, region_name, system_id=None) -> None:
+    def navigateBack(self, back):
+        region_name = None
+        pos = None
+        if back:
+            region_name, pos, zoom = self.region_queue.undo()
+        else:
+            region_name, pos, zoom = self.region_queue.redo()
+        if region_name:
+            self.changeRegionByName(region_name=region_name, update_queue=False)
+            if zoom:
+                self.ui.mapView.setZoomFactor(zoom)
+            if pos:
+                self.ui.mapView.setScrollPosition(pos)
+
+    def changeRegionByName(self, region_name, system_id=None, update_queue=True) -> None:
         """
             Change to a region and highlight a single system.
             The Map will be configured and a rescan of the intel will be performed
         Args:
             region_name: name of the region to be activated
             system_id: id of the system to highlight or None
+            update_queue: update the undo/redo queue
 
         Returns:
             None
@@ -1101,6 +1126,11 @@ class MainWindow(QtWidgets.QMainWindow):
         curr_region_name = self.cache.getFromCache("region_name")
         if curr_region_name == region_name:
             return
+        if update_queue:
+            curr_pos = self.ui.mapView.scrollPosition()
+            curr_zoom = self.ui.mapView.zoomFactor()
+            self.region_queue.enqueue((curr_region_name, curr_pos, curr_zoom))
+
         self.cache.putIntoCache("region_name", region_name)
         self.setupMap()
         if system_id is not None:
@@ -1253,12 +1283,17 @@ class MainWindow(QtWidgets.QMainWindow):
             self.filewatcherThread.paused = False
 
     def _startStatisticTimer(self):
-        self.statisticTimer = QTimer(self)
-        self.statisticTimer.timeout.connect(self.statisticsThread.requestStatistics)
+        statistic_timer = QTimer(self)
+        statistic_timer.timeout.connect(self.statisticsThread.requestStatistics)
+        statistic_timer.start(60*1000)
+
+        eve_scout_timer = QTimer(self)
+        eve_scout_timer.timeout.connect(self.statisticsThread.requestWormholes)
+        eve_scout_timer.start(20*1000)
+
         self.statisticsThread.requestLocations()
         self.statisticsThread.requestStatistics()
         self.statisticsThread.requestSovereignty()
-        self.statisticTimer.start(60*1000)
 
     def closeEvent(self, event):
         """
@@ -1424,6 +1459,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.changeChatFontSize(new_size)
 
     def changeAlarmDistance(self, distance):
+        for system in ALL_SYSTEMS.values():
+            system.changeIntelRange(old_intel_range=self.alarmDistance,new_intel_range=distance)
         self.alarmDistance = distance
         for cm in TrayContextMenu.instances:
             for action in cm.distanceGroup.actions():
@@ -1484,39 +1521,56 @@ class MainWindow(QtWidgets.QMainWindow):
             sc.repaint_needed.connect(self.updateMapView)
             sc.show()
 
-    def markSystemOnMap(self, system_name) -> None:
+    def markSystemOnMap(self, system_marked) -> None:
         """
             Marks the selected system, if needed a region change will be initialized as needed.
         Args:
-            system_name: name or id of the system
+            system_marked: name or id of the system
 
         Returns:
             None:
 
         """
-        if type(system_name) is str:
-            if system_name in self.systems_on_map.keys():
-                curr_sys = self.systems_on_map[system_name]
+        if type(system_marked) is str:
+            if system_marked in self.systems_on_map.keys():
+                curr_sys = self.systems_on_map[system_marked]
                 curr_sys.mark()
-                self.updateMapView()
                 self.focusMapOnSystem(curr_sys.system_id)
             else:
                 self.statisticsThread.fetchLocation(fetch=False)
-                self.changeRegionBySystemID(Universe.systemIdByName(system_name))
-        elif type(system_name) is int:
-            if system_name in self.systemsById.keys():
-                curr_sys = self.systemsById[system_name]
+                self.changeRegionBySystemID(Universe.systemIdByName(system_marked))
+        elif type(system_marked) is int:
+            if system_marked in self.systemsById:
+                curr_sys = self.systemsById[system_marked]
                 curr_sys.mark()
-                self.updateMapView()
                 self.focusMapOnSystem(curr_sys.system_id)
             else:
                 self.statisticsThread.fetchLocation(fetch=False)
-                self.changeRegionBySystemID(system_name)
-                curr_sys = self.systemsById[system_name]
+                self.changeRegionBySystemID(system_marked)
+                curr_sys = self.systemsById[system_marked]
                 curr_sys.mark()
-                self.updateMapView()
+        elif type(system_marked) is System:
+            system_marked.mark()
+            self.focusMapOnSystem(system_marked.system_id)
+        self.updateMapView()
 
-    def setLocation(self, char_name, system_name: str, change_region: bool = False) -> None:
+    def updateCharLocationOnMap(self, system_id : int, char_name : str) -> None:
+        """
+            Remove the char on all maps, then assign to the system with id system_is
+        Args:
+            system_id:
+            char_name:
+
+        Returns:
+
+        """
+        for system in ALL_SYSTEMS.values():
+            system.removeLocatedCharacter(char_name, self.alarmDistance)
+        system = ALL_SYSTEMS[system_id]
+        system.addLocatedCharacter(char_name, self.alarmDistance)
+        logging.info("The location of character '{}' changed to system '{}'".format(char_name, system.name))
+
+    def setLocation(self, char_name, system_in, change_region: bool = False) -> None:
         """
         Change the location of the char to the given system inside the current map, if required the region may be
         changed. If the character is api registered, the actual system will be shown in the center of the screen.
@@ -1529,12 +1583,9 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns:
             None:
         """
-        system_id = Universe.systemIdByName(system_name)
-        for system in ALL_SYSTEMS.values():
-            system.removeLocatedCharacter(char_name)
-        logging.info("The location of character '{}' changed to system '{}'".format(char_name, system_name))
-        ALL_SYSTEMS[system_id].addLocatedCharacter(char_name)
-
+        system_id = system_in if type(system_in) is int else Universe.systemIdByName(system_in)
+        system_name = system_in if type(system_in) is str else Universe.systemNameById(system_in)
+        self.updateCharLocationOnMap(system_id, char_name)
         if system_name not in self.systems_on_map:
             if change_region:   # and char_name in self.monitoredPlayerNames:
                 try:
@@ -1548,7 +1599,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     pass
 
         if not system_name == "?" and system_name in self.systems_on_map:
-            self.systems_on_map[system_name].addLocatedCharacter(char_name)
+            self.updateCharLocationOnMap(system_id, char_name)
             if evegate.esiCheckCharacterToken(char_name):
                 self.focusMapOnSystem(self.systems_on_map[str(system_name)].system_id)
                 self.current_system_changed.emit(str(system_name))
@@ -1920,7 +1971,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.mapStatisticCache = data["statistics"]
                 if self.dotlan:
                     self.dotlan.addSystemStatistics(data['statistics'])
-
+            if "thera_wormhole" in data.keys():
+                self.dotlan.setTheraConnections(data["thera_wormhole"])
             if "sovereignty" in data:
                 self.mapSovereignty = data['sovereignty']
                 if self.dotlan:
@@ -1993,8 +2045,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for name, systems in locale_to_set.items():
             self._updateKnownPlayerAndMenu(name)
             for sys_name in systems:
-                system_id = Universe.systemIdByName(sys_name)
-                self.setLocation(name, Universe.systemNameById(system_id), self.autoChangeRegion)
+                self.setLocation(name, sys_name, self.autoChangeRegion)
 
         if not rescan:
             self.updateMapView()

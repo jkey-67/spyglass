@@ -138,6 +138,24 @@ class FetchStatistic(QRunnable):
         self.notifier_signal.emit(statistics_data)
 
 
+class FetchWormholes(QRunnable):
+    def __init__(self, notifier):
+        QRunnable.__init__(self)
+        self.notifier_signal = notifier
+
+    def run(self):
+        statistics_data = dict({"result": "pending"})
+        try:
+            statistics_data["thera_wormhole"] = evegate.ESAPIListPublicSignatures()
+            logging.info("Thera Wormhole data updated succeeded.")
+            statistics_data["result"] = "ok"
+        except Exception as e:
+            logging.error("Unable to fetch  update: %s", e)
+            statistics_data["result"] = "error"
+            statistics_data["text"] = str(e)
+        self.notifier_signal.emit(statistics_data)
+
+
 class FetchLocation(QRunnable):
     def __init__(self, notifier):
         QRunnable.__init__(self)
@@ -171,18 +189,19 @@ class MapStatisticsThread(QThread):
     def requestSovereignty(self):
         runner = FetchSovereignty(self.statistic_data_update)
         QThreadPool.globalInstance().start(runner)
-        # self.queue.put(["sovereignty"])
 
     def requestStatistics(self):
         runner = FetchStatistic(self.statistic_data_update)
         QThreadPool.globalInstance().start(runner)
-        # self.queue.put(["statistics"])
 
     def requestLocations(self):
         if self._fetchLocations:
             runner = FetchLocation(self.statistic_data_update)
             QThreadPool.globalInstance().start(runner)
-            # self.queue.put(["location"])
+
+    def requestWormholes(self):
+        runner = FetchWormholes(self.statistic_data_update)
+        QThreadPool.globalInstance().start(runner)
 
     def fetchLocation(self, fetch=True):
         self._fetchLocations = fetch

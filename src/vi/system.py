@@ -141,6 +141,8 @@ class System(object):
         self._isStaging = False
         self._hasIncursionBoss = False
         self._hasThera = False
+        self._isMonitored = 0
+        self._hasKill = 0.0
         self._svg_text_string = "stats n/a"
         self._alarm_seconds = 0
 
@@ -194,6 +196,74 @@ class System(object):
                 painter.drawLine(QLineF(self.center, system.center))
                 painter.setPen(Qt.NoPen)
 
+    @staticmethod
+    def renderLegend(painter: QPainter, region_name):
+        painter.setFont(QFont("Arial", 30, italic=True))
+        painter.setPen(QColor("#10c0c0c0"))
+        painter.drawText(QRectF(0.0, 0.0, 1024.0, 50.0), Qt.AlignLeft, region_name)
+
+        system_id = Universe.systemIdByName("Umokka")
+        region_id = Universe.regionIDFromSystemID(system_id)
+        return
+        inx = 1
+        test = System("Name", system_id, "Ticker")
+        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.renderBackground(painter, region_id)
+        test.renderSystem(painter, region_id)
+
+        inx = inx + 1
+        test._hasCampaigns = True
+        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.renderBackground(painter, region_id)
+        test.renderSystem(painter, region_id)
+
+        inx = inx + 1
+        test._hasCampaigns = False
+        test._hasIceBelt = True
+        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.renderBackground(painter, region_id)
+        test.renderSystem(painter, region_id)
+
+        inx = inx + 1
+        test._hasCampaigns = False
+        test._hasIceBelt = False
+        test._hasIncursion = True
+        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.renderBackground(painter, region_id)
+        test.renderSystem(painter, region_id)
+
+        inx = inx + 1
+        test._hasCampaigns = False
+        test._hasIceBelt = False
+        test._hasIncursion = False
+        test._isMonitored = 1
+        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.renderBackground(painter, region_id)
+        test.renderSystem(painter, region_id)
+
+        inx = inx + 1
+        test._hasCampaigns = False
+        test._hasIceBelt = False
+        test._hasIncursion = False
+        test._isMonitored = 0
+        test._locatedCharacters = ["Test"]
+        test.applySVG(QRectF(20.0, inx * 40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.renderBackground(painter, region_id)
+        test.renderSystem(painter, region_id)
+
+        inx = inx + 1
+        test._hasCampaigns = False
+        test._hasIceBelt = False
+        test._hasIncursion = False
+        test._isMonitored = 0
+        test._locatedCharacters = None
+        test._hasKill = 10.0
+        test.applySVG(QRectF(20.0, inx * 40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.renderBackground(painter, region_id)
+        test.renderSystem(painter, region_id)
+
+        pass
+
     def renderWormHoles(self, painter: QPainter, current_region_id, systems):
         """
         Renders the wormhole connections for Thera and Tumor
@@ -208,14 +278,8 @@ class System(object):
         if not self.is_jumpbridges_visible:
             return
         for system in self.theraWormholes:
+            painter.setPen(QColor("#c0ffff00"))
             if system.name in systems.keys():
-                if self.region_id == current_region_id:
-                    if self.constellation_id == system.constellation_id:
-                        painter.setPen(QColor("#80ffd700"))
-                    else:
-                        painter.setPen(QColor("#80ffd700"))
-                else:
-                    painter.setPen(QColor("#80ffd700"))
                 if self.name < system.name:
                     pos_a = self.rect.center()
                     pos_b = system.rect.center()
@@ -233,7 +297,6 @@ class System(object):
                 path.cubicTo(pos_m, pos_b, pos_b)
                 painter.drawPath(path)
             else:
-                painter.setPen(QColor("#80ffd700"))
                 pos_a = self.rect.center()
                 pos_b = self.rect.center()+QPointF(20, -20)
                 dx = (pos_b.x() - pos_a.x())/2.0
@@ -341,6 +404,7 @@ class System(object):
                 painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
+
         if self._hasCampaigns:
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30ff0000"))
@@ -353,6 +417,19 @@ class System(object):
                 painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
+
+        if self._isMonitored > 0:
+            rc_out_back_monitor = self.rect.__copy__().marginsAdded(QMargins(80, 80, 80, 80))
+            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH*1.25)
+            gradient.setColorAt(0.0, QColor("#80ffffff"))
+            gradient.setColorAt(0.6, QColor("#00ffffff"))
+            painter.setPen(Qt.NoPen)
+            path = QPainterPath()
+            path.addRoundedRect(rc_out_back_monitor, delta_h, delta_h)
+            painter.fillPath(path, QBrush(gradient))
+            painter.drawPath(path)
+            painter.setBrush(Qt.NoBrush)
+
         if bool(self._locatedCharacters):
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30800080"))
@@ -401,11 +478,22 @@ class System(object):
             painter.fillPath(path, QBrush(self.UNKNOWN_COLOR))
             painter.drawPath(path)
         else:
-            painter.setPen(QPen(QColor("#c71585")))
+            painter.setPen(QPen(QColor("#FFc0c0c0")))
             painter.drawRect(rc_out)
         painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
         painter.setFont(QFont("Arial", delta_h*2))
         painter.drawText(rc_out, Qt.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
+
+        if self._hasIceBelt:
+            if self.region_id == current_region_id:
+                rc_out = self.rect.__copy__()
+                ise_pen = QPen(QColor("#806495ED"))
+                ise_pen.setWidthF(2.5)
+                painter.setPen(ise_pen)
+                painter.setBrush(QBrush(Qt.NoBrush))
+                path = QPainterPath()
+                path.addRoundedRect(rc_out, 14, 14)
+                painter.drawPath(path)
 
         if self.is_statistics_visible:
             rc_out.translate(0.0, rc_out.height())
@@ -435,30 +523,49 @@ class System(object):
         return self.is_mark_dirty or self.is_background_dirty or self.is_incursion_dirty or self.is_status_dirty \
             or self.is_campaign_dirty or self.is_statistic_dirty or self.is_located_char_dirty or self._second_line_flash
 
-    def applySVG(self, map_coordinates: dict, scale: float = 1228./1024.):
+    def applySVG(self, map_coordinates: QRectF, scale: float = 1.2) -> None:
         """
         Sets the working rectangle for the system, use x,y,width and height of the dict
         Args:
             map_coordinates:
             scale:
                 Scaling factor for the distance in between the systems base on 1027x768 DotLan SVG Maps, the default is 1.2
+        Returns:
+        """
+        self.rect = map_coordinates
+        self.center = map_coordinates.center()
 
+    def mark(self, sec=10.0):
+        """
+        Activate the mark for sec seconds
+        Args:
+            sec:
+                marking time, default is 10s
         Returns:
 
         """
-        self.rect = QRectF(map_coordinates["x"]*scale,
-                           map_coordinates["y"]*scale,
-                           map_coordinates["width"],
-                           map_coordinates["height"])
-        self.center = self.rect.center()
-
-    def mark(self):
         self.is_mark_dirty = True
-        self.marker = datetime.datetime.utcnow().timestamp() + 10.0
+        self.marker = datetime.datetime.utcnow().timestamp() + sec
 
-    def addLocatedCharacter(self, char_name):
+    def addLocatedCharacter(self, char_name, intel_range=None):
         if char_name not in self._locatedCharacters:
             self._locatedCharacters.append(char_name)
+            for sys in self.getNeighbours(intel_range):
+                sys._isMonitored = sys._isMonitored + 1
+
+    def removeLocatedCharacter(self, char_name, intel_range):
+        if char_name in self._locatedCharacters:
+            self._locatedCharacters.remove(char_name)
+            for sys in self.getNeighbours(intel_range):
+                if sys._isMonitored > 0:
+                    sys._isMonitored = sys._isMonitored - 1
+            if self._isMonitored > 0:
+                self._isMonitored = self._isMonitored - 1
+
+    def changeIntelRange(self, old_intel_range, new_intel_range):
+        for char_name in self._locatedCharacters:
+            self.removeLocatedCharacter(char_name, old_intel_range)
+            self.addLocatedCharacter(char_name, new_intel_range)
 
     def setCampaigns(self, campaigns: bool):
         self.is_campaign_dirty = True
@@ -479,10 +586,6 @@ class System(object):
         for char in self._locatedCharacters:
             characters.append(char)
         return characters
-
-    def removeLocatedCharacter(self, char_name):
-        if char_name in self._locatedCharacters:
-            self._locatedCharacters.remove(char_name)
 
     @property
     def neighbours(self):
@@ -583,7 +686,7 @@ class System(object):
                 else:
                     self._second_line = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
         else:
-            self._second_line =self.ticker
+            self._second_line = self.ticker
 
     def updateStyle(self):
         for i in range(5):
@@ -595,12 +698,21 @@ class System(object):
         self.setBackgroundColor(self.UNKNOWN_COLOR)
 
     def getTooltipText(self):
-        format_src = '''<span style=" font-weight:600; color:#e5a50a;">{system}</span>''' \
-                     '''<span style=" font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>''' \
+        format_src = '''<span style="font-weight:600; color:#e5a50a;">{system}</span>''' \
+                     '''<span style="font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>''' \
                      '''<br/><span style=" font-weight:600; color:#e01b24;">{systemstats}</span>'''
 
         # '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''
         # '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''
+
+        def BR():
+            return "<br/>"
+
+        def YELLOW(txt):
+            return '''<span style="font-weight:600; color:#e5a50a;">{}</span>'''.format(txt)
+
+        def RED(txt):
+            return '''<span style="font-weight:600; color:#e01b24;">{}</span>'''.format(txt)
 
         if self._hasIncursion:
             if self._isStaging:
@@ -608,7 +720,18 @@ class System(object):
             else:
                 format_src = format_src + '''<br/><span style=" font-weight:600; color:#ff9900;">-Incursion{}-</span>'''.format(" Boss" if self._hasIncursionBoss else "")
 
+        if bool(self.wormhole_info):
+            format_src = format_src + BR() + YELLOW("Wormholes")
+            for info in self.wormhole_info:
+                region_name = Universe.regionNameFromSystemID(Universe.systemIdByName( info["out_system_name"]))
+                format_src = format_src + BR() + "{wh_type} ".format(**info) + \
+                        YELLOW("{out_signature} ".format(**info)) + \
+                        RED("{out_system_name} ".format(**info)) +  \
+                        YELLOW(region_name) + "  " + \
+                        RED("({remaining_hours}h {max_ship_size})".format(**info))
+
         if self._hasCampaigns:
+            format_src = format_src + "<br/>Campaigns"
             cache_key = "sovereignty_campaigns"
             response = Cache().getFromCache(cache_key)
             if response:
@@ -637,7 +760,8 @@ class System(object):
         )
 
         for msg in self._system_messages:
-            res = res + "<br/>" + msg.guiText
+            time = msg.timestamp.strftime("%H:%M:%S")
+            res = res + "<br/>" + YELLOW(time) + "-" + msg.guiText
         return res
 
     def clearIntel(self):
