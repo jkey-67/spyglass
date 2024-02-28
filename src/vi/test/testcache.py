@@ -1,12 +1,13 @@
 import unittest
 import os
+import json
 
 from vi.cache import Cache
-import vi.evegate as evegate
 from vi.universe import Universe
-import json
 from vi.clipboard import evaluateClipboardData
 from vi.redoundoqueue import RedoUndoQueue
+from vi.dotlan import Map
+from vi import evegate
 
 
 class TestCache(unittest.TestCase):
@@ -241,6 +242,7 @@ class TestCache(unittest.TestCase):
             filename = os.path.join(self.curr_path, "..", "ui", "res", "mapdata", "{}.svg".format(
                 evegate.convertRegionNameForDotlan(region["name"])))
             svg = evegate.getSvgFromDotlan(region=region["name"], dark=True)
+            dmap = Map(region["name"], svg)
             if svg.find("region not found") == -1:
                 with open(filename, "w") as f:
                     f.write(svg)
@@ -383,9 +385,6 @@ class TestCache(unittest.TestCase):
         dq.enqueue("F")
 
         pass
-
-
-
 
 
 if __name__ == '__main__':

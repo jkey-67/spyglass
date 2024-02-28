@@ -95,7 +95,7 @@ class Message(object):
         return self.status != States.IGNORE and self.user not in CTX.EVE_SYSTEM
 
     def __key(self):
-        return self.roomName, self.timestamp, self.user
+        return self.timestamp, self.roomName, self.user
 
     def __eq__(self, other):
         return self.__key() == other.__key()
@@ -104,7 +104,7 @@ class Message(object):
         return hash(self.__key())        
 
     def __del__(self):
-        logging.debug("delete message {}".format(self.guiText))
+        logging.debug("delete message {}".format(self.__key()))
 
     @property
     def status(self) -> States:

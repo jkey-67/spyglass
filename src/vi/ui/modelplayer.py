@@ -18,10 +18,9 @@
 ###########################################################################
 
 from typing import Union
-from PySide6.QtGui import *
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtWidgets, QtCore
+from PySide6.QtCore import Qt
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtWidgets import QStyledItemDelegate
 from PySide6.QtSql import QSqlQueryModel
 from vi.cache.cache import Cache
 
@@ -30,14 +29,14 @@ class TableModelPlayers(QSqlQueryModel):
     def __init__(self, parent=None):
         super(TableModelPlayers, self).__init__(parent)
 
-    def flags(self, index) -> QtCore.Qt.ItemFlags:
+    def flags(self, index) -> Qt.ItemFlags:
         if index.column() == 1:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
         else:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
 
-class StyledItemDelegatePlayers(QStyledItemDelegate):
+class StyledItemDelegatePlayers(QtWidgets.QStyledItemDelegate):
     players_edit_changed = pyqtSignal()
 
     def __init__(self, parent=None):

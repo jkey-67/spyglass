@@ -18,7 +18,7 @@
 ###########################################################################
 
 from PySide6 import QtWidgets
-from PySide6 import QtCore
+from PySide6 import Qt
 from PySide6.QtCore import Signal as pyqtSignal
 from vi.ui import Ui_RegionChooser
 from vi.universe import Universe
@@ -33,7 +33,7 @@ class RegionChooser(QtWidgets.QDialog):
         self.ui.setupUi(self)
         self.list_of_region_names = sorted([region["name"] for region in Universe.REGIONS])
         self.strList = QtWidgets.QCompleter(self.list_of_region_names, parent=self)
-        self.strList.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.strList.setCaseSensitivity(Qt.CaseInsensitive)
         self.ui.regionNameField.addItems(self.list_of_region_names)
         self.ui.regionNameField.setCompleter(self.strList)
         self.ui.regionNameField.setCurrentText(region_name)

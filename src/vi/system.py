@@ -120,17 +120,10 @@ class System(object):
         self.is_statistics_visible = True
         self.is_jumpbridges_visible = True
 
-        self.is_mark_dirty = False
-        self.is_background_dirty = True
-        self.is_incursion_dirty = True
-        self.is_status_dirty = True
-        self.is_campaign_dirty = True
-        self.is_statistic_dirty = True
-        self.is_located_char_dirty = False
-
+        self._is_dirty = True
         self._status = None
         self._first_line = self.name
-        self._second_line = ""
+        self._second_line = ticker
         self._second_line_flash = False
         self._last_alarm_timestamp = 0
         self._locatedCharacters = []
@@ -145,6 +138,14 @@ class System(object):
         self._hasKill = 0.0
         self._svg_text_string = "stats n/a"
         self._alarm_seconds = 0
+        # C cloning, R Refining, F Factory, R Research, O Offices, I Industry
+        self._hasKeepStar = set()  # set of station services
+        # C cloning, R Refining, F Factory, R Research, O Offices, I Industry
+        self._hasStation = set()   # set of station services
+
+    @property
+    def is_dirty(self) -> bool:
+        return self._is_dirty or self._hasKill > 0.0 or self.marker != 0.0 or self._status is not States.UNKNOWN
 
     @property
     def status(self):
@@ -201,26 +202,30 @@ class System(object):
         painter.setFont(QFont("Arial", 30, italic=True))
         painter.setPen(QColor("#10c0c0c0"))
         painter.drawText(QRectF(0.0, 0.0, 1024.0, 50.0), Qt.AlignLeft, region_name)
+        # System.testRender(painter)
 
+    @staticmethod
+    def testRender(painter: QPainter):
         system_id = Universe.systemIdByName("Umokka")
         region_id = Universe.regionIDFromSystemID(system_id)
-        return
         inx = 1
         test = System("Name", system_id, "Ticker")
-        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test._first_line = "XXXX"
+        test._second_line = "YYYYY"
+        test.applySVG(QRectF(20.0, inx*50.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
         test.renderBackground(painter, region_id)
         test.renderSystem(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = True
-        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
         test.renderSystem(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
         test._hasIceBelt = True
-        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
         test.renderSystem(painter, region_id)
 
@@ -228,7 +233,7 @@ class System(object):
         test._hasCampaigns = False
         test._hasIceBelt = False
         test._hasIncursion = True
-        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
         test.renderSystem(painter, region_id)
 
@@ -237,7 +242,7 @@ class System(object):
         test._hasIceBelt = False
         test._hasIncursion = False
         test._isMonitored = 1
-        test.applySVG(QRectF(20.0, inx*40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
         test.renderSystem(painter, region_id)
 
@@ -247,7 +252,18 @@ class System(object):
         test._hasIncursion = False
         test._isMonitored = 0
         test._locatedCharacters = ["Test"]
-        test.applySVG(QRectF(20.0, inx * 40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.rect.moveTop(inx * 50.0)
+        test.renderBackground(painter, region_id)
+        test.renderSystem(painter, region_id)
+
+        inx = inx + 1
+        test._hasCampaigns = False
+        test._hasIceBelt = False
+        test._hasIncursion = False
+        test._isMonitored = 0
+        test._locatedCharacters = None
+        test._hasKill = 1.0
+        test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
         test.renderSystem(painter, region_id)
 
@@ -258,10 +274,9 @@ class System(object):
         test._isMonitored = 0
         test._locatedCharacters = None
         test._hasKill = 10.0
-        test.applySVG(QRectF(20.0, inx * 40.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
+        test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
         test.renderSystem(painter, region_id)
-
         pass
 
     def renderWormHoles(self, painter: QPainter, current_region_id, systems):
@@ -397,7 +412,7 @@ class System(object):
                 gradient.setColorAt(0.6, QColor("#00ffd700"))
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
-            path.addRoundedRect(rc_out_back.x(), rc_out_back.y(), rc_out_back.width(), rc_out_back.height(), delta_h, delta_h)
+            path.addRoundedRect(rc_out_back, delta_h, delta_h)
 
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
@@ -411,7 +426,7 @@ class System(object):
             gradient.setColorAt(0.6, QColor("#00ff0000"))
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
-            path.addRoundedRect(rc_out_back.x(), rc_out_back.y(), rc_out_back.width(), rc_out_back.height(), delta_h, delta_h)
+            path.addRoundedRect(rc_out_back, delta_h, delta_h)
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
@@ -430,13 +445,29 @@ class System(object):
             painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
 
+        if self._hasKill > 0.0:
+            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
+            col_red = QColor("#FF4500")
+            col_red.setAlphaF(max(min(self._hasKill/20., 1.), 0.001))
+            gradient.setColorAt(0.0, col_red)
+            gradient.setColorAt(0.6, QColor("#00FF4500"))
+            painter.setPen(Qt.NoPen)
+            path = QPainterPath()
+            path.addRoundedRect(rc_out_back, delta_h, delta_h)
+            for i in range(int(-delta_w), int(delta_w), 1):
+                gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
+                painter.fillPath(path, QBrush(gradient))
+            painter.drawPath(path)
+            painter.setBrush(Qt.NoBrush)
+            self._hasKill = self._hasKill - 0.025
+
         if bool(self._locatedCharacters):
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30800080"))
             gradient.setColorAt(0.6, QColor("#00800080"))
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
-            path.addRoundedRect(rc_out_back.x(), rc_out_back.y(), rc_out_back.width(), rc_out_back.height(), delta_h, delta_h)
+            path.addRoundedRect(rc_out_back, delta_h, delta_h)
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
@@ -452,15 +483,17 @@ class System(object):
             gradient.setColorAt(0.6, QColor("#006495ed"))
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
-            path.addEllipse(rc_out_back.x(), rc_out_back.y(), rc_out_back.width(), rc_out_back.height())
+            path.addEllipse(rc_out_back)
             gradient.setCenter(rc_out_back.center().x(), rc_out_back.center().y())
             painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
+        else:
+            self.marker = 0.0
 
     def renderSystem(self, painter: QPainter, current_region_id):
         """
-        Renders the system to a painter
+        Renders the system to a painter and resets the dirty flad
         Args:
             painter: QPainter to use
             current_region_id: region id of map
@@ -481,7 +514,7 @@ class System(object):
             painter.setPen(QPen(QColor("#FFc0c0c0")))
             painter.drawRect(rc_out)
         painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
-        painter.setFont(QFont("Arial", delta_h*2))
+        painter.setFont(QFont("Arial", delta_h*1.8))
         painter.drawText(rc_out, Qt.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
 
         if self._hasIceBelt:
@@ -499,10 +532,11 @@ class System(object):
             rc_out.translate(0.0, rc_out.height())
             rc_out.setHeight(delta_h*2)
 
-            painter.setFont(QFont("Arial", delta_h*1.5))
-            painter.setPen(QPen(QColor("#80FF0000")))
+            painter.setFont(QFont("Arial", delta_h*1.3))
+            painter.setPen(QPen(QColor("#c0FF0000")))
             painter.drawText(rc_out, Qt.AlignCenter, self._svg_text_string)
             painter.setBrush(Qt.NoBrush)
+        self._is_dirty = False
 
     @property
     def mapCoordinates(self) -> QRectF:
@@ -513,27 +547,17 @@ class System(object):
         """
         return self.rect
 
-    @property
-    def is_dirty(self):
-        """
-        Gathers the dirty flag of the system, a request to be repainted
-        Returns:
-
-        """
-        return self.is_mark_dirty or self.is_background_dirty or self.is_incursion_dirty or self.is_status_dirty \
-            or self.is_campaign_dirty or self.is_statistic_dirty or self.is_located_char_dirty or self._second_line_flash
-
-    def applySVG(self, map_coordinates: QRectF, scale: float = 1.2) -> None:
+    def applySVG(self, map_coordinates: QRectF) -> None:
         """
         Sets the working rectangle for the system, use x,y,width and height of the dict
         Args:
             map_coordinates:
-            scale:
-                Scaling factor for the distance in between the systems base on 1027x768 DotLan SVG Maps, the default is 1.2
+
         Returns:
         """
         self.rect = map_coordinates
         self.center = map_coordinates.center()
+        self._is_dirty = True
 
     def mark(self, sec=10.0):
         """
@@ -544,14 +568,15 @@ class System(object):
         Returns:
 
         """
-        self.is_mark_dirty = True
         self.marker = datetime.datetime.utcnow().timestamp() + sec
+        self._is_dirty = True
 
     def addLocatedCharacter(self, char_name, intel_range=None):
         if char_name not in self._locatedCharacters:
             self._locatedCharacters.append(char_name)
             for sys in self.getNeighbours(intel_range):
                 sys._isMonitored = sys._isMonitored + 1
+            self._is_dirty = True
 
     def removeLocatedCharacter(self, char_name, intel_range):
         if char_name in self._locatedCharacters:
@@ -561,25 +586,27 @@ class System(object):
                     sys._isMonitored = sys._isMonitored - 1
             if self._isMonitored > 0:
                 self._isMonitored = self._isMonitored - 1
+            self._is_dirty = True
 
     def changeIntelRange(self, old_intel_range, new_intel_range):
         for char_name in self._locatedCharacters:
             self.removeLocatedCharacter(char_name, old_intel_range)
             self.addLocatedCharacter(char_name, new_intel_range)
+            self._is_dirty = True
 
     def setCampaigns(self, campaigns: bool):
-        self.is_campaign_dirty = True
         self._hasCampaigns = campaigns
+        self._is_dirty = True
 
     def setIncursion(self, has_incursion: bool = False, is_staging: bool = False, has_boss: bool = False):
-        self.is_incursion_dirty = True
         self._hasIncursion = has_incursion
         self._isStaging = is_staging
         self._hasIncursionBoss = has_boss
+        self._is_dirty = True
 
     def setBackgroundColor(self, color):
-        self.is_background_dirty = True
         self.backgroundColor = color
+        self._is_dirty = True
 
     def getLocatedCharacters(self):
         characters = []
@@ -627,6 +654,10 @@ class System(object):
                 systems[newSystem] = {"distance": current_distance}
         return systems
 
+    def addKill(self):
+        self._hasKill = self._hasKill + 1.0
+        self._is_dirty = True
+
     def setStatus(self, message) -> None:
         """
         Appends a new message to the system
@@ -638,9 +669,9 @@ class System(object):
         """
         self._system_messages.append(message)
         self._status = None
-        self.is_status_dirty = True
+        self._is_dirty = True
 
-    def setStatistics(self, statistics : dict) -> None:
+    def setStatistics(self, statistics: dict) -> None:
         """
         Sets the statistic information as dict, jumps, factionkills, shipkills and podkills will be used as keys
         Args:
@@ -649,11 +680,11 @@ class System(object):
         Returns:
 
         """
-        self.is_statistic_dirty = True
         if statistics is None:
             self._svg_text_string = "stats n/a"
         else:
             self._svg_text_string = "j-{jumps} f-{factionkills} s-{shipkills} p-{podkills}".format(**statistics)
+        self._is_dirty = True
 
     def updateSVG(self):
         last_cycle = True
@@ -696,39 +727,43 @@ class System(object):
         self.UNKNOWN_COLOR = self.styles.getCommons()["unknown_colour"]
         self.CLEAR_COLOR = self.styles.getCommons()["clear_colour"]
         self.setBackgroundColor(self.UNKNOWN_COLOR)
+        self._is_dirty = True
 
     def getTooltipText(self):
-        format_src = '''<span style="font-weight:600; color:#e5a50a;">{system}</span>''' \
-                     '''<span style="font-weight:600; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>''' \
-                     '''<br/><span style=" font-weight:600; color:#e01b24;">{systemstats}</span>'''
+        format_src = '''<span style="font-weight:medium; color:#e5a50a;">{system}</span>''' \
+                     '''<span style="font-weight:medium; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>''' \
+                     '''<br/><span style=" font-weight:medium; color:#e01b24;">{systemstats}</span>'''
 
-        # '''<p><span style=" font-weight:600; color:#deddda;">{timers}</span></p>'''
-        # '''<p><span style=" font-weight:600; color:#deddda;">{zkillinfo}</span></p>'''
+        # '''<p><span style=" font-weight:bold; color:#deddda;">{timers}</span></p>'''
+        # '''<p><span style=" font-weight:bold; color:#deddda;">{zkillinfo}</span></p>'''
 
         def BR():
             return "<br/>"
 
         def YELLOW(txt):
-            return '''<span style="font-weight:600; color:#e5a50a;">{}</span>'''.format(txt)
+            return '''<span style="font-weight:medium; color:#e5a50a;">{}</span>'''.format(txt)
+
+        def GRAY(txt):
+            return '''<span style="font-weight:medium; color:#c0c0c0;">{}</span>'''.format(txt)
 
         def RED(txt):
-            return '''<span style="font-weight:600; color:#e01b24;">{}</span>'''.format(txt)
+            return '''<span style="font-weight:medium; color:#e01b24;">{}</span>'''.format(txt)
 
         if self._hasIncursion:
             if self._isStaging:
-                format_src = format_src + '''<br/><span style=" font-weight:600; color:#ffcc00;">-Incursion Staging{}-</span>'''.format(" Boss" if self._hasIncursionBoss else "")
+                format_src = format_src + '''<br/><span style=" font-weight:medium; color:#ffcc00;">-Incursion Staging{}-</span>'''.format(" Boss" if self._hasIncursionBoss else "")
             else:
-                format_src = format_src + '''<br/><span style=" font-weight:600; color:#ff9900;">-Incursion{}-</span>'''.format(" Boss" if self._hasIncursionBoss else "")
+                format_src = format_src + '''<br/><span style=" font-weight:medium; color:#ff9900;">-Incursion{}-</span>'''.format(" Boss" if self._hasIncursionBoss else "")
 
         if bool(self.wormhole_info):
             format_src = format_src + BR() + YELLOW("Wormholes")
             for info in self.wormhole_info:
-                region_name = Universe.regionNameFromSystemID(Universe.systemIdByName( info["out_system_name"]))
+                region_name = Universe.regionNameFromSystemID(Universe.systemIdByName(info["out_system_name"]))
                 format_src = format_src + BR() + "{wh_type} ".format(**info) + \
-                        YELLOW("{out_signature} ".format(**info)) + \
-                        RED("{out_system_name} ".format(**info)) +  \
-                        YELLOW(region_name) + "  " + \
-                        RED("({remaining_hours}h {max_ship_size})".format(**info))
+                    YELLOW("{out_signature} ".format(**info)) + \
+                    RED("{out_system_name} ".format(**info)) +  \
+                    YELLOW(region_name) + "  " + \
+                    RED("({remaining_hours}h {max_ship_size})".format(**info))
 
         if self._hasCampaigns:
             format_src = format_src + "<br/>Campaigns"
@@ -743,13 +778,13 @@ class System(object):
                     event_type = itm["event_type"]
                     if solar_system_id == self.system_id:
                         if event_type == "tcu_defense":
-                            format_src = (format_src + '<br/><span style=" font-weight:600; color:#c00000;">TCU {}</span>'.format(start_time))
+                            format_src = (format_src + '<br/><span style="font-weight:medium; color:#c00000;">TCU {}</span>'.format(start_time))
                         if event_type == "ihub_defense":
-                            format_src = format_src + '<br/><span style=" font-weight:600; color:#c00000;">IHUB {}</span>'.format(start_time)
+                            format_src = format_src + '<br/><span style="font-weight:medium; color:#c00000;">IHUB {}</span>'.format(start_time)
                         if event_type == "station_defense":
-                            format_src = format_src + '<br/><span style=" font-weight:600; color:#c00000;">Defense Events {}</span>'.format(start_time)
+                            format_src = format_src + '<br/><span style="font-weight:medium; color:#c00000;">Defense Events {}</span>'.format(start_time)
                         if event_type == "station_freeport":
-                            format_src = format_src + '<br/><span style=" font-weight:600; color:#c00000;">Freeport Events {}</span>'.format(start_time)
+                            format_src = format_src + '<br/><span style="font-weight:medium; color:#c00000;">Freeport Events {}</span>'.format(start_time)
 
         res = format_src.format(
             system=self.name,
@@ -761,17 +796,20 @@ class System(object):
 
         for msg in self._system_messages:
             time = msg.timestamp.strftime("%H:%M:%S")
-            res = res + "<br/>" + YELLOW(time) + "-" + msg.guiText
+            res = res + '<br/>' + GRAY(time) + "-" + msg.guiText
         return res
 
     def clearIntel(self):
-        self._system_messages.clear()
+        self._system_messages = []
         self._status = None
+        self._is_dirty = True
+        self._second_line_flash = False
 
     def pruneMessage(self, message):
         if message in self._system_messages:
             self._system_messages.remove(message)
             self._status = None
+
 
 def _InitAllSystemsA():
     for system_id, sys in Universe.SYSTEMS.items():
@@ -787,4 +825,3 @@ def _InitAllSystems():
 
 
 ALL_SYSTEMS = _InitAllSystems()
-

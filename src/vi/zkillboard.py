@@ -19,7 +19,7 @@ from vi.chatparser.ctx import CTX
 
 class Zkillmonitor(QObject):
     status_killmail = pyqtSignal(bool)
-    new_killmail = pyqtSignal(Message)
+    report_system_kill = pyqtSignal(int)
     MONITORING_PATH = "zkillMonitor.log"
     LOG_VICTIM = True
     LOG_ATTACKES = False
@@ -99,6 +99,7 @@ class Zkillmonitor(QObject):
             None
         """
         kill_data = json.loads(text)
+        self.report_system_kill.emit(kill_data["solar_system_id"])
         self.logKillmail(kill_data)
         if self.logKillAsIntel(kill_data):
             kill_string = self.getIntelString(kill_data)

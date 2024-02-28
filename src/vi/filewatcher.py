@@ -31,7 +31,7 @@ from PySide6.QtCore import Signal as pyqtSignal
 There is a problem with the QFIleWatcher on Windows and the log
 files from EVE.
 The first implementation (now FileWatcher_orig) works fine on Linux, but
-on Windows it seems ther is something buffered. Only a file-operation on
+on Windows it seems there is something buffered. Only a file-operation on
 the watched directory another event there, which triggers the OS to
 reread the files information, trigger the QFileWatcher.
 So here is a workaround implementation.
@@ -66,7 +66,7 @@ class FileWatcher(QtCore.QThread):
             if size_file < path_stat.st_size:
                 logging.debug("Update file {}".format(file_name))
                 self.files[file_name] = path_stat.st_size
-                self.file_change.emit(file_name, False)
+        self.file_change.emit(file_name, False)
 
     def directoryChanged(self, path_name):
         with FileWatcher.FILE_LOCK:

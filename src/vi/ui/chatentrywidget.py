@@ -75,8 +75,11 @@ class ChatEntryWidget(QtWidgets.QWidget):
         if not ChatEntryWidget.SHOW_AVATAR:
             self.ui.avatarLabel.setVisible(False)
 
+    def __key(self):
+        return self.message.timestamp, self.message.roomName, self.message.user
+
     def __del__(self):
-        logging.debug("ChatEntryWidget __del__ for message {}".format(self.message.guiText))
+        logging.debug("ChatEntryWidget __del__ for message {}".format(self.__key()))
 
     def linkClicked(self, link):
         link = str(link)
@@ -88,7 +91,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
 
     def updateText(self):
         time = datetime.datetime.strftime(self.message.timestamp, "%H:%M:%S")
-        text = u"<small>{time} - <b>{user}</b> - <i>{room}</i></small><br>{text}".format(
+        text = u'<small>{time} - <a style="color:#DAA520">{user}</a> - <i>{room}</i></small><br>{text}'.format(
             user=self.message.user,
             room=self.message.roomName,
             time=time,

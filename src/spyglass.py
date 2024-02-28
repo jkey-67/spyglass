@@ -27,7 +27,7 @@ from logging.handlers import RotatingFileHandler
 from PySide6 import QtGui, QtWidgets
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtSql import QSqlDatabase
-from PySide6.QtGui import Qt
+from PySide6.QtCore import Qt
 from vi import version
 from vi.ui import viui, systemtray
 from vi.cache import cache
@@ -195,6 +195,8 @@ class Application(QApplication):
 if __name__ == "__main__":
     res = 0
     try:
+        # os.environ["XDG_SESSION_TYPE"] = "wayland"
+        # os.environ["QT_QPA_PLATFORM"] = "wayland"
         app = Application(sys.argv)
         res = app.exec()
         del app

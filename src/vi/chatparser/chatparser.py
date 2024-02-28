@@ -20,6 +20,7 @@
 import datetime
 import os
 import logging
+import time
 
 from typing import Optional
 from vi.states import States
@@ -84,6 +85,21 @@ class ChatParser(object):
         except (Exception,):
             return None
 
+    def _fetchLinesFromFile(self, path):
+        filename = os.path.basename(path)
+        roomname = self.roomNameFromFileName(filename)
+        if roomname is None:
+            return list()
+        try:
+            with open(path, "r", encoding='utf-16-le') as f:
+                content = f.read()
+            logging.debug("Add room " + roomname + " to list.")
+        except Exception as e:
+            self.ignoredPaths.append(path)
+            logging.warning("Read a log file failed: File: {0} - problem: {1}".format(path, str(e)))
+            return list()
+        return content.split("\n")
+
     def _fetchFileChanges(self, path):
         """
             updates the data like number of lines and user and room name for a give path and return the content
@@ -96,27 +112,20 @@ class ChatParser(object):
         """
         filename = os.path.basename(path)
         roomname = self.roomNameFromFileName(filename)
-        if roomname is None:
-            return None, None
-        try:
-            with open(path, "r", encoding='utf-16-le') as f:
-                content = f.read()
-            logging.debug("Add room " + roomname + " to list.")
-        except Exception as e:
-            self.ignoredPaths.append(path)
-            logging.warning("Read a log file failed: File: {0} - problem: {1}".format(path, str(e)))
-            return None, None
 
-        lines = content.split("\n")
+        lines = self._fetchLinesFromFile(path)
+
         if path not in self.fileData or (roomname in LOCAL_NAMES and "charname" not in self.fileData.get(path, [])):
             self.fileData[path] = {}
             if roomname in LOCAL_NAMES:
                 charname = None
                 session_start = None
-                # for local-chats we need more infos
+                # for local-chats we need more info
                 for line in lines:
                     if "Listener:" in line:
                         charname = line[line.find(":") + 1:].strip()
+                    elif "Channel ID" in line:
+                        channel_id = line[line.find(":") + 1:].strip()
                     elif "Session started:" in line:
                         session_str = line[line.find(":") + 1:].strip()
                         session_start = datetime.datetime.strptime(session_str, "%Y.%m.%d %H:%M:%S")
@@ -157,6 +166,14 @@ class ChatParser(object):
         parseMessageForMap(systems_on_map, message)
         self.knownMessages.append(message)
         return message
+
+    def clearIntel(self):
+        self.knownMessages.clear()
+
+    def pruneMessages(self, expired):
+        old = [msg for msg in self.knownMessages if time.mktime(msg.timestamp.timetuple()) < expired]
+        for msg in old:
+            self.knownMessages.remove(msg)
 
     def fileModified(self, path, systems_on_map: dict[str, System], rescan=False) -> list[Message]:
         messages = []

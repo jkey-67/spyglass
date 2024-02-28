@@ -10,6 +10,7 @@ from vi.evegate import getSvgFromDotlan
 SVG_SYSTEM_USED = getSvgFromDotlan(region="providence", dark=True)
 ALL_SYSTEMS_FROM_SVG = Map(SVG_SYSTEM_USED).systems
 
+
 class TestIntel(unittest.TestCase):
     # Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     # cache_used = Cache()
@@ -160,7 +161,7 @@ class TestIntel(unittest.TestCase):
         self.assertEqual(res, "jumpbridge", "Structure should be jumpbridge")
 
     def test_removeXmlData(self):
-        soup = BeautifulSoup('<a style="color:#28a5ed;font-weight:bold" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>', 'html.parser')
+        soup = BeautifulSoup('<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>', 'html.parser')
         [s.extract() for s in soup(['href', 'br'])]
         res = soup.getText()
         http_start = res.find("http")

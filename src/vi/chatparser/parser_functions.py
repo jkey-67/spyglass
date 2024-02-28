@@ -204,7 +204,7 @@ def parseSystems(systems_on_map, rtext, systems_found) -> bool:
 
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:
-            return in_text.replace(in_word, CTX.FORMAT_SYSTEM_IN_RERION.format(in_system, in_word))
+            return in_text.replace(in_word, CTX.FORMAT_SYSTEM_IN_REGION.format(in_system, in_word))
         else:
             return in_text.replace(in_word, CTX.FORMAT_SYSTEM.format(in_system, in_word))
 

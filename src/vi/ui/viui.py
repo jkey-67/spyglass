@@ -24,16 +24,14 @@ import parse
 
 from typing import Union
 from typing import Optional
-from collections import deque
 
 import vi.version
 from vi.universe import Universe
 from vi.system import System
 import logging
-from PySide6.QtGui import *
+from PySide6.QtGui import Qt
 from PySide6 import QtGui, QtCore, QtWidgets
-from PySide6.QtCore import QPoint, QPointF, QByteArray, QSortFilterProxyModel, QTimer
-from PySide6.QtCore import QThreadPool
+from PySide6.QtCore import QPoint, QPointF, QSortFilterProxyModel, QTimer
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QImage, QPixmap, QDesktopServices
 from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, \
@@ -78,7 +76,7 @@ from vi.system import ALL_SYSTEMS
 """
  Timer intervals
 """
-MAP_UPDATE_INTERVAL_MSEC = 250
+MAP_UPDATE_INTERVAL_MSEC = 20
 CLIPBOARD_CHECK_INTERVAL_MSEC = 125
 
 
@@ -324,9 +322,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         "Spyglass is running to remedy this."
             QMessageBox.warning(self, "Known Characters not Found", info_text)
 
-        update_splash_window_info("Prepare region maps")
-        self.prepareMaps(lambda region_name, percent: update_splash_window_info("Caching region ({perc}%) {rgn}".format(rgn=region_name, perc=percent)))
-
         update_splash_window_info("Update player names")
 
         if self.invertWheel is None:
@@ -369,7 +364,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.menuTransparency.addAction(action)
         self.intelTimeGroup = QActionGroup(self.ui.menu)
         self.intelTimeGroup.intelTime = 20
-        for i in (10, 20, 40, 60):
+        for i in (2, 5, 10, 20, 40, 60):
             action = QAction("Past {0}min".format(i), None)
             action.setCheckable(True)
             action.setChecked(i == self.intelTimeGroup.intelTime)
@@ -484,7 +479,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playerGroup.setExclusionPolicy(QActionGroup.ExclusionPolicy.None_)
         self.ui.menuChars.clear()
         for name in self.knownPlayerNames:
-            icon = QIcon()
+            icon = QtGui.QIcon()
             if evegate.esiCheckCharacterToken(name):
                 avatar_raw_img = evegate.esiCharactersPortrait(name)
                 if avatar_raw_img is not None:
@@ -523,7 +518,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
 
     def paintEvent(self, event):
-        painter = QPainter()
+        painter = QtGui.QPainter()
         painter.begin(self)
         opt = QStyleOption()
         opt.initFrom(self)
@@ -629,7 +624,26 @@ class MainWindow(QtWidgets.QMainWindow):
             for system in self.systems_on_map.values():
                 if system.mapCoordinates.contains(pos):
                     if not QtWidgets.QToolTip.isVisible():
-                        QtWidgets.QToolTip.showText(global_pos, system.getTooltipText(), self)
+                        if False:
+                            edit = QtWidgets.QLabel(self)
+                            effect = QtWidgets.QGraphicsOpacityEffect(self)
+                            alpha_gradient = QtGui.QLinearGradient()
+                            alpha_gradient.setColorAt(0.0, Qt.transparent)
+                            alpha_gradient.setColorAt(0.5, Qt.black)
+                            alpha_gradient.setColorAt(1.0, Qt.transparent)
+                            effect.setOpacityMask(alpha_gradient)
+                            effect.setOpacity(0.8)
+                            edit.setGraphicsEffect(effect)
+                            # edit.setAutoFillBackground(False)
+                            edit.setTextFormat(Qt.RichText)
+                            edit.setOpenExternalLinks(True)
+                            edit.move(pos.x(), pos.y())
+                            edit.resize(QtCore.QSize(800, 300))
+                            edit.setText(system.getTooltipText())
+                            edit.show()
+                            # edit.grabMouse()
+                        else:
+                            QtWidgets.QToolTip.showText(global_pos, system.getTooltipText(), self)
                     return True
             return False
 
@@ -1026,6 +1040,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.removeChar.clicked.connect(callOnRemoveChar)
 
+    def updateKillboard(self, system_id):
+        ALL_SYSTEMS[system_id].addKill()
+        # self.changeRegionBySystemID(system_id)
+        # self.focusMapOnSystem(system_id)
+
     def _setupThreads(self):
         logging.info("Set up threads and their connections...")
         self.avatarFindThread = AvatarFindThread()
@@ -1038,7 +1057,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
 
         self.zkillboard = Zkillmonitor(parent=self)
-
+        self.zkillboard.report_system_kill.connect(self.updateKillboard)
         self.apiThread = None
 
         #  self.filewatcherThread.addMonitorFile(zkillMonitor.MONITORING_PATH)
@@ -1053,11 +1072,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def _terminateThreads(self):
         logging.info("Stop the threads ...")
         try:
-            if not QThreadPool.globalInstance().waitForDone():
-                logging.error("Unable to finalize the thread pool.")
-            else:
-                logging.error("Finalization of the thread pool succeeded.")
-
             self.zkillboard.startDisconnect()
             SoundManager().quit()
             SoundManager().wait()
@@ -1098,18 +1112,21 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.mapView.setScrollPosition(pt_system)
 
     def navigateBack(self, back):
-        region_name = None
-        pos = None
+        """
+        Implements the backward forward mouse key functions
+        Args:
+            back: True mean back els forward
+
+        Returns:
+
+        """
         if back:
             region_name, pos, zoom = self.region_queue.undo()
         else:
             region_name, pos, zoom = self.region_queue.redo()
         if region_name:
             self.changeRegionByName(region_name=region_name, update_queue=False)
-            if zoom:
-                self.ui.mapView.setZoomFactor(zoom)
-            if pos:
-                self.ui.mapView.setScrollPosition(pos)
+            self.ui.mapView.setZoomAndScrollPos(zoom, pos)
 
     def changeRegionByName(self, region_name, system_id=None, update_queue=True) -> None:
         """
@@ -1133,15 +1150,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.cache.putIntoCache("region_name", region_name)
         self.setupMap()
-        if system_id is not None:
-            self.focusMapOnSystem(system_id)
-        else:
-            view_center = self.ui.mapView.size() / 2
-            pt_system = QPointF(1027.0/2.0
-                                * self.ui.mapView.zoom - view_center.width(),
-                                768.0/2.0
-                                * self.ui.mapView.zoom - view_center.height())
-            self.ui.mapView.setScrollPosition(pt_system)
+        if update_queue:
+            if system_id is not None:
+                self.focusMapOnSystem(system_id)
+            else:
+                view_center = self.ui.mapView.size() / 2
+                size_of_image = self.ui.mapView.imgSize
+                pt_system = QPointF(size_of_image.width()/2.0
+                                    * self.ui.mapView.zoom - view_center.width(),
+                                    size_of_image.height()/2.0
+                                    * self.ui.mapView.zoom - view_center.height())
+                self.ui.mapView.setScrollPosition(pt_system)
         self.region_changed.emit(region_name)
 
     def changeRegionBySystemID(self, system_id: int) -> None:
@@ -1190,30 +1209,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     return None
             else:
                 return svg
-
-    def prepareMaps(self, callback=None):
-        return
-        akt = 0
-        total = len(Universe.REGIONS)
-        for region in Universe.REGIONS:
-            region_name = region["name"]
-            if callback:
-                akt = akt + 1
-                callback(region_name, int(akt/total*100))
-                if akt > 1:
-                    return
-            if region_name in self.dotlan_maps:
-                self.dotlan = self.dotlan_maps[region_name]
-            else:
-                svg = self.loadSVGMapFile(self.cache, region_name)
-                if svg is None:
-                    continue
-                self.dotlan_maps[region_name] = self.dotlan = dotlan.Map(
-                    region_name=region_name,
-                    svg_file=svg,
-                    set_jump_maps_visible=self.ui.jumpbridgesButton.isChecked(),
-                    set_statistic_visible=self.ui.statisticsButton.isChecked(),
-                    set_jump_bridges=self.mapJumpGates)
 
     def setupMap(self):
         logging.debug("setupMap started...")
@@ -1285,6 +1280,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _startStatisticTimer(self):
         statistic_timer = QTimer(self)
         statistic_timer.timeout.connect(self.statisticsThread.requestStatistics)
+        statistic_timer.timeout.connect(self.pruneOutdatedMessages)
         statistic_timer.start(60*1000)
 
         eve_scout_timer = QTimer(self)
@@ -1460,7 +1456,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeAlarmDistance(self, distance):
         for system in ALL_SYSTEMS.values():
-            system.changeIntelRange(old_intel_range=self.alarmDistance,new_intel_range=distance)
+            system.changeIntelRange(old_intel_range=self.alarmDistance, new_intel_range=distance)
         self.alarmDistance = distance
         for cm in TrayContextMenu.instances:
             for action in cm.distanceGroup.actions():
@@ -1484,7 +1480,6 @@ class MainWindow(QtWidgets.QMainWindow):
         clip_content = self.clipboard.text()
         if clip_content != self.oldClipboardContent:
             for line_content in clip_content.splitlines():
-                print("Clipboard line {}".format(clip_content))
                 cb_type, cb_data = evaluateClipboardData(line_content)
                 if cb_type == "poi":
                     if self.cache.putPOI(cb_data):
@@ -1554,7 +1549,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.focusMapOnSystem(system_marked.system_id)
         self.updateMapView()
 
-    def updateCharLocationOnMap(self, system_id : int, char_name : str) -> None:
+    def updateCharLocationOnMap(self, system_id: int, char_name: str) -> None:
         """
             Remove the char on all maps, then assign to the system with id system_is
         Args:
@@ -1577,7 +1572,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         Args:
             char_name: name of the character
-            system_name: system name
+            system_in: system name
             change_region: allow change of the region
 
         Returns:
@@ -1607,10 +1602,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def updateMapView(self):
         try:
-            if self.dotlan and self.dotlan.is_dirty:
+            if self.dotlan and self.dotlan.is_dirty():
                 self.mapTimer.stop()
                 self.ui.mapView.setContent(self.dotlan)
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
+            else:
+                pass
         except Exception as e:
             logging.error("Error updateMapView failed: {0}".format(str(e)))
             pass
@@ -1815,7 +1812,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chatEntries.append(chat_entry_widget)
         chat_entry_widget.mark_system.connect(self.markSystemOnMap)
         self.chat_message_added.emit(chat_entry_widget, message.timestamp)
-        self.pruneMessages()
         if scroll_to_bottom:
             self.ui.chatListWidget.scrollToBottom()
 
@@ -1825,7 +1821,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 system.clearIntel()
         except Exception as e:
             logging.error(e)
-
+        self.chatparser.clearIntel()
         try:
             while self.ui.chatListWidget.count() > 0:
                 item = self.ui.chatListWidget.item(0)
@@ -1836,19 +1832,20 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             logging.error(e)
 
-    def pruneMessages(self):
+    def pruneOutdatedMessages(self):
         """
             prune all outdated messages
         Returns:
 
         """
         try:
-            now = time.mktime(currentEveTime().timetuple())
+            expired = time.mktime(currentEveTime().timetuple()) - (60 * self.chatparser.intelTime)
+            self.chatparser.pruneMessages(expired)
             for row in range(self.ui.chatListWidget.count()):
                 chat_list_widget_item = self.ui.chatListWidget.item(0)
                 chat_entry_widget = self.ui.chatListWidget.itemWidget(chat_list_widget_item)
                 message = chat_entry_widget.message
-                if now - time.mktime(message.timestamp.timetuple()) > (60 * self.chatparser.intelTime):
+                if expired > time.mktime(message.timestamp.timetuple()):
                     self.chatEntries.remove(chat_entry_widget)
                     self.ui.chatListWidget.takeItem(0)
                     try:
@@ -1966,46 +1963,48 @@ class MainWindow(QtWidgets.QMainWindow):
             self.avatarFindThread.addChatEntry(entry, clear_cache=True)
 
     def updateStatisticsOnMap(self, data):
-        if data["result"] == "ok":
-            if "statistics" in data.keys():
-                self.mapStatisticCache = data["statistics"]
-                if self.dotlan:
-                    self.dotlan.addSystemStatistics(data['statistics'])
-            if "thera_wormhole" in data.keys():
-                self.dotlan.setTheraConnections(data["thera_wormhole"])
-            if "sovereignty" in data:
-                self.mapSovereignty = data['sovereignty']
-                if self.dotlan:
-                    self.dotlan.setSystemSovereignty(data['sovereignty'])
 
-            if 'incursions' in data:
-                self.mapIncursions = data['incursions']
-                if self.dotlan:
-                    self.dotlan.setIncursionSystems(data['incursions'])
+        if "statistics" in data.keys():
+            self.mapStatisticCache = data["statistics"]
+            if self.dotlan:
+                self.dotlan.addSystemStatistics(data['statistics'])
 
-            if 'campaigns' in data:
-                self.mapCampaigns = data['campaigns']
-                if self.dotlan:
-                    self.dotlan.setCampaignsSystems(data['campaigns'])
+        if "thera_wormhole" in data.keys():
+            self.dotlan.setTheraConnections(data["thera_wormhole"])
 
-            if "registered-chars" in data:
-                first_one = True
+        if "sovereignty" in data:
+            self.mapSovereignty = data['sovereignty']
+            if self.dotlan:
+                self.dotlan.setSystemSovereignty(data['sovereignty'])
+
+        if 'incursions' in data:
+            self.mapIncursions = data['incursions']
+            if self.dotlan:
+                self.dotlan.setIncursionSystems(data['incursions'])
+
+        if 'campaigns' in data:
+            self.mapCampaigns = data['campaigns']
+            if self.dotlan:
+                self.dotlan.setCampaignsSystems(data['campaigns'])
+
+        if "registered-chars" in data:
+            first_one = True
+            for itm in data["registered-chars"]:
+                if itm["online"] and itm["name"] == evegate.esiCharName():
+                    self.setLocation(itm["name"], itm["system"]["name"],
+                                     first_one and itm["name"] == evegate.esiCharName())
+                    first_one = False
+            if first_one:
                 for itm in data["registered-chars"]:
                     if itm["online"] and itm["name"] == evegate.esiCharName():
                         self.setLocation(itm["name"], itm["system"]["name"],
-                                         first_one and itm["name"] == evegate.esiCharName())
+                                         first_one)
                         first_one = False
-                if first_one:
-                    for itm in data["registered-chars"]:
-                        if itm["online"] and itm["name"] == evegate.esiCharName():
-                            self.setLocation(itm["name"], itm["system"]["name"],
-                                             first_one)
-                            first_one = False
 
+        if data["result"] == "error":
+            logging.error("updateStatisticsOnMap, error: {}".format(data["text"]))
+        else:
             logging.debug("Map statistic update  succeeded.")
-        elif data["result"] == "error":
-            text = data["text"]
-            logging.error("updateStatisticsOnMap, error: %s" % text)
 
     def zoomMapIn(self):
         self.ui.mapView.zoomIn()
@@ -2046,7 +2045,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._updateKnownPlayerAndMenu(name)
             for sys_name in systems:
                 self.setLocation(name, sys_name, self.autoChangeRegion)
-
+        QApplication.processEvents()
         if not rescan:
             self.updateMapView()
 
