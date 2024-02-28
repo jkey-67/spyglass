@@ -363,8 +363,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.opacityGroup.addAction(action)
             self.ui.menuTransparency.addAction(action)
         self.intelTimeGroup = QActionGroup(self.ui.menu)
-        self.intelTimeGroup.intelTime = 20
-        for i in (2, 5, 10, 20, 40, 60):
+        self.intelTimeGroup.intelTime = 10
+        for i in (5, 10, 20, 30, 60):
             action = QAction("Past {0}min".format(i), None)
             action.setCheckable(True)
             action.setChecked(i == self.intelTimeGroup.intelTime)
