@@ -27,6 +27,7 @@ from vi.ui.styles import Styles
 from vi.system import System, ALL_SYSTEMS
 from vi.universe import Universe
 
+
 JB_COLORS = ("66CD00", "7CFC00", "7CFC00", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
              "90EE90", "8FBC8F", "20B2AA", "2E8B57", "808000", "6B8E23")
 
@@ -205,7 +206,7 @@ class Map(object):
 
     def renderMap(self, painter):
         for system in self.systems.values():
-            system.updateSVG()
+            system.updateSystemBackgroundColors()
             system.renderBackground(painter, self.region_id)
 
         for system in self.systems.values():

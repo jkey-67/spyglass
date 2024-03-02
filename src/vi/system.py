@@ -31,6 +31,7 @@ from vi.states import States
 from vi.cache.cache import Cache
 from vi.ui.styles import Styles, TextInverter
 from vi.universe import Universe
+from vi.globals import Globals
 
 
 class System(object):
@@ -111,6 +112,7 @@ class System(object):
         self._system_messages = []
         self.jumpBridges = set()
         self.theraWormholes = set()
+        self.backgroundAlpha = 1.0
         self.backgroundColor = self.UNKNOWN_COLOR
         self.center = QPointF()
         self.rect = QRectF(0.0, 0.0, 64.0, 32.0)
@@ -503,7 +505,7 @@ class System(object):
         """
         delta_h = self.ELEMENT_HEIGHT / 8
         rc_out = self.rect.__copy__().marginsAdded(QMargins(-2, -2, -2, -2))
-        painter.setBrush(QBrush(self.backgroundColor))
+        painter.setBrush(self.getBackgroundBrush())
         if self.region_id == current_region_id:
             painter.setPen(QPen(QColor("#FFc0c0c0")))
             path = QPainterPath()
@@ -608,6 +610,11 @@ class System(object):
         self.backgroundColor = color
         self._is_dirty = True
 
+    def getBackgroundBrush(self) -> QBrush:
+        brush_color = QColor(self.backgroundColor)
+        brush_color.setAlphaF(self.backgroundAlpha)
+        return QBrush(brush_color)
+
     def getLocatedCharacters(self):
         characters = []
         for char in self._locatedCharacters:
@@ -686,18 +693,25 @@ class System(object):
             self._svg_text_string = "j-{jumps} f-{factionkills} s-{shipkills} p-{podkills}".format(**statistics)
         self._is_dirty = True
 
-    def updateSVG(self):
+    def updateSystemBackgroundColors(self) -> None:
+        """
+        Updated the background color depending on the current alarm state and current time
+        Returns:
+            None
+        """
         last_cycle = True
         alarm_time = datetime.datetime.utcnow().timestamp() - self._last_alarm_timestamp
         if self.status == States.ALARM:
             for maxDiff, alarmColour, lineColour in self.ALARM_COLORS:
-                if alarm_time < maxDiff:
+                if alarm_time < Globals().intel_time*60.0:
+                    self.backgroundAlpha = 1 - alarm_time/(Globals().intel_time*60.0)
                     self.backgroundColor = alarmColour
                     last_cycle = False
                     break
         elif self.status == States.CLEAR:
             for maxDiff, clearColour, lineColour in self.CLEAR_COLORS:
-                if alarm_time < maxDiff:
+                if alarm_time < Globals().intel_time*60:
+                    self.backgroundAlpha = 1 - alarm_time/(Globals().intel_time*60.0)
                     self.backgroundColor = clearColour
                     last_cycle = False
                     break
@@ -705,6 +719,7 @@ class System(object):
         if self.status in (States.ALARM, States.CLEAR):
             if last_cycle:
                 self._second_line_flash = False
+                self.backgroundAlpha = 1.0
                 self.backgroundColor = self.UNKNOWN_COLOR
 
             minutes = int(math.floor(alarm_time / 60))

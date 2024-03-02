@@ -107,6 +107,14 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
  - the public part of the EvE-Scout Backend API v2 2.1.0 is now used to handle Thera and Turnur system. [ESAPI](https://api.eve-scout.com/ui/#overview)
  - fix detection local change for local zh, es, ko and jp 
 
+## 1.7.1
+- using native Qt paint functions instead of the QSVGPainter
+- fixed a regression which caused a deadlock during file parsing
+- the monitored areas within the alarm distance is now marked with a white background
+- zKillboard entries will get a orange background
+- known Wormhole Thera and Turnur connections will be marked yellow on the current map, the info window show the identifier, the estimated lifetime and the maximum allowed ship types
+- the mouse forward and backward buttons can now be used to navigate in between the last maps and positions 
+
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
@@ -249,6 +257,11 @@ Spyglass writes its own set of logs to the \Documents\EVE\spyglass\logs director
 
 Your feedback is needed! Use the program for a while, then come back [here and create issues](https://github.com/jkey-67/spyglass/tree/qt5). Record anything you think about Spyglass - bugs, frustrations, and ideas to make it better.
 
+**After the last update, I can't start Spyglass anymore.**
 
+Maybe you need to remove the database, close Spyglass then rename the current database and start again. You find the database file in \Documents\EVE\spyglass\cache-2.sqlite3 rename the file.
+
+**Trouble using Wayland on linux**
+Currently transparent windows, clipboard and hotkeys did not work proper on linux system. 
 
 **All EVE related materials are property of [CCP Games](https://www.ccpgames.com/)**

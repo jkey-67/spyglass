@@ -24,6 +24,7 @@ import time
 
 from typing import Optional
 from vi.states import States
+from vi.globals import Globals
 from vi.dotlan import System
 from .message import Message
 from .parser_functions import parseLocal, parseMessageForMap
@@ -38,12 +39,11 @@ class ChatParser(object):
     """ ChatParser will analyze every new line that was found inside the Chatlogs.
     """
 
-    def __init__(self, path=None, rooms=None, inteltime=20):
+    def __init__(self, path=None, rooms=None):
         """ path = the path with the logs
             rooms = the rooms to parse"""
         self.path = path  # the path with the chatlog
         self.rooms = rooms  # the rooms to watch (excl. local)
-        self.intelTime = inteltime  # 20 min intel time as default
         self.fileData = {}  # information about the files in the directory
         self.knownMessages = []  # message we already analyzed
         self.locations = {}  # information about the location of a char
@@ -152,7 +152,7 @@ class ChatParser(object):
 
         message = Message(room=room_name,
                           message=line)
-        valid_timestamp = datetime.datetime.utcnow()-datetime.timedelta(minutes=self.intelTime)
+        valid_timestamp = datetime.datetime.utcnow()-datetime.timedelta(minutes=Globals().intel_time)
         if message.timestamp < valid_timestamp:
             logging.debug("Skip {} Room:{}".format(line, room_name))
             return None

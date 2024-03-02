@@ -28,6 +28,7 @@ from typing import Optional
 import vi.version
 from vi.universe import Universe
 from vi.system import System
+from vi.globals import Globals
 import logging
 from PySide6.QtGui import Qt
 from PySide6 import QtGui, QtCore, QtWidgets
@@ -40,6 +41,7 @@ from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, \
 from vi import evegate
 from vi import dotlan, filewatcher
 from vi.states import States
+from vi.globals import Globals
 from vi.ui import JumpbridgeChooser, ChatroomChooser, RegionChooser, SystemChat, ChatEntryWidget, ChatEntryItem
 
 from vi.cache.cache import Cache, currentEveTime
@@ -363,11 +365,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.opacityGroup.addAction(action)
             self.ui.menuTransparency.addAction(action)
         self.intelTimeGroup = QActionGroup(self.ui.menu)
-        self.intelTimeGroup.intelTime = 10
+        globals = Globals()
         for i in (5, 10, 20, 30, 60):
             action = QAction("Past {0}min".format(i), None)
             action.setCheckable(True)
-            action.setChecked(i == self.intelTimeGroup.intelTime)
+            action.setChecked(i == globals.intel_time)
             action.intelTime = i
             action.triggered.connect(self.changeIntelTime)
             self.intelTimeGroup.addAction(action)
@@ -377,7 +379,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         update_splash_window_info("Update chat parser")
 
-        self.chatparser = ChatParser(self.pathToLogs, self.room_names, self.intelTimeGroup.intelTime)
+        self.chatparser = ChatParser(self.pathToLogs, self.room_names)
         update_splash_window_info("Setup worker threads")
         self._setupThreads()
         update_splash_window_info("Setup UI")
@@ -1264,7 +1266,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     room_name = ChatParser.roomNameFromFileName(file)
                     modify_time = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
                     delta = now - modify_time
-                    if (delta.total_seconds() < 60 * self.chatparser.intelTime) and (delta.total_seconds() > 0):
+                    if (delta.total_seconds() < 60 * Globals().intel_time) and (delta.total_seconds() > 0):
                         if room_name in self.room_names:
                             self.logFileChanged(file_path, rescan=True)
 
@@ -1316,7 +1318,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "changeAutoChangeRegion", self.autoChangeRegion),
                     (None, "wheelDirChanged", self.invertWheel),
                     (None, "showJumpbridge", self.ui.jumpbridgesButton.isChecked()),
-                    (None, "showStatistic", self.ui.statisticsButton.isChecked()))
+                    (None, "showStatistic", self.ui.statisticsButton.isChecked()),
+                    (None, "setIntelTime", Globals().intel_time))
 
         self.cache.putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
         self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
@@ -1347,11 +1350,17 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.useSpokenNotificationsAction.setChecked(False)
             self.ui.useSpokenNotificationsAction.setEnabled(False)
 
+    def setIntelTime(self, minutes=None):
+        if minutes and self.intelTimeGroup:
+            for action in self.intelTimeGroup.actions():
+                action.setChecked(action.intelTime == minutes)
+        Globals().intel_time = minutes
+        self.ui.timeInfo.setText("All Intel (past {} minutes)".format(Globals().intel_time))
+
     def changeIntelTime(self):
         action = self.intelTimeGroup.checkedAction()
-        self.intelTimeGroup.intelTime = action.intelTime
-        self.chatparser.intelTime = action.intelTime
-        self.ui.timeInfo.setText("All Intel (past {} minutes)".format(self.chatparser.intelTime))
+        Globals().intel_time = action.intelTime
+        self.ui.timeInfo.setText("All Intel (past {} minutes)".format(Globals().intel_time))
         self.rescanIntel()
 
     def setOpacity(self, value=None):
@@ -1839,7 +1848,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
         try:
-            expired = time.mktime(currentEveTime().timetuple()) - (60 * self.chatparser.intelTime)
+            expired = time.mktime(currentEveTime().timetuple()) - (60 * Globals().intel_time)
             self.chatparser.pruneMessages(expired)
             for row in range(self.ui.chatListWidget.count()):
                 chat_list_widget_item = self.ui.chatListWidget.item(0)
