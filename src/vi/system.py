@@ -82,18 +82,17 @@ class System(object):
     SYSTEM_STYLE = "font-family: Arial, Helvetica, sans-serif; font-size: 8px; fill: {};"
     ALARM_STYLE = "font-family: Arial, Helvetica, sans-serif; font-size: 7px; fill: {};"
 
-    ALARM_BASE_T = 60  # set 1 for testing
-    ALARM_COLORS = [(ALARM_BASE_T * 5,  "#d00000", "#FFFFFF"),
-                    (ALARM_BASE_T * 10, "#D09B0F", "#FFFFFF"),
-                    (ALARM_BASE_T * 15, "#D0FA0F", "#000000"),
-                    (ALARM_BASE_T * 20, "#D0FDA2", "#000000"),
-                    (0,       "#FFFFFF", "#000000")]
+    ALARM_COLORS = [(1.0,  "#d00000", "#D09B0F", "#C0C0C0"),
+                    (0.75, "#D09B0F", "#D0FA0F", "#C0C0C0"),
+                    (0.5,  "#D0FA0F", "#D0FDA2", "#C0C0C0"),
+                    (0.25, "#D0FDA2", "#BACKGD", "#C0C0C0"),
+                    (0,    "#BACKGD", "#BACKGD", "#C0C0C0")]
 
-    CLEAR_COLORS = [(ALARM_BASE_T * 5,  "#00FF00", "#000000"),
-                    (ALARM_BASE_T * 10, "#40FF40", "#000000"),
-                    (ALARM_BASE_T * 15, "#80FF80", "#000000"),
-                    (ALARM_BASE_T * 20, "#C0FFC0", "#000000"),
-                    (0,       "#FFFFFF", "#000000")]
+    CLEAR_COLORS = [(1.0,  "#00FF00", "#40FF40", "#C0C0C0"),
+                    (0.75, "#40FF40", "#80FF80", "#C0C0C0"),
+                    (0.5,  "#80FF80", "#C0FFC0", "#C0C0C0"),
+                    (0.25, "#C0FFC0", "#BACKGD", "#C0C0C0"),
+                    (0.0,  "#BACKGD", "#BACKGD", "#C0C0C0")]
 
     ALARM_COLOR = ALARM_COLORS[0][1]
     UNKNOWN_COLOR = styles.getCommons()["unknown_colour"]
@@ -114,7 +113,9 @@ class System(object):
         self.theraWormholes = set()
         self.backgroundAlpha = 1.0
         self.backgroundColor = self.UNKNOWN_COLOR
-        self.center = QPointF()
+        self.backgroundColorNext = self.UNKNOWN_COLOR
+        self.statusTextColor = "#FFFFFF"
+
         self.rect = QRectF(0.0, 0.0, 64.0, 32.0)
         self.marker = 0.0
         self.wormhole_info = list()
@@ -611,8 +612,19 @@ class System(object):
         self._is_dirty = True
 
     def getBackgroundBrush(self) -> QBrush:
-        brush_color = QColor(self.backgroundColor)
-        brush_color.setAlphaF(self.backgroundAlpha)
+        """
+        Generates the background brush for the systems, blended from backgroundColor to backgroundColorNext depends
+        on the backgroundAlpha
+        Returns:
+
+        """
+        r = self.backgroundAlpha
+        col_a = QColor(self.backgroundColor)
+        col_b = QColor(self.backgroundColorNext) if self.backgroundColorNext != "#BACKGD" else self.UNKNOWN_COLOR
+        brush_color = QColor(255*(col_b.redF() * (1 - r) + col_a.redF() * r),
+                             255*(col_b.greenF() * (1 - r)+col_a.greenF() * r),
+                             255*(col_b.blueF() * (1 - r) + col_a.blueF() * r))
+
         return QBrush(brush_color)
 
     def getLocatedCharacters(self):
@@ -702,37 +714,49 @@ class System(object):
         last_cycle = True
         alarm_time = datetime.datetime.utcnow().timestamp() - self._last_alarm_timestamp
         if self.status == States.ALARM:
-            for maxDiff, alarmColour, lineColour in self.ALARM_COLORS:
-                if alarm_time < Globals().intel_time*60.0:
+            for maxDiff, alarmColour, nextColor, lineColour in self.ALARM_COLORS:
+                curr_diff = alarm_time / (Globals().intel_time * 60.0)
+                if curr_diff <= maxDiff:
                     self.backgroundAlpha = 1 - alarm_time/(Globals().intel_time*60.0)
                     self.backgroundColor = alarmColour
+                    self.backgroundColorNext = nextColor
+                    self.statusTextColor = lineColour
                     last_cycle = False
                     break
         elif self.status == States.CLEAR:
-            for maxDiff, clearColour, lineColour in self.CLEAR_COLORS:
-                if alarm_time < Globals().intel_time*60:
+            for maxDiff, clearColour, nextColor, lineColour in self.CLEAR_COLORS:
+                curr_diff = alarm_time / (Globals().intel_time * 60.0)
+                if curr_diff <= maxDiff:
                     self.backgroundAlpha = 1 - alarm_time/(Globals().intel_time*60.0)
                     self.backgroundColor = clearColour
+                    self.backgroundColorNext = nextColor
+                    self.statusTextColor = lineColour
                     last_cycle = False
                     break
 
         if self.status in (States.ALARM, States.CLEAR):
             if last_cycle:
                 self._second_line_flash = False
+                self._second_line = self.ticker
                 self.backgroundAlpha = 1.0
                 self.backgroundColor = self.UNKNOWN_COLOR
-
-            minutes = int(math.floor(alarm_time / 60))
-            seconds = int(alarm_time - minutes * 60)
-            if self._alarm_seconds != seconds:
-                self._alarm_seconds = seconds
-                self._second_line_flash = not self._second_line_flash
-                if self._second_line_flash:
-                    self._second_line = "{m:02d}:{s:02d}".format(m=minutes, s=seconds, ticker=self.ticker)
-                else:
-                    self._second_line = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
+                self.backgroundColorNext = self.UNKNOWN_COLOR
+            else:
+                minutes = int(math.floor(alarm_time / 60))
+                seconds = int(alarm_time - minutes * 60)
+                if self._alarm_seconds != seconds:
+                    self._alarm_seconds = seconds
+                    self._second_line_flash = not self._second_line_flash
+                    if self._second_line_flash:
+                        self._second_line = "{m:02d}:{s:02d}".format(m=minutes, s=seconds, ticker=self.ticker)
+                    else:
+                        self._second_line = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
         else:
+            self._second_line_flash = False
             self._second_line = self.ticker
+            self.backgroundAlpha = 1.0
+            self.backgroundColor = self.UNKNOWN_COLOR
+            self.backgroundColorNext = self.UNKNOWN_COLOR
 
     def updateStyle(self):
         for i in range(5):

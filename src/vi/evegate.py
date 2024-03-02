@@ -1361,6 +1361,8 @@ def getAllJumpGates(name_char: str, system_name_src="", system_name_dst="",
                 search_category=Category.structure)
 
             if "structure" not in structure.keys():
+                Cache().clearJumpGate(jump_bridge_text["src"])
+                Cache().clearJumpGate(jump_bridge_text["dst"])
                 Cache().putJumpGate(
                     src=jump_bridge_text.named["src"],
                     dst=jump_bridge_text.named["dst"],
@@ -1370,8 +1372,6 @@ def getAllJumpGates(name_char: str, system_name_src="", system_name_dst="",
                     json_dst=None,
                     used=0
                 )
-                Cache().clearJumpGate(jump_bridge_text["src"])
-                Cache().clearJumpGate(jump_bridge_text["dst"])
                 continue
             cnt_structures = len(structure["structure"])
             if cnt_structures < 2:

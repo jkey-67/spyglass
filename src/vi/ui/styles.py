@@ -105,9 +105,9 @@ class TextInverter:
         # perceptive Luminance formula
         perc = 1 - (((0.299 * red) + (0.587 * green) + (0.114 * blue)) / 255)
         if perc < 0.5:
-            return "#000000"
+            return "#C0000000"
         else:
-            return "#c0c0c0"
+            return "#c0c0c0c0"
 
 
 if __name__ == "__main__":
