@@ -19,8 +19,8 @@ class Singleton(type):
 
 
 '''
-	Example usage - its that simple!
+    Example usage - its that simple!
 
-	class Sound():
-		__metaclass__ = Singleton
+    class Sound():
+        metaclass__ = Singleton
 '''

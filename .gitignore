@@ -6,5 +6,6 @@ src/build/*
 src/dist/*
 src/.idea/*
 venv/
-eve_api_key.py
 workspace.xml
+cache.sqlit3
+cache-2.sqlite3

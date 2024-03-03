@@ -1,18 +1,18 @@
 ###########################################################################
 #  concatmaps - Tool to concat evemaps									  #
 #  Copyright (C) 2014-15 Sebastian Meyer (sparrow.242.de+eve@gmail.com )  #
-#																		  #
+#                                                                         #
 #  This program is free software: you can redistribute it and/or modify	  #
 #  it under the terms of the GNU General Public License as published by	  #
 #  the Free Software Foundation, either version 3 of the License, or	  #
 #  (at your option) any later version.									  #
-#																		  #
+#                                                                         #
 #  This program is distributed in the hope that it will be useful,		  #
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
 #  GNU General Public License for more details.							  #
-#																		  #
-#																		  #
+#                                                                         #
+#                                                                         #
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
@@ -35,48 +35,47 @@ def checkArguments(args):
         sys.exit(2)
 
 
-def concat(firstFile, secondFile):
-    firstSvg = loadSvg(firstFile)
-    secondSvg = loadSvg(secondFile)
+def concat(first_file, second_file):
+    first_svg = loadSvg(first_file)
+    second_svg = loadSvg(second_file)
     symbols = []
     jumps = []
-    systemUses = []
+    system_uses = []
 
-    for defElement in secondSvg.select("defs"):
-        for symbol in defElement.select("symbol"):
+    for def_element in second_svg.select("defs"):
+        for symbol in def_element.select("symbol"):
             symbols.append(symbol)
 
-    for jumpgroup in secondSvg.select("#jumps"):
+    for jumpgroup in second_svg.select("#jumps"):
         for jump in jumpgroup.select("line"):
-            jump["x1"] = float(jump["x1"]) + 1024
-            jump["x2"] = float(jump["x2"]) + 1024
-            jump["y1"] = float(jump["y1"]) + 300
-            jump["y2"] = float(jump["y2"]) + 300
+            jump["x1"] = str(float(jump["x1"]) + 1024)
+            jump["x2"] = str(float(jump["x2"]) + 1024)
+            jump["y1"] = str(float(jump["y1"]) + 300)
+            jump["y2"] = str(float(jump["y2"]) + 300)
             jumps.append(jump)
 
-    for sysgroup in secondSvg.select("#sysuse"):
+    for sysgroup in second_svg.select("#sysuse"):
         for sysuse in sysgroup.select("use"):
-            sysuse["x"] = float(sysuse["x"]) + 1024
-            sysuse["y"] = float(sysuse["y"]) + 300
-            systemUses.append(sysuse)
+            sysuse["x"] = str(float(sysuse["x"]) + 1024)
+            sysuse["y"] = str(float(sysuse["y"]) + 300)
+            system_uses.append(sysuse)
 
-    defElement = firstSvg.select("defs")[0]
+    def_element = first_svg.select("defs")[0]
     for symbol in symbols:
-        defElement.append(symbol)
+        def_element.append(symbol)
 
-    jumpsElement = firstSvg.select("#jumps")[0]
+    jumps_element = first_svg.select("#jumps")[0]
     for jump in jumps:
-        jumpsElement.append(jump)
+        jumps_element.append(jump)
 
-    systemUseElement = firstSvg.select("#sysuse")[0]
-    for systemUse in systemUses:
-        systemUseElement.append(systemUse)
+    system_use_element = first_svg.select("#sysuse")[0]
+    for system_use in system_uses:
+        system_use_element.append(system_use)
 
-    return firstSvg
+    return first_svg
 
 
 def loadSvg(path):
-    content = None
     with open(path) as f:
         content = f.read()
     return BeautifulSoup(content)
@@ -90,9 +89,10 @@ def main():
         errout("The new map is written to stdout")
         sys.exit(1)
     checkArguments(sys.argv)
-    newSvg = concat(sys.argv[1], sys.argv[2])
-    result = newSvg.body.next.prettify().encode("utf-8")
-    #with open("/home/jkeymer/projects/spyglass/src/vi/ui/res/mapdata/Wickedcreek_Scaldingpass.svg", "wb") as svgFile:
+    new_svg = concat(sys.argv[1], sys.argv[2])
+    result = new_svg.body.next.prettify().encode("utf-8")
+    # Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
+    # with open("/home/jkeymer/projects/spyglass/src/vi/ui/res/mapdata/Wickedcreek_Scaldingpass.svg", "wb") as svgFile:
     #    svgFile.write(result);
     #    svgFile.close()
     print(result)

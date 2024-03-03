@@ -1,0 +1,496 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg version="1.1"
+     id="svgdoc"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1024" height="768"
+     viewBox="0 0 1024 768"
+     style="background: #111111"
+     onload="init(evt)"
+>
+
+
+<style type="text/css">
+<![CDATA[
+/* jumps */
+.j	{ stroke: #bbbbbb; stroke-width: 1; }
+.jc	{ stroke: #dd0000; stroke-width: 1; }
+.jr	{ stroke: #800080; stroke-width: 1; }
+.jx	{ stroke: #bbbbbb; stroke-width: 3; }
+.jxc	{ stroke: #dd0000; stroke-width: 3; }
+.jxr	{ stroke: #800080; stroke-width: 3; }
+.jb	{ stroke: #0000FF; stroke-width: 3; fill: none; }
+
+/* external system */
+.eh	{ stroke: #00B000; stroke-width: 1; fill: #333333; }
+.el	{ stroke: #F00000; stroke-width: 1; stroke-dasharray: 8, 4; fill: #333333; }
+.e	{ stroke: #cccccc; stroke-width: 1; fill: #333333; }
+.exh	{ stroke: #00B000; stroke-width: 2; fill: #333333; }
+.exl	{ stroke: #F00000; stroke-width: 2; stroke-dasharray: 8, 3; fill: #333333; }
+.ex	{ stroke: #cccccc; stroke-width: 2; fill: #333333; }
+
+/* external system text */
+.es	{ font-size: 9px; font-family: Arial, Helvetica, sans-serif; fill: #ffffff; }
+.er	{ font-weight: bold; font-size: 7px; font-family: verdana, Arial, sans-serif; fill: #dddddd; }
+
+/* system */
+.sh	{ stroke: #00B000; stroke-width: 1; }
+.sl	{ stroke: #F00000; stroke-width: 1; stroke-dasharray: 8, 3; }
+.s	{ stroke: #777777; stroke-width: 1; }
+.sc	{ stroke-width: 1.2; stroke-dasharray: 4, 3; }
+.sx	{ stroke-width: 2.5; }
+
+.scl	{ stroke: transparent; stroke-width: 2; fill: transparent; }
+
+/* system text */
+.ss	{ font-family: Arial, Helvetica, sans-serif; font-size: 9px; fill: #ffffff; }
+.st	{ font-weight: bold; font-size: 7px; font-family: verdana, Arial, sans-serif; fill: #cccccc; }
+.so	{ fill: #ff2222; }
+.i	{ stroke: #0080FF; stroke-width: 1; fill: none; }
+
+/* station */
+.o	{ fill: #000000; }
+.oc	{ fill: #0000FF; }
+.oa	{ fill: #FFDC00; }
+.og	{ fill: #00FF00; }
+.om	{ fill: #FF0000; }
+.o1	{ fill: #ffffff; stroke-width: 0.5; stroke: #888888; }
+.o2	{ fill: #ffffff; stroke-width: 0.5; stroke: #888888; }
+.oo	{ fill: none; stroke: #AAAAAA; stroke-width: 1; }
+
+/* station services */
+.v1	{ fill: #FF0000; }
+.v2	{ fill: #00FF00; }
+.v3	{ fill: #FFDC00; }
+.v4	{ fill: #0000FF; }
+
+/* legend */
+.lb	{ stroke-width: 1; stroke: #777777; fill: #222222; }
+.lbt	{ stroke-width: 1; stroke: #777777; fill: #222222; }
+.lt	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 12px; }
+.lc	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
+.l	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 10px; }
+
+/* highlight */
+.h	{ fill: none; stroke-width: 3; stroke: #FFFFFF; }
+.hw	{ fill: none; stroke-width: 2; stroke: #00AA00; }
+.hl	{ fill: none; stroke-width: 2; stroke: #F00000; }
+.hg	{ fill: none; stroke-width: 2; stroke: #00B000; }
+
+/* incursion */
+.inc	{ fill: url(#incBg); }
+.incs	{ fill: url(#incStBg); }
+
+/* contested */
+.con	{ fill: url(#conBg); }
+
+/* sov campaign triggered */
+.cam		{ fill: url(#camBg); }
+.cam-active	{ fill: url(#camActiveBg); }
+]]>
+</style>
+
+<g id="map">
+<g id="legend">
+
+</g>
+
+<defs>
+  <symbol id="def32000101">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD101" class="sys link-5-32000101" target="_top">
+      <rect id="rect32000101" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD101</text>
+      <text id="txt32000101" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000092">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD092" class="sys link-5-32000092" target="_top">
+      <rect id="rect32000092" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD092</text>
+      <text id="txt32000092" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000093">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD093" class="sys link-5-32000093" target="_top">
+      <rect id="rect32000093" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD093</text>
+      <text id="txt32000093" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000100">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD100" class="sys link-5-32000100" target="_top">
+      <rect id="rect32000100" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD100</text>
+      <text id="txt32000100" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000090">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD090" class="sys link-5-32000090" target="_top">
+      <rect id="rect32000090" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD090</text>
+      <text id="txt32000090" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000096">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD096" class="sys link-5-32000096" target="_top">
+      <rect id="rect32000096" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD096</text>
+      <text id="txt32000096" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000104">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD104" class="sys link-5-32000104" target="_top">
+      <rect id="rect32000104" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD104</text>
+      <text id="txt32000104" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000098">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD098" class="sys link-5-32000098" target="_top">
+      <rect id="rect32000098" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD098</text>
+      <text id="txt32000098" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000103">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD103" class="sys link-5-32000103" target="_top">
+      <rect id="rect32000103" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD103</text>
+      <text id="txt32000103" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000099">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD099" class="sys link-5-32000099" target="_top">
+      <rect id="rect32000099" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD099</text>
+      <text id="txt32000099" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000089">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD089" class="sys link-5-32000089" target="_top">
+      <rect id="rect32000089" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD089</text>
+      <text id="txt32000089" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000097">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD097" class="sys link-5-32000097" target="_top">
+      <rect id="rect32000097" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD097</text>
+      <text id="txt32000097" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000091">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD091" class="sys link-5-32000091" target="_top">
+      <rect id="rect32000091" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD091</text>
+      <text id="txt32000091" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000095">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD095" class="sys link-5-32000095" target="_top">
+      <rect id="rect32000095" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD095</text>
+      <text id="txt32000095" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000094">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD094" class="sys link-5-32000094" target="_top">
+      <rect id="rect32000094" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD094</text>
+      <text id="txt32000094" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000102">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD102" class="sys link-5-32000102" target="_top">
+      <rect id="rect32000102" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD102</text>
+      <text id="txt32000102" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000118">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD118" class="sys link-5-32000118" target="_top">
+      <rect id="rect32000118" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD118</text>
+      <text id="txt32000118" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000117">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD117" class="sys link-5-32000117" target="_top">
+      <rect id="rect32000117" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD117</text>
+      <text id="txt32000117" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000119">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD119" class="sys link-5-32000119" target="_top">
+      <rect id="rect32000119" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD119</text>
+      <text id="txt32000119" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000120">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD120" class="sys link-5-32000120" target="_top">
+      <rect id="rect32000120" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD120</text>
+      <text id="txt32000120" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000116">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD116" class="sys link-5-32000116" target="_top">
+      <rect id="rect32000116" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD116</text>
+      <text id="txt32000116" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000115">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD115" class="sys link-5-32000115" target="_top">
+      <rect id="rect32000115" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD115</text>
+      <text id="txt32000115" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000114">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD114" class="sys link-5-32000114" target="_top">
+      <rect id="rect32000114" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD114</text>
+      <text id="txt32000114" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000113">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD113" class="sys link-5-32000113" target="_top">
+      <rect id="rect32000113" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD113</text>
+      <text id="txt32000113" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000088">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD088" class="sys link-5-32000088" target="_top">
+      <rect id="rect32000088" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD088</text>
+      <text id="txt32000088" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000086">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD086" class="sys link-5-32000086" target="_top">
+      <rect id="rect32000086" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD086</text>
+      <text id="txt32000086" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000082">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD082" class="sys link-5-32000082" target="_top">
+      <rect id="rect32000082" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD082</text>
+      <text id="txt32000082" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000084">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD084" class="sys link-5-32000084" target="_top">
+      <rect id="rect32000084" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD084</text>
+      <text id="txt32000084" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000087">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD087" class="sys link-5-32000087" target="_top">
+      <rect id="rect32000087" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD087</text>
+      <text id="txt32000087" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000108">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD108" class="sys link-5-32000108" target="_top">
+      <rect id="rect32000108" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD108</text>
+      <text id="txt32000108" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000085">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD085" class="sys link-5-32000085" target="_top">
+      <rect id="rect32000085" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD085</text>
+      <text id="txt32000085" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000112">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD112" class="sys link-5-32000112" target="_top">
+      <rect id="rect32000112" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD112</text>
+      <text id="txt32000112" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000106">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD106" class="sys link-5-32000106" target="_top">
+      <rect id="rect32000106" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD106</text>
+      <text id="txt32000106" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000083">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD083" class="sys link-5-32000083" target="_top">
+      <rect id="rect32000083" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD083</text>
+      <text id="txt32000083" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000105">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD105" class="sys link-5-32000105" target="_top">
+      <rect id="rect32000105" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD105</text>
+      <text id="txt32000105" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000109">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD109" class="sys link-5-32000109" target="_top">
+      <rect id="rect32000109" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD109</text>
+      <text id="txt32000109" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000081">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD081" class="sys link-5-32000081" target="_top">
+      <rect id="rect32000081" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD081</text>
+      <text id="txt32000081" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000110">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD110" class="sys link-5-32000110" target="_top">
+      <rect id="rect32000110" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD110</text>
+      <text id="txt32000110" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000107">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD107" class="sys link-5-32000107" target="_top">
+      <rect id="rect32000107" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD107</text>
+      <text id="txt32000107" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+  <symbol id="def32000111">
+    <a xlink:href="http://evemaps.dotlan.net/system/AD111" class="sys link-5-32000111" target="_top">
+      <rect id="rect32000111" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">AD111</text>
+      <text id="txt32000111" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+    </a>
+  </symbol>
+
+
+  <symbol id="defCampaign" width="85" height="46">
+    <rect x="0" y="0" width="85" height="46" class="cam" />
+  </symbol>
+  <symbol id="defCampaignActive" width="85" height="46">
+    <rect x="0" y="0" width="85" height="46" class="cam-active" />
+  </symbol>
+  <radialGradient id="conBg">
+    <stop offset="50%" stop-color="#FFA0FF"/>
+    <stop offset="95%" stop-color="#FFA0FF" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="camBg">
+    <stop offset="30%" stop-color="#FF8800" stop-opacity="1"/>
+    <stop offset="95%" stop-color="#FF8800" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="camActiveBg">
+    <stop offset="40%" stop-color="#FF0000" stop-opacity="1"/>
+    <stop offset="95%" stop-color="#FF0000" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="incBg">
+    <stop offset="50%" stop-color="#AFCE00"/>
+    <stop offset="100%" stop-color="#AFCE00" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="incStBg">
+    <stop offset="50%" stop-color="#808000"/>
+    <stop offset="100%" stop-color="#808000" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
+
+<g id="glow">
+
+
+</g>
+
+<g id="campaigns"></g>
+
+<g id="jumps">
+
+</g>
+
+<g id="sysuse">
+<use id="sys32000101" x="51" y="23" width="62.5" height="30" xlink:href="#def32000101" />
+<use id="sys32000092" x="51" y="23" width="62.5" height="30" xlink:href="#def32000092" />
+<use id="sys32000093" x="51" y="23" width="62.5" height="30" xlink:href="#def32000093" />
+<use id="sys32000100" x="51" y="23" width="62.5" height="30" xlink:href="#def32000100" />
+<use id="sys32000090" x="51" y="23" width="62.5" height="30" xlink:href="#def32000090" />
+<use id="sys32000096" x="51" y="23" width="62.5" height="30" xlink:href="#def32000096" />
+<use id="sys32000104" x="51" y="23" width="62.5" height="30" xlink:href="#def32000104" />
+<use id="sys32000098" x="51" y="23" width="62.5" height="30" xlink:href="#def32000098" />
+<use id="sys32000103" x="51" y="23" width="62.5" height="30" xlink:href="#def32000103" />
+<use id="sys32000099" x="51" y="23" width="62.5" height="30" xlink:href="#def32000099" />
+<use id="sys32000089" x="51" y="23" width="62.5" height="30" xlink:href="#def32000089" />
+<use id="sys32000097" x="51" y="23" width="62.5" height="30" xlink:href="#def32000097" />
+<use id="sys32000091" x="51" y="23" width="62.5" height="30" xlink:href="#def32000091" />
+<use id="sys32000095" x="51" y="23" width="62.5" height="30" xlink:href="#def32000095" />
+<use id="sys32000094" x="51" y="23" width="62.5" height="30" xlink:href="#def32000094" />
+<use id="sys32000102" x="51" y="23" width="62.5" height="30" xlink:href="#def32000102" />
+<use id="sys32000118" x="51" y="23" width="62.5" height="30" xlink:href="#def32000118" />
+<use id="sys32000117" x="51" y="23" width="62.5" height="30" xlink:href="#def32000117" />
+<use id="sys32000119" x="51" y="23" width="62.5" height="30" xlink:href="#def32000119" />
+<use id="sys32000120" x="51" y="23" width="62.5" height="30" xlink:href="#def32000120" />
+<use id="sys32000116" x="51" y="23" width="62.5" height="30" xlink:href="#def32000116" />
+<use id="sys32000115" x="51" y="23" width="62.5" height="30" xlink:href="#def32000115" />
+<use id="sys32000114" x="51" y="23" width="62.5" height="30" xlink:href="#def32000114" />
+<use id="sys32000113" x="51" y="23" width="62.5" height="30" xlink:href="#def32000113" />
+<use id="sys32000088" x="51" y="23" width="62.5" height="30" xlink:href="#def32000088" />
+<use id="sys32000086" x="51" y="23" width="62.5" height="30" xlink:href="#def32000086" />
+<use id="sys32000082" x="51" y="23" width="62.5" height="30" xlink:href="#def32000082" />
+<use id="sys32000084" x="51" y="23" width="62.5" height="30" xlink:href="#def32000084" />
+<use id="sys32000087" x="51" y="23" width="62.5" height="30" xlink:href="#def32000087" />
+<use id="sys32000108" x="51" y="23" width="62.5" height="30" xlink:href="#def32000108" />
+<use id="sys32000085" x="51" y="23" width="62.5" height="30" xlink:href="#def32000085" />
+<use id="sys32000112" x="51" y="23" width="62.5" height="30" xlink:href="#def32000112" />
+<use id="sys32000106" x="51" y="23" width="62.5" height="30" xlink:href="#def32000106" />
+<use id="sys32000083" x="51" y="23" width="62.5" height="30" xlink:href="#def32000083" />
+<use id="sys32000105" x="51" y="23" width="62.5" height="30" xlink:href="#def32000105" />
+<use id="sys32000109" x="51" y="23" width="62.5" height="30" xlink:href="#def32000109" />
+<use id="sys32000081" x="51" y="23" width="62.5" height="30" xlink:href="#def32000081" />
+<use id="sys32000110" x="51" y="23" width="62.5" height="30" xlink:href="#def32000110" />
+<use id="sys32000107" x="51" y="23" width="62.5" height="30" xlink:href="#def32000107" />
+<use id="sys32000111" x="51" y="23" width="62.5" height="30" xlink:href="#def32000111" />
+
+</g>
+
+<g id="highlights">
+
+</g>
+
+<g id="notes"></g>
+
+<g id="standings"></g>
+
+</g>
+<g id="controls" style="display: none;">
+  <a xlink:title="Zoom In"><image id="zoom_in" x="5" y="5" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/magnifier_zoom_in.png" style="cursor: pointer;"/></a>
+  <a xlink:title="Zoom Out"><image id="zoom_out" x="5" y="23" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/magnifier_zoom_out.png" style="cursor: pointer;"/></a>
+  <a xlink:title="Enable Mousewheel Support"><image id="wheel_on" x="5" y="42" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/mouse_add.png" style="cursor: pointer;"/> </a>
+  <a xlink:title="Disable Mousewheel Support"><image id="wheel_off" x="5" y="42" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/mouse_delete.png" style="cursor: pointer; display: none;"/></a>
+</g>
+
+
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript"><![CDATA[
+
+function init(E) {
+	SVGMap.init(E);
+}
+
+]]></script>
+
+
+</svg>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   version="1.1"
+   id="svg1"
+   width="1024"
+   height="1024"
+   viewBox="0 0 1024 1024"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <color-profile
+       name="C49RG9x"
+       xlink:href="../../../../../../.local/share/icc/edid-7d1e4e1213290d99045f5222b66d1cb0.icc"
+       id="color-profile1" />
+  </defs>
+  <g
+     id="g1">
+    <path
+       style="fill:#999999;fill-opacity:1"
+       d="m 703.95672,576.49107 c 105.2473,-105.32991 191.1753,-191.68998 190.951,-191.91126 -0.5714,-0.56384 -765.09158,-2.7293 -765.65221,-2.16867 C 128.72297,382.94367 510.82562,768 511.88662,768 c 0.3912,0 86.8228,-86.17902 192.0701,-191.50893 z M 896.00002,287.5 V 256 h -384 -384.00004 v 31.5 31.5 h 384.00004 384 z"
+       id="path8" />
+  </g>
+</svg>

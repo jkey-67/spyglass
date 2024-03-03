@@ -2,18 +2,18 @@
 ###########################################################################
 #  Spyglass - Visual Intel Chat Analyzer								  #
 #  Copyright (C) 2017 Crypta Eve (crypta@crypta.tech)                     #
-#																		  #
+#  																		  #
 #  This program is free software: you can redistribute it and/or modify	  #
 #  it under the terms of the GNU General Public License as published by	  #
 #  the Free Software Foundation, either version 3 of the License, or	  #
 #  (at your option) any later version.									  #
-#																		  #
+#  																		  #
 #  This program is distributed in the hope that it will be useful,		  #
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of		  #
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the		  #
 #  GNU General Public License for more details.							  #
-#																		  #
-#																		  #
+#  																		  #
+#  																		  #
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
@@ -22,35 +22,31 @@ import sys
 import os
 import logging
 import traceback
-
+import datetime
 from logging.handlers import RotatingFileHandler
-from logging import StreamHandler
-
-from PyInstaller.building import splash
-from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtWebEngine import QtWebEngine
-from PyQt5.QtSql import QSqlDatabase
-from vi import version, PanningWebView
+from PySide6 import QtGui, QtWidgets
+from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtSql import QSqlDatabase
+from PySide6.QtCore import Qt
+from vi import version
 from vi.ui import viui, systemtray
 from vi.cache import cache
 from vi.ui.styles import Styles
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from vi.zkillboard import Zkillmonitor
 
 
-
-def exceptHook(exceptionType, exceptionValue, tracebackObject):
+def exceptHook(exception_type, exception_value, traceback_object):
     """
         Global function to catch unhandled exceptions.
     """
     try:
-        logging.critical("-- Unhandled Exception --")
-        logging.critical(''.join(traceback.format_tb(tracebackObject)))
-        # traceback.print_tb(tracebackObject)
-        logging.critical('{0}: {1}'.format(exceptionType, exceptionValue))
-        logging.critical("-- ------------------- --")
-    except Exception:
+        logging.critical("-- Unhandled Exception ---------------------------------------------------------------------")
+        logging.critical(''.join(traceback.format_tb(traceback_object)))
+        logging.critical('{0}: {1}'.format(exception_type, exception_value))
+        logging.critical("--------------------------------------------------------------------------------------------")
+    except (Exception,):
         pass
 
 
@@ -61,105 +57,159 @@ backGroundColor = "#c6d9ec"
 class Application(QApplication):
     def __init__(self, args):
         super(Application, self).__init__(args)
-        QtWebEngine.initialize()
-        splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png")))
-        splash.show()
+        pixmap = QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png"))
         if version.SNAPSHOT:
-            QMessageBox.critical(None, "Snapshot", "This is a snapshot release... Use as you will....")
+            painter = QtGui.QPainter()
+            painter.begin(pixmap)
+            font = painter.font()
+            font.setPixelSize(60)
+            font.setBold(True)
+            painter.save()
+            painter.setPen(Qt.red)
+            painter.setFont(font)
+            painter.rotate(30.0)
+            painter.drawText(200, 0, "Snapshot Version")
+            painter.restore()
+            painter.end()
+        self.splash = QtWidgets.QSplashScreen(pixmap)
+        self.splash.show()
+        QApplication.processEvents()
 
-        # Set up paths
-        chatLogDirectory = ""
+        def change_splash_text(txt):
+            # logging.info(txt)
+            if self.splash and len(txt):
+                self.splash.showMessage("   {}".format(txt), Qt.AlignLeft, QtGui.QColor(0x808000))
+
+        chat_log_directory = ""
         if len(sys.argv) > 1:
-            chatLogDirectory = sys.argv[1]
-
-        if not os.path.exists(chatLogDirectory):
+            chat_log_directory = sys.argv[1]
+        change_splash_text("fetch path and os")
+        if not os.path.exists(chat_log_directory):
             if sys.platform.startswith("darwin"):
-                chatLogDirectory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
-                if not os.path.exists(chatLogDirectory):
-                    chatLogDirectory = os.path.join(os.path.expanduser("~"), "Library", "Application Support",
-                                                    "Eve Online",
-                                                    "p_drive", "User", "My Documents", "EVE", "logs", "Chatlogs")
+                change_splash_text("fetch path anf os, darwin detected")
+                chat_log_directory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
+                if not os.path.exists(chat_log_directory):
+                    chat_log_directory = os.path.join(os.path.expanduser("~"), "Library", "Application Support",
+                                                      "Eve Online", "p_drive", "User", "My Documents", "EVE",
+                                                      "logs", "Chatlogs")
             elif sys.platform.startswith("linux"):
-                chatLogDirectory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
+                change_splash_text("fetch path anf os, linux detected")
+                chat_log_directory = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "logs", "Chatlogs")
             elif sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
+                change_splash_text("fetch path anf os, windows detected")
                 import ctypes.wintypes
                 buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
                 ctypes.windll.shell32.SHGetFolderPathW(0, 0x05, 0, 0, buf)
                 documents_path = buf.value
                 from os.path import expanduser
-                chatLogDirectory = os.path.join(documents_path, "EVE", "logs", "Chatlogs")
+                chat_log_directory = os.path.join(documents_path, "EVE", "logs", "Chatlogs")
                 # Now I need to just make sure... Some old pcs could still be on XP
-                if not os.path.exists(chatLogDirectory):
-                    chatLogDirectory = os.path.join(os.path.expanduser("~"), "My Documents", "EVE", "logs", "Chatlogs")
+                if not os.path.exists(chat_log_directory):
+                    chat_log_directory = os.path.join(os.path.expanduser("~"), "My Documents", "EVE",
+                                                      "logs", "Chatlogs")
 
-        # todo show select folder dialog if path is not valid
-        if not os.path.exists(chatLogDirectory):
-            chatLogDirectory = QtWidgets.QFileDialog.getExistingDirectory(None, caption="Select EVE Online chat  logfiles directory", directory=chatLogDirectory)
+        if not os.path.exists(chat_log_directory):
+            chat_log_directory = QtWidgets.QFileDialog.getExistingDirectory(
+                None,
+                caption="Select EVE Online chat  logfiles directory", dir=chat_log_directory)
 
-        if not os.path.exists(chatLogDirectory):
+        if not os.path.exists(chat_log_directory):
             # None of the paths for logs exist, bailing out
-            QMessageBox.critical(None, "No path to Logs", "No logs found at: " + chatLogDirectory, QMessageBox.Close )
+            QMessageBox.critical(None, "No path to Logs", "Unable to find the log files at:\n\n" + chat_log_directory +
+                                 "\n\nThe Spyglass Application will be terminated.", QMessageBox.Close)
             sys.exit(1)
 
-        # Setting local directory for cache and logging
-        spyglassDir = os.path.join(os.path.dirname(os.path.dirname(chatLogDirectory)), "spyglass")
-        if not os.path.exists(spyglassDir):
-            os.mkdir(spyglassDir)
-        cache.Cache.PATH_TO_CACHE = os.path.join(spyglassDir, "cache-2.sqlite3")
+        change_splash_text("setting local directory for cache and logging")
+
+        spyglass_dir = os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)), "spyglass")
+        Zkillmonitor.MONITORING_PATH = os.path.join(chat_log_directory,
+                                                    datetime.datetime.strftime(
+                                                        datetime.datetime.utcnow(),
+                                                        "zKillboard_daily_logfile_%Y%m%d.txt"))
+
+        if not os.path.exists(spyglass_dir):
+            os.mkdir(spyglass_dir)
+        cache.Cache.PATH_TO_CACHE = os.path.join(spyglass_dir, "cache-2.sqlite3")
         self.con = QSqlDatabase.addDatabase("QSQLITE")
         self.con.setDatabaseName(cache.Cache.PATH_TO_CACHE)
         self.con.open()
 
-        spyglassLogDirectory = os.path.join(spyglassDir, "logs")
-        if not os.path.exists(spyglassLogDirectory):
-            os.mkdir(spyglassLogDirectory)
+        spyglass_log_directory = os.path.join(spyglass_dir, "logs")
+        if not os.path.exists(spyglass_log_directory):
+            os.mkdir(spyglass_log_directory)
 
-        spyglassCache = Cache()
-        logLevel = spyglassCache.getFromCache("logging_level")
-        if not logLevel:
-            logLevel = logging.WARN
+        spyglass_cache = Cache()
+        log_level = spyglass_cache.getFromCache("logging_level")
+        if not log_level:
+            log_level = logging.INFO
         if version.SNAPSHOT:
-            logLevel = logging.DEBUG  # For Testing
-        backGroundColor = spyglassCache.getFromCache("background_color")
+            log_level = logging.DEBUG  # For Testing
+        spyglass_cache.clearOutdatedPlayerNames()
+        back_ground_color = spyglass_cache.getFromCache("background_color")
 
-        if backGroundColor:
-            self.setStyleSheet("background-color: %s;" % backGroundColor)
-        css = Styles().getStyle()
+        if back_ground_color:
+            self.setStyleSheet("background-color: %s;" % back_ground_color)
+        css = Styles.getStyle()
         self.setStyleSheet(css)
         del css
 
-
+        root_logger = logging.getLogger()
+        root_logger.setLevel(level=log_level)
         # Setup logging for console and rotated log files
-        formatter = logging.Formatter('%(asctime)s| %(message)s', datefmt='%m/%d %I:%M:%S')
-        rootLogger = logging.getLogger()
-        rootLogger.setLevel(level=logLevel)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(logging.Formatter('"%(asctime)s - "/%(pathname)s:%(lineno)s)" : %(message)s'))
 
-        logFilename = spyglassLogDirectory + "/output.log"
+        log_filename = spyglass_log_directory + "/output.log"
+        file_handler = RotatingFileHandler(maxBytes=(1048576 * 5), backupCount=7, filename=log_filename, mode='a')
+        file_handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)9s [%(filename)s:%(lineno)s] - %(message)s"))
+        root_logger.addHandler(stream_handler)
+        root_logger.addHandler(file_handler)
 
-        fileHandler = RotatingFileHandler(maxBytes=(1048576 * 5), backupCount=7, filename=logFilename, mode='a')
-        fileHandler.setFormatter(formatter)
-        rootLogger.addHandler(fileHandler)
+        logging.info("================================================================================================")
+        logging.info("Spyglass %s starting up", version.VERSION)
+        logging.info("Looking for chat logs at: {0}".format(chat_log_directory))
+        logging.info("Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE))
+        logging.info("Writing logs to: {0}".format(spyglass_log_directory))
+        logging.info("================================================================================================")
+        tray_icon = systemtray.TrayIcon(self)
+        tray_icon.show()
 
-        consoleHandler = StreamHandler()
-        consoleHandler.setFormatter(formatter)
-        rootLogger.addHandler(consoleHandler)
-
-        logging.critical("")
-        logging.critical("------------------- Spyglass %s starting up -------------------", version.VERSION)
-        logging.critical("")
-        logging.critical(" Looking for chat logs at: {0}".format(chatLogDirectory))
-        logging.critical(" Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE))
-        logging.critical(" Writing logs to: {0}".format(spyglassLogDirectory))
-        trayIcon = systemtray.TrayIcon(self)
-        trayIcon.show()
-        def change_splash_text( txt ):
-            if len(txt):
-                splash.showMessage("    {} ...".format(txt), QtCore.Qt.AlignLeft, QtGui.QColor(0x808000))
-        self.mainWindow = viui.MainWindow(chatLogDirectory, trayIcon, change_splash_text)
+        change_splash_text("init main windows")
+        QApplication.processEvents()
+        self.mainWindow = viui.MainWindow(chat_log_directory, tray_icon, change_splash_text)
+        self.splash.finish(self.mainWindow)
         self.mainWindow.show()
         self.mainWindow.raise_()
 
-# The main application
+        logging.info("Initialisation completed =======================================================================")
+
+    def __del__(self):
+        logging.info("Spyglass terminated normal =====================================================================")
+
+
+"""
+    The main application
+"""
+
 if __name__ == "__main__":
-    app = Application(sys.argv)
-    sys.exit(app.exec_())
+    res = 0
+    try:
+        # os.environ["XDG_SESSION_TYPE"] = "wayland"
+        # os.environ["QT_QPA_PLATFORM"] = "wayland"
+        app = Application(sys.argv)
+        res = app.exec()
+        del app
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+
+        info = "Traceback\n"
+        while exc_tb:
+            filename = exc_tb.tb_frame.f_code.co_filename
+            line = exc_tb.tb_lineno
+            info = "{}   File \"{}\", line {}\n".format(info, filename, line)
+            exc_tb = exc_tb.tb_next
+
+        logging.critical("Spyglass terminated abnormal : %s\n%s. ", e.__str__(), info)
+        logging.info("================================================================================================")
+    sys.exit(res)
