@@ -68,6 +68,7 @@ def textReplace(element, new_text):
 def parsePlayerNames(rtext) -> bool:
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
+        text.replace("  ", " ")
         tokens = text.strip().split()
 
         if len(tokens) == 0:
