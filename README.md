@@ -119,7 +119,7 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
 - fixing an endless loop while parsing intel lines with multiple space in between tokens
 - showing vulnerability occupancy level (ADM) and vulnerable start time on top
 - the VR regions are removed from selection
-
+- a honeycomb-shape background with a defined color can be placed around a system in the background
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
@@ -153,6 +153,39 @@ Please remember to manage your access to all [third-party-applications](https://
 ## JBs
 - If you are docked on station, copy the name of the structure from inside the Solar System: Information Structure Tab
 - In space, use the right mouse button to click on the structure inside the overview and copy then
+
+## Background marking
+You can mark systems with a honeycomb colored background by adding the file background.txt to the spyglass folder 
+%user%/Documents/EVE/Spyglass.
+
+Each line represent one marking, the first element is a name of a Region, Constellation or System.
+The second element, the color and the option third element defines a scale factor defining the bounding box for the drawing in between 1.0 to 2.0. 
+
+Valid colors will be for example ,gree,#AARRGGBB  and #RRGGBB. If alpha is defined as 1.0(255) the alpha is replaced with 0.3f.
+
+You can comment out lines by with a leading #. 
+
+```
+ # Region Lonetrek has RGB color R=0xC0, G=0xC0, B=0xC0 alpha is defaulted to 1.0
+ Lonetrek,#c0c0c0
+ 
+ # Connstellation VT-LHB will be red  R=0xFF, G=0x00, B=0x00 alpha is defaulted to 1.0
+ VT-LHB,red
+ 
+ # System Jitas bounding box will be scaled by factor 1.5 
+ Jita,#FFB8860B,2.0 
+ 
+ #System MJ-5F9 is yellow with alpha 1.0 
+ MJ-5F9,#ffffff00
+ 
+ #System TDP-T3 is blue with alpha defaulted
+ TDP-T3,blue
+ 
+ #System Z-ENUD is white with alpha defaulted
+ Z-ENUD,white
+ ```
+
+
 
 ## Running EVE Spyglass from Source
 

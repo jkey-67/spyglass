@@ -24,6 +24,7 @@
 import math
 import datetime
 import json
+import os
 
 from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF
 from PySide6.QtGui import QPainter, QFont, QPen, QBrush, QColor, QRadialGradient, QPainterPath
@@ -151,6 +152,9 @@ class System(object):
         self.vulnerable_end_time = None
         self.vulnerable_start_time = None
         self._vulnerability_text = None
+
+        self.marking_color = None
+        self.marking_scale = 1.0
 
     @property
     def is_dirty(self) -> bool:
@@ -411,6 +415,26 @@ class System(object):
         rc_out_back = self.rect.__copy__().marginsAdded(QMargins(20, 20, 20, 20))
         delta_h = self.ELEMENT_HEIGHT / 2
         delta_w = self.ELEMENT_WIDTH / 2
+
+        if self.marking_color:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(self.marking_color))
+            path = QPainterPath()
+            scale = self.marking_scale
+            factor_a = 0.8 * scale
+            factor_a_y = 1.0 * scale
+            factor_b = 1.125 * scale
+            path.moveTo(self.rect.center().x() - delta_w * factor_a, self.rect.center().y() - delta_h * factor_a_y)
+            path.lineTo(self.rect.center().x() + delta_w * factor_a, self.rect.center().y() - delta_h * factor_a_y)
+            path.lineTo(self.rect.center().x() + delta_w * factor_b, self.rect.center().y() - delta_h * 0.0)
+            path.lineTo(self.rect.center().x() + delta_w * factor_a, self.rect.center().y() + delta_h * factor_a_y)
+            path.lineTo(self.rect.center().x() - delta_w * factor_a, self.rect.center().y() + delta_h * factor_a_y)
+            path.lineTo(self.rect.center().x() - delta_w * factor_b, self.rect.center().y() + delta_h * 0.0)
+
+            painter.drawPath(path)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawPath(path)
+
         if self._hasIncursion:
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30ffd700"))
@@ -912,8 +936,49 @@ def _InitAllSystemsA():
 
 def _InitAllSystems():
     res = dict()
+
+    def applyColorToSystem(system_id, tokens):
+        if tokens[1][0] == '#' and len(tokens[1]) == 9:
+            res[system_id].marking_color = QColor(tokens[1])
+        else:
+            res[system_id].marking_color = QColor(tokens[1])
+            res[system_id].marking_color.setAlphaF(0.3)
+        if len(tokens) > 2:
+            res[system_id].marking_scale = max(1.0, min(float(tokens[2]), 2.0))
+
     for system_id, system_data in Universe.SYSTEMS.items():
         res[system_id] = System(name=system_data["name"], system_id=system_id)
+    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "backgrounds.txt")
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            content = f.read()
+            lines = content.split("\n")
+            for line in lines:
+                if len(line) == 0:
+                    continue
+                if line[0] is '#':
+                    continue
+                line = line.split(',')
+                if len(line) < 2:
+                    continue
+                constellation_id = Universe.constellationIdByName(line[0])
+                region_id = Universe.regionIdByName(line[0])
+                if region_id:
+                    region = Universe.regionByID(region_id)
+                    for constellation_id in region["constellations"]:
+                        constellation = Universe.constellationByID(constellation_id)
+                        for system_id in constellation["systems"]:
+                            applyColorToSystem(system_id, line)
+
+                if constellation_id:
+                    constellation = Universe.constellationByID(constellation_id)
+                    for system_id in constellation["systems"]:
+                        applyColorToSystem(system_id, line)
+
+                system_id = Universe.systemIdByName(line[0])
+                if system_id:
+                    applyColorToSystem(system_id, line)
+
     return res
 
 

@@ -22,7 +22,7 @@ def instFiles():
         '--workpath', builddir,
         '--onefile',
         '--windowed',
-        '--name', 'spyglass-1.7.1.run',
+        '--name', 'spyglass-1.7.2.run',
         '../spyglass.py',
         '--icon=../icon.ico',
         "--add-data=../vi/universe/*.json:./vi/universe",

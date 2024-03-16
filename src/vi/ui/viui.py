@@ -658,17 +658,39 @@ class MainWindow(QtWidgets.QMainWindow):
                     break
         self.ui.mapView.doubleClicked = doubleClicked
 
-    def handleDestinationActions(self, act, destination_id, jump_route=None) -> bool:
-        if hasattr(act, "eve_action"):
-            player_name = act.eve_action["player_name"]
+    def handleDestinationActions(self, act, destination, jump_route=None) -> bool:
+        """
+        Handles the set destination functionality for a registered character, the destination dict
+        Args:
+            act: action to be used,needs the dict attribute eve_action with key "player_name"
+            destination: at least one of the keys "system_id" or "solar_system_id", the keys "structure_id" and
+                "station_id" are optional.
+            jump_route:
+
+        Returns:
+            True if succeeded
+
+        """
+        if hasattr(act, "eve_action") or "player_name" in destination:
+            if "system_id" in destination:
+                system_id = destination["system_id"]
+            elif "solar_system_id" in destination:
+                system_id = destination["solar_system_id"]
+            else:
+                return False
+            if "player_name" in destination:
+                player_name = destination["player_name"]
+            else:
+                player_name = act.eve_action["player_name"]
             if self.ui.actionUser_Thera_for_routs.isChecked():
                 evegate.ESAPIListPublicSignatures()
                 the_route = RoutPlanner.findRoute(
                     src_id=evegate.esiCharactersLocation(player_name),
-                    dst_id=destination_id,
+                    dst_id=system_id,
                     use_ansi=True,
                     use_thera=True
                 )
+
                 last_thera = False
                 first = True
                 last = len(the_route.attr)
@@ -687,16 +709,28 @@ class MainWindow(QtWidgets.QMainWindow):
                         beginning=first)
                     first = False
 
+                if "station_id" in destination.keys():
+                    evegate.esiAutopilotWaypoint(player_name, destination["station_id"],
+                                                 beginning=False, clear_all=False)
+                elif "structure_id" in destination.keys():
+                    evegate.esiAutopilotWaypoint(player_name, destination["structure_id"],
+                                                 beginning=False, clear_all=False)
+
                 return True
             if act.eve_action["action"] == "destination":
-                evegate.esiAutopilotWaypoint(
-                    player_name,
-                    destination_id)
-                return True
+                if "structure_id" in destination.keys():
+                    evegate.esiAutopilotWaypoint(player_name, destination["structure_id"])
+                    return True
+                elif "station_id" in destination.keys():
+                    evegate.esiAutopilotWaypoint(player_name, destination["station_id"])
+                    return True
+                else:
+                    evegate.esiAutopilotWaypoint(player_name, system_id)
+                    return True
             elif act.eve_action["action"] == "waypoint":
                 evegate.esiAutopilotWaypoint(
                     char_name=player_name,
-                    system_id=destination_id,
+                    system_id=system_id,
                     clear_all=False,
                     beginning=False)
                 return True
@@ -707,7 +741,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return True
             elif act.eve_action["action"] == "route":
                 if jump_route is None:
-                    evegate.esiAutopilotWaypoint(player_name, destination_id)
+                    evegate.esiAutopilotWaypoint(player_name, system_id)
                     return True
                 else:
                     first = True
@@ -786,7 +820,7 @@ class MainWindow(QtWidgets.QMainWindow):
             lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
             if item and "destination_id" in item.keys():
-                if self.handleDestinationActions(res, destination_id=item["destination_id"]):
+                if self.handleDestinationActions(res, item):
                     return
                 elif res == lps_ctx_menu.copy:
                     if "structure_id" in item.keys():
@@ -869,7 +903,7 @@ class MainWindow(QtWidgets.QMainWindow):
             lps_ctx_menu = TheraContextMenu(target_system_name)
             lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
-            if self.handleDestinationActions(act=res, destination_id=Universe.systemIdByName(target_system_name)):
+            if self.handleDestinationActions(act=res, destination={"system_id": Universe.systemIdByName(target_system_name)}):
                 return
             elif res == lps_ctx_menu.updateData:
                 self.ui.tableViewThera.model().sourceModel().updateData()
@@ -914,7 +948,7 @@ class MainWindow(QtWidgets.QMainWindow):
             lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewJBs.mapToGlobal(pos))
             source_id = item["id_src"] if item["id_src"] is not None else Universe.systemIdByName(item["src"])
-            if self.handleDestinationActions(res, source_id):
+            if self.handleDestinationActions(res, destination={"system_id": source_id}):
                 return
             elif res == lps_ctx_menu.update:
                 inx_selected = self.ui.tableViewJBs.selectedIndexes()
@@ -983,7 +1017,7 @@ class MainWindow(QtWidgets.QMainWindow):
             lps_ctx_menu = TheraContextMenu(target_system_name)
             lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
-            if self.handleDestinationActions(act=res, destination_id=Universe.systemIdByName(target_system_name)):
+            if self.handleDestinationActions(act=res, destination={"system_id": Universe.systemIdByName(target_system_name)}):
                 return
             elif res == lps_ctx_menu.updateData:
                 self.ui.tableViewStorm.model().sourceModel().updateData()
@@ -2098,7 +2132,7 @@ class MainWindow(QtWidgets.QMainWindow):
             map_ctx_menu.updateMenu(alarm_distance=self.alarmDistance)
         res = map_ctx_menu.exec_(self.mapToGlobal(QPoint(event.x(), event.y())))
         if selected_system:
-            if self.handleDestinationActions(res, selected_system.system_id):
+            if self.handleDestinationActions(res, destination={"system_id": selected_system.system_id}):
                 return
             elif res == map_ctx_menu.clearJumpGate:
                 self.cache.clearJumpGate(selected_system.name)

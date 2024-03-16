@@ -166,8 +166,8 @@ class Map(object):
 
         # Create soup from the svg
         self.soup = BeautifulSoup(svg_file, features="html.parser")
-        self.svg_size = _extractSizeFromSoup(self.soup, 1.2)
-        self.systems = _extractSystemsFromSoup(self.soup, 1.2)
+        self.svg_size = _extractSizeFromSoup(self.soup, 1.3)
+        self.systems = _extractSystemsFromSoup(self.soup, 1.3)
 
         self.systemsById = {}
         self.systemsByName = {}
