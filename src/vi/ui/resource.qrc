@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>res/adm_vul.svg</file>
     <file>res/search.svg</file>
     <file>res/down.svg</file>
     <file>res/apply.svg</file>

@@ -8,11 +8,10 @@ from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Signal as pyqtSignal
 
-from vi.universe import Universe
-from vi.chatparser.message import Message
-import vi.evegate as evegate
-from vi.cache import Cache
-from vi.chatparser.ctx import CTX
+from .evegate import esiUniverseNames, esiAlliances
+from .universe import Universe
+from .cache import Cache
+from .chatparser.ctx import CTX
 
 # see https://github.com/zKillboard/zKillboard/wiki
 
@@ -144,7 +143,7 @@ class Zkillmonitor(QObject):
         character_id = victim["character_id"] if "character_id" in victim.keys() else 0
         ship_type_id = victim["ship_type_id"] if "ship_type_id" in victim.keys() else 0
         alliance_id = victim["alliance_id"] if "alliance_id" in victim.keys() else 0
-        user_data = evegate.esiUniverseNames({character_id, system_id, ship_type_id, alliance_id})
+        user_data = esiUniverseNames({character_id, system_id, ship_type_id, alliance_id})
 
         kill_victim_character = user_data[character_id] if character_id and character_id in user_data.keys() else "-"
         kill_victim_ship_type = user_data[ship_type_id] if ship_type_id and ship_type_id in user_data.keys() else "-"
@@ -154,7 +153,7 @@ class Zkillmonitor(QObject):
         if alliance_id:
             message_msk = \
                 "[ {date} ] zKillboard.com >{link}<br/>{system} {player} &lt;{ticker}&gt; ({alliance}) lost a {ship}\n"
-            alliance_ticker = evegate.esiAlliances(alliance_id)["ticker"]
+            alliance_ticker = esiAlliances(alliance_id)["ticker"]
         else:
             message_msk = "[ {date} ] zKillboard.com >{link}<br/>{system} {player} lost a {ship}\n"
 

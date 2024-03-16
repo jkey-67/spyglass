@@ -20,13 +20,15 @@
 import os
 import sys
 import logging
-from .resources import resourcePath
-from vi.singleton import Singleton
-from vi.cache.cache import Cache
-from threading import Thread
 
 import pygame
 import pygame._sdl2.audio as sdl2_audio
+
+from threading import Thread
+from vi.resources import resourcePath
+from vi.singleton import Singleton
+from vi.cache.cache import Cache
+
 
 try:
     from PySide6.QtTextToSpeech import QTextToSpeech

@@ -115,6 +115,11 @@ Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interf
 - known Wormhole Thera and Turnur connections will be marked yellow on the current map, the info window show the identifier, the estimated lifetime and the maximum allowed ship types
 - the mouse forward and backward buttons can now be used to navigate in between the last maps and positions 
 
+## 1.7.2
+- fixing an endless loop while parsing intel lines with multiple space in between tokens
+- showing vulnerability occupancy level (ADM) and vulnerable start time on top
+- the VR regions are removed from selection
+
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 

@@ -24,8 +24,6 @@ import time
 import parse
 import threading
 
-from vi.universe import Universe
-from vi.universe.routeplanner import RoutPlanner
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QThread, QUrl
 from PySide6.QtCore import Signal as pyqtSignal
@@ -49,6 +47,8 @@ from enum import Enum
 from eve_api_key import CLIENTS_API_KEY
 from vi.cache.cache import Cache
 from vi.version import VERSION
+from vi.universe import Universe
+from vi.universe.routeplanner import RoutPlanner
 
 thread_local = local()
 
@@ -1293,7 +1293,7 @@ class Category(Enum):
     structure = "structure"
 
 
-def esiSearch(esi_char_name: str, search_text, search_category: str, search_strict=False):
+def esiSearch(esi_char_name: str, search_text, search_category: Category, search_strict=False):
     """ updates all jump bridge data via api searching for names which have a substring  %20%C2%BB%20 means " >> "
     """
     if esi_char_name is None:
@@ -2104,10 +2104,12 @@ def generate_universe_region_names(use_outdated=True):
         out_file.write('}\n')
         print("Region generation done.")
 
-
+# vulnerability_occupancy_level
 # The main application for testing
 if __name__ == "__main__":
     session = getSession()
+    state = esiSovereigntyStructures()
+    stat = getPlayerSovereignty()
     dumpSpyglassDownloadStats()
     # genereate_universe_system_names()
     # generate_universe_region_names()

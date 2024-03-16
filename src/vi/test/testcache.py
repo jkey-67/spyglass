@@ -6,7 +6,7 @@ from vi.cache import Cache
 from vi.universe import Universe
 from vi.clipboard import evaluateClipboardData
 from vi.redoundoqueue import RedoUndoQueue
-from vi.dotlan import Map
+from vi import Map
 from vi import evegate
 
 
@@ -68,7 +68,7 @@ class TestCache(unittest.TestCase):
         self.assertIsNotNone(systems)
 
     def test_update_all_json_files(self):
-        self.use_outdated_cache = True
+        self.use_outdated_cache = False
         self.test_generateShipnames()
         self.test_generateRegions()
         self.test_generateConstellations()

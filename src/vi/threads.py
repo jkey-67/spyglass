@@ -24,8 +24,8 @@ import os
 from PySide6.QtCore import QThread, QRunnable, QThreadPool
 from PySide6.QtCore import Signal as pyqtSignal
 from vi import evegate
-from vi.cache.cache import Cache
-from vi.resources import resourcePath
+from .cache.cache import Cache
+from .resources import resourcePath
 
 STATISTICS_UPDATE_INTERVAL_MSECS = 1 * 60 * 1000
 

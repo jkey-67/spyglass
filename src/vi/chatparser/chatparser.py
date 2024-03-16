@@ -23,12 +23,12 @@ import logging
 import time
 
 from typing import Optional
-from vi.states import States
-from vi.globals import Globals
-from vi.dotlan import System
 from .message import Message
 from .parser_functions import parseLocal, parseMessageForMap
 from .line_parser import lineToDatetime
+from ..states import States
+from ..globals import Globals
+from ..dotlan import System
 
 # Names the local chat logs could start with (depends on l10n of the client)
 
@@ -120,21 +120,24 @@ class ChatParser(object):
             if roomname in LOCAL_NAMES:
                 charname = None
                 session_start = None
+                channel_id = None
                 # for local-chats we need more info
                 for line in lines:
-                    if "Listener:" in line:
+                    if "Listener" in line:
                         charname = line[line.find(":") + 1:].strip()
                     elif "Channel ID" in line:
                         channel_id = line[line.find(":") + 1:].strip()
-                    elif "Session started:" in line:
+                    elif "Session started" in line:
                         session_str = line[line.find(":") + 1:].strip()
                         session_start = datetime.datetime.strptime(session_str, "%Y.%m.%d %H:%M:%S")
 
-                    if charname and session_start:
+                    if charname and session_start and channel_id:
                         self.fileData[path]["charname"] = charname
                         self.fileData[path]["sessionstart"] = session_start
+                        self.fileData[path]["channel_id"] = channel_id
                         self.fileData[path]["lines"] = 1
                         break
+
         if "lines" in self.fileData[path].keys():
             prev_lines = self.fileData[path]["lines"]
         else:

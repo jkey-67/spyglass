@@ -28,7 +28,7 @@ import json
 from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF
 from PySide6.QtGui import QPainter, QFont, QPen, QBrush, QColor, QRadialGradient, QPainterPath
 from vi.states import States
-from vi.cache.cache import Cache
+from vi.cache import Cache
 from vi.ui.styles import Styles, TextInverter
 from vi.universe import Universe
 from vi.globals import Globals
@@ -120,6 +120,7 @@ class System(object):
         self.marker = 0.0
         self.wormhole_info = list()
 
+        self.is_vulnerable_visible = True
         self.is_statistics_visible = True
         self.is_jumpbridges_visible = True
 
@@ -145,6 +146,11 @@ class System(object):
         self._hasKeepStar = set()  # set of station services
         # C cloning, R Refining, F Factory, R Research, O Offices, I Industry
         self._hasStation = set()   # set of station services
+
+        self.vulnerability_occupancy_level = None
+        self.vulnerable_end_time = None
+        self.vulnerable_start_time = None
+        self._vulnerability_text = None
 
     @property
     def is_dirty(self) -> bool:
@@ -217,20 +223,20 @@ class System(object):
         test._second_line = "YYYYY"
         test.applySVG(QRectF(20.0, inx*50.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = True
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
         test._hasIceBelt = True
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
@@ -238,7 +244,7 @@ class System(object):
         test._hasIncursion = True
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
@@ -247,7 +253,7 @@ class System(object):
         test._isMonitored = 1
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
@@ -257,7 +263,7 @@ class System(object):
         test._locatedCharacters = ["Test"]
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
@@ -268,7 +274,7 @@ class System(object):
         test._hasKill = 1.0
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
@@ -279,7 +285,7 @@ class System(object):
         test._hasKill = 10.0
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
         pass
 
     def renderWormHoles(self, painter: QPainter, current_region_id, systems):
@@ -494,9 +500,9 @@ class System(object):
         else:
             self.marker = 0.0
 
-    def renderSystem(self, painter: QPainter, current_region_id):
+    def renderSystemTexts(self, painter: QPainter, current_region_id):
         """
-        Renders the system to a painter and resets the dirty flad
+        Renders the system to a painter and resets the dirty flag
         Args:
             painter: QPainter to use
             current_region_id: region id of map
@@ -532,13 +538,25 @@ class System(object):
                 painter.drawPath(path)
 
         if self.is_statistics_visible:
+            rc_out = self.rect.__copy__()
             rc_out.translate(0.0, rc_out.height())
             rc_out.setHeight(delta_h*2)
 
             painter.setFont(QFont("Arial", delta_h*1.3))
-            painter.setPen(QPen(QColor("#c0FF0000")))
+            painter.setPen(QPen(QColor("#C0FF0000")))
             painter.drawText(rc_out, Qt.AlignCenter, self._svg_text_string)
             painter.setBrush(Qt.NoBrush)
+
+        if self.is_vulnerable_visible:
+            rc_out = self.rect.__copy__()
+            rc_out.translate(0.0, -delta_h*2)
+            rc_out.setHeight(delta_h*2)
+
+            painter.setFont(QFont("Arial", delta_h*1.3))
+            painter.setPen(QPen(QColor("#C0FF8000")))
+            painter.drawText(rc_out, Qt.AlignCenter, self._vulnerability_text)
+            painter.setBrush(Qt.NoBrush)
+
         self._is_dirty = False
 
     @property
@@ -705,6 +723,31 @@ class System(object):
             self._svg_text_string = "j-{jumps} f-{factionkills} s-{shipkills} p-{podkills}".format(**statistics)
         self._is_dirty = True
 
+    def setVulnerabilityInfo(self, sys_sov_structures: dict) -> None:
+        """
+        Updates the vulnerability information of the system
+        Args:
+            sys_sov_structures:
+
+        Returns:
+
+        """
+        self._vulnerability_text = None
+        if "vulnerability_occupancy_level" in sys_sov_structures:
+            self.vulnerability_occupancy_level = sys_sov_structures["vulnerability_occupancy_level"]
+            self._vulnerability_text = "({})".format(self.vulnerability_occupancy_level )
+            self._is_dirty = True
+
+        if "vulnerable_start_time" in sys_sov_structures:
+            self.vulnerable_start_time = datetime.datetime.strptime(sys_sov_structures['vulnerable_start_time'],
+                                                                  "%Y-%m-%dT%H:%M:%SZ")
+            self._vulnerability_text = self._vulnerability_text + " " + self.vulnerable_start_time.strftime("%m/%d %H:%M")
+            self._is_dirty = True
+        if "vulnerable_end_time" in sys_sov_structures:
+            self.vulnerable_end_time = datetime.datetime.strptime(sys_sov_structures['vulnerable_end_time'],
+                                                                  "%Y-%m-%dT%H:%M:%SZ")
+            self._is_dirty = True
+
     def updateSystemBackgroundColors(self) -> None:
         """
         Updated the background color depending on the current alarm state and current time
@@ -753,7 +796,11 @@ class System(object):
                         self._second_line = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
         else:
             self._second_line_flash = False
-            self._second_line = self.ticker
+            if self.vulnerability_occupancy_level:
+                self._second_line = "{} ({})".format(self.ticker, self.vulnerability_occupancy_level)
+            else:
+                self._second_line = self.ticker
+
             self.backgroundAlpha = 1.0
             self.backgroundColor = self.UNKNOWN_COLOR
             self.backgroundColorNext = self.UNKNOWN_COLOR
@@ -769,9 +816,15 @@ class System(object):
         self._is_dirty = True
 
     def getTooltipText(self):
-        format_src = '''<span style="font-weight:medium; color:#e5a50a;">{system}</span>''' \
-                     '''<span style="font-weight:medium; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>''' \
-                     '''<br/><span style=" font-weight:medium; color:#e01b24;">{systemstats}</span>'''
+        if self.vulnerability_occupancy_level:
+            format_src = '<span style="font-weight:medium; color:#e5a50a;">{system}</span>' \
+                         '<span style="font-weight:medium; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>' \
+                         '<span style="font-weight:medium; font-style:italic; color:#deddda;">({adm})</span>' \
+                         '<br/><span style=" font-weight:medium; color:#e01b24;">{systemstats}</span>'
+        else:
+            format_src = '<span style="font-weight:medium; color:#e5a50a;">{system}</span>' \
+                     '<span style="font-weight:medium; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>' \
+                     '<br/><span style=" font-weight:medium; color:#e01b24;">{systemstats}</span>'
 
         # '''<p><span style=" font-weight:bold; color:#deddda;">{timers}</span></p>'''
         # '''<p><span style=" font-weight:bold; color:#deddda;">{zkillinfo}</span></p>'''
@@ -829,6 +882,7 @@ class System(object):
             system=self.name,
             ticker=self.ticker,
             systemstats=self._svg_text_string,
+            adm=self.vulnerability_occupancy_level,
             timers="",
             zkillinfo=""
         )

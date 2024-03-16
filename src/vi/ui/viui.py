@@ -25,19 +25,18 @@ import parse
 from typing import Union
 from typing import Optional
 
-import vi.version
-from vi.universe import Universe
-from vi.system import System
-from vi.globals import Globals
 import logging
 from PySide6.QtGui import Qt
 from PySide6 import QtGui, QtCore, QtWidgets
-from PySide6.QtCore import QPoint, QPointF, QSortFilterProxyModel, QTimer
+from PySide6.QtCore import QPoint, QPointF, QSortFilterProxyModel, QTimer, Qt, QIODevice
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QImage, QPixmap, QDesktopServices
-from PySide6.QtWidgets import QMessageBox, QStyleOption, QStyle, QFileDialog, \
-    QStyledItemDelegate, QApplication, QAbstractItemView
+from PySide6.QtGui import QIcon, QImage, QPixmap, QDesktopServices
+from PySide6.QtWidgets import (QMessageBox, QStyleOption, QStyle, QFileDialog,
+                               QStyledItemDelegate, QApplication, QAbstractItemView)
 
+import vi.version
+from vi.universe import Universe
+from vi.system import System
 from vi import evegate
 from vi import dotlan, filewatcher
 from vi.states import States
@@ -87,7 +86,7 @@ class POITableModell(QSqlQueryModel):
         super(POITableModell, self).__init__(parent)
         self.cache = Cache()
 
-    def flags(self, index) -> QtCore.Qt.ItemFlags:
+    def flags(self, index) -> Qt.ItemFlags:
         default_flags = super(POITableModell, self).flags(index)
         if index.isValid():
             if index.column() == 1:
@@ -100,8 +99,8 @@ class POITableModell(QSqlQueryModel):
     def supportedDropActions(self):
         return Qt.MoveAction | Qt.CopyAction
 
-    def dropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int, parent) -> bool:
-        if action == QtCore.Qt.IgnoreAction:
+    def dropMimeData(self, data: QtCore.QMimeData, action: Qt.DropAction, row: int, column: int, parent) -> bool:
+        if action == Qt.IgnoreAction:
             return True
         if not data.hasFormat('text/plain'):
             return False
@@ -122,7 +121,7 @@ class POITableModell(QSqlQueryModel):
 
         encoded_data = data.data('text/plain')
 
-        stream = QtCore.QDataStream(encoded_data, QtCore.QIODevice.ReadOnly)
+        stream = QtCore.QDataStream(encoded_data, QIODevice.ReadOnly)
         new_items = []
         rows = 0
         while not stream.atEnd():
@@ -147,7 +146,7 @@ class POITableModell(QSqlQueryModel):
     def mimeData(self, indexes):
         mime_data = QtCore.QMimeData()
         # encoded_data = QtCore.QByteArray()
-        # stream = QtCore.QDataStream(encoded_data, QtCore.QIODevice.WriteOnly)
+        # stream = QtCore.QDataStream(encoded_data, QIODevice.WriteOnly)
         for index in indexes:
             if index.isValid():
                 db_data = self.cache.getPOIAtIndex(index.row())
@@ -241,9 +240,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.region_stack = list()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        icon = QtGui.QIcon()
+        icon = QIcon()
         icon.addPixmap(QtGui.QPixmap(resourcePath(os.path.join("vi", "ui", "res", "eve-sso-login-black-small.png"))),
-                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
+                       QIcon.Normal, QIcon.Off)
 
         self.completer_system_names = QtWidgets.QCompleter(Universe.systemNames())
         self.completer_system_names.setCaseSensitivity(Qt.CaseInsensitive)
@@ -263,10 +262,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.connectToEveOnline.setFlat(False)
         self.setWindowTitle(
             "EVE-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
-        self.taskbarIconQuiescent = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
-        self.taskbarIconWorking = QtGui.QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
+        self.taskbarIconQuiescent = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
+        self.taskbarIconWorking = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
         self.setWindowIcon(self.taskbarIconQuiescent)
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.setFocusPolicy(Qt.StrongFocus)
         self.pathToLogs = pat_to_logfile
         self.currContent = None
         self.mapTimer = QTimer(self)
@@ -365,11 +364,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.opacityGroup.addAction(action)
             self.ui.menuTransparency.addAction(action)
         self.intelTimeGroup = QActionGroup(self.ui.menu)
-        globals = Globals()
+        globals_setting = Globals()
         for i in (5, 10, 20, 30, 60):
             action = QAction("Past {0}min".format(i), None)
             action.setCheckable(True)
-            action.setChecked(i == globals.intel_time)
+            action.setChecked(i == globals_setting.intel_time)
             action.intelTime = i
             action.triggered.connect(self.changeIntelTime)
             self.intelTimeGroup.addAction(action)
@@ -481,7 +480,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playerGroup.setExclusionPolicy(QActionGroup.ExclusionPolicy.None_)
         self.ui.menuChars.clear()
         for name in self.knownPlayerNames:
-            icon = QtGui.QIcon()
+            icon = QIcon()
             if evegate.esiCheckCharacterToken(name):
                 avatar_raw_img = evegate.esiCharactersPortrait(name)
                 if avatar_raw_img is not None:
@@ -540,6 +539,7 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("wireUpUIConnections")
         self.clipboard.dataChanged.connect(self.clipboardChanged)
         self.ui.statisticsButton.clicked.connect(self.changeStatisticsVisibility)
+        self.ui.adm_vul_Button.clicked.connect(self.changeADMVisibility)
         self.ui.jumpbridgesButton.clicked.connect(self.changeJumpbridgesVisibility)
         self.ui.infoAction.triggered.connect(self.showInfo)
         self.ui.showChatAvatarsAction.triggered.connect(self.changeShowAvatars)
@@ -823,7 +823,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.region_changed_by_system_id.emit(int(item["system_id"]))
                     return
 
-        self.ui.tableViewPOIs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ui.tableViewPOIs.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewPOIs.customContextMenuRequested.connect(showPOIContextMenu)
 
     def _wireUpThera(self):
@@ -878,7 +878,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.region_changed_by_system_id.emit(Universe.systemIdByName(target_system_name))
                 return
 
-        self.ui.tableViewThera.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ui.tableViewThera.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewThera.customContextMenuRequested.connect(showTheraContextMenu)
 
     def _wireUpDatabaseViewsJB(self):
@@ -956,7 +956,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     if "dst" in item:
                         self.region_changed_by_system_id.emit(Universe.systemIdByName(item["dst"]))
                 return
-        self.ui.tableViewJBs.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ui.tableViewJBs.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewJBs.customContextMenuRequested.connect(showJBContextMenu)
 
     def _wireUpStorm(self):
@@ -992,7 +992,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.region_changed_by_system_id.emit(Universe.systemIdByName(target_system_name))
                 return
 
-        self.ui.tableViewStorm.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ui.tableViewStorm.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewStorm.customContextMenuRequested.connect(showStormContextMenu)
 
     def _wireUpDatabaseCharacters(self):
@@ -1044,8 +1044,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def updateKillboard(self, system_id):
         ALL_SYSTEMS[system_id].addKill()
-        # self.changeRegionBySystemID(system_id)
-        # self.focusMapOnSystem(system_id)
+        if Globals().follow_kills:
+            self.changeRegionBySystemID(system_id)
+            self.focusMapOnSystem(system_id)
 
     def _setupThreads(self):
         logging.info("Set up threads and their connections...")
@@ -1096,7 +1097,8 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_system = self.trayIcon.contextMenu().currentSystem
         if selected_system is None:
             return
-        self.changeRegionBySystemID(selected_system.system_id)
+        self.ui.regionNameField.setCurrentText(selected_system.name)
+        # self.changeRegionBySystemID(selected_system.system_id)
 
     def focusMapOnSystem(self, system_id: int):
         """sets the system defined by the id to the focus of the map
@@ -1414,9 +1416,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.hide()
         self.ui.alwaysOnTopAction.setChecked(value)
         if value:
-            self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
+            self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         else:
-            self.setWindowFlags(self.windowFlags() & (~QtCore.Qt.WindowStaysOnTopHint))
+            self.setWindowFlags(self.windowFlags() & (~Qt.WindowStaysOnTopHint))
         if do_show:
             self.show()
 
@@ -1427,10 +1429,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if do_show:
             self.hide()
         if value:
-            self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+            self.setWindowFlags(Qt.FramelessWindowHint)
             self.changeAlwaysOnTop(True)
         else:
-            self.setWindowFlags(self.windowFlags() & (~QtCore.Qt.FramelessWindowHint))
+            self.setWindowFlags(self.windowFlags() & (~Qt.FramelessWindowHint))
         self.ui.menubar.setVisible(not value)
         self.ui.frameButton.setVisible(value)
         self.ui.framelessWindowAction.setChecked(value)
@@ -1477,11 +1479,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dotlan.changeJumpbridgesVisibility(val)
         self.updateMapView()
 
+    def changeADMVisibility(self, val):
+        self.dotlan.changeVulnerableVisibility(val)
+        self.updateMapView()
+
     def changeStatisticsVisibility(self, val):
         self.dotlan.changeStatisticsVisibility(val)
         self.updateMapView()
-        if val:
-            self.statisticsThread.requestStatistics()
 
     def clipboardChanged(self):
         """ the content of the clip board is used to set jump bridge and poi
@@ -1985,6 +1989,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.mapSovereignty = data['sovereignty']
             if self.dotlan:
                 self.dotlan.setSystemSovereignty(data['sovereignty'])
+
+        if "structures" in data:
+            if self.dotlan:
+                self.dotlan.setSystemStructures(data['structures'])
 
         if 'incursions' in data:
             self.mapIncursions = data['incursions']

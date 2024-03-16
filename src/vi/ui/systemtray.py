@@ -64,6 +64,7 @@ class ActionPackage(QObject):
 
         self.openDotlan.triggered.connect(self.browserOpenDotlan)
         self.openZKillboard.triggered.connect(self.browserOpenZKillboard)
+        self.gameMenu = None
 
     def updateActionPackage(self, sys_name=None, rgn_name=None):
         self.currentSystem = sys_name
@@ -92,14 +93,13 @@ class ActionPackage(QObject):
             self.changeRegion.setText("Change Region")
             self.changeRegion.setEnabled(False)
 
-    def browserOpenDotlan(self, checked):
+    def browserOpenDotlan(self):
         if self.currentSystem:
             QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name))
 
-    def browserOpenZKillboard(self, checked):
+    def browserOpenZKillboard(self):
         if self.currentSystem:
-            QDesktopServices.openUrl(
-                "https://zkillboard.com/system/{}".format(self.currentSystem.system_id))
+            QDesktopServices.openUrl("https://zkillboard.com/system/{}".format(self.currentSystem.system_id))
 
 
 class TrayContextMenu(QtWidgets.QMenu):
@@ -280,11 +280,11 @@ class MapContextMenu(QtWidgets.QMenu):
             if action.isChecked():
                 self.alarm_distance.emit(action.alarmDistance)
 
-    def browserOpenDotlan(self, checked):
+    def browserOpenDotlan(self):
         if self.currentSystem:
             QDesktopServices.openUrl("https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name))
 
-    def browserOpenZKillboard(self, checked):
+    def browserOpenZKillboard(self):
         if self.currentSystem:
             QDesktopServices.openUrl(
                 "https://zkillboard.com/system/{}".format(self.currentSystem.system_id))

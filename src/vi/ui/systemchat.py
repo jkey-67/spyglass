@@ -34,7 +34,7 @@ class SystemChat(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self, parent)
         self.ui = Ui_SystemChat()
         self.ui.setupUi(self)
-        self.chatType = 0
+        self.chatType = chat_type
         self.selector = selector
         self.chatEntries = []
         for entry in chat_entries:

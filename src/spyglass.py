@@ -28,7 +28,8 @@ from PySide6 import QtGui, QtWidgets
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtSql import QSqlDatabase
 from PySide6.QtCore import Qt
-from vi import version
+
+from vi.version import VERSION, SNAPSHOT
 from vi.ui import viui, systemtray
 from vi.cache import cache
 from vi.ui.styles import Styles
@@ -58,7 +59,7 @@ class Application(QApplication):
     def __init__(self, args):
         super(Application, self).__init__(args)
         pixmap = QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png"))
-        if version.SNAPSHOT:
+        if SNAPSHOT:
             painter = QtGui.QPainter()
             painter.begin(pixmap)
             font = painter.font()
@@ -142,7 +143,7 @@ class Application(QApplication):
         log_level = spyglass_cache.getFromCache("logging_level")
         if not log_level:
             log_level = logging.INFO
-        if version.SNAPSHOT:
+        if SNAPSHOT:
             log_level = logging.DEBUG  # For Testing
         spyglass_cache.clearOutdatedPlayerNames()
         back_ground_color = spyglass_cache.getFromCache("background_color")
@@ -167,7 +168,7 @@ class Application(QApplication):
         root_logger.addHandler(file_handler)
 
         logging.info("================================================================================================")
-        logging.info("Spyglass %s starting up", version.VERSION)
+        logging.info("Spyglass %s starting up", VERSION)
         logging.info("Looking for chat logs at: {0}".format(chat_log_directory))
         logging.info("Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE))
         logging.info("Writing logs to: {0}".format(spyglass_log_directory))

@@ -24,8 +24,7 @@
 from PySide6.QtCore import QRectF, QSizeF
 from bs4 import BeautifulSoup
 from vi.ui.styles import Styles
-from vi.system import System, ALL_SYSTEMS
-from vi.universe import Universe
+from vi.system import System, ALL_SYSTEMS, Universe
 
 
 JB_COLORS = ("66CD00", "7CFC00", "7CFC00", "00FF00", "ADFF2F", "9ACD32", "00FA9A"
@@ -155,6 +154,7 @@ class Map(object):
                  svg_file,
                  set_jump_maps_visible=False,
                  set_statistic_visible=False,
+                 set_adm_visible=False,
                  set_jump_bridges=None):
 
         self.region_name = region_name
@@ -162,6 +162,7 @@ class Map(object):
         self.outdatedCacheError = None
         self._jumpMapsVisible = set_jump_maps_visible
         self._statisticsVisible = set_statistic_visible
+        self._set_vulnerable_visible = set_adm_visible
 
         # Create soup from the svg
         self.soup = BeautifulSoup(svg_file, features="html.parser")
@@ -201,6 +202,12 @@ class Map(object):
                 sys = ALL_SYSTEMS[int(system_id)]
                 sys.ticker = sys_stats["ticker"]
 
+    @staticmethod
+    def setSystemStructures(system_structures):
+        for sys_stats in system_structures:
+            sys = ALL_SYSTEMS[int(sys_stats["solar_system_id"])]
+            sys.setVulnerabilityInfo(sys_stats)
+
     def renderLegend(self, painter):
         System.renderLegend(painter, self.region_name)
 
@@ -215,7 +222,7 @@ class Map(object):
             system.renderWormHoles(painter, self.region_id, self.systems)
 
         for system in self.systems.values():
-            system.renderSystem(painter, self.region_id)
+            system.renderSystemTexts(painter, self.region_id)
 
     def is_dirty(self):
         for system in self.systems.values():
@@ -252,8 +259,6 @@ class Map(object):
             sys1.jumpBridges.add(sys2)
             sys2.jumpBridges.add(sys1)
 
-        self.updateJumpbridgesVisibility()
-
     def setTheraConnections(self, thera_connections):
         for system in ALL_SYSTEMS.values():
             system.wormhole_info = list()
@@ -266,15 +271,16 @@ class Map(object):
             sys1.wormhole_info.append(connection)
             sys2.wormhole_info.append(connection)
 
-        self.updateJumpbridgesVisibility()
-
-    def updateStatisticsVisibility(self):
+    def changeVulnerableVisibility(self, selected: bool) -> bool:
+        self._set_vulnerable_visible = selected
         for system in self.systems.values():
-            system.is_statistics_visible = self._statisticsVisible
+            system.is_vulnerable_visible = self._set_vulnerable_visible
+        return self._set_vulnerable_visible
 
     def changeStatisticsVisibility(self, selected: bool) -> bool:
         self._statisticsVisible = selected
-        self.updateStatisticsVisibility()
+        for system in self.systems.values():
+            system.is_statistics_visible = self._statisticsVisible
         return self._statisticsVisible
 
     def updateJumpbridgesVisibility(self):
@@ -283,5 +289,6 @@ class Map(object):
 
     def changeJumpbridgesVisibility(self, selected: bool) -> bool:
         self._jumpMapsVisible = selected
-        self.updateJumpbridgesVisibility()
+        for system in self.systems.values():
+            system.is_jumpbridges_visible = self._jumpMapsVisible
         return self._jumpMapsVisible

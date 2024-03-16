@@ -82,7 +82,7 @@
             <number>0</number>
            </property>
            <item row="0" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0,0">
+            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0,0,0">
              <property name="spacing">
               <number>2</number>
              </property>
@@ -207,17 +207,32 @@
                  <height>0</height>
                 </size>
                </property>
+               <property name="maximumSize">
+                <size>
+                 <width>300</width>
+                 <height>500</height>
+                </size>
+               </property>
                <property name="toolTip">
                 <string>Current Region on Map.</string>
                </property>
                <property name="editable">
                 <bool>false</bool>
                </property>
+               <property name="currentText">
+                <string notr="true"/>
+               </property>
+               <property name="maxVisibleItems">
+                <number>30</number>
+               </property>
                <property name="insertPolicy">
                 <enum>QComboBox::NoInsert</enum>
                </property>
                <property name="sizeAdjustPolicy">
-                <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+                <enum>QComboBox::AdjustToMinimumContentsLength</enum>
+               </property>
+               <property name="minimumContentsLength">
+                <number>20</number>
                </property>
                <property name="placeholderText">
                 <string notr="true"/>
@@ -396,7 +411,7 @@
                 <enum>Qt::NoFocus</enum>
                </property>
                <property name="toolTip">
-                <string>Show System Statistic on Map.</string>
+                <string>Show Systems Statistic on Map.</string>
                </property>
                <property name="text">
                 <string/>
@@ -404,6 +419,55 @@
                <property name="icon">
                 <iconset resource="resource.qrc">
                  <normaloff>:/Icons/res/statistic.svg</normaloff>:/Icons/res/statistic.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="adm_vul_Button">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>27</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>48</width>
+                 <height>32</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>11</pointsize>
+                </font>
+               </property>
+               <property name="focusPolicy">
+                <enum>Qt::NoFocus</enum>
+               </property>
+               <property name="toolTip">
+                <string>Show Systems Vulnerable time and Vulnerability Occupancy Level (ADM)</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/Icons/res/adm_vul.svg</normaloff>:/Icons/res/adm_vul.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -457,7 +521,7 @@
              <x>0</x>
              <y>1</y>
              <width>411</width>
-             <height>27</height>
+             <height>31</height>
             </rect>
            </property>
            <property name="toolTip">
@@ -1444,7 +1508,7 @@
     <string>Providence</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>providence</string>
+    <string notr="true">Providence</string>
    </property>
   </action>
   <action name="catchRegionAction">
@@ -1455,7 +1519,7 @@
     <string>Catch</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>catch</string>
+    <string notr="true">Catch</string>
    </property>
   </action>
   <action name="providenceCatchRegionAction">
@@ -1466,7 +1530,7 @@
     <string>Perrigen Falls</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>Perrigen_Falls</string>
+    <string notr="true">Perrigen Falls</string>
    </property>
   </action>
   <action name="providenceCatchCompactRegionAction">
@@ -1477,7 +1541,7 @@
     <string>Pure Blind</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>Pure_Blind</string>
+    <string notr="true">Pure Blind</string>
    </property>
   </action>
   <action name="queriousRegionAction">
@@ -1488,7 +1552,7 @@
     <string>Querious</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>querious</string>
+    <string notr="true">Querious</string>
    </property>
   </action>
   <action name="actionDefault">
@@ -1556,7 +1620,7 @@
     <string>Tactical Map</string>
    </property>
    <property name="regionName" stdset="0">
-    <string>Denci_Tactical</string>
+    <string notr="true">Denci_Tactical</string>
    </property>
   </action>
   <action name="actionInvertMouseWheel">

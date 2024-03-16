@@ -18,7 +18,7 @@
 ###########################################################################
 
 from parse import parse
-import vi.evegate as evegate
+from vi import evegate
 from vi.universe import Universe
 
 

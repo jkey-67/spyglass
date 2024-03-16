@@ -106,7 +106,7 @@ class FileWatcher(QtCore.QThread):
 
     def updateWatchedFiles(self, path_name=None):
         """
-        Updates the list of monitored file, all Fleet and Alliance chats and files with mdate, earlier then the last
+        Updates the list of monitored file, all Fleet and Alliance chats and files with m-date, earlier then the last
         downtime, will be ignored by default.
 
         Returns:

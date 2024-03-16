@@ -19,17 +19,17 @@
 
 import json
 import os
-from vi.universe.shipnames import SHIPNAMES
-from vi.universe.npcnames import NPCNAMES
+from .shipnames import SHIPNAMES
+from .npcnames import NPCNAMES
 
 try:
-    from vi.universe.regionnames import REGION_IDS_BY_NAME
+    from .regionnames import REGION_IDS_BY_NAME
 except (Exception,):
     REGION_IDS_BY_NAME = {}
     pass
 
 try:
-    from vi.universe.constellationnames import CONNSTELLATION_IDS_BY_NAME
+    from .constellationnames import CONNSTELLATION_IDS_BY_NAME
 except (Exception,):
     CONNSTELLATION_IDS_BY_NAME = {}
     pass
