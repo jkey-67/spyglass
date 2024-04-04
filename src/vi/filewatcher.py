@@ -58,15 +58,16 @@ class FileWatcher(QtCore.QThread):
         self.active = sys.platform.startswith("win32")
 
     def fileChanged(self, file_name):
-        with FileWatcher.FILE_LOCK:
-            path_stat = os.stat(file_name)
-            size_file = self.files[file_name]
-            if not stat.S_ISREG(path_stat.st_mode):
-                return
-            if size_file < path_stat.st_size:
-                logging.debug("Update file {}".format(file_name))
-                self.files[file_name] = path_stat.st_size
-        self.file_change.emit(file_name, False)
+        if os.path.exists(file_name):
+            with FileWatcher.FILE_LOCK:
+                path_stat = os.stat(file_name)
+                size_file = self.files[file_name]
+                if not stat.S_ISREG(path_stat.st_mode):
+                    return
+                if size_file < path_stat.st_size:
+                    logging.debug("Update file {}".format(file_name))
+                    self.files[file_name] = path_stat.st_size
+            self.file_change.emit(file_name, False)
 
     def directoryChanged(self, path_name):
         with FileWatcher.FILE_LOCK:
