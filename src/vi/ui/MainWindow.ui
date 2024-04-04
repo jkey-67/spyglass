@@ -22,6 +22,21 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_7">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>2</number>
+    </property>
+    <property name="topMargin">
+     <number>2</number>
+    </property>
+    <property name="rightMargin">
+     <number>2</number>
+    </property>
+    <property name="bottomMargin">
+     <number>2</number>
+    </property>
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
@@ -30,16 +45,16 @@
       <widget class="QWidget" name="mapwidget" native="true">
        <layout class="QGridLayout" name="gridLayout">
         <property name="leftMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="topMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="rightMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="bottomMargin">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="spacing">
          <number>0</number>
@@ -82,9 +97,9 @@
             <number>0</number>
            </property>
            <item row="0" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0,0,0">
+            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0">
              <property name="spacing">
-              <number>2</number>
+              <number>0</number>
              </property>
              <property name="bottomMargin">
               <number>0</number>
@@ -147,7 +162,7 @@
                 <enum>Qt::NoFocus</enum>
                </property>
                <property name="toolTip">
-                <string>Select Region by System name.</string>
+                <string>Select the region by system name.</string>
                </property>
                <property name="text">
                 <string/>
@@ -229,7 +244,7 @@
                 <enum>QComboBox::NoInsert</enum>
                </property>
                <property name="sizeAdjustPolicy">
-                <enum>QComboBox::AdjustToMinimumContentsLength</enum>
+                <enum>QComboBox::AdjustToContents</enum>
                </property>
                <property name="minimumContentsLength">
                 <number>20</number>
@@ -257,6 +272,44 @@
               </widget>
              </item>
              <item>
+              <widget class="QToolButton" name="locateChar">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>27</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>32</width>
+                 <height>32</height>
+                </size>
+               </property>
+               <property name="focusPolicy">
+                <enum>Qt::NoFocus</enum>
+               </property>
+               <property name="toolTip">
+                <string>Set the focus on the current selected API char.</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/Icons/res/locate.svg</normaloff>:/Icons/res/locate.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QToolButton" name="zoomInButton">
                <property name="minimumSize">
                 <size>
@@ -274,7 +327,7 @@
                 <enum>Qt::NoFocus</enum>
                </property>
                <property name="toolTip">
-                <string>Zoom in.</string>
+                <string>Zoom into the map.</string>
                </property>
                <property name="text">
                 <string/>
@@ -319,7 +372,7 @@
                 <enum>Qt::NoFocus</enum>
                </property>
                <property name="toolTip">
-                <string>Zoom out.</string>
+                <string>Zoom out of the map.</string>
                </property>
                <property name="text">
                 <string/>
@@ -362,7 +415,7 @@
                 <enum>Qt::NoFocus</enum>
                </property>
                <property name="toolTip">
-                <string>Show Ansiblex on Map.</string>
+                <string>Show Ansiblex connections on the map.</string>
                </property>
                <property name="text">
                 <string/>
@@ -411,7 +464,7 @@
                 <enum>Qt::NoFocus</enum>
                </property>
                <property name="toolTip">
-                <string>Show Systems Statistic on Map.</string>
+                <string>Show systems statistic on map.</string>
                </property>
                <property name="text">
                 <string/>
@@ -460,7 +513,7 @@
                 <enum>Qt::NoFocus</enum>
                </property>
                <property name="toolTip">
-                <string>Show Systems Vulnerable time and Vulnerability Occupancy Level (ADM)</string>
+                <string>Show systems vulnerable time and vulnerability occupancy level (ADM)</string>
                </property>
                <property name="text">
                 <string/>
@@ -498,7 +551,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="2" column="0">
          <widget class="PanningWebView" name="mapView" native="true">
           <property name="enabled">
            <bool>true</bool>
@@ -572,7 +625,7 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <property name="spacing">
-             <number>3</number>
+             <number>0</number>
             </property>
             <property name="leftMargin">
              <number>0</number>
@@ -589,7 +642,7 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout">
               <property name="spacing">
-               <number>2</number>
+               <number>0</number>
               </property>
               <item>
                <widget class="QLabel" name="timeInfo">
@@ -770,6 +823,9 @@
               <property name="selectionMode">
                <enum>QAbstractItemView::NoSelection</enum>
               </property>
+              <property name="textElideMode">
+               <enum>Qt::ElideNone</enum>
+              </property>
               <property name="horizontalScrollMode">
                <enum>QAbstractItemView::ScrollPerPixel</enum>
               </property>
@@ -789,7 +845,7 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <property name="spacing">
-             <number>3</number>
+             <number>0</number>
             </property>
             <property name="leftMargin">
              <number>0</number>
@@ -817,6 +873,9 @@
               <property name="dragDropOverwriteMode">
                <bool>false</bool>
               </property>
+              <property name="textElideMode">
+               <enum>Qt::ElideNone</enum>
+              </property>
               <property name="sortingEnabled">
                <bool>true</bool>
               </property>
@@ -842,7 +901,7 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <property name="spacing">
-             <number>3</number>
+             <number>0</number>
             </property>
             <property name="leftMargin">
              <number>0</number>
@@ -877,7 +936,7 @@
                <enum>QAbstractItemView::SelectRows</enum>
               </property>
               <property name="textElideMode">
-               <enum>Qt::ElideMiddle</enum>
+               <enum>Qt::ElideNone</enum>
               </property>
               <property name="gridStyle">
                <enum>Qt::SolidLine</enum>
@@ -913,7 +972,7 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_4">
             <property name="spacing">
-             <number>3</number>
+             <number>0</number>
             </property>
             <property name="leftMargin">
              <number>0</number>
@@ -986,7 +1045,7 @@
               <item>
                <widget class="QToolButton" name="removeChar">
                 <property name="toolTip">
-                 <string>Remove API Key.</string>
+                 <string>Remove API Key for the selected character.</string>
                 </property>
                 <property name="text">
                  <string>Remove</string>
@@ -1009,6 +1068,9 @@
              <widget class="QTableView" name="tableChars">
               <property name="editTriggers">
                <set>QAbstractItemView::CurrentChanged|QAbstractItemView::DoubleClicked|QAbstractItemView::SelectedClicked</set>
+              </property>
+              <property name="textElideMode">
+               <enum>Qt::ElideNone</enum>
               </property>
               <property name="sortingEnabled">
                <bool>true</bool>
@@ -1045,7 +1107,7 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <property name="spacing">
-             <number>3</number>
+             <number>0</number>
             </property>
             <property name="leftMargin">
              <number>0</number>
@@ -1061,6 +1123,9 @@
             </property>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <property name="spacing">
+               <number>0</number>
+              </property>
               <item>
                <widget class="QLineEdit" name="lineEditThera">
                 <property name="toolTip">
@@ -1109,7 +1174,7 @@
               <item>
                <widget class="QToolButton" name="toolRescanThrea">
                 <property name="toolTip">
-                 <string>Update Thera Connections vom EvE-Scout.</string>
+                 <string>Fetch the latest Thera and Turnur connections from EvE-Scout.</string>
                 </property>
                 <property name="text">
                  <string>...</string>
@@ -1138,6 +1203,9 @@
              <widget class="QTableView" name="tableViewThera">
               <property name="editTriggers">
                <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+              <property name="textElideMode">
+               <enum>Qt::ElideNone</enum>
               </property>
               <property name="sortingEnabled">
                <bool>true</bool>
@@ -1196,7 +1264,7 @@
               <item>
                <widget class="QToolButton" name="toolRescanStorm">
                 <property name="toolTip">
-                 <string>Update Thera Connections from EvE-Scout</string>
+                 <string>Fetch latest storm data from EvE-Scout</string>
                 </property>
                 <property name="text">
                  <string>...</string>
@@ -1225,6 +1293,9 @@
              <widget class="QTableView" name="tableViewStorm">
               <property name="showDropIndicator" stdset="0">
                <bool>false</bool>
+              </property>
+              <property name="textElideMode">
+               <enum>Qt::ElideNone</enum>
               </property>
               <property name="sortingEnabled">
                <bool>true</bool>
@@ -1297,21 +1368,19 @@
    </widget>
    <widget class="QMenu" name="menuRegion">
     <property name="title">
-     <string>Region</string>
+     <string>Navigation</string>
     </property>
     <addaction name="catchRegionAction"/>
     <addaction name="providenceRegionAction"/>
     <addaction name="queriousRegionAction"/>
-    <addaction name="separator"/>
-    <addaction name="wickedcreekScaldingpassRegionAction"/>
     <addaction name="providenceCatchRegionAction"/>
     <addaction name="providenceCatchCompactRegionAction"/>
-    <addaction name="separator"/>
+    <addaction name="wickedcreekScaldingpassRegionAction"/>
     <addaction name="actionAuto_switch"/>
     <addaction name="separator"/>
+    <addaction name="actionUserTheraRoutes"/>
+    <addaction name="separator"/>
     <addaction name="jumpbridgeDataAction"/>
-    <addaction name="separator"/>
-    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -1631,15 +1700,18 @@
     <string>Invert Mouse Wheel</string>
    </property>
   </action>
-  <action name="actionUser_Thera_for_routs">
+  <action name="actionUserTheraRoutes">
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
    <property name="text">
-    <string>User Thera for routs</string>
+    <string>User Wormholes for routing</string>
    </property>
    <property name="toolTip">
-    <string>Use Thera and Turnur connection for routig</string>
+    <string>User Thera and Thumu connections for routing.</string>
    </property>
   </action>
  </widget>
@@ -1802,7 +1874,7 @@
   <connection>
    <sender>toolUseTheraRouting</sender>
    <signal>toggled(bool)</signal>
-   <receiver>actionUser_Thera_for_routs</receiver>
+   <receiver>actionUserTheraRoutes</receiver>
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1831,6 +1903,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>locateChar</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>locateChar()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>560</x>
+     <y>51</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>631</x>
+     <y>378</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionUserTheraRoutes</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toolUseTheraRouting</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1167</x>
+     <y>49</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>region_changed(QString)</signal>
@@ -1847,5 +1951,6 @@
   <slot>changeCurrentSystem(str)</slot>
   <slot>showInfo()</slot>
   <slot>changeFrameless(bool)</slot>
+  <slot>locateChar()</slot>
  </slots>
 </ui>
