@@ -95,6 +95,7 @@ class Universe(object):
 
     STARGATES = _loadJsonFile(os.path.join(curr_path, "evestargates.json"))
     SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]
+    SHIP_NAMES.sort(key=lambda name: -len(name))
     NPC_FACTION_NAMES = NPCNAMES
     LOCATED_CHARS = set()
 
