@@ -143,6 +143,7 @@ def parseStatus(rtext):
             return States.REQUEST
         elif text.strip().upper() in CTX.STATUS_BLUE:
             return States.CLEAR
+    return States.ALARM
 
 
 def parseShips(rtext) -> bool:
@@ -247,9 +248,9 @@ def parseSystems(systems_on_map, rtext, systems_found) -> bool:
                 formatted_text = formatSystem(text, word, matched_system_name, system_on_map)
                 textReplace(text, formatted_text)
                 return True
-            elif 3 < len(upper_word) < 5:  # - upperWord < 4 chars.
+            elif 2 < len(upper_word) < 5:  # - upperWord < 4 chars.
                 for system in system_names:  # system begins with?
-                    if system.startswith(upper_word):
+                    if system.startswith(upper_word) and len(system) == 6 and '-' in system:
                         match_system_id = Universe.systemIdByName(system)
                         if match_system_id:  # - direct hit on name
                             matched_system_name = Universe.systemNameById(match_system_id)
@@ -356,13 +357,14 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
 
     parseSystems(systems_on_map, rtext, message.affectedSystems)
 
-    for system in message.affectedSystems:
-        if system.name in systems_on_map.keys():
-            while parsePlayerNames(rtext):
-                continue
-
     while parseShips(rtext):
         continue
+
+
+    #for system in message.affectedSystems:
+    #    if system.name in systems_on_map.keys():
+    #        #while parsePlayerNames(rtext):
+    #            continue
 
     parsed_status = parseStatus(rtext)
     message.status = parsed_status if parsed_status is not None else States.ALARM
