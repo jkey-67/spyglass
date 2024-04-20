@@ -1,7 +1,7 @@
 altgraph
 beautifulsoup4
 future
-pyside6
+pyside6==6.6.0
 PyYAML
 requests
 urllib3
@@ -12,3 +12,5 @@ pyttsx3
 espeakng
 pygame
 networkx
+numpy
+scipy

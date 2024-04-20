@@ -42,7 +42,7 @@ def currentEveTime():
     Returns:
         datetime.datetime: The current eve-time as a datetime.datetime
     """
-    return datetime.datetime.utcnow()
+    return datetime.datetime.now(datetime.UTC)
 
 
 def secondsTillDowntime():

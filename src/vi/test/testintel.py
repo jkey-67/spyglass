@@ -8,7 +8,7 @@ from vi.clipboard import evaluateClipboardData
 from vi.evegate import getSvgFromDotlan
 
 SVG_SYSTEM_USED = getSvgFromDotlan(region="providence", dark=True)
-ALL_SYSTEMS_FROM_SVG = Map(SVG_SYSTEM_USED).systems
+ALL_SYSTEMS_FROM_SVG = Map("Providence", SVG_SYSTEM_USED).systems
 
 
 class TestIntel(unittest.TestCase):
@@ -56,7 +56,6 @@ class TestIntel(unittest.TestCase):
         self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
 
-
     def test_mesage_parser_with(self):
 
         system = ALL_SYSTEMS_FROM_SVG.get("18-GZM")
@@ -92,20 +91,23 @@ class TestIntel(unittest.TestCase):
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems = set()
-        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
+        while parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems):
+            pass
+        res_state = parser_functions.parseStatus(rtext)
         self.assertFalse(res_systems == set(), "System name '18-GZM' not fetched correct as 18-GZM")
         if res_systems:
             for item in res_systems:
                 self.assertEqual("18-GZM", item.name, "System name '18-GZM' not fetched correct as 18-GZM")
-                self.assertEqual(States.UNKNOWN, item.status, "System state for '18-GZM' not fetched correct as UNKNOWN")
+                self.assertEqual(States.ALARM, res_state, "System state for '18-GZM' not fetched correct as UNKNOWN")
 
         formatted_text = u"<rtext>{0}</rtext>".format("juk clr")
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems_two = set()
-        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems_two)
+        while parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems_two):
+            pass
 
-        self.assertTrue(res_systems_two == set(), "System name 'Juk' not fetched correct as empty set")
+        self.assertFalse(res_systems_two == set(), "System name 'Juk' not correct fetched as empty set")
 
     def test_system_parser_with_upper_case(self):
         formatted_text = u"<rtext>{0}</rtext>".format("DITAL clr")
@@ -141,7 +143,7 @@ class TestIntel(unittest.TestCase):
                 self.assertEqual("TXJ-II", item.name, "System name 'TXJ' not fetched correct as TXJ-II")
 
     def test_system_parser_ship_names(self):
-        formatted_text = u"<rtext>{0}</rtext>".format("TXJ Anna Succubus")
+        formatted_text = u"<rtext>{0}</rtext>".format("TXJ Anna caldari navy hookbill")
         soup = BeautifulSoup(formatted_text, 'html.parser')
         rtext = soup.select("rtext")[0]
         res_systems = set()

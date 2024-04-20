@@ -281,7 +281,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialMapPosition = None
         self.autoChangeRegion = False
         self.mapPositionsDict = {}
+
+        try:
+            status = evegate.esiStatus()
+            info = "Server ({server_version}) online {players} players started {start_time}.".format(**status)
+            logging.info(info)
+            update_splash_window_info(info)
+        except (Exception,) as e:
+            update_splash_window_info("There was no response from the server, perhaps the server is down.")
+
         update_splash_window_info("Fetch universe system jumps via ESI.")
+
         self.mapStatisticCache = evegate.esiUniverseSystem_jumps(use_outdated=True)
         update_splash_window_info("Fetch player sovereignty via ESI.")
         self.mapSovereignty = evegate.getPlayerSovereignty(use_outdated=True, fore_refresh=False, show_npc=True)
@@ -296,7 +306,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         update_splash_window_info("Preset application")
 
-        # Set up Theme menu - fill in list of themes and add connections
         update_splash_window_info("Set up Theme menu - fill in list of themes and add connections")
         self.themeGroup = QActionGroup(self.ui.menu)
         styles = Styles()
@@ -324,6 +333,7 @@ class MainWindow(QtWidgets.QMainWindow):
             QMessageBox.warning(self, "Known Characters not Found", info_text)
 
         update_splash_window_info("Update player names")
+        # Set up Theme menu - fill in list of themes and add connections
 
         if self.invertWheel is None:
             self.invertWheel = False
@@ -422,6 +432,7 @@ class MainWindow(QtWidgets.QMainWindow):
         update_splash_window_info("EVE-Syp perform an initial scan of all intel files.")
         self.rescanIntel()
         update_splash_window_info("Initialisation succeeded.")
+        self.tool_widget = None
 
     @property
     def systems_on_map(self) -> dict[str, System]:
@@ -626,26 +637,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for system in self.systems_on_map.values():
                 if system.mapCoordinates.contains(pos):
                     if not QtWidgets.QToolTip.isVisible():
-                        if False:
-                            edit = QtWidgets.QLabel(self)
-                            effect = QtWidgets.QGraphicsOpacityEffect(self)
-                            alpha_gradient = QtGui.QLinearGradient()
-                            alpha_gradient.setColorAt(0.0, Qt.transparent)
-                            alpha_gradient.setColorAt(0.5, Qt.black)
-                            alpha_gradient.setColorAt(1.0, Qt.transparent)
-                            effect.setOpacityMask(alpha_gradient)
-                            effect.setOpacity(0.8)
-                            edit.setGraphicsEffect(effect)
-                            # edit.setAutoFillBackground(False)
-                            edit.setTextFormat(Qt.RichText)
-                            edit.setOpenExternalLinks(True)
-                            edit.move(pos.x(), pos.y())
-                            edit.resize(QtCore.QSize(800, 300))
-                            edit.setText(system.getTooltipText())
-                            edit.show()
-                            # edit.grabMouse()
-                        else:
-                            QtWidgets.QToolTip.showText(global_pos, system.getTooltipText(), self)
+                        QtWidgets.QToolTip.showText(global_pos, system.getTooltipText(), self)
                     return True
             return False
 
@@ -682,7 +674,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 player_name = destination["player_name"]
             else:
                 player_name = act.eve_action["player_name"]
-            if self.ui.actionUser_Thera_for_routs.isChecked():
+            if self.ui.actionUserTheraRoutes.isChecked():
                 evegate.ESAPIListPublicSignatures()
                 the_route = RoutPlanner.findRoute(
                     src_id=evegate.esiCharactersLocation(player_name),
@@ -889,7 +881,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.tableViewThera.model().sourceModel().updateData(sys_name)
 
         self.ui.lineEditThera.editingFinished.connect(theraSystemChanged)
-        self.ui.toolRescanThrea.clicked.connect(theraSystemChanged)
+        # self.ui.actionUserTheraRoutes.toggled.connect(theraSystemChanged)
 
         def showTheraContextMenu(pos):
             menu_inx = self.ui.tableViewThera.model().mapToSource(self.ui.tableViewThera.indexAt(pos))
@@ -1376,6 +1368,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionAuto_switch.setChecked(value)
         self.autoChangeRegion = value
 
+
     def changeUseSpokenNotifications(self, value=None):
         if SoundManager().platformSupportsSpeech():
             if value is None:
@@ -1608,9 +1601,17 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         for system in ALL_SYSTEMS.values():
             system.removeLocatedCharacter(char_name, self.alarmDistance)
-        system = ALL_SYSTEMS[system_id]
-        system.addLocatedCharacter(char_name, self.alarmDistance)
-        logging.info("The location of character '{}' changed to system '{}'".format(char_name, system.name))
+
+        if system_id in ALL_SYSTEMS.keys():
+            system = ALL_SYSTEMS[system_id]
+            system.addLocatedCharacter(char_name, self.alarmDistance)
+            logging.info("The location of character '{}' changed to system '{}'".format(char_name, system.name))
+        else:
+            logging.info("The location of character '{}' changed to Unknown system.".format(char_name))
+
+    def locateChar(self):
+        self.statisticsThread.fetchLocation(fetch=True)
+        self.statisticsThread.requestLocations()
 
     def setLocation(self, char_name, system_in, change_region: bool = False) -> None:
         """
@@ -1627,7 +1628,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         system_id = system_in if type(system_in) is int else Universe.systemIdByName(system_in)
         system_name = system_in if type(system_in) is str else Universe.systemNameById(system_in)
-        self.updateCharLocationOnMap(system_id, char_name)
+        # self.updateCharLocationOnMap(system_id, char_name)
         if system_name not in self.systems_on_map:
             if change_region:   # and char_name in self.monitoredPlayerNames:
                 try:
@@ -1639,13 +1640,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 except Exception as e:
                     logging.error(e)
                     pass
-
-        if not system_name == "?" and system_name in self.systems_on_map:
+            self.updateMapView()
+        elif not system_name == "?" and system_name in self.systems_on_map:
             self.updateCharLocationOnMap(system_id, char_name)
             if evegate.esiCheckCharacterToken(char_name):
                 self.focusMapOnSystem(self.systems_on_map[str(system_name)].system_id)
                 self.current_system_changed.emit(str(system_name))
-        self.updateMapView()
+            self.updateMapView()
 
     def updateMapView(self):
         try:

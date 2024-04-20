@@ -338,7 +338,7 @@ def parseLocal(path: str, char_name: str, line: str) -> Message:
 
 def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> Message:
     """
-        Parse the massage based on the current systems an text
+        Parse the massage based on the current systems and text
     Args:
         systems_on_map:
         message:

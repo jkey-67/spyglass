@@ -766,7 +766,12 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-
+  <rect id="inc30001552" x="-8.5" y="126.5" width="85" height="46" class="inc" />
+  <rect id="inc30001551" x="26.5" y="86.5" width="85" height="46" class="inc" />
+  <rect id="inc30001550" x="66.5" y="131.5" width="85" height="46" class="inc" />
+  <rect id="inc30001549" x="66.5" y="181.5" width="85" height="46" class="inc" />
+  <rect id="inc30001548" x="86.5" y="231.5" width="85" height="46" class="inc" />
+  <rect id="inc30001553" x="101.5" y="86.5" width="85" height="46" class="incs" />
 
 </g>
 

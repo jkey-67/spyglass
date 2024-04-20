@@ -97,11 +97,11 @@ class SystemChat(QtWidgets.QDialog):
                 entry.updateAvatar(avatar_data)
 
     def setSystemAlarm(self):
-        # self.system.setStatus(States.ALARM, datetime.datetime.utcnow())
+        # self.system.setStatus(States.ALARM, datetime.datetime.now(datetime.UTC))
         self.repaint_needed.emit()
 
     def setSystemClear(self):
-        # self.system.setStatus(States.CLEAR, datetime.datetime.utcnow())
+        # self.system.setStatus(States.CLEAR, datetime.datetime.now(datetime.UTC))
         self.repaint_needed.emit()
 
     def closeDialog(self):

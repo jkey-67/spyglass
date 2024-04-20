@@ -1004,12 +1004,7 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-  <rect id="inc30001105" x="581.5" y="111.5" width="85" height="46" class="inc" />
-  <rect id="inc30001103" x="601.5" y="71.5" width="85" height="46" class="inc" />
-  <rect id="inc30001104" x="671.5" y="91.5" width="85" height="46" class="inc" />
-  <rect id="inc30001108" x="676.5" y="136.5" width="85" height="46" class="inc" />
-  <rect id="inc30001106" x="741.5" y="91.5" width="85" height="46" class="inc" />
-  <rect id="inc30001107" x="746.5" y="136.5" width="85" height="46" class="incs" />
+
 
 </g>
 

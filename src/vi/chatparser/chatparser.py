@@ -56,7 +56,7 @@ class ChatParser(object):
     def lastDowntime():
         """ Return the timestamp from the last downtime
         """
-        target = datetime.datetime.utcnow()
+        target = datetime.datetime.now(datetime.UTC)
         if target.hour < 11:
             target = target - datetime.timedelta(1)
         target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
@@ -155,7 +155,7 @@ class ChatParser(object):
 
         message = Message(room=room_name,
                           message=line)
-        valid_timestamp = datetime.datetime.utcnow()-datetime.timedelta(minutes=Globals().intel_time)
+        valid_timestamp = datetime.datetime.now(datetime.UTC)-datetime.timedelta(minutes=Globals().intel_time)
         if message.timestamp < valid_timestamp:
             logging.debug("Skip {} Room:{}".format(line, room_name))
             return None
@@ -164,7 +164,7 @@ class ChatParser(object):
         if message in self.knownMessages:
             message.status = States.IGNORE
             logging.debug("Ignore {} Room:{}".format(line, room_name))
-            return message
+            return None
         # Parse new message only  if needed
         parseMessageForMap(systems_on_map, message)
         self.knownMessages.append(message)

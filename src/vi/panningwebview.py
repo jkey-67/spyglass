@@ -71,8 +71,10 @@ class PanningWebView(QWidget):
             painter.setTransform(self.transform)
             self.content.renderMap(painter)
             self.transform.reset()
+            self.transform.scale(2.0, 2.0)
             painter.setTransform(self.transform)
             self.content.renderLegend(painter)
+            self.transform.reset()
         except (Exception,):
             pass
 

@@ -667,6 +667,13 @@
       <text x="28" y="21.7" class="er" text-anchor="middle">Vale of the Silent</text>
     </a>
   </symbol>
+  <symbol id="def30100000">
+    <a xlink:href="http://evemaps.dotlan.net/map/Yasna_Zakh/Zarzakh" class="sys link-5-30100000" target="_top">
+      <rect id="rect30100000" x="3.5" y="3.5" width="50" height="22" class="e" />
+      <text x="28" y="14" class="es" text-anchor="middle">Zarzakh</text>
+      <text x="28" y="21.7" class="er" text-anchor="middle">Yasna Zakh</text>
+    </a>
+  </symbol>
   <symbol id="def30001963">
     <a xlink:href="http://evemaps.dotlan.net/map/Pure_Blind/KQK1-2" class="sys link-5-30001963" target="_top">
       <rect id="rect30001963" x="3.5" y="3.5" width="50" height="22" class="e" />
@@ -1026,6 +1033,7 @@
 <line id="j-30001269-30001268" x1="353.5" y1="34.5" x2="418.5" y2="39.5" class="j" />
 <line id="j-30001270-30001269" x1="418.5" y1="39.5" x2="493.5" y2="34.5" class="j" />
 <line id="j-30001273-30001269" x1="418.5" y1="39.5" x2="458.5" y2="74.5" class="j" />
+<line id="j-30100000-30001269" x1="418.5" y1="39.5" x2="1001.5" y2="744.5" class="jr" />
 <line id="j-30001280-30001273" x1="473.5" y1="114.5" x2="458.5" y2="74.5" class="jc" />
 <line id="j-30001281-30001280" x1="473.5" y1="114.5" x2="483.5" y2="159.5" class="j" />
 <line id="j-30001282-30001280" x1="473.5" y1="114.5" x2="383.5" y2="174.5" class="j" />
@@ -1124,6 +1132,7 @@
 <use id="sys30000261" x="845" y="285" width="62.5" height="30" xlink:href="#def30000261" />
 <use id="sys30000263" x="845" y="330" width="62.5" height="30" xlink:href="#def30000263" />
 <use id="sys30000240" x="845" y="455" width="62.5" height="30" xlink:href="#def30000240" />
+<use id="sys30100000" x="973" y="730" width="62.5" height="30" xlink:href="#def30100000" />
 <use id="sys30001963" x="20" y="230" width="62.5" height="30" xlink:href="#def30001963" />
 <use id="sys30001263" x="155" y="80" width="62.5" height="30" xlink:href="#def30001263" />
 <use id="sys30001284" x="315" y="85" width="62.5" height="30" xlink:href="#def30001284" />

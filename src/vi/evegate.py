@@ -137,7 +137,7 @@ def secondUntilExpire(response, default: int = 3600) -> int:
     if "Expires" in response.headers:
         expires = response.headers["Expires"]
         locale.setlocale(locale.LC_TIME, 'en_US')
-        return (datetime.datetime.strptime(expires, "%a, %d %b %Y %H:%M:%S GMT") - datetime.datetime.utcnow()).seconds
+        return (datetime.datetime.strptime(expires, "%a, %d %b %Y %H:%M:%S GMT") - datetime.datetime.now(datetime.UTC)).seconds
     else:
         return default
 
@@ -311,6 +311,30 @@ def esiUniverseNames(ids: set, use_outdated=False, lang="en"):
     except Exception as e:
         logging.error("Exception during idsToNames: %s", e)
     return data
+
+
+def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en"):
+    """ Returns the names for a list of ids
+
+        Args:
+            ids(set): set of ids to search
+            use_outdated(bool): if True the cache timestamp will be ignored
+            lang: language used
+
+        Returns:
+              dict:dict  key = id, value = name
+    """
+    cache = Cache()
+
+    # something already in the cache?
+    cache_key = u"_".join(("attribute", "id", str(attribute_id), lang))
+    name = cache.getFromCache(cache_key, use_outdated)
+    url = "https://esi.evetech.net/latest/dogma/attributes/{}/?datasource=tranquility&language={}".format(attribute_id,lang)
+    response = getSession().get(url)
+    if response.status_code != 200:
+        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+        response.raise_for_status()
+    return response.json()
 
 
 class EvetechImage(Enum):
@@ -2012,7 +2036,8 @@ def getSvgFromDotlan(region: str, dark: bool = True) -> str:
     if response.status_code == 200:
         return response.text
     else:
-        response.raise_for_status()
+        logging.info("Unable to get svg from dotlan : {}".format(url))
+        return "<b>region not found</b>"
 
 
 def esiGetFactions():
@@ -2046,7 +2071,7 @@ def dumpSpyglassDownloadStats():
         return None
 
 
-def genereate_universe_constellation_names(use_outdated=True):
+def generate_universe_constellation_names(use_outdated=True):
     esiUniverseAllSystems()
     with open("universe/constellationnames.py", "w", encoding="utf-8")as out_file:
         print("Constellation generation started ...")
@@ -2065,7 +2090,7 @@ def genereate_universe_constellation_names(use_outdated=True):
         print("Constellation generation done.")
 
 
-def genereate_universe_system_names(use_outdated=True):
+def generate_universe_system_names(use_outdated=True):
     session = Session()
     systems = esiUniverseAllSystems()
     with open("universe/systemnames.json", "w", encoding="utf-8")as out_file:
@@ -2084,7 +2109,7 @@ def genereate_universe_system_names(use_outdated=True):
         print("Region generation systems done.")
 
 
-def generate_universe_region_names(use_outdated=True):
+def generate_universe_region_names(use_outdated=False):
 
     with open("universe/regionnames.py", "w", encoding="UTF-8")as out_file:
         print("Region generation started ...")
@@ -2104,11 +2129,26 @@ def generate_universe_region_names(use_outdated=True):
         out_file.write('}\n')
         print("Region generation done.")
 
+
 # vulnerability_occupancy_level
 # The main application for testing
 if __name__ == "__main__":
+    cats = esiUniverseAllCategories()
+    status = esiStatus()
     session = getSession()
-    state = esiSovereigntyStructures()
+    status = esiStatus()
+    ids = esiUniverseGroups(1657) # Citadel
+    ids = esiUniverseGroups(1404) # Engineering Complex
+    ids = esiUniverseGroups(1406) # Refinery
+    info = esiUniverseTypes(35834)
+    res = []
+    for itm in info['dogma_attributes']:
+        res.append(esiDogmaAttributes(itm['attribute_id']))
+
+    # 2017 Upwell Cyno Beacon
+
+    state = esiUniverseSystems(30000734)
+    sov_structs = esiSovereigntyStructures()
     stat = getPlayerSovereignty()
     dumpSpyglassDownloadStats()
     # genereate_universe_system_names()

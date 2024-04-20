@@ -125,7 +125,7 @@ class Application(QApplication):
         spyglass_dir = os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)), "spyglass")
         Zkillmonitor.MONITORING_PATH = os.path.join(chat_log_directory,
                                                     datetime.datetime.strftime(
-                                                        datetime.datetime.utcnow(),
+                                                        datetime.datetime.now(datetime.UTC),
                                                         "zKillboard_daily_logfile_%Y%m%d.txt"))
 
         if not os.path.exists(spyglass_dir):

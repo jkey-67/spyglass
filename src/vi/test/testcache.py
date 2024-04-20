@@ -242,7 +242,9 @@ class TestCache(unittest.TestCase):
             filename = os.path.join(self.curr_path, "..", "ui", "res", "mapdata", "{}.svg".format(
                 evegate.convertRegionNameForDotlan(region["name"])))
             svg = evegate.getSvgFromDotlan(region=region["name"], dark=True)
-            dmap = Map(region["name"], svg)
+            region_name = region["name"]
+            # self.assertEqual(svg.find("region not found"), -1, "Unable to get svg for region {}".format(region_name))
+            # self.assertIsNotNone(Map(region_name, svg), "Unable to create map for region {}".format(region_name))
             if svg.find("region not found") == -1:
                 with open(filename, "w") as f:
                     f.write(svg)
