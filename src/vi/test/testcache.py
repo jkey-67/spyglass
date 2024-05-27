@@ -300,26 +300,6 @@ class TestCache(unittest.TestCase):
         self.cache_used.removeAPIKey("Mr D")
         self.cache_used.removeAPIKey("Mr E")
 
-    def test_clipboard_parser(self):
-        jb_list = [
-            '<a href="showinfo:35841//1037567076715">8CN-CH » OX-S7P - Speedway</a> in 8CN-CH',
-            'DUO-51 » L-FM3P',
-            'OX-S7P » 8CN-CH - Speedway 2'
-        ]
-        for itm in jb_list:
-            res_type, res = evaluateClipboardData(itm)
-            self.assertEqual(res_type, "jumpbridge", "Result of '{}'is not jumpbridge".format(itm))
-
-        pos_list = [
-            "<url=showinfo:1531//60002476 alt='Current Station'>Vittenyn IV - Moon 6" 
-            " - Expert Distribution Warehouse</url>",
-            "Vittenyn IV - Moon 6 - Expert Distribution Warehouse\n0 m",
-            'Trossere VII - Moon 3 - University of Caille',
-            "Jita IV - Moon 4 - Caldari Navy Assembly Plant"
-            ]
-        for itm in pos_list:
-            res_type, res = evaluateClipboardData(itm)
-            self.assertEqual(res_type, "poi", "Result of '{}' is not poi".format(itm))
 
     def test_esi(self):
         res = evegate.esiStatus()

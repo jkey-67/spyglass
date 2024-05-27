@@ -3,6 +3,7 @@ import logging
 import os.path
 import time
 
+import datetime
 from PySide6.QtCore import QUrl, QObject, QTimer
 from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtWidgets import QApplication
@@ -108,12 +109,12 @@ class Zkillmonitor(QObject):
 
     @staticmethod
     def logKillmail(kill_data):
-        kill_time = time.mktime(time.strptime(kill_data["killmail_time"], "%Y-%m-%dT%H:%M:%SZ"))
+        kill_time = datetime.datetime.strptime(kill_data["killmail_time"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
         Cache().putKillmailtoCache(
             killmail_id=kill_data["killmail_id"],
             region_id=Universe.regionIDFromSystemID(kill_data["solar_system_id"]),
             system_id=kill_data["solar_system_id"],
-            modified=kill_time,
+            modified=kill_time.timestamp(),
             json_txt=json.dumps(kill_data)
         )
 

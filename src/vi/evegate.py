@@ -137,7 +137,9 @@ def secondUntilExpire(response, default: int = 3600) -> int:
     if "Expires" in response.headers:
         expires = response.headers["Expires"]
         locale.setlocale(locale.LC_TIME, 'en_US')
-        return (datetime.datetime.strptime(expires, "%a, %d %b %Y %H:%M:%S GMT") - datetime.datetime.now(datetime.UTC)).seconds
+        res_time = datetime.datetime.strptime(expires, "%a, %d %b %Y %H:%M:%S GMT").replace(tzinfo=datetime.timezone.utc)
+        utc_time = datetime.datetime.now(datetime.timezone.utc)
+        return (res_time - utc_time).seconds
     else:
         return default
 
@@ -930,7 +932,8 @@ def refreshToken(params: Optional[ApiKey]) -> Optional[ApiKey]:
             return params
         char_api_key_set = json.loads(cache_api_key)
         char_api_key_set["ExpiresOn"] = \
-            datetime.datetime.utcfromtimestamp(time.time() + params.expires_in).strftime('%Y-%m-%dT%H:%M:%S')
+            datetime.datetime.fromtimestamp(time.time() + params.expires_in,
+                                            tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
         char_api_key_set["valid_until"] = \
             time.time() + params.expires_in
         char_api_key_set.update(ref_token)

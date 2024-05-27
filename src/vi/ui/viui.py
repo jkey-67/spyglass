@@ -56,7 +56,7 @@ from vi.ui.systemtray import TheraContextMenu
 from vi.ui.systemtray import ActionPackage
 from vi.ui.styles import Styles
 from vi.chatparser.chatparser import ChatParser
-from vi.clipboard import evaluateClipboardData
+from vi.clipboard import evaluateClipboardData, tokenize_eve_formatted_text
 from vi.ui.modelplayer import TableModelPlayers, StyledItemDelegatePlayers
 from vi.ui.modelthera import TableModelThera
 from vi.ui.modelstorm import TableModelStorm
@@ -1519,22 +1519,23 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         clip_content = self.clipboard.text()
         if clip_content != self.oldClipboardContent:
-            for line_content in clip_content.splitlines():
-                cb_type, cb_data = evaluateClipboardData(line_content)
-                if cb_type == "poi":
-                    if self.cache.putPOI(cb_data):
-                        self.poi_changed.emit()
-                elif cb_type == "jumpbridge":
-                    if self.cache.putJumpGate(
-                            src=cb_data["src"],
-                            dst=cb_data["dst"],
-                            src_id=cb_data["id_src"],
-                            dst_id=cb_data["id_dst"],
-                            json_src=cb_data["json_src"],
-                            json_dst=cb_data["json_dst"]):
-                        self.jbs_changed.emit()
-                elif cb_type == "link":
-                    QDesktopServices.openUrl(cb_data)
+            for full_line_content in clip_content.splitlines():
+                for line_content in tokenize_eve_formatted_text(full_line_content):
+                    cb_type, cb_data = evaluateClipboardData(line_content)
+                    if cb_type == "poi":
+                        if self.cache.putPOI(cb_data):
+                            self.poi_changed.emit()
+                    elif cb_type == "jumpbridge":
+                        if self.cache.putJumpGate(
+                                src=cb_data["src"],
+                                dst=cb_data["dst"],
+                                src_id=cb_data["id_src"],
+                                dst_id=cb_data["id_dst"],
+                                json_src=cb_data["json_src"],
+                                json_dst=cb_data["json_dst"]):
+                            self.jbs_changed.emit()
+                    elif cb_type == "link":
+                        QDesktopServices.openUrl(cb_data)
             self.oldClipboardContent = clip_content
 
     def mapLinkClicked(self, url: QtCore.QUrl) -> None:

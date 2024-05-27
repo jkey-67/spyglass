@@ -22,9 +22,9 @@
 ###########################################################################
 
 import math
-import datetime
 import json
 import os
+import datetime
 
 from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF
 from PySide6.QtGui import QPainter, QFont, QPen, QBrush, QColor, QRadialGradient, QPainterPath
@@ -924,7 +924,7 @@ class System(object):
 
         if "vulnerable_start_time" in sys_sov_structures:
             self.vulnerable_start_time = datetime.datetime.strptime(sys_sov_structures['vulnerable_start_time'],
-                                                                  "%Y-%m-%dT%H:%M:%SZ")
+                                                                  "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
             self._vulnerability_text = (self.vulnerable_start_time.strftime("%m/%d %H:%M") + " " +
                                         self._vulnerability_text)
         else:
@@ -932,7 +932,7 @@ class System(object):
 
         if "vulnerable_end_time" in sys_sov_structures:
             self.vulnerable_end_time = datetime.datetime.strptime(sys_sov_structures['vulnerable_end_time'],
-                                                                  "%Y-%m-%dT%H:%M:%SZ")
+                                                                  "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
         else:
             self.vulnerable_end_time = None
 
@@ -1174,7 +1174,7 @@ def _ApplyStructuresToSystem(data):
                     data[system_id].structures = [new_data]
                 else:
                     data[system_id].structures.append(new_data)
-            elif type_id is 2017:
+            elif type_id == 2017:
                 data[system_id].has_cyno_beacon = True
 
     filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "structures.txt")

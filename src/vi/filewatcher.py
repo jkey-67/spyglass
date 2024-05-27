@@ -16,16 +16,19 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
+import datetime
 import logging
 import os
 import sys
 import stat
 import time
-import datetime
+from zoneinfo import ZoneInfo
 import threading
 
 from PySide6 import QtCore
 from PySide6.QtCore import Signal as pyqtSignal
+
+from vi.evetime import lastDowntime
 
 """
 There is a problem with the QFIleWatcher on Windows and the log
@@ -95,16 +98,6 @@ class FileWatcher(QtCore.QThread):
         self.active = False
         QtCore.QThread.quit(self)
 
-    @staticmethod
-    def lastDowntime():
-        """ Return the timestamp from the last downtime
-        """
-        target = datetime.datetime.now(datetime.UTC)
-        if target.hour < 11:
-            target = target - datetime.timedelta(1)
-        target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
-        return target.timestamp()
-
     def updateWatchedFiles(self, path_name=None):
         """
         Updates the list of monitored file, all Fleet and Alliance chats and files with m-date, earlier then the last
@@ -114,7 +107,7 @@ class FileWatcher(QtCore.QThread):
             None: modifies the file member
         """
         path = self.path
-        last_downtime = self.lastDowntime()
+        last_downtime = lastDowntime()
         for f in os.listdir(path):
             try:
                 full_path = os.path.join(path, f)

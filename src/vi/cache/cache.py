@@ -23,9 +23,10 @@ import time
 import logging
 import vi.version
 import json
-import datetime
+
 from typing import Optional
 from .dbstructure import updateDatabase
+from vi.evetime import currentEveTime, secondsTillDowntime
 
 
 def to_blob(x):
@@ -34,26 +35,6 @@ def to_blob(x):
 
 def from_blob(x):
     return x
-
-
-def currentEveTime():
-    """ Gets the current eve time utc now
-
-    Returns:
-        datetime.datetime: The current eve-time as a datetime.datetime
-    """
-    return datetime.datetime.now(datetime.UTC)
-
-
-def secondsTillDowntime():
-    """ Return the seconds till the next downtime"""
-    now = currentEveTime()
-    target = now
-    if now.hour > 11:
-        target = target + datetime.timedelta(1)
-    target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
-    delta = target - now
-    return delta.seconds
 
 
 class Cache(object):

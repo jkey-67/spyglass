@@ -1,7 +1,7 @@
 altgraph
 beautifulsoup4
 future
-pyside6==6.6.0
+pyside6
 PyYAML
 requests
 urllib3

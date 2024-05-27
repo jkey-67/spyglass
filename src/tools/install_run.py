@@ -24,7 +24,7 @@ def instFiles():
         '--windowed',
         '--name', 'spyglass-1.7.2.run',
         '../spyglass.py',
-        '--icon=../icon.ico',
+        '--icon="../icon.ico"',
         "--add-data=../vi/universe/*.json:./vi/universe",
         '--add-data=../vi/ui/*.ui:./vi/ui',
         '--add-data=../vi/ui/res/*.*:./vi/ui/res',
