@@ -1862,7 +1862,7 @@ def ESAPIListPublicObservationsRecords():
     observations_records = used_cache.getFromCache(cache_key)
     if observations_records is None:
         req = "https://api.eve-scout.com/v2/public/observations"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             used_cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -1893,7 +1893,7 @@ def ESAPIListPublicSignatures():
     list_public_signatures = used_cache.getFromCache(cache_key)
     if list_public_signatures is None:
         req = "https://api.eve-scout.com/v2/public/signatures"
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             used_cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -1917,7 +1917,7 @@ def ESAPIListWormholeTypes():
     if list_wormhole_types is None:
         req = "https://api.eve-scout.com/v2/public/wormholetypes"
 
-        response = requests.get(req)
+        response = getSession().get(req)
         if response.status_code == 200:
             used_cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
@@ -1943,7 +1943,7 @@ def ESAPIListSystems(query: str, limit=None, space="k-space"):
     req = "https://api.eve-scout.com/v2/public/systems?query={}&space={}".format(query, space)
     if limit:
         req = req + "&limit={}".format(limit)
-    response = requests.get(req)
+    response = getSession().get(req)
     if response.status_code == 200:
         return response.json()
     else:
@@ -1964,7 +1964,7 @@ def ESAPIRoteToHighSec(system_name: str):
 
     """
     req = "https://api.eve-scout.com/v2/public/routes/highsec?from={}".format(system_name)
-    response = requests.get(req)
+    response = getSession().get(req)
     if response.status_code == 200:
         return response.json()
     else:
@@ -2035,7 +2035,7 @@ def getSvgFromDotlan(region: str, dark: bool = True) -> str:
         url = u"https://evemaps.dotlan.net/svg/{0}.dark.svg".format(convertRegionNameForDotlan(region))
     else:
         url = u"https://evemaps.dotlan.net/svg/{0}.svg".format(convertRegionNameForDotlan(region))
-    response = requests.get(url)
+    response = getSession().get(url)
     if response.status_code == 200:
         return response.text
     else:
@@ -2133,9 +2133,29 @@ def generate_universe_region_names(use_outdated=False):
         print("Region generation done.")
 
 
+def esiPing() -> bool:
+    req = "https://esi.evetech.net/ping"
+    response = getSession().get(req)
+    if response.status_code != 200:
+        return False
+    else:
+        return response.text == "ok"
+
+
+def esiStatusJson():
+    req = "https://esi.evetech.net/status.json?version=latest"
+    response = getSession().get(req)
+    if response.status_code != 200:
+        return False
+    else:
+        return response.json()
+
+
 # vulnerability_occupancy_level
 # The main application for testing
 if __name__ == "__main__":
+    res = esiPing()
+    status = esiStatusJson()
     cats = esiUniverseAllCategories()
     status = esiStatus()
     session = getSession()

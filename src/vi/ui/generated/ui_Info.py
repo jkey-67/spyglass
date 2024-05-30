@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'Info.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.6.0
+## Created by: Qt User Interface Compiler version 6.7.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -24,7 +24,7 @@ class Ui_EVESpyInfo(object):
         if not EVESpyInfo.objectName():
             EVESpyInfo.setObjectName(u"EVESpyInfo")
         EVESpyInfo.resize(700, 702)
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(6)
         sizePolicy.setHeightForWidth(EVESpyInfo.sizePolicy().hasHeightForWidth())
@@ -43,8 +43,8 @@ class Ui_EVESpyInfo(object):
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.line_2 = QFrame(self.layoutWidget)
         self.line_2.setObjectName(u"line_2")
-        self.line_2.setFrameShape(QFrame.HLine)
-        self.line_2.setFrameShadow(QFrame.Sunken)
+        self.line_2.setFrameShape(QFrame.Shape.HLine)
+        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.verticalLayout_2.addWidget(self.line_2)
 
@@ -71,8 +71,8 @@ class Ui_EVESpyInfo(object):
 
         self.line = QFrame(self.layoutWidget)
         self.line.setObjectName(u"line")
-        self.line.setFrameShape(QFrame.HLine)
-        self.line.setFrameShadow(QFrame.Sunken)
+        self.line.setFrameShape(QFrame.Shape.HLine)
+        self.line.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.verticalLayout_2.addWidget(self.line)
 

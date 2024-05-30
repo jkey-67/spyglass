@@ -1,6 +1,7 @@
 import unittest
 import os
 import json
+import uuid
 
 from vi.cache import Cache
 from vi.universe import Universe
@@ -8,6 +9,30 @@ from vi.clipboard import evaluateClipboardData
 from vi.redoundoqueue import RedoUndoQueue
 from vi import Map
 from vi import evegate
+
+
+class FileName:
+    def __init__(self, curr_path, file_name):
+        self.temp_name = os.path.join(curr_path, str(uuid.uuid4()) )
+        self.file_name = os.path.join(curr_path, file_name )
+
+    def __del__(self):
+        if os.path.exists(self.temp_name):
+            os.remove(self.temp_name)
+            print('Delete file ', self.temp_name)
+
+    def prepare(self):
+        if os.path.exists(self.temp_name):
+            os.remove(self.temp_name)
+
+    def update(self):
+        if os.path.exists(self.temp_name):
+            if os.path.exists(self.file_name):
+                os.remove(self.file_name)
+            os.renames(self.temp_name, self.file_name)
+
+    def __str__(self):
+        return self.temp_name
 
 
 class TestCache(unittest.TestCase):
@@ -58,7 +83,6 @@ class TestCache(unittest.TestCase):
                     for key in list(i.keys()):
                         if key not in ids.keys():
                             ids.update(i)
-
         self.assertIsNotNone(ids)
 
     def test_loadSystems(self):
@@ -69,6 +93,7 @@ class TestCache(unittest.TestCase):
 
     def test_update_all_json_files(self):
         self.use_outdated_cache = False
+        self.test_generateSystems()
         self.test_generateShipnames()
         self.test_generateRegions()
         self.test_generateConstellations()
@@ -108,8 +133,10 @@ class TestCache(unittest.TestCase):
             ships_file.write(")\n")
 
     def test_generateRegions(self):
+        name = FileName(self.curr_path, "everegions.json")
+        name.prepare()
         res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "everegions.json"), "w") as ships_file:
+        with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
             eol_txt = "\n        "
@@ -134,10 +161,13 @@ class TestCache(unittest.TestCase):
                     ships_file.write(ship_text)
 
             ships_file.write("]\n")
+        name.update()
 
     def test_generateConstellations(self):
+        name = FileName(self.curr_path, "eveconstellations.json")
+        name.prepare()
         res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "eveconstellations.json"), "w") as ships_file:
+        with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
             eol_txt = "\n        "
@@ -165,10 +195,13 @@ class TestCache(unittest.TestCase):
                         ships_file.write(ship_text)
 
             ships_file.write("]\n")
+        name.update()
 
     def test_generateSystems(self):
+        name = FileName(self.curr_path, "evesystems.json")
+        name.prepare()
         res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "evesystems.json"), "w") as ships_file:
+        with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
             eol_txt = "\n        "
@@ -198,10 +231,13 @@ class TestCache(unittest.TestCase):
                             ships_file.write(ship_text)
 
             ships_file.write("]\n")
+        name.update()
 
     def test_generateStargates(self):
+        filename = FileName(self.curr_path, "evestargates.json")
+        filename.prepare()
         res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "evestargates.json"), "w") as ships_file:
+        with open(filename.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
             eol_txt = "\n        "
@@ -236,6 +272,7 @@ class TestCache(unittest.TestCase):
                                 ships_file.write(ship_text)
 
             ships_file.write("]\n")
+        filename.update()
 
     def test_GetDotlanFiles(self):
         for region in Universe.REGIONS:
