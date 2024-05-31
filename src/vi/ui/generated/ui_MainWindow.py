@@ -556,7 +556,64 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.tableChars)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.m_qLedOnline = QLabel(self.qTabAPIChar)
+        self.m_qLedOnline.setObjectName(u"m_qLedOnline")
+        self.m_qLedOnline.setEnabled(True)
+        self.m_qLedOnline.setMaximumSize(QSize(24, 24))
+        self.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+        self.m_qLedOnline.setScaledContents(True)
+
+        self.horizontalLayout_6.addWidget(self.m_qLedOnline)
+
+        self.m_qPlayerOnline = QLabel(self.qTabAPIChar)
+        self.m_qPlayerOnline.setObjectName(u"m_qPlayerOnline")
+
+        self.horizontalLayout_6.addWidget(self.m_qPlayerOnline)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_6)
+
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.m_qLedZKillboarOnline = QLabel(self.qTabAPIChar)
+        self.m_qLedZKillboarOnline.setObjectName(u"m_qLedZKillboarOnline")
+        self.m_qLedZKillboarOnline.setEnabled(True)
+        self.m_qLedZKillboarOnline.setMaximumSize(QSize(24, 24))
+        self.m_qLedZKillboarOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+        self.m_qLedZKillboarOnline.setScaledContents(True)
+
+        self.horizontalLayout_7.addWidget(self.m_qLedZKillboarOnline)
+
+        self.m_qZKillboard = QLabel(self.qTabAPIChar)
+        self.m_qZKillboard.setObjectName(u"m_qZKillboard")
+
+        self.horizontalLayout_7.addWidget(self.m_qZKillboard)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_7)
+
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.m_qLedEveScout = QLabel(self.qTabAPIChar)
+        self.m_qLedEveScout.setObjectName(u"m_qLedEveScout")
+        self.m_qLedEveScout.setEnabled(True)
+        self.m_qLedEveScout.setMaximumSize(QSize(24, 24))
+        self.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+        self.m_qLedEveScout.setScaledContents(True)
+
+        self.horizontalLayout_8.addWidget(self.m_qLedEveScout)
+
+        self.m_qEveScout = QLabel(self.qTabAPIChar)
+        self.m_qEveScout.setObjectName(u"m_qEveScout")
+
+        self.horizontalLayout_8.addWidget(self.m_qEveScout)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_8)
+
+        self.verticalSpacer = QSpacerItem(20, 42, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout_4.addItem(self.verticalSpacer)
 
@@ -871,6 +928,12 @@ class Ui_MainWindow(object):
         self.removeChar.setToolTip(QCoreApplication.translate("MainWindow", u"Remove API Key for the selected character.", None))
 #endif // QT_CONFIG(tooltip)
         self.removeChar.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
+        self.m_qLedOnline.setText("")
+        self.m_qPlayerOnline.setText(QCoreApplication.translate("MainWindow", u"(0) Players", None))
+        self.m_qLedZKillboarOnline.setText("")
+        self.m_qZKillboard.setText(QCoreApplication.translate("MainWindow", u"Webserver connection to zKillboard ", None))
+        self.m_qLedEveScout.setText("")
+        self.m_qEveScout.setText(QCoreApplication.translate("MainWindow", u"Connection to EVE-Scout", None))
         self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabAPIChar), QCoreApplication.translate("MainWindow", u"API Chars", None))
 #if QT_CONFIG(tooltip)
         self.lineEditThera.setToolTip(QCoreApplication.translate("MainWindow", u"System name used for distance calculation.", None))

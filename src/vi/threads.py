@@ -208,6 +208,7 @@ class MapStatisticsThread(QThread):
                     statistics_data["statistics"] = evegate.esiUniverseSystem_jumps()
                     statistics_data["incursions"] = evegate.esiIncursions(False)
                     statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(False)
+                    statistics_data["server-status"] = evegate.esiStatus()
 
                 if "registered-chars" in tsk:
                     statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()

@@ -42,10 +42,12 @@ class Zkillmonitor(QObject):
         self.reconnectTimer.start()
 
     def startConnectFromTimer(self):
+        self.status_killmail.emit(False)
         logging.info("Websocket reconnecting to url {}".format(self.address))
         self.webSocket.open(QUrl(self.address))
 
     def startConnect(self):
+        self.status_killmail.emit(False)
         return
         self.reconnectTimer.stop()
         logging.info("Websocket connecting to url {}".format(self.address))

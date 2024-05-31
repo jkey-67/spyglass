@@ -1898,7 +1898,7 @@ def ESAPIListPublicSignatures():
             used_cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
         else:
-            response.raise_for_status()
+            return []
     return json.loads(list_public_signatures)
 
 

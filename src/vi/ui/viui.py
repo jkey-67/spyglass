@@ -1087,6 +1087,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.zkillboard = Zkillmonitor(parent=self)
         self.zkillboard.report_system_kill.connect(self.updateKillboard)
+        self.zkillboard.status_killmail.connect(lambda online: self.ui.m_qLedZKillboarOnline.setPixmap(
+                    QPixmap(u":/Icons/res/online.svg" if online else QPixmap(u":/Icons/res/offline.svg"))))
+
         self.apiThread = None
 
         #  self.filewatcherThread.addMonitorFile(zkillMonitor.MONITORING_PATH)
@@ -2017,9 +2020,21 @@ class MainWindow(QtWidgets.QMainWindow):
             self.mapStatisticCache = data["statistics"]
             if self.dotlan:
                 self.dotlan.addSystemStatistics(data['statistics'])
+        if "server-status" in data.keys():
+            server_status = data["server-status"]
+            if server_status["players"] > 0:
+                self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+            else:
+                self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
+            self.ui.m_qPlayerOnline.setText("Players ({players}) Server version ({server_version})".format(**server_status))
 
         if "thera_wormhole" in data.keys():
-            self.dotlan.setTheraConnections(data["thera_wormhole"])
+            thera_wormhole = data["thera_wormhole"]
+            if thera_wormhole and len(thera_wormhole) > 0:
+                self.ui.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+            else:
+                self.ui.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
+            self.dotlan.setTheraConnections(thera_wormhole)
 
         if "sovereignty" in data:
             self.mapSovereignty = data['sovereignty']

@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>res/offline.svg</file>
+    <file>res/online.svg</file>
     <file>res/locate.svg</file>
     <file>res/adm_vul.svg</file>
     <file>res/search.svg</file>
