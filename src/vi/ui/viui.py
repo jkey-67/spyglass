@@ -666,6 +666,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(act, "eve_action") or "player_name" in destination:
             if "system_id" in destination:
                 system_id = destination["system_id"]
+            elif "structure_id" in destination:
+                system_id = destination["structure_id"]
             elif "solar_system_id" in destination:
                 system_id = destination["solar_system_id"]
             else:

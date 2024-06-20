@@ -11,8 +11,8 @@ from vi import evegate
 
 class FileName:
     def __init__(self, curr_path, file_name):
-        self.temp_name = os.path.join(curr_path, str(uuid.uuid4()) )
-        self.file_name = os.path.join(curr_path, file_name )
+        self.temp_name = os.path.join(curr_path, str(uuid.uuid4()))
+        self.file_name = os.path.join(curr_path, file_name)
 
     def __del__(self):
         if os.path.exists(self.temp_name):
@@ -334,7 +334,6 @@ class TestCache(unittest.TestCase):
         self.cache_used.removeAPIKey("Mr C")
         self.cache_used.removeAPIKey("Mr D")
         self.cache_used.removeAPIKey("Mr E")
-
 
     def test_esi(self):
         res = evegate.esiStatus()

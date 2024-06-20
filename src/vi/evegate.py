@@ -995,7 +995,13 @@ def esiAutopilotWaypoint(char_name: str, system_id: int, beginning=True, clear_a
             "token": token.access_token,
         }
         url = "https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
-        getSession().post(url=url)
+        response = getSession().post(url=url)
+        if response.status_code != 204:
+            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+        else:
+            return True
+    else:
+        return False
 
 
 def getRouteFromEveOnline(jumpgates, src, dst):
@@ -1011,7 +1017,7 @@ def getRouteFromEveOnline(jumpgates, src, dst):
     url = "https://esi.evetech.net/v1/route/{}/{}/?connections={}".format(src, dst, route_elements)
     response = getSession().get(url=url)
     if response.status_code != 200:
-        # logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
         # response.raise_for_status()
         return []
     return response.json()
