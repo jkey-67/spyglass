@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.1
+## Created by: Qt User Interface Compiler version 6.7.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,12 +16,12 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QFrame,
-    QGridLayout, QHBoxLayout, QHeaderView, QLabel,
-    QLineEdit, QListView, QListWidget, QListWidgetItem,
-    QMainWindow, QMenu, QMenuBar, QPushButton,
-    QScrollBar, QSizePolicy, QSpacerItem, QSplitter,
-    QTabWidget, QTableView, QToolButton, QVBoxLayout,
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QDockWidget,
+    QFrame, QGridLayout, QHBoxLayout, QHeaderView,
+    QLabel, QLineEdit, QListView, QListWidget,
+    QListWidgetItem, QMainWindow, QMenu, QMenuBar,
+    QPushButton, QScrollBar, QSizePolicy, QSpacerItem,
+    QSplitter, QTableView, QToolButton, QVBoxLayout,
     QWidget)
 
 from vi.panningwebview import PanningWebView
@@ -31,9 +31,9 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1263, 758)
+        MainWindow.resize(1417, 843)
         icon = QIcon()
-        icon.addFile(u":/Icons/icon.ico", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u":/Icons/icon.ico", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainWindow.setWindowIcon(icon)
         MainWindow.setWindowOpacity(1.000000000000000)
         self.infoAction = QAction(MainWindow)
@@ -141,25 +141,20 @@ class Ui_MainWindow(object):
         self.actionUserTheraRoutes.setChecked(False)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.verticalLayout_7 = QVBoxLayout(self.centralwidget)
-        self.verticalLayout_7.setSpacing(0)
-        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-        self.verticalLayout_7.setContentsMargins(2, 2, 2, 2)
+        self.verticalLayout_5 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_5.setSpacing(0)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.verticalLayout_5.setContentsMargins(2, 2, 2, 2)
         self.splitter = QSplitter(self.centralwidget)
         self.splitter.setObjectName(u"splitter")
         self.splitter.setOrientation(Qt.Horizontal)
+        self.splitter.setHandleWidth(20)
         self.mapwidget = QWidget(self.splitter)
         self.mapwidget.setObjectName(u"mapwidget")
         self.gridLayout = QGridLayout(self.mapwidget)
         self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
-        self.mapHorzScrollBar = QScrollBar(self.mapwidget)
-        self.mapHorzScrollBar.setObjectName(u"mapHorzScrollBar")
-        self.mapHorzScrollBar.setOrientation(Qt.Horizontal)
-
-        self.gridLayout.addWidget(self.mapHorzScrollBar, 4, 0, 2, 1)
-
         self.mapbuttonwidget = QWidget(self.mapwidget)
         self.mapbuttonwidget.setObjectName(u"mapbuttonwidget")
         self.mapbuttonwidget.setMinimumSize(QSize(0, 24))
@@ -171,7 +166,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setSpacing(0)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(-1, -1, -1, 0)
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.frameButton = QToolButton(self.mapbuttonwidget)
         self.frameButton.setObjectName(u"frameButton")
         self.frameButton.setMinimumSize(QSize(0, 32))
@@ -181,7 +176,7 @@ class Ui_MainWindow(object):
         self.frameButton.setFont(font)
         self.frameButton.setFocusPolicy(Qt.NoFocus)
         icon1 = QIcon()
-        icon1.addFile(u":/Icons/res/restoreframe.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u":/Icons/res/restoreframe.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.frameButton.setIcon(icon1)
         self.frameButton.setIconSize(QSize(40, 20))
 
@@ -193,7 +188,7 @@ class Ui_MainWindow(object):
         self.searchSystem.setMaximumSize(QSize(32, 32))
         self.searchSystem.setFocusPolicy(Qt.NoFocus)
         icon2 = QIcon()
-        icon2.addFile(u":/Icons/res/search.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u":/Icons/res/search.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.searchSystem.setIcon(icon2)
         self.searchSystem.setIconSize(QSize(32, 32))
 #if QT_CONFIG(shortcut)
@@ -249,7 +244,7 @@ class Ui_MainWindow(object):
         self.locateChar.setMaximumSize(QSize(32, 32))
         self.locateChar.setFocusPolicy(Qt.NoFocus)
         icon3 = QIcon()
-        icon3.addFile(u":/Icons/res/locate.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u":/Icons/res/locate.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.locateChar.setIcon(icon3)
         self.locateChar.setIconSize(QSize(40, 20))
         self.locateChar.setAutoRaise(True)
@@ -262,7 +257,7 @@ class Ui_MainWindow(object):
         self.zoomInButton.setMaximumSize(QSize(32, 32))
         self.zoomInButton.setFocusPolicy(Qt.NoFocus)
         icon4 = QIcon()
-        icon4.addFile(u":/Icons/res/plus.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u":/Icons/res/plus.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.zoomInButton.setIcon(icon4)
         self.zoomInButton.setIconSize(QSize(40, 20))
         self.zoomInButton.setAutoRaise(True)
@@ -279,7 +274,7 @@ class Ui_MainWindow(object):
         self.zoomOutButton.setFont(font1)
         self.zoomOutButton.setFocusPolicy(Qt.NoFocus)
         icon5 = QIcon()
-        icon5.addFile(u":/Icons/res/minus.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u":/Icons/res/minus.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.zoomOutButton.setIcon(icon5)
         self.zoomOutButton.setIconSize(QSize(40, 20))
         self.zoomOutButton.setAutoRaise(True)
@@ -293,7 +288,7 @@ class Ui_MainWindow(object):
         self.jumpbridgesButton.setFont(font)
         self.jumpbridgesButton.setFocusPolicy(Qt.NoFocus)
         icon6 = QIcon()
-        icon6.addFile(u":/Icons/res/jumpbridge.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon6.addFile(u":/Icons/res/jumpbridge.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.jumpbridgesButton.setIcon(icon6)
         self.jumpbridgesButton.setIconSize(QSize(40, 20))
         self.jumpbridgesButton.setCheckable(True)
@@ -309,7 +304,7 @@ class Ui_MainWindow(object):
         self.statisticsButton.setFont(font)
         self.statisticsButton.setFocusPolicy(Qt.NoFocus)
         icon7 = QIcon()
-        icon7.addFile(u":/Icons/res/statistic.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon7.addFile(u":/Icons/res/statistic.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.statisticsButton.setIcon(icon7)
         self.statisticsButton.setIconSize(QSize(40, 20))
         self.statisticsButton.setCheckable(True)
@@ -325,7 +320,7 @@ class Ui_MainWindow(object):
         self.adm_vul_Button.setFont(font)
         self.adm_vul_Button.setFocusPolicy(Qt.NoFocus)
         icon8 = QIcon()
-        icon8.addFile(u":/Icons/res/adm_vul.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon8.addFile(u":/Icons/res/adm_vul.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.adm_vul_Button.setIcon(icon8)
         self.adm_vul_Button.setIconSize(QSize(40, 20))
         self.adm_vul_Button.setCheckable(True)
@@ -346,6 +341,12 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.mapVertScrollBar, 2, 1, 4, 1)
 
+        self.mapHorzScrollBar = QScrollBar(self.mapwidget)
+        self.mapHorzScrollBar.setObjectName(u"mapHorzScrollBar")
+        self.mapHorzScrollBar.setOrientation(Qt.Horizontal)
+
+        self.gridLayout.addWidget(self.mapHorzScrollBar, 4, 0, 2, 1)
+
         self.mapView = PanningWebView(self.mapwidget)
         self.mapView.setObjectName(u"mapView")
         self.mapView.setEnabled(True)
@@ -363,369 +364,21 @@ class Ui_MainWindow(object):
         self.systemNames.setToolTip(u"Enter the System name so select the region.")
 #endif // QT_CONFIG(tooltip)
 
-        self.gridLayout.addWidget(self.mapView, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.mapView, 3, 0, 1, 1)
 
         self.splitter.addWidget(self.mapwidget)
-        self.chatbox = QWidget(self.splitter)
-        self.chatbox.setObjectName(u"chatbox")
-        self.verticalLayout = QVBoxLayout(self.chatbox)
-        self.verticalLayout.setSpacing(0)
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.qSidepannel = QTabWidget(self.chatbox)
-        self.qSidepannel.setObjectName(u"qSidepannel")
-        self.qSidepannel.setTabPosition(QTabWidget.East)
-        self.qSidepannel.setDocumentMode(True)
-        self.qSidepannel.setMovable(True)
-        self.qSidepannel.setTabBarAutoHide(True)
-        self.qTabIntel = QWidget()
-        self.qTabIntel.setObjectName(u"qTabIntel")
-        self.verticalLayout_2 = QVBoxLayout(self.qTabIntel)
-        self.verticalLayout_2.setSpacing(0)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setSpacing(0)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.timeInfo = QLabel(self.qTabIntel)
-        self.timeInfo.setObjectName(u"timeInfo")
-        self.timeInfo.setMinimumSize(QSize(0, 32))
-        self.timeInfo.setMaximumSize(QSize(16777215, 32))
 
-        self.horizontalLayout.addWidget(self.timeInfo)
-
-        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout.addItem(self.horizontalSpacer_3)
-
-        self.clearIntel = QToolButton(self.qTabIntel)
-        self.clearIntel.setObjectName(u"clearIntel")
-        icon9 = QIcon()
-        icon9.addFile(u":/Icons/res/trash-box.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.clearIntel.setIcon(icon9)
-        self.clearIntel.setIconSize(QSize(24, 24))
-        self.clearIntel.setAutoRaise(True)
-
-        self.horizontalLayout.addWidget(self.clearIntel)
-
-        self.rescanIntel = QToolButton(self.qTabIntel)
-        self.rescanIntel.setObjectName(u"rescanIntel")
-        icon10 = QIcon()
-        icon10.addFile(u":/Icons/res/arrows-rotate.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.rescanIntel.setIcon(icon10)
-        self.rescanIntel.setIconSize(QSize(24, 24))
-        self.rescanIntel.setCheckable(False)
-        self.rescanIntel.setAutoRaise(True)
-
-        self.horizontalLayout.addWidget(self.rescanIntel)
-
-        self.chatLargeButton = QToolButton(self.qTabIntel)
-        self.chatLargeButton.setObjectName(u"chatLargeButton")
-        self.chatLargeButton.setMinimumSize(QSize(32, 32))
-        self.chatLargeButton.setMaximumSize(QSize(32, 32))
-        self.chatLargeButton.setFocusPolicy(Qt.NoFocus)
-        self.chatLargeButton.setIcon(icon4)
-        self.chatLargeButton.setIconSize(QSize(40, 20))
-        self.chatLargeButton.setAutoRaise(True)
-
-        self.horizontalLayout.addWidget(self.chatLargeButton)
-
-        self.chatSmallButton = QToolButton(self.qTabIntel)
-        self.chatSmallButton.setObjectName(u"chatSmallButton")
-        self.chatSmallButton.setMinimumSize(QSize(32, 32))
-        self.chatSmallButton.setMaximumSize(QSize(32, 32))
-        self.chatSmallButton.setFocusPolicy(Qt.NoFocus)
-        self.chatSmallButton.setIcon(icon5)
-        self.chatSmallButton.setIconSize(QSize(40, 20))
-        self.chatSmallButton.setAutoRaise(True)
-
-        self.horizontalLayout.addWidget(self.chatSmallButton)
-
-
-        self.verticalLayout_2.addLayout(self.horizontalLayout)
-
-        self.chatListWidget = QListWidget(self.qTabIntel)
-        self.chatListWidget.setObjectName(u"chatListWidget")
-        self.chatListWidget.setEnabled(True)
-        self.chatListWidget.setFrameShadow(QFrame.Plain)
-        self.chatListWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.chatListWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.chatListWidget.setSelectionMode(QAbstractItemView.NoSelection)
-        self.chatListWidget.setTextElideMode(Qt.ElideNone)
-        self.chatListWidget.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self.chatListWidget.setResizeMode(QListView.Adjust)
-        self.chatListWidget.setSortingEnabled(True)
-
-        self.verticalLayout_2.addWidget(self.chatListWidget)
-
-        self.qSidepannel.addTab(self.qTabIntel, "")
-        self.qTabPOIS = QWidget()
-        self.qTabPOIS.setObjectName(u"qTabPOIS")
-        self.verticalLayout_5 = QVBoxLayout(self.qTabPOIS)
-        self.verticalLayout_5.setSpacing(0)
-        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.verticalLayout_5.setContentsMargins(0, 0, 0, 0)
-        self.tableViewPOIs = QTableView(self.qTabPOIS)
-        self.tableViewPOIs.setObjectName(u"tableViewPOIs")
-        self.tableViewPOIs.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewPOIs.setTabKeyNavigation(False)
-        self.tableViewPOIs.setProperty("showDropIndicator", False)
-        self.tableViewPOIs.setDragDropOverwriteMode(False)
-        self.tableViewPOIs.setTextElideMode(Qt.ElideNone)
-        self.tableViewPOIs.setSortingEnabled(True)
-        self.tableViewPOIs.horizontalHeader().setProperty("showSortIndicator", True)
-        self.tableViewPOIs.horizontalHeader().setStretchLastSection(True)
-        self.tableViewPOIs.verticalHeader().setVisible(False)
-        self.tableViewPOIs.verticalHeader().setHighlightSections(False)
-
-        self.verticalLayout_5.addWidget(self.tableViewPOIs)
-
-        self.qSidepannel.addTab(self.qTabPOIS, "")
-        self.qTabJumpbridges = QWidget()
-        self.qTabJumpbridges.setObjectName(u"qTabJumpbridges")
-        self.verticalLayout_3 = QVBoxLayout(self.qTabJumpbridges)
-        self.verticalLayout_3.setSpacing(0)
-        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.tableViewJBs = QTableView(self.qTabJumpbridges)
-        self.tableViewJBs.setObjectName(u"tableViewJBs")
-        self.tableViewJBs.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableViewJBs.setTabKeyNavigation(False)
-        self.tableViewJBs.setProperty("showDropIndicator", False)
-        self.tableViewJBs.setAlternatingRowColors(False)
-        self.tableViewJBs.setSelectionMode(QAbstractItemView.ContiguousSelection)
-        self.tableViewJBs.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewJBs.setTextElideMode(Qt.ElideNone)
-        self.tableViewJBs.setGridStyle(Qt.SolidLine)
-        self.tableViewJBs.setSortingEnabled(True)
-        self.tableViewJBs.setCornerButtonEnabled(False)
-        self.tableViewJBs.horizontalHeader().setDefaultSectionSize(150)
-        self.tableViewJBs.horizontalHeader().setHighlightSections(False)
-        self.tableViewJBs.horizontalHeader().setStretchLastSection(True)
-        self.tableViewJBs.verticalHeader().setVisible(False)
-        self.tableViewJBs.verticalHeader().setHighlightSections(False)
-
-        self.verticalLayout_3.addWidget(self.tableViewJBs)
-
-        self.qSidepannel.addTab(self.qTabJumpbridges, "")
-        self.qTabAPIChar = QWidget()
-        self.qTabAPIChar.setObjectName(u"qTabAPIChar")
-        self.verticalLayout_4 = QVBoxLayout(self.qTabAPIChar)
-        self.verticalLayout_4.setSpacing(0)
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_3 = QHBoxLayout()
-        self.horizontalLayout_3.setSpacing(0)
-        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.connectToEveOnline = QPushButton(self.qTabAPIChar)
-        self.connectToEveOnline.setObjectName(u"connectToEveOnline")
-        self.connectToEveOnline.setMinimumSize(QSize(0, 27))
-        self.connectToEveOnline.setMaximumSize(QSize(166, 22))
-        self.connectToEveOnline.setAutoFillBackground(False)
-        self.connectToEveOnline.setText(u"")
-        icon11 = QIcon()
-        icon11.addFile(u"res/eve-sso-login-black-small.png", QSize(), QIcon.Normal, QIcon.Off)
-        self.connectToEveOnline.setIcon(icon11)
-        self.connectToEveOnline.setIconSize(QSize(163, 38))
-        self.connectToEveOnline.setFlat(False)
-
-        self.horizontalLayout_3.addWidget(self.connectToEveOnline)
-
-        self.horizontalSpacer = QSpacerItem(10, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_3.addItem(self.horizontalSpacer)
-
-        self.removeChar = QToolButton(self.qTabAPIChar)
-        self.removeChar.setObjectName(u"removeChar")
-        self.removeChar.setIcon(icon9)
-        self.removeChar.setIconSize(QSize(24, 24))
-
-        self.horizontalLayout_3.addWidget(self.removeChar)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_3)
-
-        self.tableChars = QTableView(self.qTabAPIChar)
-        self.tableChars.setObjectName(u"tableChars")
-        self.tableChars.setEditTriggers(QAbstractItemView.CurrentChanged|QAbstractItemView.DoubleClicked|QAbstractItemView.SelectedClicked)
-        self.tableChars.setTextElideMode(Qt.ElideNone)
-        self.tableChars.setSortingEnabled(True)
-        self.tableChars.setCornerButtonEnabled(False)
-        self.tableChars.horizontalHeader().setStretchLastSection(True)
-        self.tableChars.verticalHeader().setVisible(False)
-
-        self.verticalLayout_4.addWidget(self.tableChars)
-
-        self.horizontalLayout_6 = QHBoxLayout()
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.m_qLedOnline = QLabel(self.qTabAPIChar)
-        self.m_qLedOnline.setObjectName(u"m_qLedOnline")
-        self.m_qLedOnline.setEnabled(True)
-        self.m_qLedOnline.setMaximumSize(QSize(24, 24))
-        self.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
-        self.m_qLedOnline.setScaledContents(True)
-
-        self.horizontalLayout_6.addWidget(self.m_qLedOnline)
-
-        self.m_qPlayerOnline = QLabel(self.qTabAPIChar)
-        self.m_qPlayerOnline.setObjectName(u"m_qPlayerOnline")
-
-        self.horizontalLayout_6.addWidget(self.m_qPlayerOnline)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_6)
-
-        self.horizontalLayout_7 = QHBoxLayout()
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.m_qLedZKillboarOnline = QLabel(self.qTabAPIChar)
-        self.m_qLedZKillboarOnline.setObjectName(u"m_qLedZKillboarOnline")
-        self.m_qLedZKillboarOnline.setEnabled(True)
-        self.m_qLedZKillboarOnline.setMaximumSize(QSize(24, 24))
-        self.m_qLedZKillboarOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
-        self.m_qLedZKillboarOnline.setScaledContents(True)
-
-        self.horizontalLayout_7.addWidget(self.m_qLedZKillboarOnline)
-
-        self.m_qZKillboard = QLabel(self.qTabAPIChar)
-        self.m_qZKillboard.setObjectName(u"m_qZKillboard")
-
-        self.horizontalLayout_7.addWidget(self.m_qZKillboard)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_7)
-
-        self.horizontalLayout_8 = QHBoxLayout()
-        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-        self.m_qLedEveScout = QLabel(self.qTabAPIChar)
-        self.m_qLedEveScout.setObjectName(u"m_qLedEveScout")
-        self.m_qLedEveScout.setEnabled(True)
-        self.m_qLedEveScout.setMaximumSize(QSize(24, 24))
-        self.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/online.svg"))
-        self.m_qLedEveScout.setScaledContents(True)
-
-        self.horizontalLayout_8.addWidget(self.m_qLedEveScout)
-
-        self.m_qEveScout = QLabel(self.qTabAPIChar)
-        self.m_qEveScout.setObjectName(u"m_qEveScout")
-
-        self.horizontalLayout_8.addWidget(self.m_qEveScout)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_8)
-
-        self.verticalSpacer = QSpacerItem(20, 42, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.verticalLayout_4.addItem(self.verticalSpacer)
-
-        self.qSidepannel.addTab(self.qTabAPIChar, "")
-        self.qTabThera = QWidget()
-        self.qTabThera.setObjectName(u"qTabThera")
-        self.verticalLayout_6 = QVBoxLayout(self.qTabThera)
-        self.verticalLayout_6.setSpacing(0)
-        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_4 = QHBoxLayout()
-        self.horizontalLayout_4.setSpacing(0)
-        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.lineEditThera = QLineEdit(self.qTabThera)
-        self.lineEditThera.setObjectName(u"lineEditThera")
-        self.lineEditThera.setInputMask(u"")
-        self.lineEditThera.setText(u"")
-        self.lineEditThera.setPlaceholderText(u"")
-
-        self.horizontalLayout_4.addWidget(self.lineEditThera)
-
-        self.toolUseTheraRouting = QToolButton(self.qTabThera)
-        self.toolUseTheraRouting.setObjectName(u"toolUseTheraRouting")
-        icon12 = QIcon()
-        icon12.addFile(u":/Icons/res/route.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.toolUseTheraRouting.setIcon(icon12)
-        self.toolUseTheraRouting.setIconSize(QSize(24, 24))
-#if QT_CONFIG(shortcut)
-        self.toolUseTheraRouting.setShortcut(u"")
-#endif // QT_CONFIG(shortcut)
-        self.toolUseTheraRouting.setCheckable(True)
-        self.toolUseTheraRouting.setAutoRaise(True)
-
-        self.horizontalLayout_4.addWidget(self.toolUseTheraRouting)
-
-        self.toolRescanThrea = QToolButton(self.qTabThera)
-        self.toolRescanThrea.setObjectName(u"toolRescanThrea")
-        self.toolRescanThrea.setIcon(icon10)
-        self.toolRescanThrea.setIconSize(QSize(24, 24))
-        self.toolRescanThrea.setCheckable(False)
-        self.toolRescanThrea.setAutoRaise(True)
-
-        self.horizontalLayout_4.addWidget(self.toolRescanThrea)
-
-
-        self.verticalLayout_6.addLayout(self.horizontalLayout_4)
-
-        self.tableViewThera = QTableView(self.qTabThera)
-        self.tableViewThera.setObjectName(u"tableViewThera")
-        self.tableViewThera.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableViewThera.setTextElideMode(Qt.ElideNone)
-        self.tableViewThera.setSortingEnabled(True)
-        self.tableViewThera.setCornerButtonEnabled(False)
-        self.tableViewThera.horizontalHeader().setStretchLastSection(True)
-        self.tableViewThera.verticalHeader().setVisible(False)
-
-        self.verticalLayout_6.addWidget(self.tableViewThera)
-
-        self.qSidepannel.addTab(self.qTabThera, "")
-        self.qTabStorm = QWidget()
-        self.qTabStorm.setObjectName(u"qTabStorm")
-        self.verticalLayout_8 = QVBoxLayout(self.qTabStorm)
-        self.verticalLayout_8.setSpacing(0)
-        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
-        self.verticalLayout_8.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_5 = QHBoxLayout()
-        self.horizontalLayout_5.setSpacing(0)
-        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_5.addItem(self.horizontalSpacer_4)
-
-        self.toolRescanStorm = QToolButton(self.qTabStorm)
-        self.toolRescanStorm.setObjectName(u"toolRescanStorm")
-        self.toolRescanStorm.setIcon(icon10)
-        self.toolRescanStorm.setIconSize(QSize(24, 24))
-        self.toolRescanStorm.setCheckable(False)
-        self.toolRescanStorm.setAutoRaise(True)
-
-        self.horizontalLayout_5.addWidget(self.toolRescanStorm)
-
-
-        self.verticalLayout_8.addLayout(self.horizontalLayout_5)
-
-        self.tableViewStorm = QTableView(self.qTabStorm)
-        self.tableViewStorm.setObjectName(u"tableViewStorm")
-        self.tableViewStorm.setProperty("showDropIndicator", False)
-        self.tableViewStorm.setTextElideMode(Qt.ElideNone)
-        self.tableViewStorm.setSortingEnabled(True)
-        self.tableViewStorm.setCornerButtonEnabled(False)
-        self.tableViewStorm.horizontalHeader().setStretchLastSection(True)
-        self.tableViewStorm.verticalHeader().setVisible(False)
-
-        self.verticalLayout_8.addWidget(self.tableViewStorm)
-
-        self.qSidepannel.addTab(self.qTabStorm, "")
-
-        self.verticalLayout.addWidget(self.qSidepannel)
-
-        self.splitter.addWidget(self.chatbox)
-
-        self.verticalLayout_7.addWidget(self.splitter)
+        self.verticalLayout_5.addWidget(self.splitter)
 
         self.updateAvail = QPushButton(self.centralwidget)
         self.updateAvail.setObjectName(u"updateAvail")
 
-        self.verticalLayout_7.addWidget(self.updateAvail)
+        self.verticalLayout_5.addWidget(self.updateAvail)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1263, 24))
+        self.menubar.setGeometry(QRect(0, 0, 1417, 24))
         self.menu = QMenu(self.menubar)
         self.menu.setObjectName(u"menu")
         self.menuChat = QMenu(self.menubar)
@@ -747,6 +400,362 @@ class Ui_MainWindow(object):
         self.menuChars = QMenu(self.menuIntel)
         self.menuChars.setObjectName(u"menuChars")
         MainWindow.setMenuBar(self.menubar)
+        self.dockWidget = QDockWidget(MainWindow)
+        self.dockWidget.setObjectName(u"dockWidget")
+        self.dockWidget.setFloating(False)
+        self.dockWidget.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
+        self.dockWidget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dockWidgetContents = QWidget()
+        self.dockWidgetContents.setObjectName(u"dockWidgetContents")
+        self.verticalLayout_9 = QVBoxLayout(self.dockWidgetContents)
+        self.verticalLayout_9.setSpacing(0)
+        self.verticalLayout_9.setObjectName(u"verticalLayout_9")
+        self.verticalLayout_9.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setSpacing(0)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.timeInfo = QLabel(self.dockWidgetContents)
+        self.timeInfo.setObjectName(u"timeInfo")
+        self.timeInfo.setMinimumSize(QSize(0, 32))
+        self.timeInfo.setMaximumSize(QSize(16777215, 32))
+
+        self.horizontalLayout.addWidget(self.timeInfo)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_3)
+
+        self.clearIntel = QToolButton(self.dockWidgetContents)
+        self.clearIntel.setObjectName(u"clearIntel")
+        icon9 = QIcon()
+        icon9.addFile(u":/Icons/res/trash-box.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.clearIntel.setIcon(icon9)
+        self.clearIntel.setIconSize(QSize(24, 24))
+        self.clearIntel.setAutoRaise(True)
+
+        self.horizontalLayout.addWidget(self.clearIntel)
+
+        self.rescanIntel = QToolButton(self.dockWidgetContents)
+        self.rescanIntel.setObjectName(u"rescanIntel")
+        icon10 = QIcon()
+        icon10.addFile(u":/Icons/res/arrows-rotate.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.rescanIntel.setIcon(icon10)
+        self.rescanIntel.setIconSize(QSize(24, 24))
+        self.rescanIntel.setCheckable(False)
+        self.rescanIntel.setAutoRaise(True)
+
+        self.horizontalLayout.addWidget(self.rescanIntel)
+
+        self.chatLargeButton = QToolButton(self.dockWidgetContents)
+        self.chatLargeButton.setObjectName(u"chatLargeButton")
+        self.chatLargeButton.setMinimumSize(QSize(32, 32))
+        self.chatLargeButton.setMaximumSize(QSize(32, 32))
+        self.chatLargeButton.setFocusPolicy(Qt.NoFocus)
+        self.chatLargeButton.setIcon(icon4)
+        self.chatLargeButton.setIconSize(QSize(40, 20))
+        self.chatLargeButton.setAutoRaise(True)
+
+        self.horizontalLayout.addWidget(self.chatLargeButton)
+
+        self.chatSmallButton = QToolButton(self.dockWidgetContents)
+        self.chatSmallButton.setObjectName(u"chatSmallButton")
+        self.chatSmallButton.setMinimumSize(QSize(32, 32))
+        self.chatSmallButton.setMaximumSize(QSize(32, 32))
+        self.chatSmallButton.setFocusPolicy(Qt.NoFocus)
+        self.chatSmallButton.setIcon(icon5)
+        self.chatSmallButton.setIconSize(QSize(40, 20))
+        self.chatSmallButton.setAutoRaise(True)
+
+        self.horizontalLayout.addWidget(self.chatSmallButton)
+
+
+        self.verticalLayout_9.addLayout(self.horizontalLayout)
+
+        self.chatListWidget = QListWidget(self.dockWidgetContents)
+        self.chatListWidget.setObjectName(u"chatListWidget")
+        self.chatListWidget.setEnabled(True)
+        self.chatListWidget.setFrameShadow(QFrame.Plain)
+        self.chatListWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.chatListWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.chatListWidget.setSelectionMode(QAbstractItemView.NoSelection)
+        self.chatListWidget.setTextElideMode(Qt.ElideNone)
+        self.chatListWidget.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.chatListWidget.setResizeMode(QListView.Adjust)
+        self.chatListWidget.setSortingEnabled(True)
+
+        self.verticalLayout_9.addWidget(self.chatListWidget)
+
+        self.dockWidget.setWidget(self.dockWidgetContents)
+        MainWindow.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dockWidget)
+        self.dockWidget_2 = QDockWidget(MainWindow)
+        self.dockWidget_2.setObjectName(u"dockWidget_2")
+        self.dockWidget_2.setFloating(False)
+        self.dockWidget_2.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
+        self.dockWidgetContents_2 = QWidget()
+        self.dockWidgetContents_2.setObjectName(u"dockWidgetContents_2")
+        self.verticalLayout_2 = QVBoxLayout(self.dockWidgetContents_2)
+        self.verticalLayout_2.setSpacing(0)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.tableViewPOIs = QTableView(self.dockWidgetContents_2)
+        self.tableViewPOIs.setObjectName(u"tableViewPOIs")
+        self.tableViewPOIs.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.tableViewPOIs.setTabKeyNavigation(False)
+        self.tableViewPOIs.setProperty("showDropIndicator", False)
+        self.tableViewPOIs.setDragDropOverwriteMode(False)
+        self.tableViewPOIs.setTextElideMode(Qt.ElideNone)
+        self.tableViewPOIs.setSortingEnabled(True)
+        self.tableViewPOIs.horizontalHeader().setProperty("showSortIndicator", True)
+        self.tableViewPOIs.horizontalHeader().setStretchLastSection(True)
+        self.tableViewPOIs.verticalHeader().setVisible(False)
+        self.tableViewPOIs.verticalHeader().setHighlightSections(False)
+
+        self.verticalLayout_2.addWidget(self.tableViewPOIs)
+
+        self.dockWidget_2.setWidget(self.dockWidgetContents_2)
+        MainWindow.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dockWidget_2)
+        self.dockWidget_3 = QDockWidget(MainWindow)
+        self.dockWidget_3.setObjectName(u"dockWidget_3")
+        self.dockWidget_3.setFloating(False)
+        self.dockWidget_3.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
+        self.dockWidgetContents_3 = QWidget()
+        self.dockWidgetContents_3.setObjectName(u"dockWidgetContents_3")
+        self.verticalLayout_3 = QVBoxLayout(self.dockWidgetContents_3)
+        self.verticalLayout_3.setSpacing(0)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
+        self.tableViewJBs = QTableView(self.dockWidgetContents_3)
+        self.tableViewJBs.setObjectName(u"tableViewJBs")
+        self.tableViewJBs.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableViewJBs.setTabKeyNavigation(False)
+        self.tableViewJBs.setProperty("showDropIndicator", False)
+        self.tableViewJBs.setAlternatingRowColors(False)
+        self.tableViewJBs.setSelectionMode(QAbstractItemView.ContiguousSelection)
+        self.tableViewJBs.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableViewJBs.setTextElideMode(Qt.ElideNone)
+        self.tableViewJBs.setGridStyle(Qt.SolidLine)
+        self.tableViewJBs.setSortingEnabled(True)
+        self.tableViewJBs.setCornerButtonEnabled(False)
+        self.tableViewJBs.horizontalHeader().setDefaultSectionSize(150)
+        self.tableViewJBs.horizontalHeader().setHighlightSections(False)
+        self.tableViewJBs.horizontalHeader().setStretchLastSection(True)
+        self.tableViewJBs.verticalHeader().setVisible(False)
+        self.tableViewJBs.verticalHeader().setHighlightSections(False)
+
+        self.verticalLayout_3.addWidget(self.tableViewJBs)
+
+        self.dockWidget_3.setWidget(self.dockWidgetContents_3)
+        MainWindow.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dockWidget_3)
+        self.dockWidget_4 = QDockWidget(MainWindow)
+        self.dockWidget_4.setObjectName(u"dockWidget_4")
+        self.dockWidget_4.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
+        self.dockWidgetContents_4 = QWidget()
+        self.dockWidgetContents_4.setObjectName(u"dockWidgetContents_4")
+        self.verticalLayout_7 = QVBoxLayout(self.dockWidgetContents_4)
+        self.verticalLayout_7.setSpacing(0)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.verticalLayout_7.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setSpacing(0)
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.connectToEveOnline = QPushButton(self.dockWidgetContents_4)
+        self.connectToEveOnline.setObjectName(u"connectToEveOnline")
+        self.connectToEveOnline.setMinimumSize(QSize(0, 27))
+        self.connectToEveOnline.setMaximumSize(QSize(166, 22))
+        self.connectToEveOnline.setAutoFillBackground(False)
+        self.connectToEveOnline.setText(u"")
+        icon11 = QIcon()
+        icon11.addFile(u"res/eve-sso-login-black-small.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.connectToEveOnline.setIcon(icon11)
+        self.connectToEveOnline.setIconSize(QSize(163, 38))
+        self.connectToEveOnline.setFlat(False)
+
+        self.horizontalLayout_3.addWidget(self.connectToEveOnline)
+
+        self.horizontalSpacer = QSpacerItem(10, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer)
+
+        self.removeChar = QToolButton(self.dockWidgetContents_4)
+        self.removeChar.setObjectName(u"removeChar")
+        self.removeChar.setIcon(icon9)
+        self.removeChar.setIconSize(QSize(24, 24))
+
+        self.horizontalLayout_3.addWidget(self.removeChar)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_3)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.m_qLedOnline = QLabel(self.dockWidgetContents_4)
+        self.m_qLedOnline.setObjectName(u"m_qLedOnline")
+        self.m_qLedOnline.setEnabled(True)
+        self.m_qLedOnline.setMaximumSize(QSize(24, 24))
+        self.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+        self.m_qLedOnline.setScaledContents(True)
+
+        self.horizontalLayout_6.addWidget(self.m_qLedOnline)
+
+        self.m_qPlayerOnline = QLabel(self.dockWidgetContents_4)
+        self.m_qPlayerOnline.setObjectName(u"m_qPlayerOnline")
+
+        self.horizontalLayout_6.addWidget(self.m_qPlayerOnline)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_6)
+
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.m_qLedZKillboarOnline = QLabel(self.dockWidgetContents_4)
+        self.m_qLedZKillboarOnline.setObjectName(u"m_qLedZKillboarOnline")
+        self.m_qLedZKillboarOnline.setEnabled(True)
+        self.m_qLedZKillboarOnline.setMaximumSize(QSize(24, 24))
+        self.m_qLedZKillboarOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+        self.m_qLedZKillboarOnline.setScaledContents(True)
+
+        self.horizontalLayout_7.addWidget(self.m_qLedZKillboarOnline)
+
+        self.m_qZKillboard = QLabel(self.dockWidgetContents_4)
+        self.m_qZKillboard.setObjectName(u"m_qZKillboard")
+
+        self.horizontalLayout_7.addWidget(self.m_qZKillboard)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_7)
+
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.m_qLedEveScout = QLabel(self.dockWidgetContents_4)
+        self.m_qLedEveScout.setObjectName(u"m_qLedEveScout")
+        self.m_qLedEveScout.setEnabled(True)
+        self.m_qLedEveScout.setMaximumSize(QSize(24, 24))
+        self.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+        self.m_qLedEveScout.setScaledContents(True)
+
+        self.horizontalLayout_8.addWidget(self.m_qLedEveScout)
+
+        self.m_qEveScout = QLabel(self.dockWidgetContents_4)
+        self.m_qEveScout.setObjectName(u"m_qEveScout")
+
+        self.horizontalLayout_8.addWidget(self.m_qEveScout)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_8)
+
+        self.tableChars = QTableView(self.dockWidgetContents_4)
+        self.tableChars.setObjectName(u"tableChars")
+        self.tableChars.setEditTriggers(QAbstractItemView.CurrentChanged|QAbstractItemView.DoubleClicked|QAbstractItemView.SelectedClicked)
+        self.tableChars.setTextElideMode(Qt.ElideNone)
+        self.tableChars.setSortingEnabled(True)
+        self.tableChars.setCornerButtonEnabled(False)
+        self.tableChars.horizontalHeader().setStretchLastSection(True)
+        self.tableChars.verticalHeader().setVisible(False)
+
+        self.verticalLayout_7.addWidget(self.tableChars)
+
+        self.dockWidget_4.setWidget(self.dockWidgetContents_4)
+        MainWindow.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dockWidget_4)
+        self.dockWidget_5 = QDockWidget(MainWindow)
+        self.dockWidget_5.setObjectName(u"dockWidget_5")
+        self.dockWidget_5.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
+        self.dockWidgetContents_5 = QWidget()
+        self.dockWidgetContents_5.setObjectName(u"dockWidgetContents_5")
+        self.verticalLayout_4 = QVBoxLayout(self.dockWidgetContents_5)
+        self.verticalLayout_4.setSpacing(0)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setSpacing(0)
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.lineEditThera = QLineEdit(self.dockWidgetContents_5)
+        self.lineEditThera.setObjectName(u"lineEditThera")
+        self.lineEditThera.setInputMask(u"")
+        self.lineEditThera.setText(u"")
+        self.lineEditThera.setPlaceholderText(u"")
+
+        self.horizontalLayout_4.addWidget(self.lineEditThera)
+
+        self.toolUseTheraRouting = QToolButton(self.dockWidgetContents_5)
+        self.toolUseTheraRouting.setObjectName(u"toolUseTheraRouting")
+        icon12 = QIcon()
+        icon12.addFile(u":/Icons/res/route.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.toolUseTheraRouting.setIcon(icon12)
+        self.toolUseTheraRouting.setIconSize(QSize(24, 24))
+#if QT_CONFIG(shortcut)
+        self.toolUseTheraRouting.setShortcut(u"")
+#endif // QT_CONFIG(shortcut)
+        self.toolUseTheraRouting.setCheckable(True)
+        self.toolUseTheraRouting.setAutoRaise(True)
+
+        self.horizontalLayout_4.addWidget(self.toolUseTheraRouting)
+
+        self.toolRescanThrea = QToolButton(self.dockWidgetContents_5)
+        self.toolRescanThrea.setObjectName(u"toolRescanThrea")
+        self.toolRescanThrea.setIcon(icon10)
+        self.toolRescanThrea.setIconSize(QSize(24, 24))
+        self.toolRescanThrea.setCheckable(False)
+        self.toolRescanThrea.setAutoRaise(True)
+
+        self.horizontalLayout_4.addWidget(self.toolRescanThrea)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_4)
+
+        self.tableViewThera = QTableView(self.dockWidgetContents_5)
+        self.tableViewThera.setObjectName(u"tableViewThera")
+        self.tableViewThera.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableViewThera.setTextElideMode(Qt.ElideNone)
+        self.tableViewThera.setSortingEnabled(True)
+        self.tableViewThera.setCornerButtonEnabled(False)
+        self.tableViewThera.horizontalHeader().setStretchLastSection(True)
+        self.tableViewThera.verticalHeader().setVisible(False)
+
+        self.verticalLayout_4.addWidget(self.tableViewThera)
+
+        self.dockWidget_5.setWidget(self.dockWidgetContents_5)
+        MainWindow.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dockWidget_5)
+        self.dockWidget_6 = QDockWidget(MainWindow)
+        self.dockWidget_6.setObjectName(u"dockWidget_6")
+        self.dockWidget_6.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
+        self.dockWidgetContents_6 = QWidget()
+        self.dockWidgetContents_6.setObjectName(u"dockWidgetContents_6")
+        self.verticalLayout_6 = QVBoxLayout(self.dockWidgetContents_6)
+        self.verticalLayout_6.setSpacing(0)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setSpacing(0)
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_5.addItem(self.horizontalSpacer_4)
+
+        self.toolRescanStorm = QToolButton(self.dockWidgetContents_6)
+        self.toolRescanStorm.setObjectName(u"toolRescanStorm")
+        self.toolRescanStorm.setIcon(icon10)
+        self.toolRescanStorm.setIconSize(QSize(24, 24))
+        self.toolRescanStorm.setCheckable(False)
+        self.toolRescanStorm.setAutoRaise(True)
+
+        self.horizontalLayout_5.addWidget(self.toolRescanStorm)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_5)
+
+        self.tableViewStorm = QTableView(self.dockWidgetContents_6)
+        self.tableViewStorm.setObjectName(u"tableViewStorm")
+        self.tableViewStorm.setProperty("showDropIndicator", False)
+        self.tableViewStorm.setTextElideMode(Qt.ElideNone)
+        self.tableViewStorm.setSortingEnabled(True)
+        self.tableViewStorm.setCornerButtonEnabled(False)
+        self.tableViewStorm.horizontalHeader().setStretchLastSection(True)
+        self.tableViewStorm.verticalHeader().setVisible(False)
+
+        self.verticalLayout_6.addWidget(self.tableViewStorm)
+
+        self.dockWidget_6.setWidget(self.dockWidgetContents_6)
+        MainWindow.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dockWidget_6)
 
         self.menubar.addAction(self.menu.menuAction())
         self.menubar.addAction(self.menuChat.menuAction())
@@ -796,17 +805,14 @@ class Ui_MainWindow(object):
         self.frameButton.clicked["bool"].connect(MainWindow.changeFrameless)
         self.zoomInButton.clicked.connect(MainWindow.zoomMapIn)
         self.zoomOutButton.clicked.connect(MainWindow.zoomMapOut)
-        MainWindow.current_system_changed.connect(self.lineEditThera.setText)
         self.chatLargeButton.clicked.connect(MainWindow.chatLarger)
         self.chatSmallButton.clicked.connect(MainWindow.chatSmaller)
         self.rescanNowAction.triggered.connect(MainWindow.rescanIntel)
-        self.toolUseTheraRouting.toggled.connect(self.actionUserTheraRoutes.setChecked)
         self.searchSystem.toggled.connect(self.systemNames.setVisible)
         self.locateChar.clicked.connect(MainWindow.locateChar)
+        MainWindow.current_system_changed.connect(self.lineEditThera.setText)
         self.actionUserTheraRoutes.toggled.connect(self.toolUseTheraRouting.setChecked)
-
-        self.qSidepannel.setCurrentIndex(0)
-
+        self.toolUseTheraRouting.toggled.connect(self.actionUserTheraRoutes.setChecked)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -898,6 +904,21 @@ class Ui_MainWindow(object):
         self.adm_vul_Button.setToolTip(QCoreApplication.translate("MainWindow", u"Show systems vulnerable time and vulnerability occupancy level (ADM)", None))
 #endif // QT_CONFIG(tooltip)
         self.adm_vul_Button.setText("")
+#if QT_CONFIG(tooltip)
+        self.updateAvail.setToolTip(QCoreApplication.translate("MainWindow", u"Download the bew Software from GitHub", None))
+#endif // QT_CONFIG(tooltip)
+        self.updateAvail.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.menu.setTitle(QCoreApplication.translate("MainWindow", u"EVE-Spyglass", None))
+        self.menuChat.setTitle(QCoreApplication.translate("MainWindow", u"Chatrooms", None))
+        self.menuSound.setTitle(QCoreApplication.translate("MainWindow", u"Sound", None))
+        self.menuRegion.setTitle(QCoreApplication.translate("MainWindow", u"Navigation", None))
+        self.menuWindow.setTitle(QCoreApplication.translate("MainWindow", u"Window", None))
+        self.menuTransparency.setTitle(QCoreApplication.translate("MainWindow", u"Transparency", None))
+        self.menuTheme.setTitle(QCoreApplication.translate("MainWindow", u"Theme", None))
+        self.menuIntel.setTitle(QCoreApplication.translate("MainWindow", u"Intel", None))
+        self.menuTime.setTitle(QCoreApplication.translate("MainWindow", u"Intel Time", None))
+        self.menuChars.setTitle(QCoreApplication.translate("MainWindow", u"Chars used", None))
+        self.dockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Intel", None))
         self.timeInfo.setText(QCoreApplication.translate("MainWindow", u"All Intel (past 20 minutes)", None))
 #if QT_CONFIG(tooltip)
         self.clearIntel.setToolTip(QCoreApplication.translate("MainWindow", u"Clear intel chat.", None))
@@ -918,9 +939,9 @@ class Ui_MainWindow(object):
 #if QT_CONFIG(shortcut)
         self.chatSmallButton.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+S", None))
 #endif // QT_CONFIG(shortcut)
-        self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabIntel), QCoreApplication.translate("MainWindow", u"Intel", None))
-        self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabPOIS), QCoreApplication.translate("MainWindow", u"POIs", None))
-        self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabJumpbridges), QCoreApplication.translate("MainWindow", u"JBs", None))
+        self.dockWidget_2.setWindowTitle(QCoreApplication.translate("MainWindow", u"POI", None))
+        self.dockWidget_3.setWindowTitle(QCoreApplication.translate("MainWindow", u"JB", None))
+        self.dockWidget_4.setWindowTitle(QCoreApplication.translate("MainWindow", u"Chars & API", None))
 #if QT_CONFIG(tooltip)
         self.connectToEveOnline.setToolTip(QCoreApplication.translate("MainWindow", u"Login with EVE Online.", None))
 #endif // QT_CONFIG(tooltip)
@@ -934,7 +955,7 @@ class Ui_MainWindow(object):
         self.m_qZKillboard.setText(QCoreApplication.translate("MainWindow", u"Webserver connection to zKillboard ", None))
         self.m_qLedEveScout.setText("")
         self.m_qEveScout.setText(QCoreApplication.translate("MainWindow", u"Connection to EVE-Scout", None))
-        self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabAPIChar), QCoreApplication.translate("MainWindow", u"API Chars", None))
+        self.dockWidget_5.setWindowTitle(QCoreApplication.translate("MainWindow", u"Thera", None))
 #if QT_CONFIG(tooltip)
         self.lineEditThera.setToolTip(QCoreApplication.translate("MainWindow", u"System name used for distance calculation.", None))
 #endif // QT_CONFIG(tooltip)
@@ -946,25 +967,10 @@ class Ui_MainWindow(object):
         self.toolRescanThrea.setToolTip(QCoreApplication.translate("MainWindow", u"Fetch the latest Thera and Turnur connections from EvE-Scout.", None))
 #endif // QT_CONFIG(tooltip)
         self.toolRescanThrea.setText(QCoreApplication.translate("MainWindow", u"...", None))
-        self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabThera), QCoreApplication.translate("MainWindow", u"Thera", None))
+        self.dockWidget_6.setWindowTitle(QCoreApplication.translate("MainWindow", u"Storm", None))
 #if QT_CONFIG(tooltip)
         self.toolRescanStorm.setToolTip(QCoreApplication.translate("MainWindow", u"Fetch latest storm data from EvE-Scout", None))
 #endif // QT_CONFIG(tooltip)
         self.toolRescanStorm.setText(QCoreApplication.translate("MainWindow", u"...", None))
-        self.qSidepannel.setTabText(self.qSidepannel.indexOf(self.qTabStorm), QCoreApplication.translate("MainWindow", u"Storm", None))
-#if QT_CONFIG(tooltip)
-        self.updateAvail.setToolTip(QCoreApplication.translate("MainWindow", u"Download the bew Software from GitHub", None))
-#endif // QT_CONFIG(tooltip)
-        self.updateAvail.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.menu.setTitle(QCoreApplication.translate("MainWindow", u"EVE-Spyglass", None))
-        self.menuChat.setTitle(QCoreApplication.translate("MainWindow", u"Chatrooms", None))
-        self.menuSound.setTitle(QCoreApplication.translate("MainWindow", u"Sound", None))
-        self.menuRegion.setTitle(QCoreApplication.translate("MainWindow", u"Navigation", None))
-        self.menuWindow.setTitle(QCoreApplication.translate("MainWindow", u"Window", None))
-        self.menuTransparency.setTitle(QCoreApplication.translate("MainWindow", u"Transparency", None))
-        self.menuTheme.setTitle(QCoreApplication.translate("MainWindow", u"Theme", None))
-        self.menuIntel.setTitle(QCoreApplication.translate("MainWindow", u"Intel", None))
-        self.menuTime.setTitle(QCoreApplication.translate("MainWindow", u"Intel Time", None))
-        self.menuChars.setTitle(QCoreApplication.translate("MainWindow", u"Chars used", None))
     # retranslateUi
 

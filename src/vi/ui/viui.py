@@ -758,6 +758,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wireUpStorm()
 
     def updateSidePanel(self):
+        return
         inx_poi = self.ui.qSidepannel.indexOf(self.ui.qTabPOIS)
         inx_jumpbridges = self.ui.qSidepannel.indexOf(self.ui.qTabJumpbridges)
         if evegate.esiCharName() is None:
@@ -1336,7 +1337,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     ("ui.splitter", "restoreGeometry", str(self.ui.splitter.saveGeometry()), True),
                     ("ui.splitter", "restoreState", str(self.ui.splitter.saveState()), True),
                     ("ui.mapView", "setZoomFactor", self.ui.mapView.zoomFactor()),
-                    ("ui.qSidepannel", "restoreGeometry", str(self.ui.qSidepannel.saveGeometry()), True),
+                    # ("ui.qSidepannel", "restoreGeometry", str(self.ui.qSidepannel.saveGeometry()), True),
                     (None, "changeChatFontSize", ChatEntryWidget.TEXT_SIZE),
                     (None, "setOpacity", self.opacityGroup.checkedAction().opacity),
                     (None, "changeAlwaysOnTop", self.ui.alwaysOnTopAction.isChecked()),
@@ -1365,7 +1366,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if value is None:
             value = self.ui.showChatAction.isChecked()
         self.ui.showChatAction.setChecked(value)
-        self.ui.chatbox.setVisible(value)
+        # self.ui.chatbox.setVisible(value)
 
     def changeAutoChangeRegion(self, value=None):
         if value is None:

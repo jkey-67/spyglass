@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'RegionChooser.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.1
+## Created by: Qt User Interface Compiler version 6.7.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -45,7 +45,7 @@ class Ui_RegionChooser(object):
         self.saveButton = QToolButton(RegionChooser)
         self.saveButton.setObjectName(u"saveButton")
         icon = QIcon()
-        icon.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.saveButton.setIcon(icon)
         self.saveButton.setIconSize(QSize(21, 21))
 
