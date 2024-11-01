@@ -90,6 +90,13 @@ def updateDatabase(old_version, con):
                     "CREATE TABLE map (id INT PRIMARY KEY, dotlan VARCHAR, native VARCHAR, modified INT, maxage INT);",
                     "UPDATE version SET version = 11"]
 
+    if old_version < 12:
+        queries += ["CREATE TABLE pointofinterest_copy(id INTEGER PRIMARY KEY,sid real,type INTEGER,name TEXT,json JSON );",
+                    "INSERT INTO pointofinterest_copy (id, sid, type,name,json) SELECT id, row_number() over () , type, name, json FROM pointofinterest;",
+                    "DROP TABLE pointofinterest;",
+                    "ALTER TABLE pointofinterest_copy RENAME TO pointofinterest;",
+                    "UPDATE version SET version = 12"]
+
     for query in queries:
         con.execute(query)
     for update in databaseUpdates:

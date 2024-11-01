@@ -113,36 +113,6 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.currentUser = None
         self.currentSystem = None
         self.trayIcon = tray_icon
-        self._buildMenu()
-
-    def updateMenu(self, sys_name=None, rgn_name=None):
-        self.currentSystem = sys_name
-        if sys_name:
-            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
-            self.setDestination.setEnabled(True)
-            self.addWaypoint.setEnabled(True)
-            self.openDotlan.setEnabled(True)
-            self.openZKillboard.setEnabled(True)
-            self.avoidSystem.setEnabled(True)
-            self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
-            self.currentSystem = sys_name
-        else:
-            self.gameMenu.setTitle("EVE-Online")
-            self.setDestination.setEnabled(False)
-            self.addWaypoint.setEnabled(False)
-            self.openDotlan.setEnabled(False)
-            self.openZKillboard.setEnabled(False)
-            self.avoidSystem.setEnabled(False)
-            self.clearJumpGate.setEnabled(False)
-            self.currentSystem = None
-        if rgn_name:
-            self.changeRegion.setText("Change Region {}".format(rgn_name))
-            self.changeRegion.setEnabled(True)
-        else:
-            self.changeRegion.setText("Change Region")
-            self.changeRegion.setEnabled(False)
-
-    def _buildMenu(self):
         self.framelessCheck = QAction("Frameless Window", self, checkable=True)
         self.setDestination = QAction("Set Destination", None, checkable=False)
         self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
@@ -192,6 +162,33 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.quitAction.triggered.connect(self.trayIcon.quit)
         self.addAction(self.quitAction)
 
+    def updateMenu(self, sys_name=None, rgn_name=None):
+        self.currentSystem = sys_name
+        if sys_name:
+            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
+            self.setDestination.setEnabled(True)
+            self.addWaypoint.setEnabled(True)
+            self.openDotlan.setEnabled(True)
+            self.openZKillboard.setEnabled(True)
+            self.avoidSystem.setEnabled(True)
+            self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
+            self.currentSystem = sys_name
+        else:
+            self.gameMenu.setTitle("EVE-Online")
+            self.setDestination.setEnabled(False)
+            self.addWaypoint.setEnabled(False)
+            self.openDotlan.setEnabled(False)
+            self.openZKillboard.setEnabled(False)
+            self.avoidSystem.setEnabled(False)
+            self.clearJumpGate.setEnabled(False)
+            self.currentSystem = None
+        if rgn_name:
+            self.changeRegion.setText("Change Region {}".format(rgn_name))
+            self.changeRegion.setEnabled(True)
+        else:
+            self.changeRegion.setText("Change Region")
+            self.changeRegion.setEnabled(False)
+
     def changeAlarmDistance(self):
         for action in self.distanceGroup.actions():
             if action.isChecked():
@@ -208,35 +205,6 @@ class MapContextMenu(QtWidgets.QMenu):
         self.currentUser = None
         self.currentSystem = None
         self.alarmDistance = 2
-        self._buildMenu()
-
-    def updateMenu(self, sys_name=None, rgn_name=None, alarm_distance=2):
-        self.alarmDistance = alarm_distance
-        for action in self.distanceGroup.actions():
-            action.setChecked(action.alarmDistance == self.alarmDistance)
-
-        if sys_name:
-            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
-            self.gameMenu.setEnabled(True)
-            self.openDotlan.setEnabled(True)
-            self.openZKillboard.setEnabled(True)
-            self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
-            self.currentSystem = sys_name
-        else:
-            self.gameMenu.setTitle("EVE-Online")
-            self.gameMenu.setEnabled(False)
-            self.openDotlan.setEnabled(False)
-            self.openZKillboard.setEnabled(False)
-            self.clearJumpGate.setEnabled(False)
-            self.currentSystem = None
-        if rgn_name:
-            self.changeRegion.setText("Change Region {}".format(rgn_name))
-            self.changeRegion.setEnabled(True)
-        else:
-            self.changeRegion.setText("Change Region")
-            self.changeRegion.setEnabled(False)
-
-    def _buildMenu(self):
         self.framelessCheck = QAction("Frameless Window", self, checkable=True)
         self.openDotlan = QAction("Dotlan", None, checkable=False)
         self.openZKillboard = QAction("zKillbard", None, checkable=False)
@@ -274,6 +242,32 @@ class MapContextMenu(QtWidgets.QMenu):
 
         self.openDotlan.triggered.connect(self.browserOpenDotlan)
         self.openZKillboard.triggered.connect(self.browserOpenZKillboard)
+
+    def updateMenu(self, sys_name=None, rgn_name=None, alarm_distance=2):
+        self.alarmDistance = alarm_distance
+        for action in self.distanceGroup.actions():
+            action.setChecked(action.alarmDistance == self.alarmDistance)
+
+        if sys_name:
+            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
+            self.gameMenu.setEnabled(True)
+            self.openDotlan.setEnabled(True)
+            self.openZKillboard.setEnabled(True)
+            self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
+            self.currentSystem = sys_name
+        else:
+            self.gameMenu.setTitle("EVE-Online")
+            self.gameMenu.setEnabled(False)
+            self.openDotlan.setEnabled(False)
+            self.openZKillboard.setEnabled(False)
+            self.clearJumpGate.setEnabled(False)
+            self.currentSystem = None
+        if rgn_name:
+            self.changeRegion.setText("Change Region {}".format(rgn_name))
+            self.changeRegion.setEnabled(True)
+        else:
+            self.changeRegion.setText("Change Region")
+            self.changeRegion.setEnabled(False)
 
     def changeAlarmDistance(self):
         for action in self.distanceGroup.actions():

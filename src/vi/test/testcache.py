@@ -40,6 +40,11 @@ class TestCache(unittest.TestCase):
     cache_used = Cache()
     evegate.setEsiCharName("nele McCool")
 
+    def test_sortPoi(self):
+        self.cache_used.swapPOIs(1, 11)
+        self.cache_used.swapPOIs(1, 1)
+
+        self.cache_used.swapPOIs(3, 4)
     def test_checkSpyglassVersionUpdate(self):
         res = evegate.checkSpyglassVersionUpdate(current_version="1.0.0", force_check=True)
         self.assertIsNotNone(res)

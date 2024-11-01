@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
+import json
 import os
 import datetime
 import time
@@ -30,7 +31,7 @@ from PySide6.QtGui import Qt
 from PySide6 import QtGui, QtCore, QtWidgets
 from PySide6.QtCore import QPoint, QPointF, QSortFilterProxyModel, QTimer, Qt, QIODevice
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QIcon, QImage, QPixmap, QDesktopServices
+from PySide6.QtGui import QIcon, QImage, QPixmap, QDesktopServices, QDrag
 from PySide6.QtWidgets import (QMessageBox, QStyleOption, QStyle, QFileDialog,
                                QStyledItemDelegate, QApplication, QAbstractItemView)
 
@@ -80,19 +81,22 @@ from vi.system import ALL_SYSTEMS
 MAP_UPDATE_INTERVAL_MSEC = 20
 CLIPBOARD_CHECK_INTERVAL_MSEC = 125
 
+dragStartPosition = QPoint()
 
-class POITableModell(QSqlQueryModel):
+
+class POITableModel(QSqlQueryModel):
+    poi_order_changed = pyqtSignal()
     def __init__(self, parent=None):
-        super(POITableModell, self).__init__(parent)
+        super(POITableModel, self).__init__(parent)
         self.cache = Cache()
 
     def flags(self, index) -> Qt.ItemFlags:
-        default_flags = super(POITableModell, self).flags(index)
+        default_flags = super(POITableModel, self).flags(index)
         if index.isValid():
             if index.column() == 1:
-                return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable | default_flags
+                return Qt.ItemIsDragEnabled | Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable | default_flags
             else:
-                return Qt.ItemIsSelectable | Qt.ItemIsEnabled | default_flags
+                return Qt.ItemIsDragEnabled | Qt.ItemIsSelectable | Qt.ItemIsEnabled | default_flags
         else:
             return Qt.ItemIsDropEnabled | default_flags
 
@@ -104,40 +108,12 @@ class POITableModell(QSqlQueryModel):
             return True
         if not data.hasFormat('text/plain'):
             return False
-        if column > 0:
-            return False
-
-        num_rows = self.rowCount(QtCore.QModelIndex())
-
-        if row != -1:
-            begin_row = row
-        elif parent.isValid():
-            begin_row = parent.row()
-        else:
-            begin_row = num_rows
-
-        if begin_row != num_rows and begin_row != 0:
-            begin_row += 1
 
         encoded_data = data.data('text/plain')
-
-        stream = QtCore.QDataStream(encoded_data, QIODevice.ReadOnly)
-        new_items = []
-        rows = 0
-        while not stream.atEnd():
-            text = str()
-            stream >> text
-            new_items.append(text)
-            rows += 1
-
-        # insert the new rows for the dropped items and set the data to these items appropriately
-        self.insertRows(begin_row, rows, QtCore.QModelIndex())
-        for text in new_items:
-            idx = self.index(begin_row, 0, QtCore.QModelIndex())
-            self.setData(idx, text, 0)
-            self.dataChanged.emit(idx, idx)
-            begin_row += 1
-
+        src_data = json.loads(str(encoded_data.data(), encoding='utf-8'))[0]
+        dst_data = self.cache.getPOIAtIndex(row)
+        self.cache.swapPOIs(src=src_data["sid"], dst=dst_data["sid"])
+        self.poi_order_changed.emit()
         return True
 
     def mimeTypes(self):
@@ -145,14 +121,12 @@ class POITableModell(QSqlQueryModel):
 
     def mimeData(self, indexes):
         mime_data = QtCore.QMimeData()
-        # encoded_data = QtCore.QByteArray()
-        # stream = QtCore.QDataStream(encoded_data, QIODevice.WriteOnly)
+        mime_data_list = list()
         for index in indexes:
-            if index.isValid():
+            if index.isValid() and index.column() is 0:
                 db_data = self.cache.getPOIAtIndex(index.row())
-                text = "<url=showinfo{}//{}>{}</url>".format(
-                    db_data["type_id"], db_data["structure_id"], db_data["name"])
-                mime_data.setText(text)
+                mime_data_list.append(db_data)
+        mime_data.setText(json.dumps(mime_data_list, indent=2))
         return mime_data
 
     def keyPressEvent(self, e):
@@ -201,8 +175,7 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
             super(StyledItemDelegatePOI, self).setEditorData(editor, index)
 
     def setModelData(self, editor, model, index) -> None:
-        src_index = model.mapToSource(index)
-        data = self.cache.getPOIAtIndex(src_index.row())
+        data = self.cache.getPOIAtIndex(index.row())
         if data and editor.toPlainText() != index.data():
             self.cache.setPOIItemInfoText(data["destination_id"], editor.toPlainText())
             super(StyledItemDelegatePOI, self).setModelData(editor, model, index)
@@ -769,41 +742,38 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.qSidepannel.setTabVisible(inx_jumpbridges, True)
 
     def _wireUpDatabaseViewPOI(self):
-        model = POITableModell()
+        model = POITableModel()
 
         def callPOIUpdate():
-            model.setQuery("SELECT type as Type, name as Name FROM pointofinterest")
+            model.setQuery("SELECT type as Type, name as Name FROM pointofinterest ORDER BY sid")
             self.ui.tableViewPOIs.resizeColumnsToContents()
             self.ui.tableViewPOIs.resizeRowsToContents()
 
-        self.ui.tableViewPOIs.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.tableViewPOIs.setSelectionMode(QAbstractItemView.SelectionMode.ContiguousSelection)
         self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.tableViewPOIs.setDragEnabled(True)
         self.ui.tableViewPOIs.setAcceptDrops(True)
         self.ui.tableViewPOIs.setDropIndicatorShown(True)
         self.ui.tableViewPOIs.setDragDropOverwriteMode(False)
-
-        self.ui.tableViewPOIs.setDragDropMode(QAbstractItemView.InternalMove)
-        self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.ui.tableViewPOIs.setDropIndicatorShown(True)
         self.ui.tableViewPOIs.setDefaultDropAction(Qt.MoveAction)
         # callPOIUpdate()
-        sort = QSortFilterProxyModel()
-        sort.setSourceModel(model)
         self.tableViewPOIsDelegate = StyledItemDelegatePOI(self)
+        model.poi_order_changed.connect(callPOIUpdate)
         self.tableViewPOIsDelegate.poi_edit_changed.connect(callPOIUpdate)
-        self.ui.tableViewPOIs.setModel(sort)
+        self.ui.tableViewPOIs.setModel(model)
+        self.ui.tableViewPOIs.setDragDropMode(QAbstractItemView.InternalMove)
         self.ui.tableViewPOIs.setItemDelegate(self.tableViewPOIsDelegate)
         self.ui.tableViewPOIs.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.tableViewPOIs.resizeColumnsToContents()
         self.ui.tableViewPOIs.resizeRowsToContents()
-
         self.poi_changed.connect(callPOIUpdate)
         self.ui.tableViewPOIs.show()
         callPOIUpdate()
 
         def showPOIContextMenu(pos):
-            index = self.ui.tableViewPOIs.model().mapToSource(self.ui.tableViewPOIs.indexAt(pos)).row()
+            index = self.ui.tableViewPOIs.indexAt(pos).row()
             item = self.cache.getPOIAtIndex(index)
             if "solar_system_id" in item:
                 lps_ctx_menu = POIContextMenu(system_name=Universe.systemNameById(item["solar_system_id"]))
@@ -1373,7 +1343,6 @@ class MainWindow(QtWidgets.QMainWindow):
             value = self.ui.actionAuto_switch.isChecked()
         self.ui.actionAuto_switch.setChecked(value)
         self.autoChangeRegion = value
-
 
     def changeUseSpokenNotifications(self, value=None):
         if SoundManager().platformSupportsSpeech():

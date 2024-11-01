@@ -514,12 +514,14 @@ class Cache(object):
             dict of the POI or None
         """
         with Cache.SQLITE_WRITE_LOCK:
-            query = "select json from pointofinterest LIMIT 1 OFFSET ?"
+            query = "select json, name ,sid from pointofinterest ORDER BY sid LIMIT 1 OFFSET ?"
             founds = self.con.execute(query, (inx,)).fetchall()
             if len(founds) == 0:
                 return None
             else:
                 ret_val = json.loads(founds[0][0])
+                ret_val["gui_name"] = founds[0][1]
+                ret_val["sid"] = founds[0][2]
                 if "station_id" in ret_val.keys():
                     ret_val["destination_id"] = ret_val["station_id"]
                 if "structure_id" in ret_val.keys():
@@ -547,6 +549,21 @@ class Cache(object):
             query = "DELETE FROM pointofinterest  WHERE id IS ?"
             self.con.execute(query, (destination_id,)).fetchall()
             self.con.commit()
+
+    def swapPOIs(self, src, dst):
+        if src == dst:
+            return
+        with Cache.SQLITE_WRITE_LOCK:
+            queries = ["UPDATE pointofinterest SET sid = {a}  WHERE sid = {b};".format(a=dst-0.1, b=src),
+                        "DROP TABLE IF EXISTS temp.tmp;",
+                        "CREATE TEMPORARY TABLE tmp AS SELECT id, row_number() OVER (ORDER BY sid) AS rn FROM pointofinterest;",
+                        "UPDATE POINTOFINTEREST SET sid = (SELECT rn FROM temp.tmp WHERE temp.tmp.id = pointofinterest.id);",
+                        "Drop TABLE temp.tmp;"]
+
+
+            for query in queries:
+                self.con.execute(query)
+                self.con.commit()
 
     def clearAPIKey(self, param) -> None:
         with Cache.SQLITE_WRITE_LOCK:
