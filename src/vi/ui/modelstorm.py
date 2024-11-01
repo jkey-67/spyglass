@@ -27,7 +27,7 @@ from vi.evegate import ESAPIListPublicObservationsRecords
 class TableModelStorm(QAbstractTableModel):
     def __init__(self, parent=None):
         super(TableModelStorm, self).__init__(parent)
-        self.model_data = ESAPIListPublicObservationsRecords()
+        self.model_data = list() # ESAPIListPublicObservationsRecords()
         self.model_display_list = [
             {"Name": ["display_name"]},
             {"Category": ["observation_category"]},

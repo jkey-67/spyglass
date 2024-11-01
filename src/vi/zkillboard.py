@@ -65,6 +65,8 @@ class Zkillmonitor(QObject):
 
     def onConnected(self):
         self.status_killmail.emit(True)
+        version = self.webSocket.version()
+        subprotocol = self.webSocket.subprotocol()
         logging.info("Websocket connected to url {}".format(self.address))
         self.webSocket.sendTextMessage('{"action":"sub","channel":"killstream"}')
         if self.reconnectTimer.isActive():

@@ -495,6 +495,7 @@ class Ui_MainWindow(object):
         MainWindow.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dockWidget)
         self.dockWidget_2 = QDockWidget(MainWindow)
         self.dockWidget_2.setObjectName(u"dockWidget_2")
+        self.dockWidget_2.setMinimumSize(QSize(300, 93))
         self.dockWidget_2.setFloating(False)
         self.dockWidget_2.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
         self.dockWidgetContents_2 = QWidget()
@@ -508,6 +509,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_10.setObjectName(u"verticalLayout_10")
         self.tableViewPOIs = QTableView(self.dockWidgetContents_2)
         self.tableViewPOIs.setObjectName(u"tableViewPOIs")
+        self.tableViewPOIs.setMinimumSize(QSize(270, 0))
         self.tableViewPOIs.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.tableViewPOIs.setTabKeyNavigation(False)
         self.tableViewPOIs.setProperty(u"showDropIndicator", False)
@@ -530,6 +532,7 @@ class Ui_MainWindow(object):
         MainWindow.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dockWidget_2)
         self.dockWidget_3 = QDockWidget(MainWindow)
         self.dockWidget_3.setObjectName(u"dockWidget_3")
+        self.dockWidget_3.setMinimumSize(QSize(300, 93))
         self.dockWidget_3.setFloating(False)
         self.dockWidget_3.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
         self.dockWidgetContents_3 = QWidget()
@@ -625,6 +628,16 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_8.addWidget(self.m_qEveScout)
 
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_8.addItem(self.horizontalSpacer_5)
+
+        self.m_qEveScoutVersion = QLabel(self.dockWidgetContents_4)
+        self.m_qEveScoutVersion.setObjectName(u"m_qEveScoutVersion")
+        self.m_qEveScoutVersion.setText(u"")
+
+        self.horizontalLayout_8.addWidget(self.m_qEveScoutVersion)
+
 
         self.verticalLayout_13.addLayout(self.horizontalLayout_8)
 
@@ -684,6 +697,7 @@ class Ui_MainWindow(object):
         MainWindow.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dockWidget_4)
         self.dockWidget_5 = QDockWidget(MainWindow)
         self.dockWidget_5.setObjectName(u"dockWidget_5")
+        self.dockWidget_5.setMinimumSize(QSize(270, 126))
         self.dockWidget_5.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
         self.dockWidgetContents_5 = QWidget()
         self.dockWidgetContents_5.setObjectName(u"dockWidgetContents_5")
@@ -749,6 +763,7 @@ class Ui_MainWindow(object):
         MainWindow.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dockWidget_5)
         self.dockWidget_6 = QDockWidget(MainWindow)
         self.dockWidget_6.setObjectName(u"dockWidget_6")
+        self.dockWidget_6.setMinimumSize(QSize(270, 126))
         self.dockWidget_6.setFeatures(QDockWidget.DockWidgetClosable|QDockWidget.DockWidgetMovable)
         self.dockWidgetContents_6 = QWidget()
         self.dockWidgetContents_6.setObjectName(u"dockWidgetContents_6")

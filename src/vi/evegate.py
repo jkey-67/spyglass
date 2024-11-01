@@ -1857,6 +1857,20 @@ def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
                 "Pending version check, current version is {}.".format(checked)]
 
 
+def ESAPIHealth():
+    """
+        Report the process health to the Azure App Service environment.
+    Returns:
+        Dict
+    """
+    req = "https://api.eve-scout.com/v2/health"
+    response = getSession().get(req, timeout=1)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return dict()
+
+
 def ESAPIListPublicObservationsRecords():
     """
         List observation records for all objects eve scout tracks

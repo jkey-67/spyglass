@@ -175,7 +175,8 @@ class MapStatisticsThread(QThread):
         self.queue = queue.Queue(maxsize=10)
         self.active = True
         self._fetchLocations = True
-        self.queue.put(["sovereignty", "statistics", "location", "thera_wormholes"])
+        self.queue.put(["sovereignty", "statistics", "location",
+                        "thera_wormholes_version"])
 
     def requestSovereignty(self):
         self.queue.put(["sovereignty"])
@@ -215,6 +216,14 @@ class MapStatisticsThread(QThread):
 
                 if "thera_wormholes" in tsk:
                     statistics_data["thera_wormhole"] = evegate.ESAPIListPublicSignatures()
+
+                if "thera_wormholes_version" in tsk:
+                    res = evegate.ESAPIHealth()
+                    if res:
+                        statistics_data["thera_wormholes_version"] = res
+                        self.queue.put(["thera_wormholes"])
+                    else:
+                        self.queue.put( ["thera_wormholes_version"])
 
                 logging.debug("MapStatisticsThread fetching {}succeeded.".format(tsk))
                 statistics_data["result"] = "ok"

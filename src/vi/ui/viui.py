@@ -2000,6 +2000,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
             self.ui.m_qPlayerOnline.setText("Players ({players}) Server version ({server_version})".format(**server_status))
 
+        if "thera_wormholes_version" in data.keys():
+            thera_wormhole = data["thera_wormholes_version"]
+            self.ui.m_qEveScoutVersion.setText(thera_wormhole["api_version"])
+
         if "thera_wormhole" in data.keys():
             thera_wormhole = data["thera_wormhole"]
             if thera_wormhole and len(thera_wormhole) > 0:
