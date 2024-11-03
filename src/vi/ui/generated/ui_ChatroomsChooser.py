@@ -79,11 +79,20 @@ class Ui_ChatroomsChooser(object):
 
     def retranslateUi(self, ChatroomsChooser):
         ChatroomsChooser.setWindowTitle(QCoreApplication.translate("ChatroomsChooser", u"Chatrooms", None))
+#if QT_CONFIG(tooltip)
+        self.label.setToolTip("")
+#endif // QT_CONFIG(tooltip)
         self.label.setText(QCoreApplication.translate("ChatroomsChooser", u"Enter the chatrooms to watch into the following field. Separate them by comma.", None))
 #if QT_CONFIG(tooltip)
-        self.saveButton.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Apply setting and close", None))
+        self.roomnamesField.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Enter the chatrooms to watch into the following field. Separate them by comma.", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.saveButton.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Apply setting and close the dialog.", None))
 #endif // QT_CONFIG(tooltip)
         self.saveButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Save", None))
+#if QT_CONFIG(tooltip)
+        self.defaultButton.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Restore the default configuration.", None))
+#endif // QT_CONFIG(tooltip)
         self.defaultButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Restore Defaults", None))
     # retranslateUi
 

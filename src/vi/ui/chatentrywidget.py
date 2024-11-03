@@ -23,6 +23,7 @@ import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtGui import QAction
 from vi.resources import resourcePath
 from PySide6.QtGui import QImage, QPixmap, QDesktopServices
 from vi.ui import Ui_ChatEntry

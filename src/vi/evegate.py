@@ -23,8 +23,7 @@ import json
 import time
 import parse
 import threading
-
-from PySide6.QtWidgets import QApplication
+from PySide6 import QtWidgets
 from PySide6.QtCore import QThread, QUrl
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -319,7 +318,7 @@ def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en"):
     """ Returns the names for a list of ids
 
         Args:
-            ids(set): set of ids to search
+            attribute_id(set): set of ids to search
             use_outdated(bool): if True the cache timestamp will be ignored
             lang: language used
 
@@ -764,6 +763,7 @@ class APIServerThread(QThread):
         Returns:
 
         """
+
         if self.browser and parent:
             self.browser.destroyed.connect(self.quit)
             self.browser.load(QUrl("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params)))
@@ -774,12 +774,14 @@ class APIServerThread(QThread):
 
         logging.info("Awaiting registration during the next 120 seconds to be completed.")
         while self.isRunning():
-            QApplication.processEvents()
+            QtWidgets.QApplication.processEvents()
 
         if self.auth_code:
             logging.info("Registration completed.")
+            return True
         else:
             logging.error("Registration not succeeded.")
+            return False
 
     def quit(self):
         self.active = False
@@ -789,6 +791,20 @@ class APIServerThread(QThread):
             if self.webserver:
                 getSession().get(url="http://localhost:8182/oauth-callback")
         QThread.quit(self)
+
+
+class WebHostWidget(QWebEngineView):
+    """
+    notify the close event to terminate the thread
+    """
+    terminate_thread = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super(WebHostWidget, self).__init__(parent)
+
+    def closeEvent(self, event):
+        self.terminate_thread.emit()
+        event.accept()
 
 
 def oauthLoginEveOnline(client_param, parent=None):
@@ -822,9 +838,11 @@ def oauthLoginEveOnline(client_param, parent=None):
         parent = Object()
         parent.apiThread = None
 
-    parent.apiThread = APIServerThread(client_param, QWebEngineView(None))
+    web_view = WebHostWidget()
+    parent.apiThread = APIServerThread(client_param, web_view)
+    web_view.terminate_thread.connect(parent.apiThread.terminate)
     parent.apiThread.start()
-    parent.apiThread.createBrowserWindow(string_params, parent)
+    return parent.apiThread.createBrowserWindow(string_params, parent)
 
 
 def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Optional[dict]:
@@ -871,18 +889,16 @@ def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Opt
 def openWithEveonline(parent=None):
     """perform an api key request and updates the cache on case of a positive response
         returns the selected username from the login
+        see: https://developers.eveonline.com/applications/details/69202
     """
     client_param_set = {
         "client_id": CLIENTS_API_KEY,
-        "scope": "esi-ui.write_waypoint.v1 "
-                 "esi-universe.read_structures.v1 "
-                 "esi-search.search_structures.v1 "
-                 "esi-location.read_online.v1 "
-                 "esi-location.read_location.v1",
+        "scope": "esi-location.read_location.v1 esi-search.search_structures.v1 esi-universe.read_structures.v1 "
+                 "esi-ui.write_waypoint.v1 esi-characters.read_standings.v1 esi-location.read_online.v1",
         "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
         "state": base64.urlsafe_b64encode(secrets.token_bytes(8))
     }
-    oauthLoginEveOnline(client_param_set, parent)
+    return oauthLoginEveOnline(client_param_set, parent)
 
 
 def getTokenOfChar(char_name) -> Optional[ApiKey]:
@@ -2170,30 +2186,31 @@ def esiStatusJson():
     else:
         return response.json()
 
-
-# vulnerability_occupancy_level
-# The main application for testing
+import os
 if __name__ == "__main__":
-    res = esiPing()
-    status = esiStatusJson()
-    cats = esiUniverseAllCategories()
-    status = esiStatus()
-    session = getSession()
-    status = esiStatus()
-    ids = esiUniverseGroups(1657) # Citadel
-    ids = esiUniverseGroups(1404) # Engineering Complex
-    ids = esiUniverseGroups(1406) # Refinery
-    info = esiUniverseTypes(35834)
-    res = []
-    for itm in info['dogma_attributes']:
-        res.append(esiDogmaAttributes(itm['attribute_id']))
-
-    # 2017 Upwell Cyno Beacon
-
-    state = esiUniverseSystems(30000734)
-    sov_structs = esiSovereigntyStructures()
-    stat = getPlayerSovereignty()
+    Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
+    standing = esiCharactersStanding("nele McCool")
+    location = esiCharactersLocation("nele McCool")
+    ping = esiPing()
+    json_status = esiStatusJson()
+    esi_status = esiStatus()
     dumpSpyglassDownloadStats()
-    # genereate_universe_system_names()
-    # generate_universe_region_names()
-    # genereate_universe_constellation_names()
+    if False:
+        cats = esiUniverseAllCategories()
+        session = getSession()
+        ids = esiUniverseGroups(1657) # Citadel
+        ids = esiUniverseGroups(1404) # Engineering Complex
+        ids = esiUniverseGroups(1406) # Refinery
+        info = esiUniverseTypes(35834)
+        res = []
+        for itm in info['dogma_attributes']:
+            res.append(esiDogmaAttributes(itm['attribute_id']))
+
+        # 2017 Upwell Cyno Beacon
+
+        state = esiUniverseSystems(30000734)
+        sov_structs = esiSovereigntyStructures()
+        stat = getPlayerSovereignty()
+        # genereate_universe_system_names()
+        # generate_universe_region_names()
+        # genereate_universe_constellation_names()

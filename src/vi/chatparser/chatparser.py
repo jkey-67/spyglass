@@ -120,7 +120,8 @@ class ChatParser(object):
                         channel_id = line[line.find(":") + 1:].strip()
                     elif "Session started" in line:
                         session_str = line[line.find(":") + 1:].strip()
-                        session_start = datetime.datetime.strptime(session_str, "%Y.%m.%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc)
+                        session_start = datetime.datetime.strptime(session_str, "%Y.%m.%d %H:%M:%S").replace(
+                            tzinfo=datetime.timezone.utc)
 
                     if charname and session_start and channel_id:
                         self.fileData[path]["charname"] = charname
@@ -193,9 +194,10 @@ class ChatParser(object):
                 if room_name in LOCAL_NAMES:
                     monitored_character_name = self.fileData[path]["charname"]
                     if monitored_character_name not in self.locations:
-                        self.locations[monitored_character_name] = {"system": "?",
-                                                                    "timestamp": datetime.datetime(1970, 1, 1, 0, 0, 0,
-                                                                                                   0, tzinfo=datetime.timezone.utc)}
+                        self.locations[monitored_character_name] = {
+                            "system": "?", "timestamp": datetime.datetime(
+                                1970, 1, 1, 0, 0, 0,0,
+                                tzinfo=datetime.timezone.utc)}
                     message = parseLocal(path, monitored_character_name, line)
                     if message.status is States.LOCATION:
                         if message.timestamp > self.locations[monitored_character_name]["timestamp"]:

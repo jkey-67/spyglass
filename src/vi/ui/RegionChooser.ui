@@ -31,6 +31,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QComboBox" name="regionNameField">
+       <property name="toolTip">
+        <string>List of all reagions</string>
+       </property>
        <property name="editable">
         <bool>true</bool>
        </property>
@@ -39,7 +42,7 @@
      <item>
       <widget class="QToolButton" name="saveButton">
        <property name="toolTip">
-        <string>Apply setting and close</string>
+        <string>Apply selection, close and switch to selected region.</string>
        </property>
        <property name="text">
         <string>Change</string>

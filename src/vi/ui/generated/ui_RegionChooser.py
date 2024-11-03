@@ -64,7 +64,10 @@ class Ui_RegionChooser(object):
         RegionChooser.setWindowTitle(QCoreApplication.translate("RegionChooser", u"Region", None))
         self.label.setText(QCoreApplication.translate("RegionChooser", u"Enter the region to watch into the following field.", None))
 #if QT_CONFIG(tooltip)
-        self.saveButton.setToolTip(QCoreApplication.translate("RegionChooser", u"Apply setting and close", None))
+        self.regionNameField.setToolTip(QCoreApplication.translate("RegionChooser", u"List of all reagions", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.saveButton.setToolTip(QCoreApplication.translate("RegionChooser", u"Apply selection, close and switch to selected region.", None))
 #endif // QT_CONFIG(tooltip)
         self.saveButton.setText(QCoreApplication.translate("RegionChooser", u"Change", None))
     # retranslateUi

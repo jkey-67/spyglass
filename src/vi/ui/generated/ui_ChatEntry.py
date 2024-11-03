@@ -28,10 +28,13 @@ class Ui_ChatEntry(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(ChatEntry.sizePolicy().hasHeightForWidth())
         ChatEntry.setSizePolicy(sizePolicy)
+        ChatEntry.setContextMenuPolicy(Qt.NoContextMenu)
         self.gridLayout = QGridLayout(ChatEntry)
+        self.gridLayout.setSpacing(2)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(2, 2, 2, 2)
         self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setSpacing(2)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.avatarLabel = QLabel(ChatEntry)
         self.avatarLabel.setObjectName(u"avatarLabel")
@@ -42,9 +45,10 @@ class Ui_ChatEntry(object):
         self.avatarLabel.setSizePolicy(sizePolicy1)
         self.avatarLabel.setMinimumSize(QSize(32, 32))
         self.avatarLabel.setMaximumSize(QSize(32, 32))
+        self.avatarLabel.setContextMenuPolicy(Qt.NoContextMenu)
         self.avatarLabel.setTextFormat(Qt.RichText)
         self.avatarLabel.setScaledContents(True)
-        self.avatarLabel.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignTop)
+        self.avatarLabel.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
 
         self.horizontalLayout.addWidget(self.avatarLabel)
 
@@ -55,8 +59,10 @@ class Ui_ChatEntry(object):
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.textLabel.sizePolicy().hasHeightForWidth())
         self.textLabel.setSizePolicy(sizePolicy2)
+        self.textLabel.setContextMenuPolicy(Qt.DefaultContextMenu)
+        self.textLabel.setText(u"?")
         self.textLabel.setTextFormat(Qt.RichText)
-        self.textLabel.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignTop)
+        self.textLabel.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
         self.textLabel.setWordWrap(True)
 
         self.horizontalLayout.addWidget(self.textLabel)
@@ -73,6 +79,5 @@ class Ui_ChatEntry(object):
     def retranslateUi(self, ChatEntry):
         ChatEntry.setWindowTitle(QCoreApplication.translate("ChatEntry", u"Form", None))
         self.avatarLabel.setText(QCoreApplication.translate("ChatEntry", u"TextLabel", None))
-        self.textLabel.setText(QCoreApplication.translate("ChatEntry", u"?", None))
     # retranslateUi
 

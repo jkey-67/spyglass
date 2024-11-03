@@ -28,7 +28,9 @@ class PanningWebView(QWidget):
     ZOOM_WHEEL = 0.4
     webViewIsScrolling = Signal(bool)
     webViewUpdateScrollbars = Signal()
-    webViewNavigateBackward = Signal(bool)
+    webViewNavigateForward = Signal()
+    webViewNavigateBackward = Signal()
+    webViewDoubleClicked = Signal(QPointF)
 
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__(parent)
@@ -162,9 +164,9 @@ class PanningWebView(QWidget):
                 self.scrollMousePress = self.scrollPosition()
                 self.positionMousePress = mouse_event.pos()
             elif mouse_event.buttons() == Qt.ForwardButton:
-                self.webViewNavigateBackward.emit(False)
+                self.webViewNavigateForward.emit()
             elif mouse_event.buttons() == Qt.BackButton:
-                self.webViewNavigateBackward.emit(True)
+                self.webViewNavigateBackward.emit()
 
     def mouseReleaseEvent(self, mouse_event: QMouseEvent):
         if self.scrolling:
@@ -186,11 +188,8 @@ class PanningWebView(QWidget):
     def hoveCheck(self, global_pos: QPoint, map_pos: QPoint) -> bool:
         return False
 
-    def doubleClicked(self, pos: QPoint) -> bool:
-        return False
-
     def mouseDoubleClickEvent(self, mouse_event: QMouseEvent):
-        self.doubleClicked(self.mapPosFromEvent(mouse_event))
+        self.webViewDoubleClicked.emit(self.mapPosFromEvent(mouse_event))
 
     def mapPosFromPos(self, pos: QPointF) -> QPointF:
         return (pos + self.scrollPos) / self.zoom
@@ -210,22 +209,12 @@ class PanningWebView(QWidget):
             if self.scrollMousePress is not None:
                 delta = mouse_event.pos() - self.positionMousePress
                 self._setScrollPosition(self.scrollMousePress - delta)
-            return
-        if self.pressed:
+        elif self.pressed:
             self.pressed = False
             self.scrolling = True
             self.webViewIsScrolling.emit(True)
-            return
-        if self.hoveCheck(mouse_event.globalPos(), self.mapPosFromEvent(mouse_event)):
-            QApplication.setOverrideCursor(Qt.PointingHandCursor)
-            return
-        else:
-            QApplication.setOverrideCursor(Qt.ArrowCursor)
-            return
-        return
-
-    def tooltipAtMapPosition(self, global_pos: QPoint, map_pos: QPoint) -> bool:
-        return False
+        elif self.hoveCheck:
+            self.hoveCheck(mouse_event.globalPos(), self.mapPosFromEvent(mouse_event))
 
     def event(self, event) -> bool:
         if event.type() == QEvent.ToolTip:

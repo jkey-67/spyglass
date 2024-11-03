@@ -173,19 +173,20 @@ class MapStatisticsThread(QThread):
     def __init__(self):
         QThread.__init__(self)
         self.queue = queue.Queue(maxsize=10)
+        self.server_status = False
         self.active = True
         self._fetchLocations = True
-        self.queue.put(["sovereignty", "statistics", "location",
-                        "thera_wormholes_version"])
+        self.queue.put(["server-status", "thera_wormholes_version"])
 
     def requestSovereignty(self):
         self.queue.put(["sovereignty"])
 
     def requestStatistics(self):
-        self.queue.put(["statistics"])
+        if self.server_status:
+            self.queue.put(["statistics", "incursions", "campaigns", "sovereignty", "structures"])
 
     def requestLocations(self):
-        if self._fetchLocations:
+        if self._fetchLocations and self.server_status:
             self.queue.put(["registered-chars"])
 
     def requestWormholes(self):
@@ -197,43 +198,76 @@ class MapStatisticsThread(QThread):
     def run(self):
         while self.active:
             tsk = self.queue.get()
-            if not self.active:
-                return
-            statistics_data = dict({"result": "pending"})
-            try:
-                if "sovereignty" in tsk:
-                    statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=False, show_npc=True)
-                    statistics_data["structures"] = evegate.esiSovereigntyStructures()
+            logging.info("Statistic thread current task is : %s ", str(tsk))
+            while tsk and len(tsk):
+                if not self.active:
+                    return
+                statistics_data = dict({"result": "pending"})
+                try:
+                    if "server-status" in tsk:
+                        self.server_status = True
+                        statistics_data["server-status"] = evegate.esiStatus()
+                        logging.info("Server status report : %s %s", statistics_data["server-status"], str(tsk))
+                        self.queue.put(["statistics", "incursions", "campaigns", "sovereignty", "structures"])
+                        tsk.remove("server-status")
+                        continue
 
-                if "statistics" in tsk:
-                    statistics_data["statistics"] = evegate.esiUniverseSystem_jumps()
-                    statistics_data["incursions"] = evegate.esiIncursions(False)
-                    statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(False)
-                    statistics_data["server-status"] = evegate.esiStatus()
+                    if "sovereignty" in tsk:
+                        statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=False, show_npc=True)
+                        tsk.remove("sovereignty")
+                        continue
 
-                if "registered-chars" in tsk:
-                    statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
+                    if "structures" in tsk:
+                        statistics_data["structures"] = evegate.esiSovereigntyStructures()
+                        tsk.remove("structures")
+                        continue
 
-                if "thera_wormholes" in tsk:
-                    statistics_data["thera_wormhole"] = evegate.ESAPIListPublicSignatures()
+                    if "statistics" in tsk:
+                        statistics_data["statistics"] = evegate.esiUniverseSystem_jumps()
+                        tsk.remove("statistics")
+                        continue
 
-                if "thera_wormholes_version" in tsk:
-                    res = evegate.ESAPIHealth()
-                    if res:
-                        statistics_data["thera_wormholes_version"] = res
-                        self.queue.put(["thera_wormholes"])
-                    else:
-                        self.queue.put( ["thera_wormholes_version"])
+                    if "incursions" in tsk:
+                        statistics_data["incursions"] = evegate.esiIncursions(False)
+                        tsk.remove("incursions")
+                        continue
 
-                logging.debug("MapStatisticsThread fetching {}succeeded.".format(tsk))
-                statistics_data["result"] = "ok"
-            except Exception as e:
-                logging.error("Error in MapStatisticsThread: %s %s", e, str(tsk))
-                statistics_data["result"] = "error"
-                statistics_data["text"] = str(e)
+                    if "campaigns" in tsk:
+                        statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(False)
+                        tsk.remove("campaigns")
+                        continue
+
+                    if "registered-chars" in tsk:
+                        statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
+                        tsk.remove("registered-chars")
+                        continue
+
+                    if "thera_wormholes" in tsk:
+                        statistics_data["thera_wormhole"] = evegate.ESAPIListPublicSignatures()
+                        tsk.remove("thera_wormholes")
+                        continue
+
+                    if "thera_wormholes_version" in tsk:
+                        res = evegate.ESAPIHealth()
+                        if res:
+                            statistics_data["thera_wormholes_version"] = res
+                            self.queue.put(["thera_wormholes"])
+                        else:
+                            self.queue.put(["thera_wormholes_version"])
+                        tsk.remove("thera_wormholes_version")
+                        continue
+
+                    logging.debug("MapStatisticsThread fetching {}succeeded.".format(tsk))
+                    statistics_data["result"] = "ok"
+                except Exception as e:
+                    self.server_status = False;
+                    logging.error("Error in MapStatisticsThread: %s %s", e, str(tsk))
+                    statistics_data["result"] = "error"
+                    statistics_data["text"] = str(e)
+                    self.queue.put(["server-status"])
+                    tsk = None
 
             self.statistic_data_update.emit(statistics_data)
-
 
     def quit(self):
         self.active = False

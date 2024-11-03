@@ -88,10 +88,13 @@ class Universe(object):
     CONSTELLATIONS = _loadJsonFile(os.path.join(curr_path, "eveconstellations.json"))
     # CONSTELLATIONSONJ = [Constellation(**constellation) for constellation in CONSTELLATIONS]
 
-    for system in _loadJsonFile(os.path.join(curr_path, "evesystems.json")):
-        SYSTEMS[system["system_id"]] = system
-        SYSTEM_NAMES.append(system["name"])
-        UPPER_SYSTEM_NAMES.append(system["name"].upper())
+    try:
+        for system in _loadJsonFile(os.path.join(curr_path, "evesystems.json")):
+            SYSTEMS[system["system_id"]] = system
+            SYSTEM_NAMES.append(system["name"])
+            UPPER_SYSTEM_NAMES.append(system["name"].upper())
+    except (Exception,):
+        pass
 
     STARGATES = _loadJsonFile(os.path.join(curr_path, "evestargates.json"))
     SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]

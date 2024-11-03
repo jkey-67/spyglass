@@ -211,6 +211,9 @@
                <property name="text">
                 <string>Region</string>
                </property>
+               <property name="buddy">
+                <cstring>regionNameField</cstring>
+               </property>
               </widget>
              </item>
              <item>
@@ -263,6 +266,9 @@
               <widget class="QLabel" name="label">
                <property name="text">
                 <string>API Char</string>
+               </property>
+               <property name="buddy">
+                <cstring>currentESICharacter</cstring>
                </property>
               </widget>
              </item>
@@ -347,6 +353,9 @@
                  <height>20</height>
                 </size>
                </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
                <property name="autoRaise">
                 <bool>true</bool>
                </property>
@@ -392,6 +401,9 @@
                  <height>20</height>
                 </size>
                </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
                <property name="autoRaise">
                 <bool>true</bool>
                </property>
@@ -434,6 +446,9 @@
                  <width>40</width>
                  <height>20</height>
                 </size>
+               </property>
+               <property name="shortcut">
+                <string notr="true"/>
                </property>
                <property name="checkable">
                 <bool>true</bool>
@@ -484,6 +499,9 @@
                  <height>20</height>
                 </size>
                </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
                <property name="checkable">
                 <bool>true</bool>
                </property>
@@ -532,6 +550,9 @@
                  <width>40</width>
                  <height>20</height>
                 </size>
+               </property>
+               <property name="shortcut">
+                <string notr="true"/>
                </property>
                <property name="checkable">
                 <bool>true</bool>
@@ -625,42 +646,42 @@
      <string>EVE-Spyglass</string>
     </property>
     <addaction name="separator"/>
-    <addaction name="infoAction"/>
+    <addaction name="actionShowInfo"/>
     <addaction name="separator"/>
-    <addaction name="quitAction"/>
+    <addaction name="actionQuitAppl"/>
    </widget>
    <widget class="QMenu" name="menuChat">
     <property name="title">
      <string>Chatrooms</string>
     </property>
-    <addaction name="showChatAvatarsAction"/>
-    <addaction name="chooseChatRoomsAction"/>
+    <addaction name="actionShowChatAvatars"/>
+    <addaction name="actionChooseChatRooms"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuSound">
     <property name="title">
      <string>Sound</string>
     </property>
-    <addaction name="activateSoundAction"/>
-    <addaction name="useSpokenNotificationsAction"/>
-    <addaction name="soundSetupAction"/>
+    <addaction name="actionActivateSound"/>
+    <addaction name="actionUseSpokenNotifications"/>
+    <addaction name="actionSoundSetup"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuRegion">
     <property name="title">
      <string>Navigation</string>
     </property>
-    <addaction name="catchRegionAction"/>
-    <addaction name="providenceRegionAction"/>
-    <addaction name="queriousRegionAction"/>
-    <addaction name="providenceCatchRegionAction"/>
-    <addaction name="providenceCatchCompactRegionAction"/>
-    <addaction name="wickedcreekScaldingpassRegionAction"/>
-    <addaction name="actionAuto_switch"/>
+    <addaction name="actionCatchRegion"/>
+    <addaction name="actionProvidenceRegion"/>
+    <addaction name="actionQueriousRegion"/>
+    <addaction name="actionProvidenceCatchRegion"/>
+    <addaction name="actionProvidenceCatchCompactRegion"/>
+    <addaction name="actionWickedcreekScaldingpassRegion"/>
+    <addaction name="actionAutoSwitchRegions"/>
     <addaction name="separator"/>
     <addaction name="actionUserTheraRoutes"/>
     <addaction name="separator"/>
-    <addaction name="jumpbridgeDataAction"/>
+    <addaction name="actionJumpbridgeData"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -676,13 +697,19 @@
       <string>Theme</string>
      </property>
     </widget>
-    <addaction name="showChatAction"/>
-    <addaction name="alwaysOnTopAction"/>
+    <widget class="QMenu" name="menuType_Here">
+     <property name="title">
+      <string>Type Here</string>
+     </property>
+    </widget>
+    <addaction name="actionShowChat"/>
+    <addaction name="actionAlwaysOnTop"/>
     <addaction name="actionInvertMouseWheel"/>
-    <addaction name="framelessWindowAction"/>
+    <addaction name="actionFramelessWindow"/>
     <addaction name="menuTransparency"/>
     <addaction name="separator"/>
     <addaction name="menuTheme"/>
+    <addaction name="menuType_Here"/>
    </widget>
    <widget class="QMenu" name="menuIntel">
     <property name="title">
@@ -701,8 +728,8 @@
     </widget>
     <addaction name="menuChars"/>
     <addaction name="menuTime"/>
-    <addaction name="clearIntelAction"/>
-    <addaction name="rescanNowAction"/>
+    <addaction name="actionClearIntelChat"/>
+    <addaction name="actionRescanIntelNow"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="menu"/>
@@ -772,6 +799,9 @@
            <property name="text">
             <string>All Intel (past 20 minutes)</string>
            </property>
+           <property name="buddy">
+            <cstring>chatListWidget</cstring>
+           </property>
           </widget>
          </item>
          <item>
@@ -805,6 +835,9 @@
              <height>24</height>
             </size>
            </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
            <property name="autoRaise">
             <bool>true</bool>
            </property>
@@ -827,6 +860,9 @@
              <width>24</width>
              <height>24</height>
             </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true"/>
            </property>
            <property name="checkable">
             <bool>false</bool>
@@ -869,6 +905,9 @@
              <height>20</height>
             </size>
            </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
            <property name="autoRaise">
             <bool>true</bool>
            </property>
@@ -908,7 +947,7 @@
             </size>
            </property>
            <property name="shortcut">
-            <string>Ctrl+S</string>
+            <string notr="true">Ctrl+S</string>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -921,6 +960,9 @@
         <widget class="QListWidget" name="chatListWidget">
          <property name="enabled">
           <bool>true</bool>
+         </property>
+         <property name="contextMenuPolicy">
+          <enum>Qt::ActionsContextMenu</enum>
          </property>
          <property name="frameShadow">
           <enum>QFrame::Plain</enum>
@@ -1245,6 +1287,9 @@
              <width>24</width>
              <height>24</height>
             </size>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -1650,12 +1695,12 @@
     </layout>
    </widget>
   </widget>
-  <action name="infoAction">
+  <action name="actionShowInfo">
    <property name="text">
     <string>Info ...</string>
    </property>
   </action>
-  <action name="alwaysOnTopAction">
+  <action name="actionAlwaysOnTop">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1666,32 +1711,7 @@
     <string>Always On Top</string>
    </property>
   </action>
-  <action name="opac100">
-   <property name="text">
-    <string>Opacity 100%</string>
-   </property>
-  </action>
-  <action name="opac80">
-   <property name="text">
-    <string>Opacity 80%</string>
-   </property>
-  </action>
-  <action name="opac60">
-   <property name="text">
-    <string>Opacity 60%</string>
-   </property>
-  </action>
-  <action name="opac40">
-   <property name="text">
-    <string>Opacity 40%</string>
-   </property>
-  </action>
-  <action name="opac20">
-   <property name="text">
-    <string>Opacity 20%</string>
-   </property>
-  </action>
-  <action name="chooseChatRoomsAction">
+  <action name="actionChooseChatRooms">
    <property name="checkable">
     <bool>false</bool>
    </property>
@@ -1701,8 +1721,11 @@
    <property name="text">
     <string>Choose Chatrooms ...</string>
    </property>
+   <property name="toolTip">
+    <string>Choose the monitord chat rooms.</string>
+   </property>
   </action>
-  <action name="showChatAvatarsAction">
+  <action name="actionShowChatAvatars">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1712,8 +1735,11 @@
    <property name="text">
     <string>Show Chat Avatars</string>
    </property>
+   <property name="toolTip">
+    <string>Show the avatars in the chat log window.</string>
+   </property>
   </action>
-  <action name="showChatAction">
+  <action name="actionShowChat">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1724,20 +1750,28 @@
     <string>Show Tabs</string>
    </property>
   </action>
-  <action name="activateSoundAction">
+  <action name="actionActivateSound">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="checked">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/volume.svg</normaloff>:/Icons/res/volume.svg</iconset>
+   </property>
    <property name="text">
     <string>Activate Sound</string>
    </property>
   </action>
-  <action name="framelessWindowAction">
+  <action name="actionFramelessWindow">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/restoreframe.svg</normaloff>:/Icons/res/restoreframe.svg</iconset>
    </property>
    <property name="text">
     <string>Frameless Main Window</string>
@@ -1746,30 +1780,34 @@
     <string>Frameless Main Window</string>
    </property>
   </action>
-  <action name="quitAction">
+  <action name="actionQuitAppl">
    <property name="text">
     <string>Quit</string>
    </property>
   </action>
-  <action name="soundSetupAction">
+  <action name="actionSoundSetup">
    <property name="text">
     <string>Sound Setup...</string>
    </property>
   </action>
-  <action name="jumpbridgeDataAction">
+  <action name="actionJumpbridgeData">
    <property name="text">
     <string>Jumpbridge Data...</string>
    </property>
   </action>
-  <action name="useSpokenNotificationsAction">
+  <action name="actionUseSpokenNotifications">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/speach.svg</normaloff>:/Icons/res/speach.svg</iconset>
    </property>
    <property name="text">
     <string>Spoken Notifications</string>
    </property>
    <property name="toolTip">
-    <string>Spoken KOS results</string>
+    <string>The system text to speak interface reads messages.</string>
    </property>
   </action>
   <action name="actionAlway_On_Top">
@@ -1777,17 +1815,12 @@
     <string>Always On Top</string>
    </property>
   </action>
-  <action name="actionFrameless">
-   <property name="text">
-    <string>Frameless</string>
-   </property>
-  </action>
   <action name="actionTransparency">
    <property name="text">
     <string>Transparency</string>
    </property>
   </action>
-  <action name="providenceRegionAction">
+  <action name="actionProvidenceRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1798,7 +1831,7 @@
     <string notr="true">Providence</string>
    </property>
   </action>
-  <action name="catchRegionAction">
+  <action name="actionCatchRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1809,7 +1842,7 @@
     <string notr="true">Catch</string>
    </property>
   </action>
-  <action name="providenceCatchRegionAction">
+  <action name="actionProvidenceCatchRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1820,7 +1853,7 @@
     <string notr="true">Perrigen Falls</string>
    </property>
   </action>
-  <action name="providenceCatchCompactRegionAction">
+  <action name="actionProvidenceCatchCompactRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1831,7 +1864,7 @@
     <string notr="true">Pure Blind</string>
    </property>
   </action>
-  <action name="queriousRegionAction">
+  <action name="actionQueriousRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1852,22 +1885,25 @@
     <string>darkstyle</string>
    </property>
   </action>
-  <action name="actionScan_on_Window_Change">
-   <property name="text">
-    <string>Scan on Window Change</string>
+  <action name="actionRescanIntelNow">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
    </property>
-  </action>
-  <action name="rescanNowAction">
    <property name="text">
     <string>Rescan Now</string>
    </property>
   </action>
-  <action name="clearIntelAction">
+  <action name="actionClearIntelChat">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
+   </property>
    <property name="text">
     <string>Clear Intel</string>
    </property>
   </action>
-  <action name="actionAuto_switch">
+  <action name="actionAutoSwitchRegions">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1875,31 +1911,7 @@
     <string>Auto  switch Region</string>
    </property>
   </action>
-  <action name="action20_min">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>20min</string>
-   </property>
-  </action>
-  <action name="action40_min">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>40 min</string>
-   </property>
-  </action>
-  <action name="action60_min">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>60 min</string>
-   </property>
-  </action>
-  <action name="wickedcreekScaldingpassRegionAction">
+  <action name="actionWickedcreekScaldingpassRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1925,6 +1937,11 @@
    <property name="checked">
     <bool>false</bool>
    </property>
+   <property name="icon">
+    <iconset>
+     <normalon>:/Icons/res/route.svg</normalon>
+    </iconset>
+   </property>
    <property name="text">
     <string>User Wormholes for routing</string>
    </property>
@@ -1939,13 +1956,19 @@
    <extends>QWidget</extends>
    <header>vi/panningwebview</header>
    <container>1</container>
+   <slots>
+    <signal>webViewNavigateForward()</signal>
+    <signal>webViewNavigateBackward()</signal>
+    <slot>webViewIsScrolling(bool)</slot>
+    <slot>webViewUpdateScrollbars()</slot>
+    <slot>webViewDoubleClicked()</slot>
+   </slots>
   </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>systemNames</tabstop>
   <tabstop>regionNameField</tabstop>
   <tabstop>currentESICharacter</tabstop>
-  <tabstop>updateAvail</tabstop>
   <tabstop>clearIntel</tabstop>
   <tabstop>rescanIntel</tabstop>
   <tabstop>chatListWidget</tabstop>
@@ -1958,8 +1981,9 @@
   <tabstop>toolUseTheraRouting</tabstop>
   <tabstop>toolRescanThrea</tabstop>
   <tabstop>tableViewThera</tabstop>
-  <tabstop>tableViewStorm</tabstop>
   <tabstop>toolRescanStorm</tabstop>
+  <tabstop>tableViewStorm</tabstop>
+  <tabstop>updateAvail</tabstop>
  </tabstops>
  <resources>
   <include location="resource.qrc"/>
@@ -1972,8 +1996,8 @@
    <slot>rescanIntel()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>897</x>
-     <y>49</y>
+     <x>1350</x>
+     <y>75</y>
     </hint>
     <hint type="destinationlabel">
      <x>511</x>
@@ -1988,28 +2012,12 @@
    <slot>clearIntelChat()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>881</x>
-     <y>49</y>
+     <x>1318</x>
+     <y>75</y>
     </hint>
     <hint type="destinationlabel">
-     <x>520</x>
-     <y>378</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>frameButton</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>changeFrameless(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>35</x>
-     <y>51</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>520</x>
-     <y>378</y>
+     <x>708</x>
+     <y>421</y>
     </hint>
    </hints>
   </connection>
@@ -2020,8 +2028,8 @@
    <slot>zoomMapIn()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>500</x>
-     <y>51</y>
+     <x>875</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -2036,8 +2044,8 @@
    <slot>zoomMapOut()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>534</x>
-     <y>51</y>
+     <x>907</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -2052,8 +2060,8 @@
    <slot>chatLarger()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
-     <y>49</y>
+     <x>1382</x>
+     <y>75</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -2068,8 +2076,8 @@
    <slot>chatSmaller()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>984</x>
-     <y>49</y>
+     <x>1414</x>
+     <y>75</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -2078,7 +2086,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>rescanNowAction</sender>
+   <sender>actionRescanIntelNow</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
    <slot>rescanIntel()</slot>
@@ -2100,12 +2108,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>139</x>
-     <y>51</y>
+     <x>362</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
-     <x>220</x>
-     <y>51</y>
+     <x>502</x>
+     <y>91</y>
     </hint>
    </hints>
   </connection>
@@ -2116,8 +2124,8 @@
    <slot>locateChar()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>560</x>
-     <y>51</y>
+     <x>843</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>631</x>
@@ -2136,8 +2144,8 @@
      <y>378</y>
     </hint>
     <hint type="destinationlabel">
-     <x>818</x>
-     <y>49</y>
+     <x>207</x>
+     <y>394</y>
     </hint>
    </hints>
   </connection>
@@ -2152,8 +2160,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1167</x>
-     <y>49</y>
+     <x>239</x>
+     <y>394</y>
     </hint>
    </hints>
   </connection>
@@ -2164,12 +2172,236 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>946</x>
-     <y>49</y>
+     <x>239</x>
+     <y>394</y>
     </hint>
     <hint type="destinationlabel">
      <x>-1</x>
      <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>connectToEveOnline</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>AddNewESICharacter()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>84</x>
+     <y>64</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>jumpbridgesButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeJumpbridgesVisibility()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>942</x>
+     <y>44</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>277</x>
+     <y>402</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>statisticsButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeStatisticsVisibility()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>982</x>
+     <y>45</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>279</x>
+     <y>468</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>adm_vul_Button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeADMVisibility()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1031</x>
+     <y>41</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>277</x>
+     <y>528</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolRescanThrea</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>updateTheraConnections()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>382</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>338</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowInfo</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>showInfo()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionChooseChatRooms</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>showChatroomChooser()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>regionNameField</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>regionNameChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>590</x>
+     <y>40</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>160</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>currentESICharacter</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>selectESIChar(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>773</x>
+     <y>46</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>279</x>
+     <y>134</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionQuitAppl</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowChatAvatars</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeShowAvatars()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mapView</sender>
+   <signal>webViewNavigateBackward()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>navigateBackward()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>610</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1072</x>
+     <y>738</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mapView</sender>
+   <signal>webViewNavigateForward()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>navigateForward()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>985</x>
+     <y>671</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1073</x>
+     <y>689</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>region_changed(QString)</signal>
+   <receiver>regionNameField</receiver>
+   <slot>setCurrentText(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>570</x>
+     <y>42</y>
     </hint>
    </hints>
   </connection>
@@ -2190,5 +2422,25 @@
   <slot>showInfo()</slot>
   <slot>changeFrameless(bool)</slot>
   <slot>locateChar()</slot>
+  <slot>AddNewESICharacter()</slot>
+  <slot>changeStatisticsVisibility()</slot>
+  <slot>changeADMVisibility()</slot>
+  <slot>changeJumpbridgesVisibility()</slot>
+  <slot>changeShowAvatars()</slot>
+  <slot>changeAlwaysOnTop()</slot>
+  <slot>showChatroomChooser()</slot>
+  <slot>changeChatVisibility()</slot>
+  <slot>showSoundSetup()</slot>
+  <slot>changeSound()</slot>
+  <slot>changeUseSpokenNotifications()</slot>
+  <slot>changeFrameless()</slot>
+  <slot>showJumpbridgeChooser()</slot>
+  <slot>fixupScrollBars()</slot>
+  <slot>navigateBack(bool)</slot>
+  <slot>showMapContextMenu(QEvent)</slot>
+  <slot>regionNameChanged(QString)</slot>
+  <slot>selectESIChar(QString)</slot>
+  <slot>navigateBackward()</slot>
+  <slot>navigateForward()</slot>
  </slots>
 </ui>

@@ -360,11 +360,12 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
     while parseShips(rtext):
         continue
 
-
+    """
     #for system in message.affectedSystems:
     #    if system.name in systems_on_map.keys():
     #        #while parsePlayerNames(rtext):
     #            continue
+    """
 
     parsed_status = parseStatus(rtext)
     message.status = parsed_status if parsed_status is not None else States.ALARM

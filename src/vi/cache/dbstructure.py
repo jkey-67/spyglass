@@ -74,28 +74,32 @@ def updateDatabase(old_version, con):
                     "UPDATE version SET version = 9"]
 
     if old_version < 10:
-        queries += ["ALTER TABLE avatars add COLUMN player_id INT;",
-                    "ALTER TABLE avatars add COLUMN alliance_id INT;",
-                    "ALTER TABLE avatars add COLUMN json VARCHAR;",
-                    "ALTER TABLE avatars add COLUMN maxage INT;",
-                    "CREATE TABLE alliances (id INT PRIMARY KEY, name VARCHAR, standing INT, maxage INT  );",
-                    "CREATE TABLE iconcache (id INT PRIMARY KEY, icon BLOB , modified INT, maxage INT);",
-                    "CREATE TABLE killmails (id INT PRIMARY KEY, system_id INT, region_id, json VARCHAR," 
-                    "modified INT, maxage INT);",
-                    "DELETE FROM cache WHERE key LIKE 'ids_dicts_%' OR key LIKE 'system_tmp%';",
-                    "ALTER TABLE players RENAME COLUMN max_age TO maxage;",
-                    "UPDATE version SET version = 10"]
+        queries += [
+            "ALTER TABLE avatars add COLUMN player_id INT;",
+            "ALTER TABLE avatars add COLUMN alliance_id INT;",
+            "ALTER TABLE avatars add COLUMN json VARCHAR;",
+            "ALTER TABLE avatars add COLUMN maxage INT;",
+            "CREATE TABLE alliances (id INT PRIMARY KEY, name VARCHAR, standing INT, maxage INT  );",
+            "CREATE TABLE iconcache (id INT PRIMARY KEY, icon BLOB , modified INT, maxage INT);",
+            "CREATE TABLE killmails (id INT PRIMARY KEY, system_id INT, region_id, json VARCHAR," 
+            "modified INT, maxage INT);",
+            "DELETE FROM cache WHERE key LIKE 'ids_dicts_%' OR key LIKE 'system_tmp%';",
+            "ALTER TABLE players RENAME COLUMN max_age TO maxage;",
+            "UPDATE version SET version = 10"]
+
     if old_version < 11:
-        queries += ["DELETE FROM cache WHERE key LIKE 'map_%';",
-                    "CREATE TABLE map (id INT PRIMARY KEY, dotlan VARCHAR, native VARCHAR, modified INT, maxage INT);",
-                    "UPDATE version SET version = 11"]
+        queries += [
+            "DELETE FROM cache WHERE key LIKE 'map_%';",
+            "CREATE TABLE map (id INT PRIMARY KEY, dotlan VARCHAR, native VARCHAR, modified INT, maxage INT);",
+            "UPDATE version SET version = 11"]
 
     if old_version < 12:
-        queries += ["CREATE TABLE pointofinterest_copy(id INTEGER PRIMARY KEY,sid real,type INTEGER,name TEXT,json JSON );",
-                    "INSERT INTO pointofinterest_copy (id, sid, type,name,json) SELECT id, row_number() over () , type, name, json FROM pointofinterest;",
-                    "DROP TABLE pointofinterest;",
-                    "ALTER TABLE pointofinterest_copy RENAME TO pointofinterest;",
-                    "UPDATE version SET version = 12"]
+        queries += [
+            "CREATE TABLE pointofinterest_copy(id INTEGER PRIMARY KEY,sid real,type INTEGER,name TEXT,json JSON );",
+            "INSERT INTO pointofinterest_copy (id,sid,type,name,json) SELECT id,row_number() over (),type,name,json FROM pointofinterest;",
+            "DROP TABLE pointofinterest;",
+            "ALTER TABLE pointofinterest_copy RENAME TO pointofinterest;",
+            "UPDATE version SET version = 12"]
 
     for query in queries:
         con.execute(query)

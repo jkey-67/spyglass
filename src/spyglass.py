@@ -35,7 +35,7 @@ from vi.cache import cache
 from vi.ui.styles import Styles
 from vi.resources import resourcePath
 from vi.cache.cache import Cache
-from vi.zkillboard import Zkillmonitor
+from vi.zkillboard import ZKillMonitor
 
 
 def exceptHook(exception_type, exception_value, traceback_object):
@@ -123,7 +123,7 @@ class Application(QApplication):
         change_splash_text("setting local directory for cache and logging")
 
         spyglass_dir = os.path.join(os.path.dirname(os.path.dirname(chat_log_directory)), "spyglass")
-        Zkillmonitor.MONITORING_PATH = os.path.join(chat_log_directory,
+        ZKillMonitor.MONITORING_PATH = os.path.join(chat_log_directory,
                                                     datetime.datetime.strftime(
                                                         datetime.datetime.now(datetime.timezone.utc),
                                                         "zKillboard_daily_logfile_%Y%m%d.txt"))

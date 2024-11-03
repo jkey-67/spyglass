@@ -554,12 +554,12 @@ class Cache(object):
         if src == dst:
             return
         with Cache.SQLITE_WRITE_LOCK:
-            queries = ["UPDATE pointofinterest SET sid = {a}  WHERE sid = {b};".format(a=dst-0.1, b=src),
-                        "DROP TABLE IF EXISTS temp.tmp;",
-                        "CREATE TEMPORARY TABLE tmp AS SELECT id, row_number() OVER (ORDER BY sid) AS rn FROM pointofinterest;",
-                        "UPDATE POINTOFINTEREST SET sid = (SELECT rn FROM temp.tmp WHERE temp.tmp.id = pointofinterest.id);",
-                        "Drop TABLE temp.tmp;"]
-
+            queries = [
+                "UPDATE pointofinterest SET sid = {a}  WHERE sid = {b};".format(a=dst-0.1, b=src),
+                "DROP TABLE IF EXISTS temp.tmp;",
+                "CREATE TEMPORARY TABLE tmp AS SELECT id, row_number() OVER (ORDER BY sid) AS rn FROM pointofinterest;",
+                "UPDATE POINTOFINTEREST SET sid = (SELECT rn FROM temp.tmp WHERE temp.tmp.id = pointofinterest.id);",
+                "Drop TABLE temp.tmp;"]
 
             for query in queries:
                 self.con.execute(query)

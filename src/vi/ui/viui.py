@@ -71,7 +71,7 @@ from vi.ui import Ui_MainWindow, Ui_EVESpyInfo, Ui_SoundSetup
 
 from vi.chatparser.message import Message
 
-from vi.zkillboard import Zkillmonitor
+from vi.zkillboard import ZKillMonitor
 
 from vi.system import ALL_SYSTEMS
 
@@ -86,6 +86,7 @@ dragStartPosition = QPoint()
 
 class POITableModel(QSqlQueryModel):
     poi_order_changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super(POITableModel, self).__init__(parent)
         self.cache = Cache()
@@ -123,7 +124,7 @@ class POITableModel(QSqlQueryModel):
         mime_data = QtCore.QMimeData()
         mime_data_list = list()
         for index in indexes:
-            if index.isValid() and index.column() is 0:
+            if index.isValid() and index.column() == 0:
                 db_data = self.cache.getPOIAtIndex(index.row())
                 mime_data_list.append(db_data)
         mime_data.setText(json.dumps(mime_data_list, indent=2))
@@ -195,13 +196,15 @@ class MainWindow(QtWidgets.QMainWindow):
     region_changed = pyqtSignal(str)
     current_system_changed = pyqtSignal(str)
 
+    def update_splash_window_info(self, string):
+        if self.update_splash:
+            self.update_splash(string)
+
     def __init__(self, pat_to_logfile, tray_icon, update_splash=None):
 
-        def update_splash_window_info(string):
-            if update_splash:
-                update_splash(string)
+        self.update_splash = update_splash
 
-        update_splash_window_info("Init GUI application")
+        self.update_splash_window_info("Init GUI application")
 
         QtWidgets.QMainWindow.__init__(self)
         self.cache = Cache()
@@ -229,6 +232,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.markSystemOnMap(self.ui.systemNames.text()),
             ))
         self.ui.systemNames.hide()
+
         # add completer system names
         self.ui.connectToEveOnline.setIcon(icon)
         self.ui.connectToEveOnline.setIconSize(QtCore.QSize(163, 38))
@@ -259,27 +263,27 @@ class MainWindow(QtWidgets.QMainWindow):
             status = evegate.esiStatus()
             info = "Server ({server_version}) online {players} players started {start_time}.".format(**status)
             logging.info(info)
-            update_splash_window_info(info)
+            self.update_splash_window_info(info)
         except (Exception,) as e:
-            update_splash_window_info("There was no response from the server, perhaps the server is down.")
+            self.update_splash_window_info("There was no response from the server, perhaps the server is down.")
 
-        update_splash_window_info("Fetch universe system jumps via ESI.")
+        self.update_splash_window_info("Fetch universe system jumps via ESI.")
 
         self.mapStatisticCache = evegate.esiUniverseSystem_jumps(use_outdated=True)
-        update_splash_window_info("Fetch player sovereignty via ESI.")
+        self.update_splash_window_info("Fetch player sovereignty via ESI.")
         self.mapSovereignty = evegate.getPlayerSovereignty(use_outdated=True, fore_refresh=False, show_npc=True)
-        update_splash_window_info("Fetch incursions via ESI...")
+        self.update_splash_window_info("Fetch incursions via ESI...")
         self.mapIncursions = evegate.esiIncursions(use_outdated=True)
-        update_splash_window_info("Fetch sovereignty campaigns via ESI...")
+        self.update_splash_window_info("Fetch sovereignty campaigns via ESI...")
         self.mapCampaigns = evegate.esiSovereigntyCampaigns(use_outdated=True)
         self.mapJumpGates = self.cache.getJumpGates()
         self.setupMap()
         self.invertWheel = False
         self._connectActionPack()
 
-        update_splash_window_info("Preset application")
+        self.update_splash_window_info("Preset application")
 
-        update_splash_window_info("Set up Theme menu - fill in list of themes and add connections")
+        self.update_splash_window_info("Set up Theme menu - fill in list of themes and add connections")
         self.themeGroup = QActionGroup(self.ui.menu)
         styles = Styles()
         for theme in styles.getStyles():
@@ -305,7 +309,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         "Spyglass is running to remedy this."
             QMessageBox.warning(self, "Known Characters not Found", info_text)
 
-        update_splash_window_info("Update player names")
+        self.update_splash_window_info("Update player names")
         # Set up Theme menu - fill in list of themes and add connections
 
         if self.invertWheel is None:
@@ -316,7 +320,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.players_changed.connect(self._addPlayerMenu)
 
         # Set up user's intel rooms
-        update_splash_window_info("Set up user's intel rooms")
+        self.update_splash_window_info("Set up user's intel rooms")
 
         cached_room_name = self.cache.getFromCache("room_names")
         if cached_room_name:
@@ -327,16 +331,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.room_names = cached_room_name
 
         # Disable the sound UI if sound is not available
-        update_splash_window_info("Doublecheck the sound UI if sound is not available...")
+        self.update_splash_window_info("Doublecheck the sound UI if sound is not available...")
         if not SoundManager.soundAvailable:
             self.changeSound(disable=True)
-            update_splash_window_info("Sound disabled.")
+            self.update_splash_window_info("Sound disabled.")
         else:
             self.changeSound()
-            update_splash_window_info("Sound successfully enabled.")
+            self.update_splash_window_info("Sound successfully enabled.")
 
         # Set up Transparency menu - fill in opacity values and make connections
-        update_splash_window_info("Set up Transparency menu - fill in opacity values and make connections")
+        self.update_splash_window_info("Set up Transparency menu - fill in opacity values and make connections")
         self.opacityGroup = QActionGroup(self.ui.menu)
         for i in (100, 80, 60, 40, 20):
             action = QAction("Opacity {0}%".format(i), None)
@@ -357,39 +361,37 @@ class MainWindow(QtWidgets.QMainWindow):
             self.intelTimeGroup.addAction(action)
             self.ui.menuTime.addAction(action)
 
-        self.ui.actionAuto_switch.triggered.connect(self.changeAutoRegion)
-
-        update_splash_window_info("Update chat parser")
+        self.update_splash_window_info("Update chat parser")
 
         self.chatparser = ChatParser(self.pathToLogs, self.room_names)
-        update_splash_window_info("Setup worker threads")
+        self.update_splash_window_info("Setup worker threads")
         self._setupThreads()
-        update_splash_window_info("Setup UI")
+        self.update_splash_window_info("Setup UI")
         self._wireUpUIConnections()
-        update_splash_window_info("Recall cached settings")
+        self.update_splash_window_info("Recall cached settings")
         self._recallCachedSettings()
 
         self._startStatisticTimer()
-        update_splash_window_info("Fetch data from eve-scout.com")
+        self.update_splash_window_info("Fetch data from eve-scout.com")
         self._wireUpDatabaseViews()
 
         self.blockSignals(False)
-        update_splash_window_info("Start all worker threads")
+        self.update_splash_window_info("Start all worker threads")
         self._startThreads()
         self.changeRegionByName(region_name=region_name)
         self.updateSidePanel()
 
-        update_splash_window_info("Apply theme.")
+        self.update_splash_window_info("Apply theme.")
 
         initial_theme = self.cache.getFromCache("theme")
         if initial_theme:
             self.changeTheme(initial_theme)
 
-        update_splash_window_info("Double check for updates on github...")
+        self.update_splash_window_info("Double check for updates on github...")
         update_avail = evegate.checkSpyglassVersionUpdate()
         if update_avail[0]:
             logging.info(update_avail[1])
-            update_splash_window_info("There is a updates available. {}".format(update_avail[1]))
+            self.update_splash_window_info("There is a updates available. {}".format(update_avail[1]))
             self.ui.updateAvail.show()
             self.ui.updateAvail.setText(update_avail[1])
 
@@ -400,11 +402,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.updateAvail.clicked.connect(openDownloadLink)
         else:
             logging.info(update_avail[1])
-            update_splash_window_info(update_avail[1])
+            self.update_splash_window_info(update_avail[1])
             self.ui.updateAvail.hide()
-        update_splash_window_info("EVE-Syp perform an initial scan of all intel files.")
+        self.update_splash_window_info("EVE-Syp perform an initial scan of all intel files.")
         self.rescanIntel()
-        update_splash_window_info("Initialisation succeeded.")
+        self.update_splash_window_info("Initialisation succeeded.")
         self.tool_widget = None
 
     @property
@@ -519,56 +521,57 @@ class MainWindow(QtWidgets.QMainWindow):
     def changeAutoRegion(self, auto_change: bool):
         self.autoChangeRegion = auto_change
 
+    def AddNewESICharacter(self):
+        if evegate.openWithEveonline(parent=self):
+            self._updateKnownPlayerAndMenu(None)
+            last_char_name = evegate.esiCharName()
+            self.ui.currentESICharacter.clear()
+            self.ui.currentESICharacter.addItems(self.cache.getAPICharNames())
+            self.ui.currentESICharacter.setCurrentText(last_char_name)
+
+    def selectESIChar(self, character_name):
+        evegate.setEsiCharName(character_name)
+        self.statisticsThread.fetchLocation(fetch=True)
+        self.rescanIntel()
+        self.players_changed.emit()
+
+    def regionNameChanged(self, new_region_name):
+        if hasattr(self, "statisticsThread"):
+            self.statisticsThread.fetchLocation(fetch=False)
+        if new_region_name in [region["name"] for region in Universe.REGIONS]:
+            self.changeRegionByName(region_name=new_region_name)
+
     def _wireUpUIConnections(self):
         logging.info("wireUpUIConnections")
+        self.ui.frameButton.setDefaultAction(self.ui.actionFramelessWindow)
         self.clipboard.dataChanged.connect(self.clipboardChanged)
-        self.ui.statisticsButton.clicked.connect(self.changeStatisticsVisibility)
-        self.ui.adm_vul_Button.clicked.connect(self.changeADMVisibility)
-        self.ui.jumpbridgesButton.clicked.connect(self.changeJumpbridgesVisibility)
-        self.ui.infoAction.triggered.connect(self.showInfo)
-        self.ui.showChatAvatarsAction.triggered.connect(self.changeShowAvatars)
-        self.ui.alwaysOnTopAction.triggered.connect(self.changeAlwaysOnTop)
-        self.ui.chooseChatRoomsAction.triggered.connect(self.showChatroomChooser)
-        self.ui.catchRegionAction.triggered.connect(
-            lambda: self.handleRegionMenuItemSelected(self.ui.catchRegionAction))
-        self.ui.providenceRegionAction.triggered.connect(
-            lambda: self.handleRegionMenuItemSelected(self.ui.providenceRegionAction))
-        self.ui.queriousRegionAction.triggered.connect(
-            lambda: self.handleRegionMenuItemSelected(self.ui.queriousRegionAction))
-        self.ui.providenceCatchRegionAction.triggered.connect(
-            lambda: self.handleRegionMenuItemSelected(self.ui.providenceCatchRegionAction))
-        self.ui.providenceCatchCompactRegionAction.triggered.connect(
-            lambda: self.handleRegionMenuItemSelected(self.ui.providenceCatchCompactRegionAction))
-        self.ui.wickedcreekScaldingpassRegionAction.triggered.connect(
-            lambda: self.handleRegionMenuItemSelected(self.ui.wickedcreekScaldingpassRegionAction))
-        self.ui.showChatAction.triggered.connect(self.changeChatVisibility)
-        self.ui.soundSetupAction.triggered.connect(self.showSoundSetup)
-        self.ui.activateSoundAction.triggered.connect(self.changeSound)
-        self.ui.useSpokenNotificationsAction.triggered.connect(self.changeUseSpokenNotifications)
+        self.ui.actionAlwaysOnTop.triggered.connect(self.changeAlwaysOnTop)
+        self.ui.actionCatchRegion.triggered.connect(
+            lambda: self.handleRegionMenuItemSelected(self.ui.actionCatchRegion))
+        self.ui.actionProvidenceRegion.triggered.connect(
+            lambda: self.handleRegionMenuItemSelected(self.ui.actionProvidenceRegion))
+        self.ui.actionQueriousRegion.triggered.connect(
+            lambda: self.handleRegionMenuItemSelected(self.ui.actionQueriousRegion))
+        self.ui.actionProvidenceCatchRegion.triggered.connect(
+            lambda: self.handleRegionMenuItemSelected(self.ui.actionProvidenceCatchRegion))
+        self.ui.actionProvidenceCatchCompactRegion.triggered.connect(
+            lambda: self.handleRegionMenuItemSelected(self.ui.actionProvidenceCatchCompactRegion))
+        self.ui.actionWickedcreekScaldingpassRegion.triggered.connect(
+            lambda: self.handleRegionMenuItemSelected(self.ui.actionWickedcreekScaldingpassRegion))
+        self.ui.actionShowChat.triggered.connect(self.changeChatVisibility)
+        self.ui.actionSoundSetup.triggered.connect(self.showSoundSetup)
+        self.ui.actionActivateSound.triggered.connect(self.changeSound)
+        self.ui.actionUseSpokenNotifications.triggered.connect(self.changeUseSpokenNotifications)
         self.trayIcon.alarm_distance.connect(self.changeAlarmDistance)
-        self.ui.framelessWindowAction.triggered.connect(self.changeFrameless)
+        self.ui.actionFramelessWindow.triggered.connect(self.changeFrameless)
         self.trayIcon.change_frameless.connect(self.changeFrameless)
-        self.ui.frameButton.clicked.connect(self.changeFrameless)
-        self.ui.quitAction.triggered.connect(self.close)
         self.trayIcon.quit_signal.connect(self.close)
-        self.ui.jumpbridgeDataAction.triggered.connect(self.showJumpbridgeChooser)
-        self.ui.rescanNowAction.triggered.connect(self.rescanIntel)
-        self.ui.clearIntelAction.triggered.connect(self.clearIntelChat)
+        self.ui.actionJumpbridgeData.triggered.connect(self.showJumpbridgeChooser)
+        self.ui.actionRescanIntelNow.triggered.connect(self.rescanIntel)
+        self.ui.actionClearIntelChat.triggered.connect(self.clearIntelChat)
         self.ui.mapView.webViewUpdateScrollbars.connect(self.fixupScrollBars)
-        self.ui.mapView.webViewNavigateBackward.connect(self.navigateBack)
         self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
-
-        def indexChanged():
-            if hasattr(self, "statisticsThread"):
-                self.statisticsThread.fetchLocation(fetch=False)
-            new_region_name = str(self.ui.regionNameField.currentText())
-            if new_region_name in [region["name"] for region in Universe.REGIONS]:
-                self.changeRegionByName(region_name=new_region_name)
-
-        self.ui.regionNameField.currentIndexChanged.connect(indexChanged)
         self.ui.regionNameField.addItems(sorted([region["name"] for region in Universe.REGIONS]))
-        self.region_changed.connect(
-            lambda rgn_str: self.ui.regionNameField.setCurrentText(rgn_str))
 
         def mapviewIsScrolling(scrolled_active):
             if scrolled_active:
@@ -581,9 +584,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
 
         self.ui.mapView.webViewIsScrolling.connect(mapviewIsScrolling)
-        self.ui.connectToEveOnline.clicked.connect(
-            lambda:
-                self._updateKnownPlayerAndMenu(evegate.openWithEveonline(parent=self)))
 
         def updateX(x: float):
             pos = self.ui.mapView.scrollPosition()
@@ -597,22 +597,25 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.mapView.setScrollPosition(pos)
         self.ui.mapVertScrollBar.valueChanged.connect(updateY)
 
-        def hoveCheck(global_pos: QPoint, pos: QPoint) -> bool:
+        def hoveCheck(global_pos: QPoint, pos: QPointF):
             """
                 Figure out if a system is below the mouse position
                 using QtWidgets.QToolTip to popup system relate information on screen
             Args:
                 global_pos: global position
                 pos: position related to the svg
-
-            Returns: true if the mouse is above a system, else false
             """
+            system_hovered = False
             for system in self.systems_on_map.values():
                 if system.mapCoordinates.contains(pos):
                     if not QtWidgets.QToolTip.isVisible():
                         QtWidgets.QToolTip.showText(global_pos, system.getTooltipText(), self)
-                    return True
-            return False
+                        QApplication.setOverrideCursor(Qt.PointingHandCursor)
+                    system_hovered = True
+
+            if not system_hovered and QApplication.overrideCursor() and QtWidgets.QToolTip.isVisible():
+                QApplication.restoreOverrideCursor()
+                QtWidgets.QToolTip.hideText()
 
         self.ui.mapView.hoveCheck = hoveCheck
 
@@ -621,7 +624,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if system.mapCoordinates.contains(pos):
                     self.mapLinkClicked(QtCore.QUrl("map_link/{0}".format(name)))
                     break
-        self.ui.mapView.doubleClicked = doubleClicked
+
+        self.ui.mapView.webViewDoubleClicked.connect(doubleClicked)
 
     def handleDestinationActions(self, act, destination, jump_route=None) -> bool:
         """
@@ -775,16 +779,23 @@ class MainWindow(QtWidgets.QMainWindow):
         def showPOIContextMenu(pos):
             index = self.ui.tableViewPOIs.indexAt(pos).row()
             item = self.cache.getPOIAtIndex(index)
+            system_id = None
             if "solar_system_id" in item:
-                lps_ctx_menu = POIContextMenu(system_name=Universe.systemNameById(item["solar_system_id"]))
+                system_id = int(item["solar_system_id"])
+            elif "sys" in item:
+                system_id = Universe.systemIdByName(item["sys"])
             elif "system_id" in item:
-                lps_ctx_menu = POIContextMenu(system_name=Universe.systemNameById(item["system_id"]))
-            else:
+                system_id = int(item["system_id"])
+
+            if system_id is None:
                 lps_ctx_menu = POIContextMenu()
+            else:
+                lps_ctx_menu = POIContextMenu(system_name=Universe.systemNameById(system_id))
 
             lps_ctx_menu.setStyleSheet(Styles.getStyle())
             res = lps_ctx_menu.exec_(self.ui.tableViewPOIs.mapToGlobal(pos))
             if item and "destination_id" in item.keys():
+
                 if self.handleDestinationActions(res, item):
                     return
                 elif res == lps_ctx_menu.copy:
@@ -816,17 +827,20 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.poi_changed.emit()
                     return
                 elif res == lps_ctx_menu.selectRegion:
-                    if "solar_system_id" in item:
-                        self.region_changed_by_system_id.emit(int(item["solar_system_id"]))
-                    elif "system_id" in item:
-                        self.region_changed_by_system_id.emit(int(item["system_id"]))
+                    if system_id is not None:
+                        self.region_changed_by_system_id.emit(system_id)
                     return
 
         self.ui.tableViewPOIs.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewPOIs.customContextMenuRequested.connect(showPOIContextMenu)
 
-    def _wireUpThera(self):
+    def updateTheraConnections(self):
+        res = evegate.ESAPIListPublicSignatures()
+        if self.dotlan:
+            self.dotlan.setTheraConnections(res)
+        self.ui.tableViewStorm.model().sourceModel().updateData()
 
+    def _wireUpThera(self):
         str_list = QtWidgets.QCompleter(Universe.systemNames())
         str_list.setCaseSensitivity(Qt.CaseInsensitive)
         str_list.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
@@ -854,7 +868,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.tableViewThera.model().sourceModel().updateData(sys_name)
 
         self.ui.lineEditThera.editingFinished.connect(theraSystemChanged)
-        # self.ui.actionUserTheraRoutes.toggled.connect(theraSystemChanged)
 
         def showTheraContextMenu(pos):
             menu_inx = self.ui.tableViewThera.model().mapToSource(self.ui.tableViewThera.indexAt(pos))
@@ -941,7 +954,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 items = dict()
                 inx_selected = self.ui.tableViewJBs.selectedIndexes()
                 for inx in inx_selected:
-                    items[inx.row()] = self.cachegetJumpGatesAtIndex(inx.row())
+                    items[inx.row()] = self.cache.getJumpGatesAtIndex(inx.row())
                 for item in items.values():
                     if "src" in item:
                         self.region_changed_by_system_id.emit(Universe.systemIdByName(item["src"]))
@@ -1058,9 +1071,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread = MapStatisticsThread()
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
 
-        self.zkillboard = Zkillmonitor(parent=self)
+        self.zkillboard = ZKillMonitor(parent=self)
         self.zkillboard.report_system_kill.connect(self.updateKillboard)
-        self.zkillboard.status_killmail.connect(lambda online: self.ui.m_qLedZKillboarOnline.setPixmap(
+        self.zkillboard.status_kill_mail.connect(lambda online: self.ui.m_qLedZKillboarOnline.setPixmap(
                     QPixmap(u":/Icons/res/online.svg" if online else QPixmap(u":/Icons/res/offline.svg"))))
 
         self.apiThread = None
@@ -1117,19 +1130,25 @@ class MainWindow(QtWidgets.QMainWindow):
                                 * self.ui.mapView.zoom-view_center.height())
             self.ui.mapView.setScrollPosition(pt_system)
 
-    def navigateBack(self, back):
+    def navigateBackward(self):
         """
         Implements the backward forward mouse key functions
-        Args:
-            back: True mean back els forward
 
         Returns:
 
         """
-        if back:
-            region_name, pos, zoom = self.region_queue.undo()
-        else:
-            region_name, pos, zoom = self.region_queue.redo()
+        region_name, pos, zoom = self.region_queue.undo()
+        if region_name:
+            self.changeRegionByName(region_name=region_name, update_queue=False)
+            self.ui.mapView.setZoomAndScrollPos(zoom, pos)
+
+    def navigateForward(self):
+        """
+        Implements the backward forward mouse key functions
+        Returns:
+
+        """
+        region_name, pos, zoom = self.region_queue.redo()
         if region_name:
             self.changeRegionByName(region_name=region_name, update_queue=False)
             self.ui.mapView.setZoomAndScrollPos(zoom, pos)
@@ -1241,10 +1260,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.dotlan.outdatedCacheError:
             e = self.dotlan.outdatedCacheError
-            diag_text = "Something went wrong getting map data. Proceeding with older cached data. " \
+            info_text = "Something went wrong getting map data. Proceeding with older cached data. " \
                         "Check for a newer version and inform the maintainer.\n\nError: {0} {1}".format(type(e), str(e))
-            logging.warning(diag_text)
-            QMessageBox.warning(self, "Using map from cache", diag_text, QMessageBox.Ok)
+            logging.warning(info_text)
+            QMessageBox.warning(self, "Using map from cache", info_text, QMessageBox.Ok)
 
         # Update the new map view, then clear old statistics from the map and request new
         logging.debug("Updating the map")
@@ -1310,15 +1329,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     # ("ui.qSidepannel", "restoreGeometry", str(self.ui.qSidepannel.saveGeometry()), True),
                     (None, "changeChatFontSize", ChatEntryWidget.TEXT_SIZE),
                     (None, "setOpacity", self.opacityGroup.checkedAction().opacity),
-                    (None, "changeAlwaysOnTop", self.ui.alwaysOnTopAction.isChecked()),
-                    (None, "changeShowAvatars", self.ui.showChatAvatarsAction.isChecked()),
+                    (None, "changeAlwaysOnTop", self.ui.actionAlwaysOnTop.isChecked()),
+                    (None, "changeShowAvatars", self.ui.actionShowChatAvatars.isChecked()),
                     (None, "changeAlarmDistance", self.alarmDistance),
-                    (None, "changeSound", self.ui.activateSoundAction.isChecked()),
-                    (None, "changeChatVisibility", self.ui.showChatAction.isChecked()),
+                    (None, "changeSound", self.ui.actionActivateSound.isChecked()),
+                    (None, "changeChatVisibility", self.ui.actionShowChat.isChecked()),
                     (None, "loadInitialMapPositions", self.mapPositionsDict),
                     (None, "setSoundVolume", SoundManager().soundVolume),
-                    (None, "changeFrameless", self.ui.framelessWindowAction.isChecked()),
-                    (None, "changeUseSpokenNotifications", self.ui.useSpokenNotificationsAction.isChecked()),
+                    (None, "changeFrameless", self.ui.actionFramelessWindow.isChecked()),
+                    (None, "changeUseSpokenNotifications", self.ui.actionUseSpokenNotifications.isChecked()),
                     (None, "changeAutoChangeRegion", self.autoChangeRegion),
                     (None, "wheelDirChanged", self.invertWheel),
                     (None, "showJumpbridge", self.ui.jumpbridgesButton.isChecked()),
@@ -1334,25 +1353,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeChatVisibility(self, value=None):
         if value is None:
-            value = self.ui.showChatAction.isChecked()
-        self.ui.showChatAction.setChecked(value)
-        # self.ui.chatbox.setVisible(value)
+            value = self.ui.actionShowChat.isChecked()
+        self.ui.actionShowChat.setChecked(value)
 
     def changeAutoChangeRegion(self, value=None):
         if value is None:
-            value = self.ui.actionAuto_switch.isChecked()
-        self.ui.actionAuto_switch.setChecked(value)
+            value = self.ui.actionAutoSwitchRegions.isChecked()
+        self.ui.actionAutoSwitchRegions.setChecked(value)
         self.autoChangeRegion = value
 
     def changeUseSpokenNotifications(self, value=None):
         if SoundManager().platformSupportsSpeech():
             if value is None:
-                value = self.ui.useSpokenNotificationsAction.isChecked()
-            self.ui.useSpokenNotificationsAction.setChecked(value)
+                value = self.ui.actionUseSpokenNotifications.isChecked()
+            self.ui.actionUseSpokenNotifications.setChecked(value)
             SoundManager().setUseSpokenNotifications(value)
         else:
-            self.ui.useSpokenNotificationsAction.setChecked(False)
-            self.ui.useSpokenNotificationsAction.setEnabled(False)
+            self.ui.actionUseSpokenNotifications.setChecked(False)
+            self.ui.actionUseSpokenNotifications.setEnabled(False)
 
     def setIntelTime(self, minutes=None):
         if minutes and self.intelTimeGroup:
@@ -1395,10 +1413,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeSound(self, value=None, disable=False):
         if disable:
-            self.ui.activateSoundAction.setChecked(False)
-            self.ui.activateSoundAction.setEnabled(False)
-            self.ui.useSpokenNotificationsAction(False)
-            self.ui.soundSetupAction.setEnabled(False)
+            self.ui.actionActivateSound.setChecked(False)
+            self.ui.actionActivateSound.setEnabled(False)
+            self.ui.actionUseSpokenNotifications(False)
+            self.ui.actionSoundSetup.setEnabled(False)
             QMessageBox.warning(
                 self, "Sound disabled",
                 "The lib 'pyglet' which is used to play sounds cannot be found, ""so the soundsystem is disabled.\n"
@@ -1406,17 +1424,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 QMessageBox.Ok)
         else:
             if value is None:
-                value = self.ui.activateSoundAction.isChecked()
-            self.ui.activateSoundAction.setChecked(value)
+                value = self.ui.actionActivateSound.isChecked()
+            self.ui.actionActivateSound.setChecked(value)
             SoundManager().soundActive = value
 
     def changeAlwaysOnTop(self, value=None):
         if value is None:
-            value = self.ui.alwaysOnTopAction.isChecked()
+            value = self.ui.actionAlwaysOnTop.isChecked()
         do_show = self.isVisible()
         if do_show:
             self.hide()
-        self.ui.alwaysOnTopAction.setChecked(value)
+        self.ui.actionAlwaysOnTop.setChecked(value)
         if value:
             self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         else:
@@ -1437,7 +1455,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setWindowFlags(self.windowFlags() & (~Qt.FramelessWindowHint))
         self.ui.menubar.setVisible(not value)
         self.ui.frameButton.setVisible(value)
-        self.ui.framelessWindowAction.setChecked(value)
+        self.ui.actionFramelessWindow.setChecked(value)
 
         for cm in TrayContextMenu.instances:
             cm.framelessCheck.setChecked(value)
@@ -1447,8 +1465,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeShowAvatars(self, value=None):
         if value is None:
-            value = self.ui.showChatAvatarsAction.isChecked()
-        self.ui.showChatAvatarsAction.setChecked(value)
+            value = self.ui.actionShowChatAvatars.isChecked()
+        self.ui.actionShowChatAvatars.setChecked(value)
         ChatEntryWidget.SHOW_AVATAR = value
         for entry in self.chatEntries:
             entry.ui.avatarLabel.setVisible(value)
@@ -1800,7 +1818,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.ui.chatListWidget.verticalScrollBar().value() == self.ui.chatListWidget.verticalScrollBar().maximum():
             scroll_to_bottom = True
 
-        if self.ui.useSpokenNotificationsAction.isChecked():
+        if self.ui.actionUseSpokenNotifications.isChecked():
             if message.roomName == "zKillboard":
                 message_text = self.formatZKillMessage(message.plainText)
             else:
@@ -1934,7 +1952,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
         dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
         dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
-        dialog.ui.useSpokenNotifications.setChecked(self.ui.useSpokenNotificationsAction.isChecked())
+        dialog.ui.useSpokenNotifications.setChecked(self.ui.actionUseSpokenNotifications.isChecked())
         dialog.ui.useSpokenNotifications.clicked.connect(self.changeUseSpokenNotifications)
         # dialog.setWindowFlags(Qt.Popup)
 
@@ -1952,7 +1970,7 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.ui.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
             dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
             dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
-            dialog.ui.useSpokenNotifications.setChecked(self.ui.useSpokenNotificationsAction.isChecked())
+            dialog.ui.useSpokenNotifications.setChecked(self.ui.actionUseSpokenNotifications.isChecked())
 
             SoundManager().loadSoundFiles()
 
@@ -1998,7 +2016,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
             else:
                 self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
-            self.ui.m_qPlayerOnline.setText("Players ({players}) Server version ({server_version})".format(**server_status))
+            self.ui.m_qPlayerOnline.setText("Players ({players}) Server version ({server_version})".format(
+                **server_status))
 
         if "thera_wormholes_version" in data.keys():
             thera_wormhole = data["thera_wormholes_version"]
@@ -2032,18 +2051,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.dotlan.setCampaignsSystems(data['campaigns'])
 
         if "registered-chars" in data:
-            first_one = True
+            region_changed = False
             for itm in data["registered-chars"]:
                 if itm["online"] and itm["name"] == evegate.esiCharName():
                     self.setLocation(itm["name"], itm["system"]["name"],
-                                     first_one and itm["name"] == evegate.esiCharName())
-                    first_one = False
-            if first_one:
+                                     change_region=True)
+                    region_changed = True
+            if not region_changed:
                 for itm in data["registered-chars"]:
-                    if itm["online"] and itm["name"] == evegate.esiCharName():
-                        self.setLocation(itm["name"], itm["system"]["name"],
-                                         first_one)
-                        first_one = False
+                    self.setLocation(itm["name"], itm["system"]["name"],
+                                     change_region=itm["name"] == evegate.esiCharName())
 
         if data["result"] == "error":
             logging.error("updateStatisticsOnMap, error: {}".format(data["text"]))
