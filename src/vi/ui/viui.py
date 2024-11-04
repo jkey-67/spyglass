@@ -42,7 +42,7 @@ from vi import evegate
 from vi import dotlan, filewatcher
 from vi.states import States
 from vi.globals import Globals
-from vi.ui import JumpbridgeChooser, ChatroomChooser, RegionChooser, SystemChat, ChatEntryWidget, ChatEntryItem
+from vi.ui import JumpbridgeChooser, ChatroomChooser, SystemChat, ChatEntryWidget, ChatEntryItem
 
 from vi.cache.cache import Cache, currentEveTime
 from vi.resources import resourcePath, resourcePathExists
@@ -1785,14 +1785,6 @@ class MainWindow(QtWidgets.QMainWindow):
             selected_region_name = str(action.property("regionName"))
             self.changeRegionByName(region_name=selected_region_name)
 
-    def showRegionChooser(self):
-        def handleRegionChosen(region_name):
-            self.handleRegionMenuItemSelected(None)
-            self.changeRegionByName(region_name=region_name)
-
-        chooser = RegionChooser(self, region_name=self.cache.getFromCache("region_name"))
-        chooser.new_region_chosen.connect(handleRegionChosen)
-        chooser.show()
 
     @staticmethod
     def formatZKillMessage(message):

@@ -32,6 +32,7 @@ class CTX:
         = u""" <a  style="color:#d0d0d0;font-weight:medium" href="link/https://zkillboard.com/alliance/{1}/">{0}</a>"""
     FORMAT_SYSTEM = u"""<a style="color:#888880;font-weight:medium" href="mark_system/{0}">{1}</a>"""
     FORMAT_SYSTEM_IN_REGION = u"""<a style="color:#DAA520;font-weight:medium" href="mark_system/{0}">{1}</a>"""
+    FORMAT_VALUE = u"""<a style="color:#d0d0d0;font-weight:medium">{0}</a>"""
     STATUS_CLEAR = {"CLEAR", "CLR", "CRL", "CLR ATM"}
     STATUS_STATUS = {"STAT", "STATUS", "STATE"}
     STATUS_BLUE = {"BLUE", "BLUES ONLY", "ONLY BLUE" "STILL BLUE", "ALL BLUES"}

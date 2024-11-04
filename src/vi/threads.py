@@ -27,8 +27,6 @@ from vi import evegate
 from .cache.cache import Cache
 from .resources import resourcePath
 
-STATISTICS_UPDATE_INTERVAL_MSECS = 1 * 60 * 1000
-
 
 class AvatarFindThread(QThread):
 
@@ -98,72 +96,6 @@ class AvatarFindThread(QThread):
         QThread.quit(self)
 
 
-class FetchSovereignty(QRunnable):
-
-    def __init__(self, notifier):
-        QRunnable.__init__(self)
-        self.notifier_signal = notifier
-
-    def run(self):
-        statistics_data = dict({"result": "pending"})
-        try:
-            statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=True, show_npc=True)
-            statistics_data["structures"] = evegate.esiSovereigntyStructures()
-            logging.info("Sovereignty data updated succeeded.")
-            statistics_data["result"] = "ok"
-        except Exception as e:
-            logging.error("Unable to fetch sovereignty update: %s", e)
-            statistics_data["result"] = "error"
-            statistics_data["text"] = str(e)
-        self.notifier_signal.emit(statistics_data)
-
-
-class FetchStatistic(QRunnable):
-    def __init__(self, notifier):
-        QRunnable.__init__(self)
-        self.notifier_signal = notifier
-
-    def run(self):
-        statistics_data = dict({"result": "pending"})
-        try:
-            statistics_data["statistics"] = evegate.esiUniverseSystem_jumps(use_outdated=False)
-            statistics_data["incursions"] = evegate.esiIncursions(use_outdated=False)
-            statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(use_outdated=False)
-            statistics_data["result"] = "ok"
-            logging.info("Statistic data updated succeeded.")
-        except Exception as e:
-            logging.error("Unable to fetch statistic update: %s", e)
-            statistics_data["result"] = "error"
-            statistics_data["text"] = str(e)
-        self.notifier_signal.emit(statistics_data)
-
-
-class FetchWormholes(QRunnable):
-    def __init__(self, notifier):
-        QRunnable.__init__(self)
-        self.notifier_signal = notifier
-
-
-
-
-class FetchLocation(QRunnable):
-    def __init__(self, notifier):
-        QRunnable.__init__(self)
-        self.notifier_signal = notifier
-
-    def run(self):
-        statistics_data = dict({"result": "pending"})
-        try:
-            statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
-            logging.info("Fetching the characters location succeeded.")
-            statistics_data["result"] = "ok"
-        except Exception as e:
-            logging.error("Fetching the characters location failed: %s", e)
-            statistics_data["result"] = "error"
-            statistics_data["text"] = str(e)
-        self.notifier_signal.emit(statistics_data)
-
-
 class MapStatisticsThread(QThread):
     """
     Fetching statistic data and player locations
@@ -198,7 +130,7 @@ class MapStatisticsThread(QThread):
     def run(self):
         while self.active:
             tsk = self.queue.get()
-            logging.info("Statistic thread current task is : %s ", str(tsk))
+            logging.debug("MapStatisticsThread current task is : %s ", str(tsk))
             while tsk and len(tsk):
                 if not self.active:
                     return
@@ -207,44 +139,61 @@ class MapStatisticsThread(QThread):
                     if "server-status" in tsk:
                         self.server_status = True
                         statistics_data["server-status"] = evegate.esiStatus()
-                        logging.info("Server status report : %s %s", statistics_data["server-status"], str(tsk))
+                        logging.info("EVE-Online Server status report : %s %s",
+                                     statistics_data["server-status"], str(tsk))
                         self.queue.put(["statistics", "incursions", "campaigns", "sovereignty", "structures"])
                         tsk.remove("server-status")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if "sovereignty" in tsk:
                         statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=False, show_npc=True)
                         tsk.remove("sovereignty")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if "structures" in tsk:
                         statistics_data["structures"] = evegate.esiSovereigntyStructures()
                         tsk.remove("structures")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if "statistics" in tsk:
                         statistics_data["statistics"] = evegate.esiUniverseSystem_jumps()
                         tsk.remove("statistics")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if "incursions" in tsk:
                         statistics_data["incursions"] = evegate.esiIncursions(False)
                         tsk.remove("incursions")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if "campaigns" in tsk:
                         statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(False)
                         tsk.remove("campaigns")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if "registered-chars" in tsk:
                         statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
                         tsk.remove("registered-chars")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if "thera_wormholes" in tsk:
                         statistics_data["thera_wormhole"] = evegate.ESAPIListPublicSignatures()
                         tsk.remove("thera_wormholes")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if "thera_wormholes_version" in tsk:
@@ -255,19 +204,21 @@ class MapStatisticsThread(QThread):
                         else:
                             self.queue.put(["thera_wormholes_version"])
                         tsk.remove("thera_wormholes_version")
+                        statistics_data["result"] = "ok"
+                        self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    logging.debug("MapStatisticsThread fetching {}succeeded.".format(tsk))
-                    statistics_data["result"] = "ok"
                 except Exception as e:
                     self.server_status = False;
-                    logging.error("Error in MapStatisticsThread: %s %s", e, str(tsk))
+                    logging.error("MapStatisticsThread Error: %s %s", e, str(tsk))
                     statistics_data["result"] = "error"
                     statistics_data["text"] = str(e)
                     self.queue.put(["server-status"])
                     tsk = None
 
-            self.statistic_data_update.emit(statistics_data)
+            if tsk and len(tsk):
+                logging.debug("MapStatisticsThread fetching data succeeded, no queries left.")
+        logging.debug("MapStatisticsThread terminated by application.")
 
     def quit(self):
         self.active = False
