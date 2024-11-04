@@ -19,7 +19,7 @@ UTF16_BOM = u'\uFEFF\n'
 class ZKillMonitor(QObject):
     """
         Converts the websocket stream to a compatible logfile, the file encoding is "utf-16-le"
-        see https://github.com/zKillboard/zKillboard/wiki
+        see: https://github.com/zKillboard/zKillboard/wiki
     """
     status_kill_mail = pyqtSignal(bool)
     report_system_kill = pyqtSignal(int)
@@ -154,6 +154,8 @@ class ZKillMonitor(QObject):
         character_id = victim["character_id"] if "character_id" in victim.keys() else 0
         ship_type_id = victim["ship_type_id"] if "ship_type_id" in victim.keys() else 0
         alliance_id = victim["alliance_id"] if "alliance_id" in victim.keys() else 0
+        total_value = "<br/>Total Value : {:,} ISK".format(
+            kill_data["zkb"]["totalValue"]) if "totalValue" in kill_data["zkb"].keys() else ""
         user_data = esiUniverseNames({character_id, system_id, ship_type_id, alliance_id})
 
         kill_victim_character = user_data[character_id] if character_id and character_id in user_data.keys() else "-"
@@ -163,10 +165,11 @@ class ZKillMonitor(QObject):
         alliance_ticker = ""
         if alliance_id:
             message_msk = \
-                "[ {date} ] zKillboard.com >{link}<br/>{system} {player} &lt;{ticker}&gt; ({alliance}) lost a {ship}\n"
+                "[ {date} ] zKillboard.com >{link}<br/>{player} &lt;{ticker}&gt;({alliance}) lost their {ship}"\
+                " in {system}.{value}\n"
             alliance_ticker = esiAlliances(alliance_id)["ticker"]
         else:
-            message_msk = "[ {date} ] zKillboard.com >{link}<br/>{system} {player} lost a {ship}\n"
+            message_msk = "[ {date} ] zKillboard.com >{link}<br/>{player} lost their {ship} in {system}.{value}\n"
 
         return message_msk.format(
             date=kill_time,
@@ -175,7 +178,9 @@ class ZKillMonitor(QObject):
             player=CTX.FORMAT_PLAYER_NAME.format(kill_victim_character, character_id),
             alliance=CTX.FORMAT_ALLIANCE_NAME.format(kill_victim_alliance, alliance_id),
             ship=CTX.FORMAT_SHIP.format(kill_victim_ship_type),
-            link=CTX.FORMAT_URL.format(kill_url))
+            link=CTX.FORMAT_URL.format(kill_url),
+            value=CTX.FORMAT_VALUE.format(total_value)
+        )
 
     @staticmethod
     def updateKillDatabase(kill_data):
