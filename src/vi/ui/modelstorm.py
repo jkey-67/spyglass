@@ -37,9 +37,9 @@ class TableModelStorm(QAbstractTableModel):
             {"Created": ["created_at"]},
         ]
 
-    def updateData(self):
+    def updateObservationsRecords(self, observations_records: dict):
         self.beginResetModel()
-        self.model_data = ESAPIListPublicObservationsRecords()
+        self.model_data = observations_records
         self.endResetModel()
 
     def rowCount(self, parent: Union[QModelIndex, QPersistentModelIndex] = ...) -> int:

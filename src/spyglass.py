@@ -58,7 +58,7 @@ backGroundColor = "#c6d9ec"
 class Application(QApplication):
     def __init__(self, args):
         super(Application, self).__init__(args)
-        pixmap = QtGui.QPixmap(resourcePath("vi/ui/res/logo_splash.png"))
+        pixmap = QtGui.QPixmap(u":/Icons/res/logo_splash.png")
         if SNAPSHOT:
             painter = QtGui.QPainter()
             painter.begin(pixmap)

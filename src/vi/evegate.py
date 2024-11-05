@@ -20,12 +20,14 @@
 import datetime
 import locale
 import json
+import os.path
 import time
 import parse
 import threading
+from inspect import currentframe, getframeinfo
 from PySide6 import QtWidgets
 from PySide6.QtCore import QThread, QUrl
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from packaging import version
@@ -80,11 +82,20 @@ class ApiKey(object):
 def getSession() -> Session:
     if not hasattr(thread_local, 'session'):
         thread_local.session = requests.Session()  # Create a new Session if not exists
+        thread_local.session.headers.update(
+            {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+             })
     return thread_local.session
 
 
-# todo :  split the cache from esi functionality
+def _logResponseError(response):
+    logging.error('ESI-Error {}, Info "{}", url "{}", response text: "{}"'.format(
+        response.status_code, response.reason, response.url, response.text), stacklevel=2)
 
+
+# todo :  split the cache from esi functionality
 
 def setEsiCharName(name):
     """
@@ -133,7 +144,8 @@ def secondUntilExpire(response, default: int = 3600) -> int:
     Returns:
         int: Seconds that can be used for caching, or 3600 as default
     """
-    if "Expires" in response.headers:
+    response_keys = response.headers.keys()
+    if "Expires" in response_keys:
         expires = response.headers["Expires"]
         locale.setlocale(locale.LC_TIME, 'en_US')
         res_time = datetime.datetime.strptime(expires, "%a, %d %b %Y %H:%M:%S GMT").replace(tzinfo=datetime.timezone.utc)
@@ -153,24 +165,24 @@ def esiStatus() -> dict:
     url = "https://esi.evetech.net/latest/status/?datasource=tranquility"
     response = getSession().get(url=url)
     if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+        _logResponseError(response)
         response.raise_for_status()
     return response.json()
 
 
-def esiCharNameToId(char_name: str, use_outdated=False) -> Optional[int]:
+def esiCharNameToId(char_name: str, use_outdated=False, use_cache=True) -> Optional[int]:
     """ Uses the EVE API to convert a character name to his ID.
 
     Args:
         char_name(str):character name to convert
         use_outdated(bool):if True, the cache timestamp will be ignored
-
+        use_cache(bool):
     Returns:
-        int:id of the character name
+        int:id of the character name or None
     """
     cache_key = "_".join(("name", "id", char_name))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return cached_id
     else:
@@ -185,33 +197,32 @@ def esiCharNameToId(char_name: str, use_outdated=False) -> Optional[int]:
                         name_found = details["name"]
                         if name_found.lower() == char_name.lower():
                             cache.putIntoCache(cache_key, idFound["id"], secondUntilExpire(response))
-                            # 60 * 60 * 24 * 365
                             return idFound["id"]
                 else:
-                    logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+                    _logResponseError(response)
                     response.raise_for_status()
     return None
 
 
-def esiUniverseIds(names, use_outdated=False):
+def esiUniverseIds(names, use_outdated=False, use_cache=False) -> dict:
     """ Uses the EVE API to convert a list of names to ids_to_names
 
     Args:
         names(list(str)): names list of names
         use_outdated(bool): if True the cache timestamp will be ignored
+        use_cache:
 
     Returns:
-             dict : key=name, value=id
+             dict: holding list of dict of the same type : key=name, value=id
     """
     if len(names) == 0:
         return {}
     data = {}
     api_check_names = set()
     cache = Cache()
-
     for name in names:
         cache_key = "_".join(("ids", "dicts", name))
-        id_from_cache = cache.getFromCache(cache_key, use_outdated)
+        id_from_cache = cache.getFromCache(cache_key, use_outdated) if use_cache else None
         if id_from_cache:
             for key, items in json.loads(id_from_cache).items():
                 for item in items:
@@ -256,13 +267,12 @@ def esiUniverseIds(names, use_outdated=False):
     return data
 
 
-def esiUniverseNames(ids: set, use_outdated=False, lang="en"):
+def esiUniverseNames(ids: set, use_outdated=False):
     """ Returns the names for a list of ids
 
         Args:
             ids(set): set of ids to search
             use_outdated(bool): if True the cache timestamp will be ignored
-            lang: language used
 
         Returns:
               dict:dict  key = id, value = name
@@ -275,12 +285,13 @@ def esiUniverseNames(ids: set, use_outdated=False, lang="en"):
 
     # something already in the cache?
     for checked_id in ids:
-        cache_key = u"_".join(("name", "id", str(checked_id), lang))
+        cache_key = u"_".join(("name", "id", str(checked_id)))
         name = cache.getFromCache(cache_key, use_outdated)
         if name:
             data[checked_id] = name
         else:
             api_check_ids.append(checked_id)
+
     if len(api_check_ids) == 0:
         return data
 
@@ -290,10 +301,10 @@ def esiUniverseNames(ids: set, use_outdated=False, lang="en"):
             if list_of_ids != "":
                 list_of_ids = list_of_ids + ","
             list_of_ids = list_of_ids + str(checked_id)
-        url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility&language={}".format(lang)
+        url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
         response = getSession().post(url, data="[{}]".format(list_of_ids))
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
         content = response.json()
         if len(content) > 0:
@@ -302,24 +313,25 @@ def esiUniverseNames(ids: set, use_outdated=False, lang="en"):
             # and writing into cache
             with Cache() as cache:
                 for checked_id in api_check_ids:
-                    cache_key = u"_".join(("name", "id", str(checked_id), lang))
+                    cache_key = u"_".join(("name", "id", str(checked_id)))
                     if checked_id in data.keys():
                         # todo check secondUntilExpire(response)
                         cache.putIntoCacheNoLock(cache_key, data[int(checked_id)], 60 * 60 * 24 * 365)
                 cache.con.commit()
         if len(api_check_ids) > 1000:
-            return esiUniverseNames(ids, use_outdated, lang=lang)
+            return esiUniverseNames(ids, use_outdated)
     except Exception as e:
         logging.error("Exception during idsToNames: %s", e)
     return data
 
 
-def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en"):
+def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en", use_cache=True):
     """ Returns the names for a list of ids
 
         Args:
             attribute_id(set): set of ids to search
             use_outdated(bool): if True the cache timestamp will be ignored
+            use_cache(bool): use data from cache
             lang: language used
 
         Returns:
@@ -329,13 +341,16 @@ def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en"):
 
     # something already in the cache?
     cache_key = u"_".join(("attribute", "id", str(attribute_id), lang))
-    name = cache.getFromCache(cache_key, use_outdated)
-    url = "https://esi.evetech.net/latest/dogma/attributes/{}/?datasource=tranquility&language={}".format(attribute_id,lang)
-    response = getSession().get(url)
-    if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-        response.raise_for_status()
-    return response.json()
+    cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
+    if cache_data:
+        return json.loads(cache_data)
+    else:
+        url = "https://esi.evetech.net/latest/dogma/attributes/{}/?datasource=tranquility&language={}".format(attribute_id,lang)
+        response = getSession().get(url)
+        if response.status_code != 200:
+            _logResponseError(response)
+            response.raise_for_status()
+        return response.json()
 
 
 class EvetechImage(Enum):
@@ -367,7 +382,7 @@ def esiImageEvetechNet(character_id: int, req_type, image_size=64):
             id=character_id, size=image_size, type=req_type[0], info=req_type[1])
         response = getSession().get(url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %60s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             avatar = None
         else:
             avatar = response.content
@@ -391,18 +406,17 @@ def getTypesIcon(type_id: int, size_image=64) -> Optional[bytearray]:
         url = "https://images.evetech.net/types/{id}/icon".format(id=type_id, size=size_image)
         response = getSession().get(url=url)
         if response.status_code == 200:
-            # todo check secondUntilExpire(response)
             used_cache.putImageToIconCache(type_id, response.content, secondUntilExpire(response))
             img = response.content
         else:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
     if img:
         return bytearray(img)
     else:
         return None
 
 
-def esiCharactersPortrait(char_name, image_size=64):
+def esiCharactersPortrait(char_name, image_size=64, use_cache=True):
     """Downloading the avatar for a player/character
 
     Args:
@@ -412,58 +426,53 @@ def esiCharactersPortrait(char_name, image_size=64):
     Returns:
         bytearray: None if something gone wrong, else the png
     """
-
-    avatar = None
-    try:
-        char_id = esiCharNameToId(char_name)
-        if char_id:
-            url = "https://images.evetech.net/characters/{id}/portrait?tenant=tranquility&size={size}".format(
-                id=char_id, size=image_size)
-            response = getSession().get(url=url)
-            if response.status_code != 200:
-                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-                response.raise_for_status()
-            avatar = response.content
-
-    except Exception as e:
-        logging.error("Exception during esiCharactersPortrait: %s", e)
+    cache = Cache()
+    cached_data = cache.getImageFromAvatar(char_name) if use_cache else None
+    if cached_data is None:
         avatar = None
-    return avatar
+        try:
+            char_id = esiCharNameToId(char_name)
+            if char_id:
+                url = "https://images.evetech.net/characters/{id}/portrait/?tenant=tranquility&size={size}".format(
+                    id=char_id, size=image_size)
+                response = getSession().get(url=url)
+                if response.status_code != 200:
+                    _logResponseError(response)
+                    response.raise_for_status()
+                avatar = response.content
+                if avatar:
+                    cache.putImageToAvatar(name=char_name, data=avatar, max_age=secondUntilExpire(response))
+        except Exception as e:
+            logging.error("Exception during esiCharactersPortrait: %s", e)
+            avatar = None
+        return avatar
+    else:
+        return cached_data
 
 
-def esiCharactersPublicInfo(char_name: str):
+def esiCharactersPublicInfo(char_name: str, use_cache=True):
     """Downloading the public player/character info
 
     Args:
-        char_name: id of the character
-
+        char_name(str): name of the character
+        use_cache(bool): use the cache
     Returns:
-        bytearray: None if something gone wrong, else the png
+        dict: Dict holding the public data of the char, or None
     """
-
-    try:
-        cache = Cache()
-        json_txt = cache.getJsonFromAvatar(char_name)
-        if json_txt is None:
-            char_id = esiCharNameToId(char_name)
-            url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=char_id)
-            response = getSession().get(url=url)
-            if response.status_code != 200:
-                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-                response.raise_for_status()
-            json_avatar = json.loads(response.text)
-            alliance_id = json_avatar["alliance_id"] if "alliance_id" in json_avatar.keys() else None
-            cache.putJsonToAvatar(player_name=char_name,
-                                  json_txt=response.text,
-                                  player_id=char_id,
-                                  alliance_id=alliance_id)
-            return json_avatar
-        else:
-            return json.loads(json_txt)
-
-    except Exception as e:
-        logging.error("Exception during esiCharactersPortrait: %s", e)
-    return None
+    cache = Cache()
+    cache_key = u"_".join(("public_info_", char_name))
+    cached_data = cache.getFromCache(cache_key) if use_cache else None
+    if cached_data is None:
+        char_id = esiCharNameToId(char_name, use_cache=use_cache)
+        url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=char_id)
+        response = getSession().get(url=url)
+        if response.status_code != 200:
+            _logResponseError(response)
+            return None
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
+        return json.loads(response.text)
+    else:
+        return json.loads(cached_data)
 
 
 def checkPlayerName(char_name):
@@ -489,10 +498,10 @@ def checkPlayerName(char_name):
     return ERROR, res_id
 
 
-def esiCharacters(char_id, use_outdated=False):
+def esiCharacters(char_id, use_outdated=False, use_cache=True):
     cache_key = u"_".join(("playerinfo_id_", str(char_id)))
     used_cache = Cache()
-    char_info = used_cache.getFromCache(cache_key, use_outdated)
+    char_info = used_cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if char_info is not None:
         char_info = json.loads(char_info)
     else:
@@ -500,12 +509,12 @@ def esiCharacters(char_id, use_outdated=False):
             url = "https://esi.evetech.net/latest/characters/{id}/?datasource=tranquility".format(id=int(char_id))
             response = getSession().get(url=url)
             if response.status_code != 200:
-                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+                _logResponseError(response)
                 response.raise_for_status()
             char_info = response.json()
             # should be valid for up to three days
             # todo check secondUntilExpire(response)
-            used_cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+            used_cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if e.response.status_code != 400:
@@ -518,6 +527,11 @@ def esiCheckCharacterToken(char_name: str) -> bool:
 
 
 def esiGetCharsOnlineStatus() -> list:
+    """
+        Fetch the connection status of all registered characters.
+    Returns:
+        List: [{"name": str,"online": bool, "system": str}]
+    """
     result = list()
     for char in Cache().getAPICharNames():
         online = esiCharactersOnline(char)
@@ -549,7 +563,7 @@ def esiCharactersOnline(char_name: str) -> bool:
             esiCharNameToId(char_name), token.access_token)
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             return False
         char_online = response.json()
         if "online" in char_online.keys():
@@ -578,7 +592,7 @@ def esiCharactersLocation(char_name: str) -> Optional[int]:
             token.access_token)
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
 
         char_online = response.json()
         if "solar_system_id" in char_online.keys():
@@ -586,15 +600,16 @@ def esiCharactersLocation(char_name: str) -> Optional[int]:
     return None
 
 
-def esiCharactersCorporationHistory(char_id, use_outdated=True):
+def esiCharactersCorporationHistory(char_id, use_outdated=True, use_cache=True):
     """ Returns a list with the ids if the corporation history of a charId
         returns a list of only the corp structs
         @param char_id id the char
         @param use_outdated also return outdated results from cache
+        @param use_cache
     """
     cache_key = u"_".join(("corp_history_id_", str(char_id)))
     cache = Cache()
-    corp_ids = cache.getFromCache(cache_key, use_outdated)
+    corp_ids = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if corp_ids is not None:
         corp_ids = json.loads(corp_ids)
     else:
@@ -604,11 +619,11 @@ def esiCharactersCorporationHistory(char_id, use_outdated=True):
                 id=char_id)
             response = getSession().get(url=url)
             if response.status_code != 200:
-                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+                _logResponseError(response)
                 response.raise_for_status()
             corp_ids = response.json()
             # todo check secondUntilExpire(response)
-            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+            cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         except requests.exceptions.RequestException as e:
             # We get a 400 when we pass non-pilot names for KOS check so fail silently for that one only
             if e.response.status_code != 400:
@@ -628,7 +643,7 @@ def getCurrentCorpForCharId(char_id, use_outdated=True) -> Optional[int]:
         return None
 
 
-def esiUniverseSystem_jumps(use_outdated=False):
+def esiUniverseSystem_jumps(use_outdated=False, use_cache=True):
     """ Reads the information for all solarsystem from the EVE API cached 3600 s
         Reads a dict like:
             systemid: "jumps", "shipkills", "factionkills", "podkills"
@@ -638,7 +653,7 @@ def esiUniverseSystem_jumps(use_outdated=False):
     cache = Cache()
     # first the data for the jumps
     cache_key = "jumpstatistic"
-    jump_data = cache.getFromCache(cache_key, use_outdated)
+    jump_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
 
     try:
         if jump_data is None:
@@ -646,25 +661,25 @@ def esiUniverseSystem_jumps(use_outdated=False):
             url = "https://esi.evetech.net/latest/universe/system_jumps/?datasource=tranquility"
             response = getSession().get(url=url)
             if response.status_code != 200:
-                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+                _logResponseError(response)
                 response.raise_for_status()
             resp = response.json()
             for row in resp:
                 jump_data[int(row["system_id"])] = int(row["ship_jumps"])
             # todo check secondUntilExpire(response)
-            cache.putIntoCache(cache_key, json.dumps(jump_data), secondUntilExpire(response))
+            cache.putIntoCache(cache_key, json.dumps(jump_data), max_age=secondUntilExpire(response))
         else:
             jump_data = json.loads(jump_data)
 
         cache_key = "systemstatistic"
-        system_data = cache.getFromCache(cache_key, use_outdated)
+        system_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
 
         if system_data is None:
             system_data = {}
             url = "https://esi.evetech.net/latest/universe/system_kills/?datasource=tranquility"
             response = getSession().get(url=url)
             if response.status_code != 200:
-                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+                _logResponseError(response)
                 response.raise_for_status()
             resp = response.json()
             for row in resp:
@@ -672,7 +687,7 @@ def esiUniverseSystem_jumps(use_outdated=False):
                                                       "faction": int(row["npc_kills"]),
                                                       "pod": int(row["pod_kills"])}
 
-            cache.putIntoCache(cache_key, json.dumps(system_data), secondUntilExpire(response))
+            cache.putIntoCache(cache_key, json.dumps(system_data), max_age=secondUntilExpire(response))
         else:
             system_data = json.loads(system_data)
     except Exception as e:
@@ -720,7 +735,7 @@ class MyApiServer(http.server.BaseHTTPRequestHandler):
 
 
 class APIServerThread(QThread):
-    new_serve_aki_key = pyqtSignal(str)
+    new_serve_aki_key = Signal(str)
     LIST_CHARS = list()
     WEB_SERVER_LOCK = threading.Lock()
 
@@ -797,7 +812,7 @@ class WebHostWidget(QWebEngineView):
     """
     notify the close event to terminate the thread
     """
-    terminate_thread = pyqtSignal()
+    terminate_thread = Signal()
 
     def __init__(self, parent=None):
         super(WebHostWidget, self).__init__(parent)
@@ -873,7 +888,7 @@ def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Opt
         }
         oauth_result = getSession().get(url="https://login.eveonline.com/oauth/verify", headers=header)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
         else:
             char_api_key_set = oauth_result.json()
@@ -881,7 +896,7 @@ def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Opt
             Cache().putAPIKey(char_api_key_set)
             return char_api_key_set["CharacterName"]
     else:
-        logging.error("ESI-Error %i : '%s' url: %60s", response.status_code, response.reason, response.url)
+        _logResponseError(response)
         response.raise_for_status()
     return None
 
@@ -995,7 +1010,7 @@ def sendTokenRequest(form_values, add_headers=None):
     print("Request sent to URL {} with headers {} and form values: "
           "{}\n".format(response.url, headers, form_values))
     if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+        _logResponseError(response)
         response.raise_for_status()
     return response
 
@@ -1013,7 +1028,7 @@ def esiAutopilotWaypoint(char_name: str, system_id: int, beginning=True, clear_a
         url = "https://esi.evetech.net/latest/ui/autopilot/waypoint/?{}".format(urllib.parse.urlencode(route))
         response = getSession().post(url=url)
         if response.status_code != 204:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
         else:
             return True
     else:
@@ -1033,107 +1048,106 @@ def getRouteFromEveOnline(jumpgates, src, dst):
     url = "https://esi.evetech.net/v1/route/{}/{}/?connections={}".format(src, dst, route_elements)
     response = getSession().get(url=url)
     if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+        _logResponseError(response)
         # response.raise_for_status()
         return []
     return response.json()
 
 
-def esiIncursions(use_outdated=False):
+def esiIncursions(use_outdated=False, use_cache=True):
     """builds a list of incursion dicts cached 300 s
     """
     cache = Cache()
     cache_key = "incursions"
-    response = cache.getFromCache(cache_key, use_outdated)
+    response = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if response:
         return json.loads(response)
     else:
         url = "https://esi.evetech.net/latest/incursions/?datasource=tranquility"
         response = getSession().get(url=url)
         if response.status_code == 200:
-            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+            cache.putIntoCache(cache_key,value=response.text, max_age=secondUntilExpire(response))
             return response.json()
         else:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
 
     return []
 
 
-def getIncursionSystemsIds(use_outdated=False):
+def getIncursionSystemsIds(use_outdated=False, use_cache=True):
     inc_systems = list()
-    incursion_list = esiIncursions(use_outdated)
+    incursion_list = esiIncursions(use_outdated=use_outdated, use_cache=use_cache)
     for constellations in incursion_list:
         for sys in constellations["infested_solar_systems"]:
             inc_systems.append(sys)
     return inc_systems
 
 
-def esiSovereigntyCampaigns(use_outdated=False):
+def esiSovereigntyCampaigns(use_outdated=False, use_cache=True):
     """builds a list of reinforced campaigns for IHUB  and TCU dicts cached 60 s
     """
     cache = Cache()
     cache_key = "sovereignty_campaigns"
-    response = cache.getFromCache(cache_key, use_outdated)
+    response = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if response:
         return json.loads(response)
     else:
         url = "https://esi.evetech.net/latest/sovereignty/campaigns/?datasource=tranquility"
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        # todo check secondUntilExpire(response)
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))  # 5 seconds from esi
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))  # 5 seconds from esi
         return response.json()
 
 
-def esiSovereigntyStructures(use_outdated=False):
+def esiSovereigntyStructures(use_outdated=False, use_cache=True):
     """
     Shows sovereignty data for structures.
 
     Args:
         use_outdated:
-
+        use_cache:
     Returns:
 
     """
     cache = Cache()
     cache_key = "sovereignty_structures"
-    response = cache.getFromCache(cache_key, use_outdated)
-    if response:
-        return json.loads(response)
+    cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
+    if cache_data:
+        return json.loads(cache_data)
     else:
         url = "https://esi.evetech.net/latest/sovereignty/structures/?datasource=tranquility"
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiSovereigntyMap(use_outdated=False):
+def esiSovereigntyMap(use_outdated=False, use_cache=True):
     """
     Shows sovereignty information for solar systems
 
     Args:
         use_outdated:
-
+        use_cache:
     Returns:
 
     """
     cache = Cache()
     cache_key = "sovereignty_map"
-    response = cache.getFromCache(cache_key, use_outdated)
+    response = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if response:
         return json.loads(response)
     else:
         url = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
@@ -1159,7 +1173,7 @@ def getAllStructures(typeid=None):
     url = "https://esi.evetech.net/latest/universe/structures/?datasource=tranquility"
     response = getSession().get(url=url)
     if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+        _logResponseError(response)
         response.raise_for_status()
     structs_found = response.json()
     if typeid is None:
@@ -1172,7 +1186,7 @@ def getAllStructures(typeid=None):
     return types
 
 
-def esiUniverseStructure(esi_char_name: str, structure_id: int, use_outdated=False):
+def esiUniverseStructure(esi_char_name: str, structure_id: int, use_outdated=False, use_cache=False):
     """"Calls https://esi.evetech.net/ui/#/Universe/get_universe_structures
     """
     res_value = None
@@ -1181,7 +1195,7 @@ def esiUniverseStructure(esi_char_name: str, structure_id: int, use_outdated=Fal
         return res_value
     cache_key = "_".join(("structure", "id", str(structure_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         res_value = json.loads(cached_id)
         res_value["structure_id"] = structure_id
@@ -1192,13 +1206,14 @@ def esiUniverseStructure(esi_char_name: str, structure_id: int, use_outdated=Fal
                 structure_id, token.access_token)
             response = getSession().get(url=url)
             if response.status_code == 200:
-                cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+                cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
                 res_value = response.json()
                 res_value["structure_id"] = structure_id
+
     return res_value
 
 
-def esiCorporationsStructures(esi_char_name: str, corporations_id: int, use_outdated=False):
+def esiCorporationsStructures(esi_char_name: str, corporations_id: int, use_outdated=False, use_cache=True):
     """"Calls https://esi.evetech.net/ui/#/Universe/get_universe_structures
     """
     res_value = None
@@ -1207,7 +1222,7 @@ def esiCorporationsStructures(esi_char_name: str, corporations_id: int, use_outd
         return res_value
     cache_key = "_".join(("corporations", "structures", "id", str(corporations_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         res_value = json.loads(cached_id)
     else:
@@ -1217,34 +1232,34 @@ def esiCorporationsStructures(esi_char_name: str, corporations_id: int, use_outd
                 .format(corporations_id, token.access_token)
             response = getSession().get(url=url)
             if response.status_code == 200:
-                cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+                cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
                 res_value = response.json()
             else:
-                logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+                _logResponseError(response)
     return res_value
 
 
-def esiLatestSovereigntyMap(use_outdated=False, fore_refresh=False):
+def esiLatestSovereigntyMap(use_outdated=False, fore_refresh=False, use_cache=True):
     """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
        https://esi.evetech.net/ui/?version=latest#/Sovereignty/get_sovereignty_map
     """
     cache = Cache()
     cache_key = "sovereignty"
-    response = cache.getFromCache(cache_key, use_outdated)
+    response = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if response and not fore_refresh:
         campaigns_list = json.loads(response)
     else:
         url = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         campaigns_list = response.json()
     return campaigns_list
 
 
-def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, callback=None):
+def getPlayerSovereignty(use_outdated=False, use_cache=True, fore_refresh=True, show_npc=True, callback=None):
     seq = ""
 
     def update_callback(seq_in):
@@ -1257,7 +1272,7 @@ def getPlayerSovereignty(use_outdated=False, fore_refresh=True, show_npc=True, c
 
     cache_key = "player_sovereignty"
     cache = Cache()
-    cached_result = cache.getFromCache(cache_key, use_outdated)
+    cached_result = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_result and not fore_refresh:
         return json.loads(cached_result)
     else:
@@ -1473,12 +1488,12 @@ def writeGatesToFile(gates, filename="jb.txt"):
         gf.close()
 
 
-def esiUniverseStargates(stargate_id, use_outdated=False):
+def esiUniverseStargates(stargate_id, use_outdated=False, use_cache=True):
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "systems", str(stargate_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
     else:
@@ -1486,18 +1501,18 @@ def esiUniverseStargates(stargate_id, use_outdated=False):
             stargate_id)
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiUniverseStations(station_id, use_outdated=False) -> Optional[dict]:
+def esiUniverseStations(station_id, use_outdated=False, use_cache=True) -> Optional[dict]:
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "stations", str(station_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
     else:
@@ -1505,10 +1520,10 @@ def esiUniverseStations(station_id, use_outdated=False) -> Optional[dict]:
             station_id)
         response = getSession().get(url=url)
         if response.status_code == 200:
-            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+            cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
             return response.json()
         else:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             return None
 
 
@@ -1523,96 +1538,97 @@ def esiUniverseSystems(system_id, use_outdated=False, lang="en", use_cache=True)
     else:
         url = "https://esi.evetech.net/dev/universe/systems/{}/?datasource=tranquility&language={}".format(
             system_id, lang)
-        response = getSession().get(url=url)
+        ses = getSession()
+        response = ses.get(url=url)
         if response.status_code == 200:
             response_json = response.json()
-            cache.putIntoCache(cache_key, json.dumps(response_json), secondUntilExpire(response))
+            cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
             return response_json
         else:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             return None
 
 
-def esiUniverseAllSystems(use_outdated=False):
+def esiUniverseAllSystems(use_outdated=False, use_cache=True):
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "all", "systems"))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
-    if cached_id:
-        return json.loads(cached_id)
+    cached_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
+    if cached_data:
+        return json.loads(cached_data)
     else:
         url = "https://esi.evetech.net/latest/universe/systems/?datasource=tranquility&language=en"
         response = getSession().get(url=url)
         if response.status_code == 200:
-            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+            cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
             return response.json()
         else:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             return None
 
 
-def esiAlliances(alliance_id, use_outdated=True):
+def esiAlliances(alliance_id, use_outdated=True, use_cache=True):
     """gets the alliance from allicance id
     """
     cache_key = "_".join(("alliance", str(alliance_id)))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
     else:
         url = "https://esi.evetech.net/latest/alliances/{}/?datasource=tranquility".format(alliance_id)
         response = getSession().get(url)
         if response.status_code == 200:
-            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+            cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
             return response.json()
         else:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
         return {"ticker": "-"}
 
 
-def esiUniverseRegions(region_id: int, use_outdated=False, lang="en"):
+def esiUniverseRegions(region_id: int, use_outdated=False, use_cache=True, lang="en"):
     cache_key = "_".join(("universe", "regions", str(region_id), lang))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
     else:
-        url = "https://esi.evetech.net/latest/universe/regions/{}/?datasource=tranquility&language={}".format(region_id, lang)
+        url = "https://esi.evetech.net/latest/universe/regions/{}?datasource=tranquility&language={}".format(region_id, lang)
         response = getSession().get(url=url)
         if response.status_code == 200:
-            cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+            cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
             return response.json()
         else:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             return None
 
 
-def esiUniverseGetAllRegions(use_outdated=False) -> Optional[set]:
+def esiUniverseGetAllRegions(use_outdated=False, use_cache=True) -> Optional[set]:
     """ Uses the EVE API to get the list of all region ids
 
     Returns:
              list : list of the ids of all regions
     """
     cache = Cache()
-    all_systems = cache.getFromCache("universe_all_regions", use_outdated)
+    all_systems = cache.getFromCache("universe_all_regions", use_outdated) if use_cache else None
     if all_systems is not None:
         return json.loads(all_systems)
     else:
         url = "https://esi.evetech.net/latest/universe/regions/?datasource=tranquility"
         response = getSession().get(url=url)
         if response.status_code == 200:
-            cache.putIntoCache("universe_all_regions", response.text, secondUntilExpire(response))
+            cache.putIntoCache("universe_all_regions", value=response.text, max_age=secondUntilExpire(response))
             return response.json()
         else:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             return None
 
 
-def esiUniverseConstellations(constellation_id: int, use_outdated=False, lang="en"):
+def esiUniverseConstellations(constellation_id: int, use_outdated=False, use_cache=True, lang="en"):
     cache_key = "_".join(("universe", "constellations", str(constellation_id), lang))
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
     else:
@@ -1620,29 +1636,29 @@ def esiUniverseConstellations(constellation_id: int, use_outdated=False, lang="e
             constellation_id, lang)
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiUniverseAllConstellations(use_outdated=False):
+def esiUniverseAllConstellations(use_outdated=False, use_cache=True):
     cache_key = "universe_all_constellations"
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
     else:
         url = "https://esi.evetech.net/latest/universe/constellations/?datasource=tranquility&language=en"
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiUniverseAllCategories(use_outdated=False):
+def esiUniverseAllCategories(use_outdated=False, use_cache=True):
     """
     Get information of an item category
 
@@ -1655,20 +1671,20 @@ def esiUniverseAllCategories(use_outdated=False):
     """
     cache_key = "universe_all_categories"
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
     else:
         url = "https://esi.evetech.net/latest/universe/categories/?datasource=tranquility&language=en"
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiUniverseCategories(categorie_id: int, use_outdated=False):
+def esiUniverseCategories(categorie_id: int, use_outdated=False, use_cache=True):
     """
     Get information of an item category
 
@@ -1683,7 +1699,7 @@ def esiUniverseCategories(categorie_id: int, use_outdated=False):
     """
     cache_key = "universe_categories_{}".format(categorie_id)
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
     else:
@@ -1691,63 +1707,64 @@ def esiUniverseCategories(categorie_id: int, use_outdated=False):
             categorie_id)
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiUniverseAllGroups(categorie_id: int, use_outdated=False):
+def esiUniverseAllGroups(categorie_id: int, use_outdated=False, use_cache=True):
     """
     Get information of an item category
     Args:
         categorie_id: categories
         use_outdated:
+        use_cache:
 
     Returns:
 
     """
     cache_key = "universe_groups"
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
     else:
         url = "https://esi.evetech.net/latest/universe/groups/?datasource=tranquility&language=en"
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiUniverseGroups(group_id: int, use_outdated=False):
+def esiUniverseGroups(group_id: int, use_outdated=False, use_cache=True):
     """
     Get information of an item category
     Args:
         group_id:
         use_outdated:
-
+        use_cache:
     Returns:
 
     """
     cache_key = "universe_group_{}".format(group_id)
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
     else:
         url = "https://esi.evetech.net/latest/universe/groups/{}/?datasource=tranquility&language=en".format(group_id)
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiUniverseAllTypes(types_id: int, use_outdated=False):
+def esiUniverseAllTypes(types_id: int, use_outdated=False, use_cache=True):
     """
     Get information of an item category
 
@@ -1755,26 +1772,27 @@ def esiUniverseAllTypes(types_id: int, use_outdated=False):
     Args:
         types_id:
         use_outdated:
+        use_cache:
 
     Returns:
 
     """
     cache_key = "universe_types"
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
     else:
         url = "https://esi.evetech.net/latest/universe/types/?datasource=tranquility&language=en"
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiUniverseTypes(types_id: int, use_outdated=False):
+def esiUniverseTypes(types_id: int, use_outdated=False, use_cache=True):
     """
     Get information of an item category
 
@@ -1782,26 +1800,27 @@ def esiUniverseTypes(types_id: int, use_outdated=False):
     Args:
         types_id:
         use_outdated:
+        use_cache:
 
     Returns:
 
     """
     cache_key = "universe_types_{}".format(types_id)
     cache = Cache()
-    cached_id = cache.getFromCache(cache_key, use_outdated)
+    cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
     else:
         url = "https://esi.evetech.net/latest/universe/types/{}/?datasource=tranquility&language=en".format(types_id)
         response = getSession().get(url=url)
         if response.status_code != 200:
-            logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
+            _logResponseError(response)
             response.raise_for_status()
-        cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+        cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
         return response.json()
 
 
-def esiCharactersStanding(char_name: str, use_outdated=False):
+def esiCharactersStanding(char_name: str, use_outdated=False, use_cache=True):
     """
     Get information of characters standings
 
@@ -1809,13 +1828,14 @@ def esiCharactersStanding(char_name: str, use_outdated=False):
     Args:
         char_name
         use_outdated:
+        use_cache:
 
     Returns:
-
+        list:
     """
     cache_key = "characters_{}_standings".format(char_name)
     cache = Cache()
-    cached_standing = cache.getFromCache(cache_key, use_outdated)
+    cached_standing = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_standing is not None:
         return json.loads(cached_standing)
     else:
@@ -1825,10 +1845,9 @@ def esiCharactersStanding(char_name: str, use_outdated=False):
                 esiCharNameToId(char_name), token.access_token)
             response = getSession().get(url=url)
             if response.status_code == 200:
-                # todo check secondUntilExpire(response)
-                cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
+                cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
                 return json.loads(response.text)
-    return dict()
+    return list()
 
 
 def hasAnsiblex(sys) -> bool:
@@ -1887,15 +1906,17 @@ def ESAPIHealth():
         return dict()
 
 
-def ESAPIListPublicObservationsRecords():
+def ESAPIListPublicObservationsRecords(use_cache=True):
     """
         List observation records for all objects eve scout tracks
+    Attributes:
+        use_cache:
     Returns:
         list of dicts
     """
     used_cache = Cache()
     cache_key = "Eve_Scout_Observations_Records"
-    observations_records = used_cache.getFromCache(cache_key)
+    observations_records = used_cache.getFromCache(cache_key) if use_cache else None
     if observations_records is None:
         req = "https://api.eve-scout.com/v2/public/observations"
         response = getSession().get(req)
@@ -1903,12 +1924,12 @@ def ESAPIListPublicObservationsRecords():
             used_cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
         else:
-            response.raise_for_status()
+            return []
     else:
         return json.loads(observations_records)
 
 
-def ESAPIListPublicSignatures():
+def ESAPIListPublicSignatures(use_cache=True):
     """
         List all public resources in the signatures collection. A signature is considered "public" if it has been fully
         scanned and has not expired or been deleted.
@@ -1921,12 +1942,15 @@ def ESAPIListPublicSignatures():
     See:
         https://api.eve-scout.com/ui/
 
+    Arguments:
+        use_cache:
+
     Returns:
         list of dicts
     """
     used_cache = Cache()
     cache_key = "Eve_Scout_Public_Signatures"
-    list_public_signatures = used_cache.getFromCache(cache_key)
+    list_public_signatures = used_cache.getFromCache(cache_key) if use_cache else None
     if list_public_signatures is None:
         req = "https://api.eve-scout.com/v2/public/signatures"
         response = getSession().get(req)
@@ -1938,18 +1962,21 @@ def ESAPIListPublicSignatures():
     return json.loads(list_public_signatures)
 
 
-def ESAPIListWormholeTypes():
+def ESAPIListWormholeTypes(use_cache=True):
     """
         List all wormhole types filtered by the specified parameters. If more than one filter at a time is provided,
         they will be applied one after the other (AND).
     See:
         https://api.eve-scout.com/ui/
+
+    Args:
+        use_cache:
     Returns:
         list of dicts
     """
     used_cache = Cache()
     cache_key = "Eve_List_Wormhole_Types"
-    list_wormhole_types = used_cache.getFromCache(cache_key)
+    list_wormhole_types = used_cache.getFromCache(cache_key) if use_cache else None
     if list_wormhole_types is None:
         req = "https://api.eve-scout.com/v2/public/wormholetypes"
 
@@ -1958,7 +1985,7 @@ def ESAPIListWormholeTypes():
             used_cache.putIntoCache(cache_key, response.text, secondUntilExpire(response))
             return response.json()
         else:
-            response.raise_for_status()
+            return None
     else:
         return json.loads(list_wormhole_types)
 
@@ -1983,10 +2010,10 @@ def ESAPIListSystems(query: str, limit=None, space="k-space"):
     if response.status_code == 200:
         return response.json()
     else:
-        response.raise_for_status()
+        return []
 
 
-def ESAPIRoteToHighSec(system_name: str):
+def ESAPIRouteToHighSec(system_name: str):
     """
         Calculate up to five routes to the closest high-sec systems from the provided system. The routing algorithm
         removes all routes which have overlapping routes, e.g. if e.g. in route A->B->C systems B and C would be
@@ -2004,11 +2031,21 @@ def ESAPIRoteToHighSec(system_name: str):
     if response.status_code == 200:
         return response.json()
     else:
-        response.raise_for_status()
+        return None
 
 
-def checkTheraConnections(system_name=None, fetch_jump_route=True):
-    thera_connections = ESAPIListPublicSignatures()
+def checkTheraConnections(thera_connections, system_name=None, fetch_jump_route=True):
+    """
+        Prepares the distans fields based on the given system name
+    Args:
+        thera_connections:
+        system_name:
+        fetch_jump_route:
+    Remarks:
+        call this function not from the gui thread.
+    Returns:
+        dict: thera connections holding patched data
+    """
     if system_name and len(thera_connections):
         src_id = Universe.systemIdByName(system_name)
         for thera_item in thera_connections:
@@ -2021,7 +2058,6 @@ def checkTheraConnections(system_name=None, fetch_jump_route=True):
 
 
 def getSpyglassUpdateLink(ver=VERSION):
-
     req = "https://api.github.com/repos/jkey-67/spyglass/releases"
     response = requests.get(req)
     if response.status_code != 200:
@@ -2076,7 +2112,8 @@ def getSvgFromDotlan(region: str, dark: bool = True) -> str:
         return response.text
     else:
         logging.info("Unable to get svg from dotlan : {}".format(url))
-        return "<b>region not found</b>"
+        return '<?xml version="1.0"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg/>'
+        #  return "<b>region not found</b>"
 
 
 def esiGetFactions():
@@ -2088,9 +2125,10 @@ def esiGetFactions():
     url = "https://esi.evetech.net/latest/universe/factions/?datasource=tranquility&language=en"
     response = getSession().get(url=url)
     if response.status_code != 200:
-        logging.error("ESI-Error %i : '%s' url: %s", response.status_code, response.reason, response.url)
-        response.raise_for_status()
-    return response.json()
+        _logResponseError(response)
+        return None
+    else:
+        return response.json()
 
 
 def dumpSpyglassDownloadStats():
@@ -2098,78 +2136,166 @@ def dumpSpyglassDownloadStats():
     req = "https://api.github.com/repos/jkey-67/spyglass/releases"
     response = requests.get(req)
     if response.status_code != 200:
-        return [False, "Error %i : '%s' url: %s", response.status_code, response.reason, response.url]
-    page_json_found = response.json()
-    for item in page_json_found:
-        if "assets" in item.keys():
-            for asset in item["assets"]:
-                cnt = asset["download_count"]
-                name = asset["browser_download_url"]
-                print("Statistic of {} download count {}".format(name, cnt))
-    else:
+        _logResponseError(response)
         return None
+    else:
+        page_json_found = response.json()
+        for item in page_json_found:
+            if "assets" in item.keys():
+                for asset in item["assets"]:
+                    cnt = asset["download_count"]
+                    name = asset["browser_download_url"]
+                    print("Statistic of {} download count {}".format(name, cnt))
+        return page_json_found
 
 
 def generate_universe_constellation_names(use_outdated=True):
     esiUniverseAllSystems()
-    with open("universe/constellationnames.py", "w", encoding="utf-8")as out_file:
-        print("Constellation generation started ...")
+    print("Constellation generation started ...")
+    constellation_id_by_name = dict()
+    data = esiUniverseAllConstellations()
+    count = len(data)
+    pos = 1
+    for constellation_id in esiUniverseAllConstellations():
+        print("Constellation id {} {}/{} {:.1f}%".format(constellation_id, pos, count, (pos / count * 100)))
+        for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
+            res = esiUniverseConstellations(constellation_id, lang=lang, use_outdated=use_outdated)
+            constellation_id_by_name[res["name"]] = res["constellation_id"]
+        pos += 1
+
+    print("Constellation generation done.")
+    with open("universe/constellationnames.py.new", "w", encoding="utf-8") as out_file:
         out_file.write('# this file is auto generated, do not edit.\n')
         out_file.write('CONNSTELLATION_IDS_BY_NAME = {\n')
-        for constellation_id in esiUniverseAllConstellations():
-            constellation_id_by_name = dict()
-            for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
-                res = esiUniverseConstellations(constellation_id, lang=lang, use_outdated=use_outdated)
-                constellation_id_by_name[res["name"]] = res["constellation_id"]
-
-            for key, data in set(constellation_id_by_name.items()):
+        data_out = set(constellation_id_by_name.items())
+        last = len(data_out)
+        for key, data in set(constellation_id_by_name.items()):
+            if last == 1:
+                out_file.write('   u"{}": {}\n'.format(key, data))
+            else:
                 out_file.write('   u"{}": {},\n'.format(key, data))
-            out_file.flush()
+            last -= 1
         out_file.write('}\n')
-        print("Constellation generation done.")
+
+    if os.path.exists("universe/constellationnames.py.new"):
+        if os.path.exists("universe/constellationnames.py"):
+            os.remove("universe/constellationnames.py")
+        os.renames("universe/constellationnames.py.new", "universe/constellationnames.py")
+
+
+def is_null_sec_system_name(name: str):
+    """
+        Roughly check if name match null sec criteria
+    Args:
+        name:
+
+    Returns:
+        true if 6 chars and all upper
+
+    """
+    if len(name) != 6 or not name.isupper():
+        return False
+    else:
+        return True
 
 
 def generate_universe_system_names(use_outdated=True):
-    session = Session()
-    systems = esiUniverseAllSystems()
-    with open("universe/systemnames.json", "w", encoding="utf-8")as out_file:
+    languages = ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es")
+    systems = esiUniverseAllSystems(use_cache=False)
+
+    systems_cnt = []
+    systems_id_by_name = {}
+    pos = 1
+    count = (len(systems) + 1) * len(languages)
+    with open("universe/systemnames.json.new", "w", encoding="utf-8")as out_file:
         out_file.write(u'{\n')
-        for system_id in esiUniverseAllSystems():
-            systems_id_by_name = dict()
-            for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
-                res = esiUniverseSystems(system_id, lang=lang, use_cache=True, use_outdated=use_outdated)
-                systems_id_by_name[res["name"]] = res["system_id"]
+        for system_id in systems:
+            for lang in languages:
+                pos = pos + 1
+                if system_id in systems_cnt:
+                    continue
+                retry = 1
+                res = {}
+                while retry < 4:
+                    res = esiUniverseSystems(system_id, lang=lang, use_cache=True, use_outdated=use_outdated)
+                    if res and "name" in res and "system_id" in res:
+                        if retry > 1 :
+                            print("System id {} '{}' '{}' {}/{} {:.1f}%".format(
+                                system_id, lang, res["name"], pos, count, (pos / count * 100)))
+                        systems_id_by_name[res["name"]] = res["system_id"]
+                        if is_null_sec_system_name(res["name"]):
+                            systems_cnt.append(system_id)
+                        break
+                    else:
+                        print("Retry creating system name for id: {} lang: '{}' retry : #{}.".format(
+                            system_id, lang, retry))
+                        retry = retry + 1
 
-            for key, data in set(systems_id_by_name.items()):
+        print("Generation of systemnames.json done.")
+
+        data_write = set(systems_id_by_name.items())
+        last = len(data_write)
+        for key, data in data_write:
+            if last == 1:
+                out_file.write(u'   "{}": {}\n'.format(key, json.dumps(data)))
+            else:
                 out_file.write(u'   "{}": {},\n'.format(key, json.dumps(data)))
-            # out_file.write(u"{}\n".format(json.dumps(systems_id_by_name, indent=4)))
-            out_file.flush()
+            last -= 1
+        systems_id_by_name.clear()
+        out_file.flush()
+
         out_file.write(u'}\n\n')
-        print("Region generation systems done.")
+
+    if os.path.exists("universe/systemnames.json.new"):
+        if os.path.exists("universe/systemnames.json"):
+            os.remove("universe/systemnames.json")
+        os.renames("universe/systemnames.json.new", "universe/systemnames.json")
 
 
-def generate_universe_region_names(use_outdated=False):
+def generate_universe_region_names(use_outdated=True):
+    print("Region generation started ...")
+    pos = 1
+    regions = esiUniverseNames(esiUniverseGetAllRegions(), use_outdated=use_outdated)
+    count = len(regions)
+    region_id_by_name = dict()
+    for region_id in regions:
+        print("Region id {} {}/{} {:.1f}%".format(region_id, pos, count, (pos / count * 100)))
+        for lang in ("en", "en-us", "de", "fr", "ja", "ru", "ko", "es", "zh"):
+            res = esiUniverseRegions(region_id, lang=lang, use_outdated=use_outdated)
+            if res and "name" in res and "region_id" in res:
+                region_id_by_name[res["name"]] = res["region_id"]
+            else:
+                continue
+        pos += 1
 
-    with open("universe/regionnames.py", "w", encoding="UTF-8")as out_file:
-        print("Region generation started ...")
+    with open("universe/regionnames.py.new", "w", encoding="UTF-8") as out_file:
         out_file.write('# this file is auto generated, do not edit.\n')
         out_file.write('REGION_IDS_BY_NAME = {\n')
-        for region_id in esiUniverseNames(esiUniverseGetAllRegions(), use_outdated=use_outdated):
-            region_id_by_name = dict()
-            print("Region id  {}".format(region_id))
-            for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
-                res = esiUniverseRegions(region_id, lang=lang, use_outdated=use_outdated)
-                region_id_by_name[res["name"]] = res["region_id"]
-                pass
-
-            for key, data in set(region_id_by_name.items()):
+        rgn_out = set(region_id_by_name.items())
+        last = len(rgn_out)
+        for key, data in rgn_out:
+            if last == 1:
+                out_file.write('   "{}": {}\n'.format(key, data))
+            else:
                 out_file.write('   "{}": {},\n'.format(key, data))
-            out_file.flush()
+            last -= 1
+        out_file.flush()
+
         out_file.write('}\n')
         print("Region generation done.")
 
+    if os.path.exists("universe/regionnames.py.new"):
+        if os.path.exists("universe/regionnames.py"):
+            os.remove("universe/regionnames.py")
+        os.renames("universe/regionnames.py.new","universe/regionnames.py")
+
 
 def esiPing() -> bool:
+    """
+        Simple 'ping' and check response to be 'ok'
+    Returns:
+
+    """
     req = "https://esi.evetech.net/ping"
     response = getSession().get(req)
     if response.status_code != 200:
@@ -2179,38 +2305,28 @@ def esiPing() -> bool:
 
 
 def esiStatusJson():
+    """
+        Fetch the status of the endpoints
+    Returns:
+        dict() : holding the data
+    """
     req = "https://esi.evetech.net/status.json?version=latest"
     response = getSession().get(req)
     if response.status_code != 200:
-        return False
+        return dict()
     else:
         return response.json()
 
-import os
+
 if __name__ == "__main__":
-    Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
-    standing = esiCharactersStanding("nele McCool")
-    location = esiCharactersLocation("nele McCool")
-    ping = esiPing()
-    json_status = esiStatusJson()
-    esi_status = esiStatus()
+    session = getSession()
+    status = esiStatusJson()
+    public_info = esiCharactersPublicInfo("nele McCool")
+    def test():
+        _logResponseError(requests.Response())
+    test()
     dumpSpyglassDownloadStats()
-    if False:
-        cats = esiUniverseAllCategories()
-        session = getSession()
-        ids = esiUniverseGroups(1657) # Citadel
-        ids = esiUniverseGroups(1404) # Engineering Complex
-        ids = esiUniverseGroups(1406) # Refinery
-        info = esiUniverseTypes(35834)
-        res = []
-        for itm in info['dogma_attributes']:
-            res.append(esiDogmaAttributes(itm['attribute_id']))
-
-        # 2017 Upwell Cyno Beacon
-
-        state = esiUniverseSystems(30000734)
-        sov_structs = esiSovereigntyStructures()
-        stat = getPlayerSovereignty()
-        # genereate_universe_system_names()
-        # generate_universe_region_names()
-        # genereate_universe_constellation_names()
+    generate_universe_region_names()
+    generate_universe_constellation_names()
+    generate_universe_system_names()
+    pass

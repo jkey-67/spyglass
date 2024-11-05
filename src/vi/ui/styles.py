@@ -21,7 +21,7 @@ import logging
 import yaml
 import os
 
-from vi.resources import resourcePath
+from vi.resources import resourcePath, resourcePathExists
 
 
 class Styles:
@@ -37,17 +37,22 @@ class Styles:
 
     def __init__(self):
         try:
-            # default theme
-            with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.css"))) as default:
-                Styles.defaultStyle = default.read()
-            with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.yaml"))) as default:
-                Styles.defaultCommons = yaml.full_load(default)
+            # light theme
+            if resourcePathExists(os.path.join("vi", "ui", "res", "styles", "light.css")):
+                with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.css"))) as default:
+                    Styles.defaultStyle = default.read()
+            if resourcePathExists(os.path.join("vi", "ui", "res", "styles", "light.yaml")):
+                with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.yaml"))) as default:
+                    Styles.defaultCommons = yaml.full_load(default)
 
             # dark theme
-            with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.css"))) as dark:
-                Styles.darkStyle = dark.read()
-            with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.yaml"))) as dark:
-                Styles.darkCommons = yaml.full_load(dark)
+            if resourcePathExists(os.path.join("vi", "ui", "res", "styles", "abyss.css")):
+                with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.css"))) as dark:
+                    Styles.darkStyle = dark.read()
+
+            if resourcePathExists(os.path.join("vi", "ui", "res", "styles", "abyss.yaml")):
+                with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.yaml"))) as dark:
+                    Styles.darkCommons = yaml.full_load(dark)
 
         except Exception as e:
             logging.critical(e)

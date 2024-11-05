@@ -99,7 +99,12 @@ class Cache(object):
             self.con.commit()
 
     def putIntoCache(self, key, value, max_age=60*60*24*3):
-        """ Putting something in the cache maxAge is maximum age in seconds
+        """
+            Putting something in the cache maxAge is maximum age in seconds
+        Args:
+                key(str):
+                value(str):
+                max_age(int):
         """
         with Cache.SQLITE_WRITE_LOCK:
             query = "DELETE FROM cache WHERE key = ?"
@@ -167,12 +172,22 @@ class Cache(object):
             self.con.execute(query)
             self.con.commit()
 
-    def putImageToAvatar(self, name, data):
+    def clearAllAvatar(self):
+        """
+            Removes all avatar images
+        Returns:
+
+        """
+        query = "DELETE FROM avatars"
+        self.con.execute(query, ()).fetchall()
+
+    def putImageToAvatar(self, name, data, max_age=47*24*60*60):
         """ Put the picture of a player or other item into the avatars table
 
         Args:
             name(str):Key of interests
-
+            data:
+            max_age:
         Args:
               data:Picture data to be inserted as blob
         """
@@ -187,7 +202,7 @@ class Cache(object):
             else:
                 data = to_blob(data)
                 query = "INSERT INTO avatars (charname, data, modified, maxage) VALUES (?, ?, ?,?)"
-                self.con.execute(query, (name, data, time.time(), 47*24*60*60))
+                self.con.execute(query, (name, data, time.time(), max_age))
             self.con.commit()
 
     def getImageFromAvatar(self, name) -> Optional[bytes]:
@@ -249,7 +264,7 @@ class Cache(object):
             data = from_blob(founds[0][0])
             return data
 
-    def putJsonToAvatar(self, player_name: str, json_txt: str, player_id=None, alliance_id=None):
+    def putJsonToAvatar(self, player_name: str, json_txt: str, player_id=None, alliance_id=None, max_age=60*60*24*14):
         """ Put the picture of a player or other item into the avatars table
 
         Args:
@@ -269,7 +284,7 @@ class Cache(object):
             else:
                 query = "INSERT INTO avatars (charname, json, modified, player_id, alliance_id, maxage) "\
                         "VALUES (?, ?, ?, ?, ?, ?)"
-                self.con.execute(query, (player_name, json_txt, time.time(), player_id, alliance_id, 48*24*60*60))
+                self.con.execute(query, (player_name, json_txt, time.time(), player_id, alliance_id, max_age))
             self.con.commit()
 
     def getJsonFromAvatar(self, name) -> Optional[bytes]:

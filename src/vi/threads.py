@@ -21,74 +21,73 @@ import time
 import logging
 import queue
 import os
-from PySide6.QtCore import QThread, QRunnable, QThreadPool
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import QThread, QObject
+from PySide6.QtCore import Signal, Slot
 from vi import evegate
 from .cache.cache import Cache
 from .resources import resourcePath
+import weakref
 
 
 class AvatarFindThread(QThread):
-
-    avatar_update = pyqtSignal(object, object)
+    avatar_update = Signal(object, object)
 
     def __init__(self):
         QThread.__init__(self)
+        self.cache = Cache()
         self.queue = queue.Queue()
         self.active = True
 
     def addChatEntry(self, chat_entry, clear_cache=False):
         try:
             if clear_cache:
-                cache = Cache()
-                cache.removeAvatar(chat_entry.message.user)
-
-            # Enqeue the data to be picked up in run()
-            self.queue.put(chat_entry)
-        except Exception as e:
+                self.cache.removeAvatar(chat_entry.message.user)
+            chat_entry.destroyed.connect(self.entryDestroyed)
+            self.queue.put(weakref.ref(chat_entry))
+        except (Exception,) as e:
             logging.error("Error in AvatarFindThread: %s", e)
+
+    @Slot(QObject)
+    def entryDestroyed(self, elem):
+        logging.debug("Error in AvatarFindThread element destroyed.")
 
     def run(self):
         last_call = 0
         wait = 500  # time between 2 requests in ms
-        while True:
+        while self.active:
             try:
                 # Block waiting for addChatEntry() to enqueue something
-                chat_entry = self.queue.get()
-                if not self.active:
-                    return
+                weak_chat_entry = self.queue.get()
+                if weak_chat_entry is None:
+                    logging.debug("AvatarFindThread termination started")
+                    continue
+                chat_entry = weak_chat_entry()
+                if chat_entry is None:
+                    logging.debug("AvatarFindThread chat entry expired.")
+                    continue
                 user = chat_entry.message.user
-
                 logging.debug("AvatarFindThread getting avatar for %s" % user)
-                avatar = None
 
-                if avatar is None and user == "SPYGLASS":
+                if user == "SPYGLASS":
                     with open(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")), "rb") as f:
                         avatar = f.read()
-
-                if avatar is None:
-                    avatar = Cache().getImageFromAvatar(user)
-                    if avatar:
-                        logging.debug("AvatarFindThread found cached avatar for %s" % user)
+                else:
+                    avatar = None
 
                 if avatar is None:
                     diff_last_call = time.time() - last_call
                     if diff_last_call < wait:
                         time.sleep((wait - diff_last_call) / 1000.0)
-                    evegate.esiCharactersPublicInfo(user)
-                    avatar = evegate.esiCharactersPortrait(user)
                     last_call = time.time()
-                    if avatar is None:
-                        Cache().removeAvatar(user)
-                    else:
-                        Cache().putImageToAvatar(user, avatar)
+                    avatar = evegate.esiCharactersPortrait(user)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % user)
+                    chat_entry.destroyed.disconnect(self.entryDestroyed)
                     self.avatar_update.emit(chat_entry, avatar)
                 else:
                     logging.warning("AvatarFindThread unable to find avatar for %s" % user)
-            except Exception as e:
-                logging.error("Error in AvatarFindThread : %s", e)
+            except (Exception,) as e:
+                logging.error("AvatarFindThread cough exception: %s", e)
 
     def quit(self):
         self.active = False
@@ -96,33 +95,62 @@ class AvatarFindThread(QThread):
         QThread.quit(self)
 
 
+class STAT:
+    SOVEREIGNTY = "sovereignty"
+    THERA_WORMHOLES_VERSION = "thera_wormholes_version"
+    SERVER_STATUS = "server-status"
+    STATISTICS = "statistics"
+    INCURSIONS = "incursions"
+    CAMPAIGNS = "campaigns"
+    STRUCTURES = "structures"
+    REGISTERED_CHARS = "registered-chars"
+    THERA_WORMHOLES = "thera_wormholes"
+    OBSERVATIONS_RECORDS = "observations_records"
+    RESULT = "result"
+    INFORMATION = "information"
+
+
+class RESULT:
+    OK = "ok"
+    ERROR = "error"
+
+
 class MapStatisticsThread(QThread):
     """
     Fetching statistic data and player locations
     """
-    statistic_data_update = pyqtSignal(dict)
+    statistic_data_update = Signal(dict)
 
     def __init__(self):
         QThread.__init__(self)
         self.queue = queue.Queue(maxsize=10)
         self.server_status = False
         self.active = True
+        self.thera_system_name = None
         self._fetchLocations = True
-        self.queue.put(["server-status", "thera_wormholes_version"])
+        self.queue.put([STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS])
 
     def requestSovereignty(self):
-        self.queue.put(["sovereignty"])
+        self.queue.put([STAT.SOVEREIGNTY])
 
     def requestStatistics(self):
         if self.server_status:
-            self.queue.put(["statistics", "incursions", "campaigns", "sovereignty", "structures"])
+            self.queue.put([STAT.STATISTICS, STAT.INCURSIONS, STAT.CAMPAIGNS, STAT.STATISTICS, STAT.STRUCTURES])
+        else:
+            self.queue.put([STAT.SERVER_STATUS])
 
     def requestLocations(self):
         if self._fetchLocations and self.server_status:
-            self.queue.put(["registered-chars"])
+            self.queue.put([STAT.REGISTERED_CHARS])
+
+    def setCurrentTheraSystem(self, system_name=None):
+        self.thera_system_name = system_name
 
     def requestWormholes(self):
-        self.queue.put(["thera_wormholes"])
+        self.queue.put([STAT.THERA_WORMHOLES])
+
+    def requestObservationsRecords(self):
+        self.queue.put([STAT.OBSERVATIONS_RECORDS])
 
     def fetchLocation(self, fetch=True):
         self._fetchLocations = fetch
@@ -134,86 +162,101 @@ class MapStatisticsThread(QThread):
             while tsk and len(tsk):
                 if not self.active:
                     return
-                statistics_data = dict({"result": "pending"})
+                statistics_data = dict({STAT.RESULT: "pending"})
                 try:
-                    if "server-status" in tsk:
+                    if STAT.SERVER_STATUS in tsk:
                         self.server_status = True
-                        statistics_data["server-status"] = evegate.esiStatus()
-                        logging.info("EVE-Online Server status report : %s %s",
-                                     statistics_data["server-status"], str(tsk))
-                        self.queue.put(["statistics", "incursions", "campaigns", "sovereignty", "structures"])
-                        tsk.remove("server-status")
-                        statistics_data["result"] = "ok"
+                        if evegate.esiPing():
+                            statistics_data[STAT.SERVER_STATUS] = evegate.esiStatus()
+                            logging.info("EVE-Online Server status report : %s %s",
+                                         statistics_data[STAT.SERVER_STATUS], str(tsk))
+                            self.queue.put([STAT.STATISTICS, STAT.INCURSIONS, STAT.CAMPAIGNS,
+                                            STAT.SOVEREIGNTY, STAT.STRUCTURES, STAT.REGISTERED_CHARS])
+                            tsk.remove(STAT.SERVER_STATUS)
+                            statistics_data[STAT.RESULT] = RESULT.OK
+                            self.statistic_data_update.emit(statistics_data)
+                        else:
+                            tsk = None
+                            self.queue.put([STAT.SERVER_STATUS])
+                            self.sleep(2)
+                        continue
+
+                    if STAT.SOVEREIGNTY in tsk:
+                        statistics_data[STAT.SOVEREIGNTY] = (
+                            evegate.getPlayerSovereignty(fore_refresh=False, show_npc=True))
+                        tsk.remove(STAT.SOVEREIGNTY)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    if "sovereignty" in tsk:
-                        statistics_data["sovereignty"] = evegate.getPlayerSovereignty(fore_refresh=False, show_npc=True)
-                        tsk.remove("sovereignty")
-                        statistics_data["result"] = "ok"
+                    if STAT.STRUCTURES in tsk:
+                        statistics_data[STAT.STRUCTURES] = evegate.esiSovereigntyStructures()
+                        tsk.remove(STAT.STRUCTURES)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    if "structures" in tsk:
-                        statistics_data["structures"] = evegate.esiSovereigntyStructures()
-                        tsk.remove("structures")
-                        statistics_data["result"] = "ok"
+                    if STAT.STATISTICS in tsk:
+                        statistics_data[STAT.STATISTICS] = evegate.esiUniverseSystem_jumps()
+                        tsk.remove(STAT.STATISTICS)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    if "statistics" in tsk:
-                        statistics_data["statistics"] = evegate.esiUniverseSystem_jumps()
-                        tsk.remove("statistics")
-                        statistics_data["result"] = "ok"
+                    if STAT.INCURSIONS in tsk:
+                        statistics_data[STAT.INCURSIONS] = evegate.esiIncursions(False)
+                        tsk.remove(STAT.INCURSIONS)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    if "incursions" in tsk:
-                        statistics_data["incursions"] = evegate.esiIncursions(False)
-                        tsk.remove("incursions")
-                        statistics_data["result"] = "ok"
+                    if STAT.CAMPAIGNS in tsk:
+                        statistics_data[STAT.CAMPAIGNS] = evegate.getCampaignsSystemsIds(False)
+                        tsk.remove(STAT.CAMPAIGNS)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    if "campaigns" in tsk:
-                        statistics_data["campaigns"] = evegate.getCampaignsSystemsIds(False)
-                        tsk.remove("campaigns")
-                        statistics_data["result"] = "ok"
+                    if STAT.REGISTERED_CHARS in tsk:
+                        statistics_data[STAT.REGISTERED_CHARS] = evegate.esiGetCharsOnlineStatus()
+                        tsk.remove(STAT.REGISTERED_CHARS)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    if "registered-chars" in tsk:
-                        statistics_data["registered-chars"] = evegate.esiGetCharsOnlineStatus()
-                        tsk.remove("registered-chars")
-                        statistics_data["result"] = "ok"
+                    if STAT.THERA_WORMHOLES in tsk:
+                        statistics_data[STAT.THERA_WORMHOLES] = evegate.checkTheraConnections(
+                            evegate.ESAPIListPublicSignatures(), self.thera_system_name)
+                        tsk.remove(STAT.THERA_WORMHOLES)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    if "thera_wormholes" in tsk:
-                        statistics_data["thera_wormhole"] = evegate.ESAPIListPublicSignatures()
-                        tsk.remove("thera_wormholes")
-                        statistics_data["result"] = "ok"
+                    if STAT.OBSERVATIONS_RECORDS in tsk:
+                        statistics_data[STAT.OBSERVATIONS_RECORDS] = evegate.ESAPIListPublicObservationsRecords()
+                        tsk.remove(STAT.OBSERVATIONS_RECORDS)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                    if "thera_wormholes_version" in tsk:
+                    if STAT.THERA_WORMHOLES_VERSION in tsk:
                         res = evegate.ESAPIHealth()
                         if res:
-                            statistics_data["thera_wormholes_version"] = res
-                            self.queue.put(["thera_wormholes"])
+                            statistics_data[STAT.THERA_WORMHOLES_VERSION] = res
+                            self.queue.put([STAT.THERA_WORMHOLES, STAT.OBSERVATIONS_RECORDS])
                         else:
-                            self.queue.put(["thera_wormholes_version"])
-                        tsk.remove("thera_wormholes_version")
-                        statistics_data["result"] = "ok"
+                            self.queue.put([STAT.THERA_WORMHOLES_VERSION])
+                        tsk.remove(STAT.THERA_WORMHOLES_VERSION)
+                        statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
-                except Exception as e:
-                    self.server_status = False;
-                    logging.error("MapStatisticsThread Error: %s %s", e, str(tsk))
-                    statistics_data["result"] = "error"
-                    statistics_data["text"] = str(e)
-                    self.queue.put(["server-status"])
+                except (Exception,) as e:
+                    self.server_status = False
+                    logging.error("MapStatisticsThread caught an exception: %s %s", e, str(tsk))
+                    statistics_data[STAT.RESULT] = RESULT.ERROR
+                    statistics_data[STAT.INFORMATION] = str(e)
+                    self.statistic_data_update.emit(statistics_data)
                     tsk = None
 
             if tsk and len(tsk):

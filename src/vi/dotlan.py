@@ -66,7 +66,7 @@ def _extractSizeFromSoup(soup, scale=1.0):
         None
     """
     svg = soup.select("svg")[0]
-    box = svg["viewbox"]
+    box = svg["viewbox"] if "viewbox" in svg else None
     if box:
         box = box.split(" ")
         return QSizeF(float(box[2])*scale, float(box[3])*scale)
@@ -105,19 +105,6 @@ def _extractSystemsFromSoup(soup, scale=1.0) -> dict[str, System]:
                 svg_height))
         systems[new_system.name] = new_system
     return systems
-
-
-def DotlanLoader(svg_content: str) -> dict[int, (str, float, float)]:
-    """
-        Extracts ids , names and positions
-    Args:
-        svg_content:
-
-    Returns:
-
-    """
-    soup = BeautifulSoup(svg_content, features="html.parser")
-    return _extractPositionsFromSoup(soup)
 
 
 class Map(object):
@@ -165,7 +152,7 @@ class Map(object):
         self._set_vulnerable_visible = set_adm_visible
 
         # Create soup from the svg
-        self.soup = BeautifulSoup(svg_file, features="html.parser")
+        self.soup = BeautifulSoup(svg_file, "lxml-xml")
         self.svg_size = _extractSizeFromSoup(self.soup, 1.3)
         self.systems = _extractSystemsFromSoup(self.soup, 1.3)
 
@@ -225,15 +212,22 @@ class Map(object):
             system.renderSystemTexts(painter, self.region_id)
 
     def is_dirty(self):
+        """
+            Checks all systems for repaint
+        Returns:
+            True if at least one system on the map needs to be repainted or if the map is empty
+        """
+        empty_map = True
         for system in self.systems.values():
+            empty_map = False
             if system.is_dirty:
                 return True
-        return False
+        return empty_map
 
     @staticmethod
     def addSystemStatistics(statistics):
         """
-        Appyes the statistic values to the systems
+        Applies the statistic values to the systems
         Args:
             statistics:
 
@@ -244,7 +238,8 @@ class Map(object):
             for system_id, data in statistics.items():
                 ALL_SYSTEMS[system_id].setStatistics(data)
 
-    def setJumpbridges(self, jumpbridges_data):
+    @staticmethod
+    def setJumpbridges(jumpbridges_data):
         """
             Adding the jumpbridges to the map soup; format of data:
             tuples with at least 3 values (sys1, connection, sys2) connection is <->
@@ -259,7 +254,8 @@ class Map(object):
             sys1.jumpBridges.add(sys2)
             sys2.jumpBridges.add(sys1)
 
-    def setTheraConnections(self, thera_connections):
+    @staticmethod
+    def setTheraConnections(thera_connections):
         for system in ALL_SYSTEMS.values():
             system.wormhole_info = list()
             system.theraWormholes = set()

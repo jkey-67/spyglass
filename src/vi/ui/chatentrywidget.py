@@ -22,7 +22,7 @@ import logging
 import datetime
 
 from PySide6 import QtWidgets
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
 from vi.resources import resourcePath
 from PySide6.QtGui import QImage, QPixmap, QDesktopServices
@@ -54,7 +54,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
     DIM_IMG = 64
     SHOW_AVATAR = True
     questionMarkPixmap = None
-    mark_system = pyqtSignal(str)
+    mark_system = Signal(str)
 
     def __init__(self, message: Message):
         QtWidgets.QWidget.__init__(self)
@@ -62,11 +62,9 @@ class ChatEntryWidget(QtWidgets.QWidget):
         self.ui = Ui_ChatEntry()
         self.ui.setupUi(self)
         if self.message.roomName == "zKillboard":
-            self.questionMarkPixmap = QPixmap(
-                resourcePath(os.path.join("vi", "ui", "res", "zKillboard.svg"))).scaledToHeight(self.DIM_IMG)
+            self.questionMarkPixmap = QPixmap(u":/Icons/res/zKillboard.svg").scaledToHeight(self.DIM_IMG)
         elif not self.questionMarkPixmap:
-            self.questionMarkPixmap = QPixmap(
-                resourcePath(os.path.join("vi", "ui", "res", "qmark.png"))).scaledToHeight(self.DIM_IMG)
+            self.questionMarkPixmap = QPixmap(u":/Icons/res/qmark.svg").scaledToHeight(self.DIM_IMG)
 
         self.ui.avatarLabel.setPixmap(self.questionMarkPixmap)
 
@@ -124,10 +122,9 @@ class ChatEntryWidget(QtWidgets.QWidget):
         try:
             if self.ui.avatarLabel:
                 self.ui.avatarLabel.setPixmap(scaled_avatar)
-        except (Exception,):
-            logging.warning("Updating a deleted chat item")
+        except (Exception,)as ex:
+            logging.warning("Updating a deleted chat item ", ex)
             self.ui.avatarLabel = None
-            # self = None
         return True
 
     def changeFontSize(self, size):

@@ -954,6 +954,35 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QToolButton" name="showAvatar">
+           <property name="toolTip">
+            <string>Show the Avatars inside the chat log.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/avatar.svg</normaloff>:/Icons/res/avatar.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
@@ -1732,11 +1761,15 @@
    <property name="checked">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/avatar.svg</normaloff>:/Icons/res/avatar.svg</iconset>
+   </property>
    <property name="text">
     <string>Show Chat Avatars</string>
    </property>
    <property name="toolTip">
-    <string>Show the avatars in the chat log window.</string>
+    <string>Change the visibility of the avatars inside the chat log window.</string>
    </property>
   </action>
   <action name="actionShowChat">
@@ -1996,8 +2029,8 @@
    <slot>rescanIntel()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
-     <y>75</y>
+     <x>1318</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
      <x>511</x>
@@ -2012,8 +2045,8 @@
    <slot>clearIntelChat()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1318</x>
-     <y>75</y>
+     <x>1286</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
      <x>708</x>
@@ -2028,7 +2061,7 @@
    <slot>zoomMapIn()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
+     <x>843</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -2044,7 +2077,7 @@
    <slot>zoomMapOut()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>907</x>
+     <x>875</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -2060,8 +2093,8 @@
    <slot>chatLarger()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1382</x>
-     <y>75</y>
+     <x>1350</x>
+     <y>78</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -2076,8 +2109,8 @@
    <slot>chatSmaller()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1414</x>
-     <y>75</y>
+     <x>1382</x>
+     <y>78</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -2124,7 +2157,7 @@
    <slot>locateChar()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>843</x>
+     <x>811</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -2185,7 +2218,7 @@
    <sender>connectToEveOnline</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
-   <slot>AddNewESICharacter()</slot>
+   <slot>addNewESICharacter()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>84</x>
@@ -2204,8 +2237,8 @@
    <slot>changeJumpbridgesVisibility()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>942</x>
-     <y>44</y>
+     <x>923</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>277</x>
@@ -2220,8 +2253,8 @@
    <slot>changeStatisticsVisibility()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>982</x>
-     <y>45</y>
+     <x>971</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>279</x>
@@ -2236,8 +2269,8 @@
    <slot>changeADMVisibility()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1031</x>
-     <y>41</y>
+     <x>1019</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>277</x>
@@ -2345,7 +2378,7 @@
    <sender>actionShowChatAvatars</sender>
    <signal>triggered(bool)</signal>
    <receiver>MainWindow</receiver>
-   <slot>changeShowAvatars()</slot>
+   <slot>changeShowAvatars(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -2405,6 +2438,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>toolRescanStorm</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>updateObservationsRecords()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>253</x>
+     <y>635</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>634</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>region_changed(QString)</signal>
@@ -2417,30 +2466,30 @@
   <slot>chatLarger()</slot>
   <slot>chatSmaller()</slot>
   <slot>updateTheraConnections()</slot>
+  <slot>updateObservationsRecords()</slot>
   <slot>changeTheraSystem(str)</slot>
   <slot>changeCurrentSystem(str)</slot>
   <slot>showInfo()</slot>
   <slot>changeFrameless(bool)</slot>
   <slot>locateChar()</slot>
-  <slot>AddNewESICharacter()</slot>
+  <slot>addNewESICharacter()</slot>
   <slot>changeStatisticsVisibility()</slot>
-  <slot>changeADMVisibility()</slot>
+  <slot>changeADMVisibility(bool)</slot>
   <slot>changeJumpbridgesVisibility()</slot>
-  <slot>changeShowAvatars()</slot>
-  <slot>changeAlwaysOnTop()</slot>
+  <slot>changeShowAvatars(bool)</slot>
+  <slot>changeAlwaysOnTop(bool)</slot>
   <slot>showChatroomChooser()</slot>
-  <slot>changeChatVisibility()</slot>
+  <slot>changeChatVisibility(bool)</slot>
   <slot>showSoundSetup()</slot>
   <slot>changeSound()</slot>
-  <slot>changeUseSpokenNotifications()</slot>
-  <slot>changeFrameless()</slot>
+  <slot>changeUseSpokenNotifications(bool)</slot>
   <slot>showJumpbridgeChooser()</slot>
   <slot>fixupScrollBars()</slot>
-  <slot>navigateBack(bool)</slot>
   <slot>showMapContextMenu(QEvent)</slot>
   <slot>regionNameChanged(QString)</slot>
   <slot>selectESIChar(QString)</slot>
   <slot>navigateBackward()</slot>
   <slot>navigateForward()</slot>
+  <slot>theraSystemChanged()</slot>
  </slots>
 </ui>

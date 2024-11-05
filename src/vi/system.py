@@ -169,6 +169,10 @@ class System(object):
         self.has_upwell_cyno_jammer = False
 
     @property
+    def center(self) -> QPointF:
+        return self.rect.center()
+
+    @property
     def is_dirty(self) -> bool:
         return self._is_dirty or self._hasKill > 0.0 or self.marker != 0.0 or self._status is not States.UNKNOWN
 
@@ -760,7 +764,6 @@ class System(object):
         Returns:
         """
         self.rect = map_coordinates
-        self.center = map_coordinates.center()
         self._is_dirty = True
 
     def mark(self, sec=10.0):
@@ -1164,18 +1167,20 @@ def _ApplyIceToSystem(data):
                     applyIceToSystem(system_id, line)
 
 
+def _applyStructuresToSystem(data, system_id_app, tokens):
+    if len(tokens) > 2:
+        new_data = {"type_id": int(tokens[0]), "structure_id": int(tokens[1]), "name": tokens[3]}
+        type_id = int(tokens[0])
+        if type_id in list(set().union(System.M_SIZE, System.L_SIZE, System.XL_SIZE)):
+            if data[system_id_app].structures is None:
+                data[system_id_app].structures = [new_data]
+            else:
+                data[system_id_app].structures.append(new_data)
+        elif type_id == 2017:
+            data[system_id_app].has_cyno_beacon = True
+
+
 def _ApplyStructuresToSystem(data):
-    def applyStructuresToSystem(system_id, tokens):
-        if len(tokens) > 2:
-            new_data = {"type_id": int(tokens[0]), "structure_id": int(tokens[1]), "name": tokens[3]}
-            type_id = int(tokens[0])
-            if type_id in list(set().union(System.M_SIZE, System.L_SIZE, System.XL_SIZE)):
-                if data[system_id].structures is None:
-                    data[system_id].structures = [new_data]
-                else:
-                    data[system_id].structures.append(new_data)
-            elif type_id == 2017:
-                data[system_id].has_cyno_beacon = True
 
     filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "structures.txt")
 
@@ -1193,7 +1198,7 @@ def _ApplyStructuresToSystem(data):
                     continue
                 system_id = Universe.systemIdByName(line[2])
                 if system_id:
-                    applyStructuresToSystem(system_id, line)
+                    _applyStructuresToSystem(data, system_id, line)
 
 
 def _InitAllSystems():

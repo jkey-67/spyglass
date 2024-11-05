@@ -57,7 +57,7 @@ def textReplace(element, new_text):
     """
     new_text = "<t>" + new_text + "</t>"
     new_elements = []
-    for newPart in BeautifulSoup(new_text, 'html.parser').select("t")[0].contents:
+    for newPart in BeautifulSoup(new_text, 'lxml-xml').select("t")[0].contents:
         new_elements.append(newPart)
     for newElement in new_elements:
         element.insert_before(newElement)
@@ -348,7 +348,7 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
     """
     original_text = message.plainText
     formatted_text = u"<rtext>{0}</rtext>".format(original_text)
-    soup = BeautifulSoup(formatted_text, 'html.parser')
+    soup = BeautifulSoup(formatted_text, 'lxml-xml')
     rtext = soup.select("rtext")[0]
     message.affectedSystems = set()
 

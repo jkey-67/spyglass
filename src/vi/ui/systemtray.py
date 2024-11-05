@@ -24,7 +24,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QDesktopServices
 from vi.resources import resourcePath
@@ -198,7 +198,7 @@ class TrayContextMenu(QtWidgets.QMenu):
 
 class MapContextMenu(QtWidgets.QMenu):
 
-    alarm_distance = pyqtSignal(int)
+    alarm_distance = Signal(int)
 
     def __init__(self):
         QtWidgets.QMenu.__init__(self)
@@ -379,9 +379,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     # Min seconds between two notifications
     MIN_WAIT_NOTIFICATION = 15
 
-    alarm_distance = pyqtSignal(int)
-    change_frameless = pyqtSignal()
-    quit_signal = pyqtSignal()
+    alarm_distance = Signal(int)
+    change_frameless = Signal()
+    quit_signal = Signal()
 
     def __init__(self, app):
         self.icon = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))

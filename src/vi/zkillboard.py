@@ -6,7 +6,7 @@ import datetime
 from PySide6.QtCore import QUrl, QObject, QTimer
 from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 
 from .evegate import esiUniverseNames, esiAlliances
 from .universe import Universe
@@ -21,8 +21,8 @@ class ZKillMonitor(QObject):
         Converts the websocket stream to a compatible logfile, the file encoding is "utf-16-le"
         see: https://github.com/zKillboard/zKillboard/wiki
     """
-    status_kill_mail = pyqtSignal(bool)
-    report_system_kill = pyqtSignal(int)
+    status_kill_mail = Signal(bool)
+    report_system_kill = Signal(int)
     MONITORING_PATH = "zkillMonitor.log"
     LOG_VICTIM = True
     LOG_ATTACKERS = False
@@ -156,7 +156,11 @@ class ZKillMonitor(QObject):
         alliance_id = victim["alliance_id"] if "alliance_id" in victim.keys() else 0
         total_value = "<br/>Total Value : {:,} ISK".format(
             kill_data["zkb"]["totalValue"]) if "totalValue" in kill_data["zkb"].keys() else ""
-        user_data = esiUniverseNames({character_id, system_id, ship_type_id, alliance_id})
+
+        if alliance_id:
+            user_data = esiUniverseNames({character_id, system_id, ship_type_id, alliance_id})
+        else:
+            user_data = esiUniverseNames({character_id, system_id, ship_type_id})
 
         kill_victim_character = user_data[character_id] if character_id and character_id in user_data.keys() else "-"
         kill_victim_ship_type = user_data[ship_type_id] if ship_type_id and ship_type_id in user_data.keys() else "-"

@@ -97,9 +97,8 @@ class PanningWebView(QWidget):
         return self.scrollPos
 
     def setScrollPosition(self, pos: QPointF):
-        if self.scrolling:
-            return
-        self._setScrollPosition(pos)
+        if not self.scrolling:
+            self._setScrollPosition(pos)
 
     def _setScrollPosition(self, pos: QPointF):
         if self.scrollPos != pos:
@@ -174,7 +173,8 @@ class PanningWebView(QWidget):
             self.scrolling = False
             self.handIsClosed = False
             self.positionMousePress = None
-            QApplication.restoreOverrideCursor()
+            if QApplication.overrideCursor():
+                QApplication.restoreOverrideCursor()
             self.webViewIsScrolling.emit(False)
             return
 
@@ -182,7 +182,8 @@ class PanningWebView(QWidget):
             self.pressed = False
             self.scrolling = False
             self.handIsClosed = False
-            QApplication.restoreOverrideCursor()
+            if QApplication.overrideCursor():
+                QApplication.restoreOverrideCursor()
             return
 
     def hoveCheck(self, global_pos: QPoint, map_pos: QPoint) -> bool:
@@ -203,7 +204,8 @@ class PanningWebView(QWidget):
     def mouseMoveEvent(self, mouse_event: QMouseEvent):
         if self.scrolling:
             if not self.handIsClosed:
-                QApplication.restoreOverrideCursor()
+                if QApplication.overrideCursor():
+                    QApplication.restoreOverrideCursor()
                 QApplication.setOverrideCursor(Qt.OpenHandCursor)
                 self.handIsClosed = True
             if self.scrollMousePress is not None:
