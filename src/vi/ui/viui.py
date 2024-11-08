@@ -70,7 +70,7 @@ from PySide6.QtSql import QSqlQueryModel
 
 from vi.ui import Ui_MainWindow, Ui_EVESpyInfo, Ui_SoundSetup
 
-from vi.chatparser.message import Message
+from vi.chatparser.message import Message, CTX
 
 from vi.zkillboard import ZKillMonitor
 
@@ -99,21 +99,43 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._update_splash:
             self._update_splash(string)
 
+    @staticmethod
+    def _initialChatRoomsFromCache(cache):
+        cached_room_name = cache.getFromCache("room_names")
+        if cached_room_name:
+            cached_room_name = cached_room_name.split(",")
+        else:
+            cached_room_name = ChatroomChooser.DEFAULT_ROOM_MANES
+            cache.putIntoCache("room_names", u",".join(cached_room_name), 60 * 60 * 24 * 365 * 5)
+        return cached_room_name
+
     def __init__(self, pat_to_logfile, tray_icon, update_splash=None):
         QtWidgets.QMainWindow.__init__(self)
         self._update_splash = update_splash
         self._update_splash_window_info("Init GUI application")
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowTitle(
+            "EVE-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
         self.cache = Cache()
         self.region_queue = RedoUndoQueue()
+        self.pathToLogs = pat_to_logfile
+        self.mapPositionsDict = {}
+        self.mapStatisticCache = {}
+        self.oldClipboardContent = ""
+        self.autoChangeRegion = False
+        self.room_names = self._initialChatRoomsFromCache(self.cache)
 
+        self._update_splash_window_info("Update chat parser")
+        self.chatparser = ChatParser(self.pathToLogs, self.room_names)
+
+        self._update_splash_window_info("Setup worker threads")
         self.apiThread = None   # thread used for api registration
         self.avatarFindThread = None  # avatar find thread
         self.filewatcherThread = None   # the file watcher
         self.statisticsThread = None  # map statistic thread
         self.zkillboard = None  # zKillBoard monitor
-        self.mapPositionsDict = {}
+        self._setupThreads()
 
         self.dotlan = self.setupRegionMap(self.cache.getFromCache("region_name"))
         self.mapTimer = QTimer(self)
@@ -138,24 +160,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.connectToEveOnline.setIcon(icon)
         self.ui.connectToEveOnline.setIconSize(QtCore.QSize(163, 38))
         self.ui.connectToEveOnline.setFlat(False)
-        self.setWindowTitle(
-            "EVE-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
+
         self.taskbarIconQuiescent = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
         self.taskbarIconWorking = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
         self.setWindowIcon(self.taskbarIconQuiescent)
         self.setFocusPolicy(Qt.StrongFocus)
-        self.pathToLogs = pat_to_logfile
-        self.oldClipboardContent = ""
 
         self.trayIcon = tray_icon
         self.trayIcon.activated.connect(self.systemTrayActivated)
         self.clipboard = QApplication.clipboard()
         self.alarmDistance = 0
-        self.lastStatisticsUpdate = 0
         self.chatEntries = []
         self.ui.frameButton.setVisible(False)
         self.initialMapPosition = None
-        self.autoChangeRegion = False
+        self.invertWheel = False
 
         try:
             status = evegate.esiStatus()
@@ -166,13 +184,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self._update_splash_window_info("There was no response from the server, perhaps the server is down.")
 
         self._update_splash_window_info("Fetch universe system jumps via ESI.")
-
-        self.mapStatisticCache = evegate.esiUniverseSystem_jumps(use_outdated=True)
         self._update_splash_window_info("Fetch player sovereignty via ESI.")
         self._update_splash_window_info("Fetch incursions via ESI...")
         self._update_splash_window_info("Fetch sovereignty campaigns via ESI...")
 
-        self.invertWheel = False
         self._connectActionPack()
 
         self._update_splash_window_info("Preset application")
@@ -216,14 +231,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # Set up user's intel rooms
         self._update_splash_window_info("Set up user's intel rooms")
 
-        cached_room_name = self.cache.getFromCache("room_names")
-        if cached_room_name:
-            cached_room_name = cached_room_name.split(",")
-        else:
-            cached_room_name = ChatroomChooser.DEFAULT_ROOM_MANES
-            self.cache.putIntoCache("room_names", u",".join(cached_room_name), 60 * 60 * 24 * 365 * 5)
-        self.room_names = cached_room_name
-
         # Disable the sound UI if sound is not available
         self._update_splash_window_info("Doublecheck the sound UI if sound is not available...")
         if not SoundManager.soundAvailable:
@@ -255,11 +262,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.intelTimeGroup.addAction(action)
             self.ui.menuTime.addAction(action)
 
-        self._update_splash_window_info("Update chat parser")
-
-        self.chatparser = ChatParser(self.pathToLogs, self.room_names)
-        self._update_splash_window_info("Setup worker threads")
-        self._setupThreads()
         self._update_splash_window_info("Setup UI")
         self._wireUpUIConnections()
         self._update_splash_window_info("Recall cached settings")
@@ -513,6 +515,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.adm_vul_Button.setDefaultAction(self.ui.actionShowADMonMap)
         self.ui.jumpbridgesButton.setDefaultAction(self.ui.actionShowJumpBridgeConnectionsOnMap)
         self.ui.statisticsButton.setDefaultAction(self.ui.actionShowSystemStatisticOnMap)
+        self.ui.toolUseTheraRouting.setDefaultAction(self.ui.actionUserTheraRoutes)
+
         self.clipboard.dataChanged.connect(self.clipboardChanged)
         self.ui.actionAlwaysOnTop.triggered.connect(self.changeAlwaysOnTop)
         self.ui.actionCatchRegion.triggered.connect(
@@ -1214,19 +1218,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setupRegionMap(self, region_name):
         """
-            Prepares a new dotlan object for the selected ragion
+            Prepares a new dotlan object for the selected region
         Args:
             region_name:
 
         Returns:
 
         """
-        logging.debug("setupMap started...")
         if not region_name:
             region_name = "Providence"
         svg = self.loadSVGMapFile(self.cache, region_name)
         if svg is None:
             return None
+
         region_map = dotlan.Map(
             region_name=region_name,
             svg_file=svg,
@@ -1235,11 +1239,7 @@ class MainWindow(QtWidgets.QMainWindow):
             set_adm_visible=self.showADMOnMap(),
             set_jump_bridges=self.cache.getJumpGates())
 
-        # Update the new map view, then clear old statistics from the map and request new
-        logging.debug("Updating the map")
         self.setInitialMapPositionForRegion(region_name)
-        # Allow the file watcher to run now that all else is set up
-        logging.debug("setupMap succeeded.")
         return region_map
 
     @Slot()
@@ -1567,10 +1567,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if system_id in ALL_SYSTEMS.keys():
             system = ALL_SYSTEMS[system_id]
             system.addLocatedCharacter(char_name, alarm_distance)
-            logging.info("The location of character '{}' changed to system '{}'".format(char_name, system.name))
-        else:
-            logging.error("The location of character '{}' changed to Unknown system id: {}.".format(
-                char_name, system_id))
+            logging.info("The current location of the character '{}' changed to the system '{}'".format(
+                char_name, system.name))
 
     @Slot()
     def locateChar(self):
@@ -1767,14 +1765,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def addMessageToDatabase(self, message: Message):
         if message and message.user:
-            data = evegate.esiCharactersPublicInfo(message.user)
-            if data:
-                self.cache.putJsonToAvatar(
-                    player_name=message.user,
-                    json_txt=json.dumps(data),
-                    alliance_id=data["alliance_id"] if "alliance_id" in data.keys() else None,
-                    max_age=3600
-                )
+            if message.roomName != CTX.ZKILLBOARD_ROOM_NAME:
+                data = evegate.esiCharactersPublicInfo(message.user)
+                if data:
+                    self.cache.putJsonToAvatar(
+                        player_name=message.user,
+                        json_txt=json.dumps(data),
+                        alliance_id=data["alliance_id"] if "alliance_id" in data.keys() else None,
+                        max_age=3600
+                    )
 
     def addMessageToIntelChat(self, message: Message):
         scroll_to_bottom = False
@@ -1782,7 +1781,7 @@ class MainWindow(QtWidgets.QMainWindow):
             scroll_to_bottom = True
 
         if self.ui.actionUseSpokenNotifications.isChecked():
-            if message.roomName == "zKillboard":
+            if message.roomName == CTX.ZKILLBOARD_ROOM_NAME:
                 message_text = self.formatZKillMessage(message.plainText)
             else:
                 message_text = message.plainText
@@ -2019,16 +2018,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if STAT.REGISTERED_CHARS in data:
             char_data = data[STAT.REGISTERED_CHARS]
+            char_data_online = []
             for itm in char_data:
-                if not itm["online"]:
+                is_esi_char = evegate.esiCharName() == itm["name"]
+                if not itm["online"] and not is_esi_char:
                     self.setLocation(itm["name"], itm["system"]["name"], change_region=False)
-                    char_data.remove(itm)
+                else:
+                    char_data_online.append(itm)
 
-            for itm in char_data:
-                if itm["online"]:
-                    self.setLocation(itm["name"], itm["system"]["name"], change_region=True)
-                    self.focusMapOnSystem(itm["system"]["system_id"])
-                    char_data.remove(itm)
+            for itm in char_data_online:
+                self.setLocation(itm["name"], itm["system"]["name"], change_region=True)
+                self.focusMapOnSystem(itm["system"]["system_id"])
 
     @Slot()
     def clearCacheFile(self):

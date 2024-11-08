@@ -113,9 +113,3 @@ class TextInverter:
             return "#C0000000"
         else:
             return "#c0c0c0c0"
-
-
-if __name__ == "__main__":
-    inv = TextInverter()
-    print("50E661")
-    print(inv.getTextColourFromBackground("50E661"))

@@ -32,7 +32,7 @@ from vi.states import States
 from vi.ui.styles import Styles
 from vi.soundmanager import SoundManager
 from vi.cache import Cache
-from vi.chatparser.message import Message
+from vi.chatparser.message import Message, CTX
 
 
 class ActionPackage(QObject):
@@ -430,7 +430,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             speech_text = (u"System {0} Alarm distance {1} in Room {2}, {3} jumps away from {4}".format(
                 system, distance, room, distance, char))
             text = speech_text + (u"\nText: %s" % text)
-            SoundManager().playSound("alarm_{}".format(distance), text, "" if message.roomName != "zKillboard" else speech_text)
+            SoundManager().playSound("alarm_{}".format(distance), text, "" if message.roomName != CTX.ZKILLBOARD_ROOM_NAME else speech_text)
             self.lastNotifications[States.ALARM] = time.time()
         elif (message.status == States.REQUEST and
               self.showRequest and

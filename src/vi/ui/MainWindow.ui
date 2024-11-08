@@ -454,7 +454,7 @@
                 <bool>true</bool>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -506,7 +506,7 @@
                 <bool>true</bool>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -515,6 +515,9 @@
              </item>
              <item>
               <widget class="QToolButton" name="adm_vul_Button">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -558,7 +561,7 @@
                 <bool>true</bool>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -679,6 +682,9 @@
     <addaction name="actionWickedcreekScaldingpassRegion"/>
     <addaction name="actionAutoSwitchRegions"/>
     <addaction name="separator"/>
+    <addaction name="actionShowJumpBridgeConnectionsOnMap"/>
+    <addaction name="actionShowSystemStatisticOnMap"/>
+    <addaction name="actionShowADMonMap"/>
     <addaction name="actionUserTheraRoutes"/>
     <addaction name="separator"/>
     <addaction name="actionJumpbridgeData"/>
@@ -1281,8 +1287,8 @@
              <height>38</height>
             </size>
            </property>
-           <property name="flat">
-            <bool>false</bool>
+           <property name="shortcut">
+            <string notr="true"/>
            </property>
           </widget>
          </item>
@@ -1464,6 +1470,40 @@
           <bool>false</bool>
          </attribute>
         </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_10">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Clear cache file</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="clearCache">
+           <property name="toolTip">
+            <string>Clears the cache file, removes non essential items only.</string>
+           </property>
+           <property name="text">
+            <string>Remove</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </item>
@@ -1982,6 +2022,48 @@
     <string>User Thera and Thumu connections for routing.</string>
    </property>
   </action>
+  <action name="actionShowADMonMap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/adm_vul.svg</normaloff>:/Icons/res/adm_vul.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Show ADM on map</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the ADM information on the map.</string>
+   </property>
+  </action>
+  <action name="actionShowSystemStatisticOnMap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/statistic.svg</normaloff>:/Icons/res/statistic.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Show system statistic on map.</string>
+   </property>
+   <property name="toolTip">
+    <string>Show system statistic on map.</string>
+   </property>
+  </action>
+  <action name="actionShowJumpBridgeConnectionsOnMap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/jumpbridge.svg</normaloff>:/Icons/res/jumpbridge.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Show jump bridge connections on map.</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2185,44 +2267,12 @@
   <connection>
    <sender>actionUserTheraRoutes</sender>
    <signal>toggled(bool)</signal>
-   <receiver>toolUseTheraRouting</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>239</x>
-     <y>394</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>toolUseTheraRouting</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>actionUserTheraRoutes</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>239</x>
-     <y>394</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>connectToEveOnline</sender>
-   <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
-   <slot>addNewESICharacter()</slot>
+   <slot>setUseThreaRoutes(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>84</x>
-     <y>64</y>
+     <x>-1</x>
+     <y>-1</y>
     </hint>
     <hint type="destinationlabel">
      <x>708</x>
@@ -2231,46 +2281,14 @@
    </hints>
   </connection>
   <connection>
-   <sender>jumpbridgesButton</sender>
-   <signal>clicked()</signal>
+   <sender>actionShowADMonMap</sender>
+   <signal>triggered(bool)</signal>
    <receiver>MainWindow</receiver>
-   <slot>changeJumpbridgesVisibility()</slot>
+   <slot>changeADMVisibility(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>923</x>
-     <y>58</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>277</x>
-     <y>402</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>statisticsButton</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>changeStatisticsVisibility()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>971</x>
-     <y>58</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>279</x>
-     <y>468</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>adm_vul_Button</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>changeADMVisibility()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1019</x>
-     <y>58</y>
+     <x>-1</x>
+     <y>-1</y>
     </hint>
     <hint type="destinationlabel">
      <x>277</x>
@@ -2454,6 +2472,102 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>clearCache</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>clearCacheFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>271</x>
+     <y>350</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>303</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowJumpBridgeConnectionsOnMap</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeJumpbridgesVisibility(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowSystemStatisticOnMap</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeStatisticsVisibility(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>connectToEveOnline</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>addNewESICharacter()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>65</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>94</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionInvertMouseWheel</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeInvertMouseWheel(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolUseTheraRouting</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>setUseThreaRoutes(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>223</x>
+     <y>397</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>region_changed(QString)</signal>
@@ -2473,9 +2587,8 @@
   <slot>changeFrameless(bool)</slot>
   <slot>locateChar()</slot>
   <slot>addNewESICharacter()</slot>
-  <slot>changeStatisticsVisibility()</slot>
+  <slot>changeJumpbridgesVisibility(bool)</slot>
   <slot>changeADMVisibility(bool)</slot>
-  <slot>changeJumpbridgesVisibility()</slot>
   <slot>changeShowAvatars(bool)</slot>
   <slot>changeAlwaysOnTop(bool)</slot>
   <slot>showChatroomChooser()</slot>
@@ -2491,5 +2604,9 @@
   <slot>navigateBackward()</slot>
   <slot>navigateForward()</slot>
   <slot>theraSystemChanged()</slot>
+  <slot>clearCacheFile()</slot>
+  <slot>changeStatisticsVisibility(bool)</slot>
+  <slot>setUseThreaRoutes(bool)</slot>
+  <slot>changeInvertMouseWheel(bool)</slot>
  </slots>
 </ui>

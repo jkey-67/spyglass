@@ -79,6 +79,7 @@ class AvatarFindThread(QThread):
                     if diff_last_call < wait:
                         time.sleep((wait - diff_last_call) / 1000.0)
                     last_call = time.time()
+                    # fetch data to
                     avatar = evegate.esiCharactersPortrait(user)
                 if avatar:
                     logging.debug("AvatarFindThread emit avatar_update for %s" % user)

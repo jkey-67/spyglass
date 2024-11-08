@@ -5,7 +5,6 @@ import datetime
 
 from PySide6.QtCore import QUrl, QObject, QTimer
 from PySide6.QtWebSockets import QWebSocket
-from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Signal
 
 from .evegate import esiUniverseNames, esiAlliances

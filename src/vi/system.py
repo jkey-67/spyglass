@@ -213,7 +213,7 @@ class System(object):
             None
 
         """
-        painter.setPen(QColor("#ffc0c0c0"))
+        painter.setPen(QColor("#ffc0c0c0"))     # constellation
         for system in self.neighbours:
             if system.name in systems.keys():
                 if self.region_id == current_region_id:

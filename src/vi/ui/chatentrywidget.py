@@ -23,11 +23,9 @@ import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QAction
-from vi.resources import resourcePath
 from PySide6.QtGui import QImage, QPixmap, QDesktopServices
 from vi.ui import Ui_ChatEntry
-from vi.chatparser.message import Message
+from vi.chatparser.message import Message, CTX
 
 
 class ChatEntryItem(QtWidgets.QListWidgetItem):
@@ -61,7 +59,7 @@ class ChatEntryWidget(QtWidgets.QWidget):
         self.message = message
         self.ui = Ui_ChatEntry()
         self.ui.setupUi(self)
-        if self.message.roomName == "zKillboard":
+        if self.message.roomName == CTX.ZKILLBOARD_ROOM_NAME:
             self.questionMarkPixmap = QPixmap(u":/Icons/res/zKillboard.svg").scaledToHeight(self.DIM_IMG)
         elif not self.questionMarkPixmap:
             self.questionMarkPixmap = QPixmap(u":/Icons/res/qmark.svg").scaledToHeight(self.DIM_IMG)

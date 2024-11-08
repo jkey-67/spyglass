@@ -164,6 +164,17 @@ class Cache(object):
         else:
             return founds[0][1]
 
+    def clearDataBase(self):
+        with Cache.SQLITE_WRITE_LOCK:
+            self.con.execute("DELETE FROM cache WHERE datetime(modified+maxage,'unixepoch') < datetime();")
+            self.con.execute("DELETE FROM cache WHERE key LIKE 'alliance%_';")
+            self.con.execute("DELETE FROM cache WHERE key LIKE 'ids_dicts_%' OR key LIKE 'system_tmp%';")
+            self.con.execute("DELETE FROM cache WHERE key LIKE 'public_info%';")
+            self.con.execute("DELETE FROM cache WHERE key LIKE 'universe_systems_%';")
+            self.con.execute("DELETE FROM cache WHERE key LIKE 'mapdata%';")
+            self.con.execute("DELETE FROM avatars;")
+            self.con.commit()
+
     def clearOutdatedCache(self):
         """ Delete all outdated jumpbridges from database
         """

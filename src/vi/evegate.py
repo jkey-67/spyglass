@@ -450,7 +450,7 @@ def esiCharactersPortrait(char_name, image_size=64, use_cache=True):
         return cached_data
 
 
-def esiCharactersPublicInfo(char_name: str, use_cache=True):
+def esiCharactersPublicInfo(char_name: str, use_cache: object = True) -> object:
     """Downloading the public player/character info
 
     Args:
@@ -2317,16 +2317,3 @@ def esiStatusJson():
     else:
         return response.json()
 
-
-if __name__ == "__main__":
-    session = getSession()
-    status = esiStatusJson()
-    public_info = esiCharactersPublicInfo("nele McCool")
-    def test():
-        _logResponseError(requests.Response())
-    test()
-    dumpSpyglassDownloadStats()
-    generate_universe_region_names()
-    generate_universe_constellation_names()
-    generate_universe_system_names()
-    pass

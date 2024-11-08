@@ -21,9 +21,8 @@
 # Little lib and tool to get the map and information from dotlan		  #
 ###########################################################################
 
-from PySide6.QtCore import QRectF, QSizeF
+from PySide6.QtCore import QRectF, QSizeF, QPointF
 from bs4 import BeautifulSoup
-from vi.ui.styles import Styles
 from vi.system import System, ALL_SYSTEMS, Universe
 
 
@@ -36,8 +35,8 @@ def _extractPositionsFromSoup(soup) -> dict[int, (str, float, float)]:
     Extracts all systems from the svg
 
     Remark:
-        Depending on the current scaling the svg will be scanned for xlink:href tags which wer interpreted as system
-        idents, x and y attributes will be used as center for the system map.
+        Depending on the current scaling the svg will be scanned for xlink:href tags #def... which wer interpreted as
+        system idents, x and y attributes will be used as center for the system map.
 
     Args:
         soup(BeautifulSoup): BeautifulSoup holding the svg
@@ -49,10 +48,13 @@ def _extractPositionsFromSoup(soup) -> dict[int, (str, float, float)]:
     # default size of the systems to calculate the center point
     systems_map_new = dict()
     for use in soup.select("use"):
-        system_id = int(use["xlink:href"][4:])
-        if system_id in ALL_SYSTEMS:
-            system = ALL_SYSTEMS[system_id]
-            systems_map_new[system_id] = (system.name, float(use.attrs["x"]), float(use.attrs["y"]))
+        if use.has_attr("xlink:href") and use.has_attr("x") and use.has_attr("y"):
+            system_attr = use.attrs["xlink:href"]
+            if system_attr.startswith("#def"):
+                system_id = int(use.attrs["xlink:href"][4:])
+                if system_id in ALL_SYSTEMS:
+                    system = ALL_SYSTEMS[system_id]
+                    systems_map_new[system_id] = (system.name, float(use.attrs["x"]), float(use.attrs["y"]))
     return systems_map_new
 
 
@@ -67,11 +69,23 @@ def _extractSizeFromSoup(soup, scale=1.0):
     """
     svg = soup.select("svg")[0]
     box = svg["viewbox"] if "viewbox" in svg else None
+    pos_x = []
+    pos_y = []
     if box:
         box = box.split(" ")
         return QSizeF(float(box[2])*scale, float(box[3])*scale)
     else:
-        return QSizeF(1024.0 * scale, 768.0 * scale)
+        return QSizeF(20*System.ELEMENT_WIDTH*scale, 20*System.ELEMENT_HEIGHT*scale)
+        for system_id, data in _extractPositionsFromSoup(soup).items():
+            pt = QRectF(
+                data[1] * scale, data[2] * scale,
+                System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT).center()
+            pos_x.append(float(pt.x()))
+            pos_y.append(float(pt.y()))
+        if len(pos_x):
+            return QSizeF(max(pos_x)-min(pos_x)+System.ELEMENT_WIDTH, max(pos_y)-min(pos_y)+System.ELEMENT_HEIGHT)
+        else:
+            return QSizeF(System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT)
 
 
 def _extractSystemsFromSoup(soup, scale=1.0) -> dict[str, System]:
@@ -92,8 +106,6 @@ def _extractSystemsFromSoup(soup, scale=1.0) -> dict[str, System]:
 
     """
     # default size of the systems to calculate the center point
-    svg_width = 62.5
-    svg_height = 30
     systems = {}
     for system_id, data in _extractPositionsFromSoup(soup).items():
         new_system = ALL_SYSTEMS[system_id]
@@ -101,19 +113,17 @@ def _extractSystemsFromSoup(soup, scale=1.0) -> dict[str, System]:
             map_coordinates=QRectF(
                 data[1] * scale,
                 data[2] * scale,
-                svg_width,
-                svg_height))
+                System.ELEMENT_WIDTH,
+                System.ELEMENT_HEIGHT))
         systems[new_system.name] = new_system
     return systems
 
 
 class Map(object):
     """
-        The map including all information from dotlan
+        The map transfers the system related information from a dotlan svg to
+        the internal System representation and setup a cache for the given region.
     """
-    # todo : dark.svgs should follow stylesheet
-
-    styles = Styles()
 
     @staticmethod
     def setIncursionSystems(incursions):
@@ -146,7 +156,6 @@ class Map(object):
 
         self.region_name = region_name
         self.region_id = Universe.regionIdByName(region_name)
-        self.outdatedCacheError = None
         self._jumpMapsVisible = set_jump_maps_visible
         self._statisticsVisible = set_statistic_visible
         self._set_vulnerable_visible = set_adm_visible
@@ -167,6 +176,10 @@ class Map(object):
 
         if set_jump_bridges:
             self.setJumpbridges(set_jump_bridges)
+
+        self._updateJumpbridgesVisibility()
+        self._updateVulnerableVisibility()
+        self._updateStatisticsVisibility()
 
     @staticmethod
     def setCampaignsSystems(lst_system_ids):
@@ -217,12 +230,10 @@ class Map(object):
         Returns:
             True if at least one system on the map needs to be repainted or if the map is empty
         """
-        empty_map = True
         for system in self.systems.values():
-            empty_map = False
             if system.is_dirty:
                 return True
-        return empty_map
+        return len(self.systems) == 0
 
     @staticmethod
     def addSystemStatistics(statistics):
@@ -246,7 +257,7 @@ class Map(object):
         """
 
         for system in ALL_SYSTEMS.values():
-            system.jumpBridges = set()
+            system.jumpBridges.clear()
 
         for bridge in jumpbridges_data:
             sys1 = ALL_SYSTEMS[Universe.systemIdByName(bridge[0])]
@@ -257,8 +268,8 @@ class Map(object):
     @staticmethod
     def setTheraConnections(thera_connections):
         for system in ALL_SYSTEMS.values():
-            system.wormhole_info = list()
-            system.theraWormholes = set()
+            system.wormhole_info.clear()
+            system.theraWormholes.clear()
 
         for connection in thera_connections:
             sys1 = ALL_SYSTEMS[connection["in_system_id"]]
@@ -269,9 +280,12 @@ class Map(object):
 
     def changeVulnerableVisibility(self, selected: bool) -> bool:
         self._set_vulnerable_visible = selected
+        self._updateVulnerableVisibility()
+        return self._set_vulnerable_visible
+
+    def _updateVulnerableVisibility(self) -> None:
         for system in self.systems.values():
             system.is_vulnerable_visible = self._set_vulnerable_visible
-        return self._set_vulnerable_visible
 
     def changeStatisticsVisibility(self, selected: bool) -> bool:
         self._statisticsVisible = selected
@@ -279,12 +293,15 @@ class Map(object):
             system.is_statistics_visible = self._statisticsVisible
         return self._statisticsVisible
 
-    def updateJumpbridgesVisibility(self):
+    def _updateStatisticsVisibility(self) -> None:
+        for system in self.systems.values():
+            system.is_statistics_visible = self._statisticsVisible
+
+    def _updateJumpbridgesVisibility(self):
         for system in self.systems.values():
             system.is_jumpbridges_visible = self._jumpMapsVisible
 
     def changeJumpbridgesVisibility(self, selected: bool) -> bool:
         self._jumpMapsVisible = selected
-        for system in self.systems.values():
-            system.is_jumpbridges_visible = self._jumpMapsVisible
+        self._updateJumpbridgesVisibility()
         return self._jumpMapsVisible

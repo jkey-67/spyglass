@@ -21,8 +21,8 @@
 class CTX:
     EVE_SYSTEM = (u"EVE-System", u"EVE System", u"Système EVE", u"Система EVE", u'EVE システム', u'EVE系统',
                   u'EVE星系', u'이브 시스템', u'Sistema EVE')
-    CHARS_TO_IGNORE = ("*", "?", ",", "!", ".", "^")
-    WORDS_TO_IGNORE = ("IN", "IS", "AS", "AT", "NV", "ESS", "GATE", "HOSTILE")
+    CHARS_TO_IGNORE = (u"*", u"?", u",", u"!", u".", "^")
+    WORDS_TO_IGNORE = (u"IN", u"IS", u"AS", u"AT", u"NV", "ESS", u"GATE", u"HOSTILE")
     FORMAT_URL = u"""<a style="color:#28a5ed;font-weight:medium" href="link/{0}">{0}</a>"""
     FORMAT_SHIP \
         = u"""<a  style="color:#d95911;font-weight:medium" href="link/https://wiki.eveuniversity.org/{0}">{0}</a>"""
@@ -33,6 +33,7 @@ class CTX:
     FORMAT_SYSTEM = u"""<a style="color:#888880;font-weight:medium" href="mark_system/{0}">{1}</a>"""
     FORMAT_SYSTEM_IN_REGION = u"""<a style="color:#DAA520;font-weight:medium" href="mark_system/{0}">{1}</a>"""
     FORMAT_VALUE = u"""<a style="color:#d0d0d0;font-weight:medium">{0}</a>"""
-    STATUS_CLEAR = {"CLEAR", "CLR", "CRL", "CLR ATM"}
-    STATUS_STATUS = {"STAT", "STATUS", "STATE"}
-    STATUS_BLUE = {"BLUE", "BLUES ONLY", "ONLY BLUE" "STILL BLUE", "ALL BLUES"}
+    STATUS_CLEAR = {u"CLEAR", u"CLR", u"CRL", u"CLR ATM"}
+    STATUS_STATUS = {u"STAT", u"STATUS", u"STATE"}
+    STATUS_BLUE = {u"BLUE", u"BLUES ONLY", u"ONLY BLUE" u"STILL BLUE", u"ALL BLUES"}
+    ZKILLBOARD_ROOM_NAME = u"zKillboard"

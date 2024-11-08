@@ -202,8 +202,6 @@ def parseSystems(systems_on_map, rtext, systems_found) -> bool:
     """
     # todo:parse systems may run in a loop
 
-    system_names = Universe.systemNamesUpperCase()
-
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:
             return in_text.replace(in_word, CTX.FORMAT_SYSTEM_IN_REGION.format(in_system, in_word))
@@ -249,7 +247,7 @@ def parseSystems(systems_on_map, rtext, systems_found) -> bool:
                 textReplace(text, formatted_text)
                 return True
             elif 2 < len(upper_word) < 5:  # - upperWord < 4 chars.
-                for system in system_names:  # system begins with?
+                for system in Universe.systemNamesUpperCase():  # system begins with?
                     if system.startswith(upper_word) and len(system) == 6 and '-' in system:
                         match_system_id = Universe.systemIdByName(system)
                         if match_system_id:  # - direct hit on name
