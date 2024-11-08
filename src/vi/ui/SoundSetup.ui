@@ -396,14 +396,45 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Enable test to speach</string>
+             <string>Enable notification sounds.</string>
             </property>
             <property name="text">
              <string>Use Spoken Notifications</string>
             </property>
             <property name="icon">
              <iconset resource="resource.qrc">
-              <normaloff>:/Icons/res/speach.svg</normaloff>:/Icons/res/speach.svg</iconset>
+              <normaloff>:/Icons/res/volume_off.svg</normaloff>
+              <normalon>:/Icons/res/volume.svg</normalon>:/Icons/res/volume_off.svg</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>24</width>
+              <height>24</height>
+             </size>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="useSoundSystem">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Enable text to speach output.</string>
+            </property>
+            <property name="text">
+             <string>Use Spoken Notifications</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource.qrc">
+              <normaloff>:/Icons/res/speach_off.svg</normaloff>
+              <normalon>:/Icons/res/speach.svg</normalon>:/Icons/res/speach_off.svg</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -432,7 +463,7 @@
           <item>
            <widget class="QToolButton" name="defaultSounds">
             <property name="toolTip">
-             <string>Set to defaults</string>
+             <string>Reset all values to default.</string>
             </property>
             <property name="text">
              <string>Default</string>

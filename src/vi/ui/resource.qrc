@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>res/volume_off.svg</file>
+    <file>res/speach_off.svg</file>
     <file>res/qmark.svg</file>
     <file>res/avatar.svg</file>
     <file>res/route_off.svg</file>

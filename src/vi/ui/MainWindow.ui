@@ -113,13 +113,13 @@
               <widget class="QToolButton" name="frameButton">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
+                 <width>32</width>
                  <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>64</width>
+                 <width>32</width>
                  <height>32</height>
                 </size>
                </property>
@@ -286,8 +286,8 @@
               <widget class="QToolButton" name="locateChar">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
-                 <height>27</height>
+                 <width>32</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -324,8 +324,8 @@
               <widget class="QToolButton" name="zoomInButton">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
-                 <height>27</height>
+                 <width>32</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -365,8 +365,8 @@
               <widget class="QToolButton" name="zoomOutButton">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
-                 <height>27</height>
+                 <width>32</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -414,7 +414,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>27</height>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -466,7 +466,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>27</height>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -521,7 +521,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>27</height>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -825,6 +825,18 @@
          </item>
          <item>
           <widget class="QToolButton" name="clearIntel">
+           <property name="minimumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>Clear intel chat.</string>
            </property>
@@ -851,6 +863,18 @@
          </item>
          <item>
           <widget class="QToolButton" name="rescanIntel">
+           <property name="minimumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>Rescan intel chat.</string>
            </property>
@@ -882,14 +906,14 @@
           <widget class="QToolButton" name="chatLargeButton">
            <property name="minimumSize">
             <size>
-             <width>32</width>
-             <height>32</height>
+             <width>36</width>
+             <height>36</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>32</width>
-             <height>32</height>
+             <width>36</width>
+             <height>36</height>
             </size>
            </property>
            <property name="focusPolicy">
@@ -923,14 +947,14 @@
           <widget class="QToolButton" name="chatSmallButton">
            <property name="minimumSize">
             <size>
-             <width>32</width>
-             <height>32</height>
+             <width>36</width>
+             <height>36</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>32</width>
-             <height>32</height>
+             <width>36</width>
+             <height>36</height>
             </size>
            </property>
            <property name="focusPolicy">
@@ -962,6 +986,18 @@
          </item>
          <item>
           <widget class="QToolButton" name="showAvatar">
+           <property name="minimumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>Show the Avatars inside the chat log.</string>
            </property>
@@ -1307,6 +1343,18 @@
          </item>
          <item>
           <widget class="QToolButton" name="removeChar">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>Remove API Key for the selected character.</string>
            </property>
@@ -1482,6 +1530,18 @@
          </item>
          <item>
           <widget class="QToolButton" name="clearCache">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>Clears the cache file, removes non essential items only.</string>
            </property>
@@ -1514,7 +1574,7 @@
    <property name="minimumSize">
     <size>
      <width>270</width>
-     <height>126</height>
+     <height>127</height>
     </size>
    </property>
    <property name="features">
@@ -1571,6 +1631,18 @@
          </item>
          <item>
           <widget class="QToolButton" name="toolUseTheraRouting">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>Use Wormhole connections for Route calculatrion.</string>
            </property>
@@ -1600,6 +1672,18 @@
          </item>
          <item>
           <widget class="QToolButton" name="toolRescanThrea">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>Fetch the latest Thera and Turnur connections from EvE-Scout.</string>
            </property>
@@ -1657,7 +1741,7 @@
    <property name="minimumSize">
     <size>
      <width>270</width>
-     <height>126</height>
+     <height>131</height>
     </size>
    </property>
    <property name="features">
@@ -1711,6 +1795,18 @@
          </item>
          <item>
           <widget class="QToolButton" name="toolRescanStorm">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>Fetch latest storm data from EvE-Scout</string>
            </property>
@@ -1832,7 +1928,8 @@
    </property>
    <property name="icon">
     <iconset resource="resource.qrc">
-     <normaloff>:/Icons/res/volume.svg</normaloff>:/Icons/res/volume.svg</iconset>
+     <normaloff>:/Icons/res/volume_off.svg</normaloff>
+     <normalon>:/Icons/res/volume.svg</normalon>:/Icons/res/volume_off.svg</iconset>
    </property>
    <property name="text">
     <string>Activate Sound</string>
@@ -1874,7 +1971,8 @@
    </property>
    <property name="icon">
     <iconset resource="resource.qrc">
-     <normaloff>:/Icons/res/speach.svg</normaloff>:/Icons/res/speach.svg</iconset>
+     <normaloff>:/Icons/res/speach_off.svg</normaloff>
+     <normalon>:/Icons/res/speach.svg</normalon>:/Icons/res/speach_off.svg</iconset>
    </property>
    <property name="text">
     <string>Spoken Notifications</string>

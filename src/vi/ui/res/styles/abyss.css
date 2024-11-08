@@ -865,8 +865,8 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 
 QTreeView, QListView
 {
-    border: 1px solid #76797C;
-    background-color: #31363b;
+    border: 1px solid #404249;
+    background-color: #404249;
 
 }
 
@@ -1014,7 +1014,7 @@ QPushButton::menu-indicator  {
 QTableView
 {
     border: 1px solid #404249;
-    gridline-color: #31363b;
+    gridline-color: #404249;
     background-color:  #31363b;
 }
 

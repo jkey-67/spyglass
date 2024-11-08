@@ -1921,8 +1921,9 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
         dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
         dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
-        dialog.ui.useSpokenNotifications.setChecked(self.ui.actionUseSpokenNotifications.isChecked())
-        dialog.ui.useSpokenNotifications.clicked.connect(self.changeUseSpokenNotifications)
+        dialog.ui.useSoundSystem.setDefaultAction(self.ui.actionActivateSound)
+        dialog.ui.useSpokenNotifications.setDefaultAction(self.ui.actionUseSpokenNotifications)
+
         # dialog.setWindowFlags(Qt.Popup)
 
         def defaultSoundSetup():
@@ -1939,7 +1940,8 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.ui.soundAlarm_3.setText(SoundManager().soundFile("alarm_3"))
             dialog.ui.soundAlarm_4.setText(SoundManager().soundFile("alarm_4"))
             dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
-            dialog.ui.useSpokenNotifications.setChecked(self.ui.actionUseSpokenNotifications.isChecked())
+            self.ui.actionActivateSound.setChecked(True)
+            self.ui.actionUseSpokenNotifications.setChecked(False)
 
             SoundManager().loadSoundFiles()
 
