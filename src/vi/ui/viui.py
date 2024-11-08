@@ -84,6 +84,7 @@ CLIPBOARD_CHECK_INTERVAL_MSEC = 125
 
 # todo: move threads to sep object
 
+
 class MainWindow(QtWidgets.QMainWindow):
 
     chat_message_added = Signal(object, object)
@@ -404,12 +405,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playerGroup.setExclusionPolicy(QActionGroup.ExclusionPolicy.None_)
         self.ui.menuChars.clear()
         for name in self.knownPlayerNames:
-            icon = QIcon()
-            if evegate.esiCheckCharacterToken(name):
-                avatar_raw_img = evegate.esiCharactersPortrait(name) if self.showAvatar else None
-                if avatar_raw_img is not None:
-                    icon.addPixmap(QPixmap.fromImage(QImage.fromData(avatar_raw_img)))
-            action = QAction(icon, "{0}".format(name))
+            if False:
+                icon = QIcon()
+                if evegate.esiCheckCharacterToken(name):
+                    avatar_raw_img = evegate.esiCharactersPortrait(name) if self.showAvatar else None
+                    if avatar_raw_img is not None:
+                        icon.addPixmap(QPixmap.fromImage(QImage.fromData(avatar_raw_img)))
+                action = QAction(icon, "{0}".format(name))
+            else:
+                action = QAction(name)
             action.setCheckable(True)
             action.playerName = name
             action.playerUse = name in self.monitoredPlayerNames
@@ -1305,7 +1309,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "setShowJumpbridge", self.showJumpbridge()),
                     (None, "setShowADMOnMap", self.showADMOnMap()),
                     (None, "setShowStatistic", self.showStatistic()),
-                    (None, "setIntelTime", Globals().intel_time),
+                    (None, "changeTheme", self.cache.getFromCache("theme")),
                     (None, "changeRegionByName", self.cache.getFromCache("region_name")))
 
         self.cache.putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
@@ -1363,16 +1367,19 @@ class MainWindow(QtWidgets.QMainWindow):
         action = self.opacityGroup.checkedAction()
         self.setWindowOpacity(action.opacity)
 
+    @Slot(object)
     def changeTheme(self, th=None):
         logging.info("change theme")
-        if th is not None:
-            for action in self.themeGroup.actions():
-                if action.theme == th:
-                    action.setChecked(True)
+        if type(th) is str:
+            if th is not None:
+                for action in self.themeGroup.actions():
+                    if action.theme == th:
+                        action.setChecked(True)
         action = self.themeGroup.checkedAction()
         styles = Styles()
         styles.setStyle(action.theme)
         theme = styles.getStyle()
+        self.dotlan.updateStyle()
         self.setStyleSheet(theme)
         self.trayIcon.contextMenu().setStyleSheet(theme)
         logging.info("Setting new theme: {}".format(action.theme))

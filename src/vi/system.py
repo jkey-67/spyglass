@@ -996,10 +996,12 @@ class System(object):
             self.backgroundColorNext = System.UNKNOWN_COLOR
 
     def updateStyle(self):
+        """
         for i in range(5):
             self.ALARM_COLORS[i] = (self.ALARM_COLORS[i][0], System.styles.getCommons()["alarm_colours"][i],
                                     self.textInv.getTextColourFromBackground(self.ALARM_COLORS[i][1]))
         self.ALARM_COLOR = self.ALARM_COLORS[0][1]
+        """
         System.UNKNOWN_COLOR = System.styles.getCommons()["unknown_colour"]
         self.CLEAR_COLOR = System.styles.getCommons()["clear_colour"]
         self.setBackgroundColor(System.UNKNOWN_COLOR)

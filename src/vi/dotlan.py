@@ -124,6 +124,7 @@ class Map(object):
         The map transfers the system related information from a dotlan svg to
         the internal System representation and setup a cache for the given region.
     """
+    default_scale = 1.3
 
     @staticmethod
     def setIncursionSystems(incursions):
@@ -161,9 +162,9 @@ class Map(object):
         self._set_vulnerable_visible = set_adm_visible
 
         # Create soup from the svg
-        self.soup = BeautifulSoup(svg_file, "lxml-xml")
-        self.svg_size = _extractSizeFromSoup(self.soup, 1.3)
-        self.systems = _extractSystemsFromSoup(self.soup, 1.3)
+        svg_content = BeautifulSoup(svg_file, "lxml-xml")
+        self.svg_size = _extractSizeFromSoup(svg_content, scale=self.default_scale)
+        self.systems = _extractSystemsFromSoup(svg_content, scale=self.default_scale)
 
         self.systemsById = {}
         self.systemsByName = {}
@@ -305,3 +306,8 @@ class Map(object):
         self._jumpMapsVisible = selected
         self._updateJumpbridgesVisibility()
         return self._jumpMapsVisible
+
+    def updateStyle(self):
+        for system in self.systems.values():
+            system.updateStyle()
+
