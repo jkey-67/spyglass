@@ -2041,7 +2041,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot()
     def clearCacheFile(self):
-        Cache().clearDataBase()
+        ret = QMessageBox.warning(
+            self,
+            "Clear Database",
+            "Do you really want to clear the Database.\n\n"
+            "All icons an character public data, alliance and map data will be removed.\n"
+            "Your characters ESI assess keys will not be removed from database.",
+            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+        if ret == QMessageBox.Yes:
+            self.cache.removeFromCache("api_char_name")
+            self.cache.clearDataBase()
 
     @Slot()
     def zoomMapIn(self):
