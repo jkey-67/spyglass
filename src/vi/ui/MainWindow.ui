@@ -697,25 +697,25 @@
      <property name="title">
       <string>Transparency</string>
      </property>
+     <addaction name="actionOpacity_100"/>
+     <addaction name="actionOpacity_80"/>
+     <addaction name="actionOpacity_60"/>
+     <addaction name="actionOpacity_40"/>
+     <addaction name="actionOpacity_20"/>
     </widget>
     <widget class="QMenu" name="menuTheme">
      <property name="title">
       <string>Theme</string>
      </property>
     </widget>
-    <widget class="QMenu" name="menuType_Here">
-     <property name="title">
-      <string>Type Here</string>
-     </property>
-    </widget>
-    <addaction name="actionShowChat"/>
+    <addaction name="actionShowTabs"/>
     <addaction name="actionAlwaysOnTop"/>
-    <addaction name="actionInvertMouseWheel"/>
     <addaction name="actionFramelessWindow"/>
-    <addaction name="menuTransparency"/>
     <addaction name="separator"/>
+    <addaction name="actionInvertMouseWheel"/>
+    <addaction name="separator"/>
+    <addaction name="menuTransparency"/>
     <addaction name="menuTheme"/>
-    <addaction name="menuType_Here"/>
    </widget>
    <widget class="QMenu" name="menuIntel">
     <property name="title">
@@ -726,17 +726,40 @@
       <string>Intel Time</string>
      </property>
      <addaction name="separator"/>
+     <addaction name="actionIntel_Time_5_min"/>
+     <addaction name="actionIntel_Time_10_min"/>
+     <addaction name="actionIntel_Time_20_min"/>
+     <addaction name="actionIntel_Time_30_min"/>
+     <addaction name="actionIntel_Time_60_min"/>
     </widget>
     <widget class="QMenu" name="menuChars">
      <property name="title">
       <string>Chars used</string>
      </property>
     </widget>
+    <widget class="QMenu" name="menuAlarm_distance">
+     <property name="title">
+      <string>Alarm distance</string>
+     </property>
+     <addaction name="actionAlarm_distance_0"/>
+     <addaction name="actionAlarm_distance_1"/>
+     <addaction name="actionAlarm_distance_2"/>
+     <addaction name="actionAlarm_distance_3"/>
+     <addaction name="actionAlarm_distance_4"/>
+     <addaction name="actionAlarm_distance_5"/>
+    </widget>
+    <widget class="QMenu" name="menuType_Here_2">
+     <property name="title">
+      <string>Type Here</string>
+     </property>
+    </widget>
     <addaction name="menuChars"/>
     <addaction name="menuTime"/>
-    <addaction name="actionClearIntelChat"/>
+    <addaction name="actionClear_Intel_Chat"/>
     <addaction name="actionRescanIntelNow"/>
     <addaction name="separator"/>
+    <addaction name="menuAlarm_distance"/>
+    <addaction name="menuType_Here_2"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menuChat"/>
@@ -1908,7 +1931,7 @@
     <string>Change the visibility of the avatars inside the chat log window.</string>
    </property>
   </action>
-  <action name="actionShowChat">
+  <action name="actionShowTabs">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -2065,15 +2088,6 @@
     <string>Rescan Now</string>
    </property>
   </action>
-  <action name="actionClearIntelChat">
-   <property name="icon">
-    <iconset resource="resource.qrc">
-     <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Clear Intel</string>
-   </property>
-  </action>
   <action name="actionAutoSwitchRegions">
    <property name="checkable">
     <bool>true</bool>
@@ -2160,6 +2174,213 @@
    </property>
    <property name="text">
     <string>Show jump bridge connections on map.</string>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_0">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 0</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>0</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_1">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 1</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>1</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 2</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>2</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_3">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 3</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>3</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_4">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 4</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>4</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_5">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 5</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>5</number>
+   </property>
+  </action>
+  <action name="actionChange_Region_to">
+   <property name="text">
+    <string>Change Region to</string>
+   </property>
+  </action>
+  <action name="actionOpen_on_dotlan">
+   <property name="text">
+    <string>Open on dotlan</string>
+   </property>
+  </action>
+  <action name="actionOpen_on_zKillboard">
+   <property name="text">
+    <string>Open on zKillboard</string>
+   </property>
+  </action>
+  <action name="actionIntel_Time_5_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 5 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>5</number>
+   </property>
+  </action>
+  <action name="actionIntel_Time_10_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 10 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>10</number>
+   </property>
+  </action>
+  <action name="actionIntel_Time_20_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 20 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>20</number>
+   </property>
+  </action>
+  <action name="actionIntel_Time_30_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 30 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>30</number>
+   </property>
+  </action>
+  <action name="actionIntel_Time_60_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 60 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>60</number>
+   </property>
+  </action>
+  <action name="actionSlyle_abyss">
+   <property name="text">
+    <string>Abyss</string>
+   </property>
+   <property name="toolTip">
+    <string>Select the dark abyss style.</string>
+   </property>
+   <property name="style" stdset="0">
+    <string>abyss</string>
+   </property>
+  </action>
+  <action name="actionStyle_light">
+   <property name="text">
+    <string>Light</string>
+   </property>
+   <property name="toolTip">
+    <string>Select the light style</string>
+   </property>
+   <property name="style" stdset="0">
+    <string>light</string>
+   </property>
+  </action>
+  <action name="actionClear_Intel_Chat">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Clear Intel Chat</string>
+   </property>
+  </action>
+  <action name="actionOpacity_100">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 100%</string>
+   </property>
+  </action>
+  <action name="actionOpacity_80">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 80%</string>
+   </property>
+  </action>
+  <action name="actionOpacity_60">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 60%</string>
+   </property>
+  </action>
+  <action name="actionOpacity_40">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 40%</string>
+   </property>
+  </action>
+  <action name="actionOpacity_20">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 20%</string>
    </property>
   </action>
  </widget>
@@ -2666,6 +2887,118 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>dockWidget</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1219</x>
+     <y>173</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_2</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1219</x>
+     <y>455</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_3</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1219</x>
+     <y>715</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_4</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>189</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_5</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>479</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_6</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>723</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionAutoSwitchRegions</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeAutoChangeRegion(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>region_changed(QString)</signal>
@@ -2706,5 +3039,6 @@
   <slot>changeStatisticsVisibility(bool)</slot>
   <slot>setUseThreaRoutes(bool)</slot>
   <slot>changeInvertMouseWheel(bool)</slot>
+  <slot>changeAutoChangeRegion(bool)</slot>
  </slots>
 </ui>

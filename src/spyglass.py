@@ -30,10 +30,9 @@ from PySide6.QtSql import QSqlDatabase
 from PySide6.QtCore import Qt
 
 from vi.version import VERSION, SNAPSHOT
-from vi.ui import viui, systemtray
+from vi.ui import viui
 from vi.cache import cache
 from vi.ui.styles import Styles
-from vi.resources import resourcePath
 from vi.cache.cache import Cache
 from vi.zkillboard import ZKillMonitor
 
@@ -73,6 +72,7 @@ class Application(QApplication):
             painter.restore()
             painter.end()
         self.splash = QtWidgets.QSplashScreen(pixmap)
+        self.splash.setWindowIcon(QtGui.QIcon(":/Icons/res/icon.ico"))
         self.splash.show()
         QApplication.processEvents()
 
@@ -173,12 +173,10 @@ class Application(QApplication):
         logging.info("Cache maintained here: {0}".format(cache.Cache.PATH_TO_CACHE))
         logging.info("Writing logs to: {0}".format(spyglass_log_directory))
         logging.info("================================================================================================")
-        tray_icon = systemtray.TrayIcon(self)
-        tray_icon.show()
 
         change_splash_text("init main windows")
         QApplication.processEvents()
-        self.mainWindow = viui.MainWindow(chat_log_directory, tray_icon, change_splash_text)
+        self.mainWindow = viui.MainWindow(chat_log_directory, change_splash_text)
         self.splash.finish(self.mainWindow)
         self.mainWindow.show()
         self.mainWindow.raise_()

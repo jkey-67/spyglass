@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
+
 import json
 import os
 import datetime
@@ -49,7 +50,6 @@ from vi.resources import resourcePath
 from vi.soundmanager import SoundManager
 from vi.threads import AvatarFindThread, MapStatisticsThread, STAT, RESULT
 from vi.redoundoqueue import RedoUndoQueue
-from vi.ui.systemtray import TrayContextMenu
 from vi.ui.systemtray import JumpBridgeContextMenu
 from vi.ui.systemtray import MapContextMenu
 from vi.ui.systemtray import POIContextMenu
@@ -110,7 +110,7 @@ class MainWindow(QtWidgets.QMainWindow):
             cache.putIntoCache("room_names", u",".join(cached_room_name), 60 * 60 * 24 * 365 * 5)
         return cached_room_name
 
-    def __init__(self, pat_to_logfile, tray_icon, update_splash=None):
+    def __init__(self, pat_to_logfile, update_splash=None):
         QtWidgets.QMainWindow.__init__(self)
         self._update_splash = update_splash
         self._update_splash_window_info("Init GUI application")
@@ -126,6 +126,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.oldClipboardContent = ""
         self.autoChangeRegion = False
         self.room_names = self._initialChatRoomsFromCache(self.cache)
+        self.currentSystem = None
 
         self._update_splash_window_info("Update chat parser")
         self.chatparser = ChatParser(self.pathToLogs, self.room_names)
@@ -158,17 +159,15 @@ class MainWindow(QtWidgets.QMainWindow):
         # add completer system names
         icon = QIcon()
         icon.addPixmap(QtGui.QPixmap(u":/Icons/res/eve-sso-login-black-small.png"), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(u":/Icons/res/eve-sso-login-black-small.png"), QIcon.Normal, QIcon.On)
         self.ui.connectToEveOnline.setIcon(icon)
         self.ui.connectToEveOnline.setIconSize(QtCore.QSize(163, 38))
         self.ui.connectToEveOnline.setFlat(False)
 
-        self.taskbarIconQuiescent = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small.png")))
-        self.taskbarIconWorking = QIcon(resourcePath(os.path.join("vi", "ui", "res", "logo_small_green.png")))
-        self.setWindowIcon(self.taskbarIconQuiescent)
+        self.window_icon = QIcon(":/Icons/res/icon.ico")
+        self.setWindowIcon(self.window_icon)
         self.setFocusPolicy(Qt.StrongFocus)
 
-        self.trayIcon = tray_icon
-        self.trayIcon.activated.connect(self.systemTrayActivated)
         self.clipboard = QApplication.clipboard()
         self.alarmDistance = 0
         self.chatEntries = []
@@ -200,7 +199,7 @@ class MainWindow(QtWidgets.QMainWindow):
             action = QAction(theme, None)
             action.setCheckable(True)
             action.theme = theme
-            if action.theme == "default":
+            if action.theme == styles.currentStyle:
                 action.setChecked(True)
             logging.info("Adding theme {}".format(theme))
             action.triggered.connect(self.changeTheme)
@@ -243,25 +242,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Set up Transparency menu - fill in opacity values and make connections
         self._update_splash_window_info("Set up Transparency menu - fill in opacity values and make connections")
-        self.opacityGroup = QActionGroup(self.ui.menu)
-        for i in (100, 80, 60, 40, 20):
-            action = QAction("Opacity {0}%".format(i), None)
-            action.setCheckable(True)
-            action.setChecked(i == 100)
-            action.opacity = float(i) / 100.0
-            action.triggered.connect(self.changeOpacity)
-            self.opacityGroup.addAction(action)
-            self.ui.menuTransparency.addAction(action)
-        self.intelTimeGroup = QActionGroup(self.ui.menu)
-        globals_setting = Globals()
-        for i in (5, 10, 20, 30, 60):
-            action = QAction("Past {0}min".format(i), None)
-            action.setCheckable(True)
-            action.setChecked(i == globals_setting.intel_time)
-            action.intelTime = i
-            action.triggered.connect(self.changeIntelTime)
-            self.intelTimeGroup.addAction(action)
-            self.ui.menuTime.addAction(action)
+
+        self.ui.actionOpacity_100.triggered.connect(lambda: self.changeWindowOpacity(1.0))
+        self.ui.actionOpacity_80.triggered.connect(lambda: self.changeWindowOpacity(0.8))
+        self.ui.actionOpacity_60.triggered.connect(lambda: self.changeWindowOpacity(0.6))
+        self.ui.actionOpacity_40.triggered.connect(lambda: self.changeWindowOpacity(0.4))
+        self.ui.actionOpacity_20.triggered.connect(lambda: self.changeWindowOpacity(0.2))
+        self._updateWindowOpacityActions(self.windowOpacity())
 
         self._update_splash_window_info("Setup UI")
         self._wireUpUIConnections()
@@ -369,9 +356,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _connectActionPack(self):
         self.actions_pack = ActionPackage()
-        self.actions_pack.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
-        self.actions_pack.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
-        self.actions_pack.quitAction.triggered.connect(self.trayIcon.quit)
 
     def _updateKnownPlayerAndMenu(self, names=None):
         """
@@ -461,9 +445,6 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             logging.error(e)
 
-    def changeAutoRegion(self, auto_change: bool):
-        self.autoChangeRegion = auto_change
-
     @Slot()
     def addNewESICharacter(self):
         if evegate.openWithEveonline(parent=self):
@@ -535,17 +516,15 @@ class MainWindow(QtWidgets.QMainWindow):
             lambda: self.handleRegionMenuItemSelected(self.ui.actionProvidenceCatchCompactRegion))
         self.ui.actionWickedcreekScaldingpassRegion.triggered.connect(
             lambda: self.handleRegionMenuItemSelected(self.ui.actionWickedcreekScaldingpassRegion))
-        self.ui.actionShowChat.triggered.connect(self.changeChatVisibility)
+
+        self.ui.actionShowTabs.triggered.connect(self.changeChatVisibility)
         self.ui.actionSoundSetup.triggered.connect(self.showSoundSetup)
         self.ui.actionActivateSound.triggered.connect(self.changeSound)
         self.ui.actionUseSpokenNotifications.triggered.connect(self.changeUseSpokenNotifications)
-        self.trayIcon.alarm_distance.connect(self.changeAlarmDistance)
         self.ui.actionFramelessWindow.triggered.connect(self.changeFrameless)
-        self.trayIcon.change_frameless.connect(self.changeFrameless)
-        self.trayIcon.quit_signal.connect(self.close)
         self.ui.actionJumpbridgeData.triggered.connect(self.showJumpbridgeChooser)
         self.ui.actionRescanIntelNow.triggered.connect(self.rescanIntel)
-        self.ui.actionClearIntelChat.triggered.connect(self.clearIntelChat)
+        self.ui.actionClear_Intel_Chat.triggered.connect(self.clearIntelChat)
         self.ui.mapView.webViewUpdateScrollbars.connect(self.fixupScrollBars)
         self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
         self.ui.regionNameField.addItems(sorted([region["name"] for region in Universe.REGIONS]))
@@ -553,6 +532,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.mapView.webViewIsScrolling.connect(self.mapviewIsScrolling)
         self.ui.mapHorzScrollBar.valueChanged.connect(self.updateX)
         self.ui.mapVertScrollBar.valueChanged.connect(self.updateY)
+
+        self.ui.actionOpen_on_dotlan.triggered.connect(lambda: QDesktopServices.openUrl(
+            "https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name)))
+
+        self.ui.actionOpen_on_zKillboard.triggered.connect(lambda: QDesktopServices.openUrl(
+            "https://zkillboard.com/system/{}".format(self.currentSystem.system_id)))
+
+        self.ui.actionChange_Region_to.triggered.connect(lambda: self.changeRegionBySystemID(self.currentSystem.system_id))
+
+        self.ui.actionAlarm_distance_0.triggered.connect(lambda: self.changeAlarmDistance(0))
+        self.ui.actionAlarm_distance_1.triggered.connect(lambda: self.changeAlarmDistance(1))
+        self.ui.actionAlarm_distance_2.triggered.connect(lambda: self.changeAlarmDistance(2))
+        self.ui.actionAlarm_distance_3.triggered.connect(lambda: self.changeAlarmDistance(3))
+        self.ui.actionAlarm_distance_4.triggered.connect(lambda: self.changeAlarmDistance(4))
+        self.ui.actionAlarm_distance_5.triggered.connect(lambda: self.changeAlarmDistance(5))
+
+        self.ui.actionIntel_Time_5_min.triggered.connect(lambda: self.changeIntelTime(5))
+        self.ui.actionIntel_Time_10_min.triggered.connect(lambda: self.changeIntelTime(10))
+        self.ui.actionIntel_Time_20_min.triggered.connect(lambda: self.changeIntelTime(20))
+        self.ui.actionIntel_Time_30_min.triggered.connect(lambda: self.changeIntelTime(30))
+        self.ui.actionIntel_Time_60_min.triggered.connect(lambda: self.changeIntelTime(60))
+
+        # self.ui.actionSlyle_abyss.triggered.connect(lambda: self.chanechane(60))
+        # self.ui.actionStyle_light.triggered.connect(lambda: self.chane(60))
 
         def hoveCheck(global_pos: QPoint, pos: QPointF):
             """
@@ -1083,13 +1086,6 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.critical(ex)
             pass
 
-    def changeRegionFromCtxMenu(self):
-        selected_system = self.trayIcon.contextMenu().currentSystem
-        if selected_system is None:
-            return
-        self.ui.regionNameField.setCurrentText(selected_system.name)
-        # self.changeRegionBySystemID(selected_system.system_id)
-
     def focusMapOnSystem(self, system_id: int):
         """sets the system defined by the id to the focus of the map
         """
@@ -1156,6 +1152,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.cache.putIntoCache("region_name", region_name)
         self.dotlan = self.setupRegionMap(region_name)
+        self.updateMapView()
         if update_queue:
             if system_id is not None:
                 self.focusMapOnSystem(system_id)
@@ -1294,12 +1291,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     ("ui.mapView", "setZoomFactor", self.ui.mapView.zoomFactor()),
                     # ("ui.qSidepannel", "restoreGeometry", str(self.ui.qSidepannel.saveGeometry()), True),
                     (None, "changeChatFontSize", ChatEntryWidget.TEXT_SIZE),
-                    (None, "setOpacity", self.opacityGroup.checkedAction().opacity),
                     (None, "changeAlwaysOnTop", self.ui.actionAlwaysOnTop.isChecked()),
                     (None, "changeShowAvatars", self.showAvatar),
                     (None, "changeAlarmDistance", self.alarmDistance),
                     (None, "changeSound", self.ui.actionActivateSound.isChecked()),
-                    (None, "changeChatVisibility", self.ui.actionShowChat.isChecked()),
+                    (None, "changeChatVisibility", self.ui.actionShowTabs.isChecked()),
                     (None, "loadInitialMapPositions", self.mapPositionsDict),
                     (None, "setSoundVolume", SoundManager().soundVolume),
                     (None, "changeFrameless", self.ui.actionFramelessWindow.isChecked()),
@@ -1310,20 +1306,18 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "setShowADMOnMap", self.showADMOnMap()),
                     (None, "setShowStatistic", self.showStatistic()),
                     (None, "changeTheme", self.cache.getFromCache("theme")),
+                    (None, "changeIntelTime", Globals().intel_time),
                     (None, "changeRegionByName", self.cache.getFromCache("region_name")))
 
         self.cache.putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
         self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
         self._terminateThreads()
-        self.trayIcon.hide()
         event.accept()
         QtCore.QCoreApplication.quit()
 
     @Slot(bool)
-    def changeChatVisibility(self, value=None):
-        if value is None:
-            value = self.ui.actionShowChat.isChecked()
-        self.ui.actionShowChat.setChecked(value)
+    def changeChatVisibility(self, value: bool):
+        self.ui.actionShowTabs.setChecked(value)
 
     @Slot(bool)
     def changeAutoChangeRegion(self, value=None):
@@ -1343,29 +1337,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.actionUseSpokenNotifications.setChecked(False)
             self.ui.actionUseSpokenNotifications.setEnabled(False)
 
-    def setIntelTime(self, minutes=None):
-        if minutes and self.intelTimeGroup:
-            for action in self.intelTimeGroup.actions():
-                action.setChecked(action.intelTime == minutes)
-        Globals().intel_time = minutes
-        self.ui.timeInfo.setText("All Intel (past {} minutes)".format(Globals().intel_time))
-
-    def changeIntelTime(self):
-        action = self.intelTimeGroup.checkedAction()
-        Globals().intel_time = action.intelTime
+    def changeIntelTime(self, intel_time):
+        self._updateIntelActions(intel_time)
+        Globals().intel_time = intel_time
         self.ui.timeInfo.setText("All Intel (past {} minutes)".format(Globals().intel_time))
         self.rescanIntel()
-
-    def setOpacity(self, value=None):
-        if value:
-            for action in self.opacityGroup.actions():
-                action.setChecked(action.opacity == value)
-        action = self.opacityGroup.checkedAction()
-        self.setWindowOpacity(action.opacity)
-
-    def changeOpacity(self):
-        action = self.opacityGroup.checkedAction()
-        self.setWindowOpacity(action.opacity)
 
     @Slot(object)
     def changeTheme(self, th=None):
@@ -1381,7 +1357,6 @@ class MainWindow(QtWidgets.QMainWindow):
         theme = styles.getStyle()
         self.dotlan.updateStyle()
         self.setStyleSheet(theme)
-        self.trayIcon.contextMenu().setStyleSheet(theme)
         logging.info("Setting new theme: {}".format(action.theme))
         self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
 
@@ -1433,9 +1408,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.frameButton.setVisible(value)
         self.ui.actionFramelessWindow.setChecked(value)
 
-        for cm in TrayContextMenu.instances:
-            cm.framelessCheck.setChecked(value)
-
         if do_show:
             self.show()
 
@@ -1463,15 +1435,72 @@ class MainWindow(QtWidgets.QMainWindow):
         new_size = ChatEntryWidget.TEXT_SIZE + 1
         self.changeChatFontSize(new_size)
 
+    def changeWindowOpacity(self, opacity):
+        self._updateWindowOpacityActions(opacity)
+        self.setWindowOpacity(opacity)
+
+    def _updateWindowOpacityActions(self, opacity):
+        self.ui.actionOpacity_100.setChecked(opacity == 1.0)
+        self.ui.actionOpacity_80.setChecked(opacity == 0.8)
+        self.ui.actionOpacity_60.setChecked(opacity == 0.6)
+        self.ui.actionOpacity_40.setChecked(opacity == 0.4)
+        self.ui.actionOpacity_20.setChecked(opacity == 0.2)
+        pass
+
+    def _updateIntelActions(self, intel_time):
+        self.ui.actionIntel_Time_5_min.setChecked(intel_time == 5)
+        self.ui.actionIntel_Time_10_min.setChecked(intel_time == 10)
+        self.ui.actionIntel_Time_20_min.setChecked(intel_time == 20)
+        self.ui.actionIntel_Time_30_min.setChecked(intel_time == 30)
+        self.ui.actionIntel_Time_60_min.setChecked(intel_time == 60)
+
+    def _updateRegionActions(self, system: System):
+        if system:
+            self.ui.actionOpen_on_dotlan.setText("Show {} on dotlan".format(system.name))
+            self.ui.actionOpen_on_dotlan.setEnabled(True)
+
+            self.ui.actionOpen_on_zKillboard.setText("Show {} on zKillboard".format(system.name))
+            self.ui.actionOpen_on_zKillboard.setEnabled(True)
+
+            region_name = Universe.regionNameFromSystemID(system.system_id)
+            self.ui.actionChange_Region_to.setText("Change region to {}".format(region_name))
+            self.ui.actionChange_Region_to.setEnabled(region_name != self.cache.getFromCache("region_name"))
+        else:
+            self.ui.actionOpen_on_dotlan.setEnabled(False)
+            self.ui.actionChange_Region_to.setEnabled(False)
+            self.ui.actionOpen_on_zKillboard.setEnabled(False)
+        self.currentSystem = system
+
+    def _updateAlarmDistanceActions(self, distance):
+        """
+            Change the alarm distance on actions
+        Args:
+            distance:
+
+        Returns:
+
+        """
+        self.ui.actionAlarm_distance_0.setChecked(distance == 0)
+        self.ui.actionAlarm_distance_1.setChecked(distance == 1)
+        self.ui.actionAlarm_distance_2.setChecked(distance == 2)
+        self.ui.actionAlarm_distance_3.setChecked(distance == 3)
+        self.ui.actionAlarm_distance_4.setChecked(distance == 4)
+        self.ui.actionAlarm_distance_5.setChecked(distance == 5)
+
     def changeAlarmDistance(self, distance):
+        """
+            Change the alarm distance on actions and systems wit and located character
+        Args:
+            distance:
+
+        Returns:
+
+        """
+
         for system in ALL_SYSTEMS.values():
             system.changeIntelRange(old_intel_range=self.alarmDistance, new_intel_range=distance)
         self.alarmDistance = distance
-        for cm in TrayContextMenu.instances:
-            for action in cm.distanceGroup.actions():
-                if action.alarmDistance == distance:
-                    action.setChecked(True)
-        self.trayIcon.alarmDistance = distance
+        self._updateAlarmDistanceActions(distance)
 
     def changeJumpbridgesVisibility(self, val):
         self.setShowJumpbridge(val)
@@ -1602,14 +1631,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if system_name in self.systems_on_map:
             self.focusMapOnSystem(system_id)
-        elif system_name not in self.systems_on_map:
+        else:
             if change_region:
                 try:
                     selected_region_name = Universe.regionNameFromSystemID(system_id)
                     concurrent_region_name = self.cache.getFromCache("region_name")
                     if selected_region_name != concurrent_region_name:
                         self.changeRegionByName(region_name=selected_region_name, system_id=system_id)
-                        self.focusMapOnSystem(system_id)
                 except Exception as e:
                     logging.error(e)
                     pass
@@ -2073,7 +2101,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 """
                  For each system that was mentioned in the message, check for alarm distance to the current system
                  and alarm if within alarm distance.
-                """
+
                 for system in message.affectedSystems:
                     is_alarm = message.status == States.ALARM
                     if is_alarm and message.user not in self.knownPlayerNames:
@@ -2089,6 +2117,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                         system.name,
                                         ", ".join(chars),
                                         data["distance"])
+                """
 
         for name, systems in locale_to_set.items():
             self._updateKnownPlayerAndMenu(name)
@@ -2108,23 +2137,12 @@ class MainWindow(QtWidgets.QMainWindow):
             region, the menu item to change the current region is added.
         """
         selected_system = self.systemUnderMouse(self.ui.mapView.mapPosFromPoint(pos))
-
-        map_ctx_menu = MapContextMenu()
-        map_ctx_menu.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)
-        map_ctx_menu.alarmCheck.triggered.connect(self.trayIcon.switchAlarm)
-        map_ctx_menu.quitAction.triggered.connect(self.trayIcon.quit)
-        map_ctx_menu.changeRegion.triggered.connect(
-            lambda: self.changeRegionBySystemID(selected_system.system_id))
-        map_ctx_menu.alarm_distance.connect(self.changeAlarmDistance)
+        map_ctx_menu = MapContextMenu(self.ui)
         map_ctx_menu.setStyleSheet(Styles.getStyle())
-
         if selected_system:
-            selected_region_name = Universe.regionNameFromSystemID(selected_system.system_id)
-            map_ctx_menu.updateMenu(sys_name=selected_system,
-                                    rgn_name=selected_region_name,
-                                    alarm_distance=self.alarmDistance)
+            self._updateRegionActions(selected_system)
         else:
-            map_ctx_menu.updateMenu(alarm_distance=self.alarmDistance)
+            self._updateRegionActions(None)
         res = map_ctx_menu.exec_(self.ui.mapView.mapToGlobal(pos))
         if selected_system:
             if self.handleDestinationActions(res, destination={"system_id": selected_system.system_id}):

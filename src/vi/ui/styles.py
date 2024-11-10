@@ -24,32 +24,39 @@ import os
 from vi.resources import resourcePath, resourcePathExists
 
 
+class STYLE:
+    DARK = "dark"
+    LIGHT = "light"
+
+
 class Styles:
-    defaultStyle = ""
-    defaultCommons = ""
+    lightStyle = ""
+    lightCommons = ""
 
     darkStyle = ""
     darkCommons = ""
 
-    styleList = ["light", "abyss"]
+    styleList = [STYLE.DARK, STYLE.LIGHT]
 
-    currentStyle = "abyss"
+    currentStyle = STYLE.DARK
 
     def __init__(self):
         try:
-            # light theme
+            # light theme Qt css
             if resourcePathExists(os.path.join("vi", "ui", "res", "styles", "light.css")):
                 with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.css"))) as default:
-                    Styles.defaultStyle = default.read()
+                    Styles.lightStyle = default.read()
+            # light theme map colors
             if resourcePathExists(os.path.join("vi", "ui", "res", "styles", "light.yaml")):
                 with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "light.yaml"))) as default:
-                    Styles.defaultCommons = yaml.full_load(default)
+                    Styles.lightCommons = yaml.full_load(default)
 
-            # dark theme
+            # dark theme Qt css
             if resourcePathExists(os.path.join("vi", "ui", "res", "styles", "abyss.css")):
                 with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.css"))) as dark:
                     Styles.darkStyle = dark.read()
 
+            # dark theme map colors
             if resourcePathExists(os.path.join("vi", "ui", "res", "styles", "abyss.yaml")):
                 with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.yaml"))) as dark:
                     Styles.darkCommons = yaml.full_load(dark)
@@ -63,18 +70,18 @@ class Styles:
 
     @staticmethod
     def getStyle():
-        if Styles.currentStyle == "light":
-            return Styles.defaultStyle
-        elif Styles.currentStyle == "abyss":
+        if Styles.currentStyle == STYLE.LIGHT:
+            return Styles.lightStyle
+        elif Styles.currentStyle == STYLE.DARK:
             return Styles.darkStyle
         else:
             return ""
 
     @staticmethod
     def getCommons():
-        if Styles.currentStyle == "light" and Styles.defaultCommons != "":
-            return Styles.defaultCommons
-        elif Styles.currentStyle == "abyss" and Styles.darkCommons != "":
+        if Styles.currentStyle == STYLE.LIGHT and Styles.lightCommons != "":
+            return Styles.lightCommons
+        elif Styles.currentStyle == STYLE.DARK and Styles.darkCommons != "":
             return Styles.darkCommons
         else:
             def_commons = {
