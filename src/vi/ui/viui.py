@@ -46,9 +46,9 @@ from vi.globals import Globals
 from vi.ui import JumpbridgeChooser, ChatroomChooser, SystemChat, ChatEntryWidget, ChatEntryItem
 
 from vi.cache.cache import Cache, currentEveTime
-from vi.resources import resourcePath
+from vi.resources import resourcePath, resourcePathExists
 from vi.soundmanager import SoundManager
-from vi.threads import AvatarFindThread, MapStatisticsThread, STAT, RESULT
+from vi.threads import AvatarFindThread, MapStatisticsThread, STAT
 from vi.redoundoqueue import RedoUndoQueue
 from vi.ui.systemtray import JumpBridgeContextMenu
 from vi.ui.systemtray import MapContextMenu
@@ -389,15 +389,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playerGroup.setExclusionPolicy(QActionGroup.ExclusionPolicy.None_)
         self.ui.menuChars.clear()
         for name in self.knownPlayerNames:
-            if False:
-                icon = QIcon()
-                if evegate.esiCheckCharacterToken(name):
-                    avatar_raw_img = evegate.esiCharactersPortrait(name) if self.showAvatar else None
-                    if avatar_raw_img is not None:
-                        icon.addPixmap(QPixmap.fromImage(QImage.fromData(avatar_raw_img)))
-                action = QAction(icon, "{0}".format(name))
-            else:
-                action = QAction(name)
+            action = QAction(name)
             action.setCheckable(True)
             action.playerName = name
             action.playerUse = name in self.monitoredPlayerNames
@@ -431,7 +423,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.mapView.wheel_dir = 1.0
         self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
 
-    def paintEvent(self, event):
+    def paintEvent__(self, event):
         painter = QtGui.QPainter()
         painter.begin(self)
         opt = QStyleOption()
@@ -553,9 +545,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionIntel_Time_20_min.triggered.connect(lambda: self.changeIntelTime(20))
         self.ui.actionIntel_Time_30_min.triggered.connect(lambda: self.changeIntelTime(30))
         self.ui.actionIntel_Time_60_min.triggered.connect(lambda: self.changeIntelTime(60))
-
-        # self.ui.actionSlyle_abyss.triggered.connect(lambda: self.chanechane(60))
-        # self.ui.actionStyle_light.triggered.connect(lambda: self.chane(60))
 
         def hoveCheck(global_pos: QPoint, pos: QPointF):
             """
@@ -1097,11 +1086,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             return
         if selected_system in self.systems_on_map.values():
-            view_center = self.ui.mapView.size() / 2
-            pt_system = QPointF(selected_system.mapCoordinates.center().x()
-                                * self.ui.mapView.zoom-view_center.width(),
-                                selected_system.mapCoordinates.center().y()
-                                * self.ui.mapView.zoom-view_center.height())
+            pt_system = self.ui.mapView.scrollPositionFromMapCoordinate(selected_system.mapCoordinates)
             self.ui.mapView.setScrollPosition(pt_system)
             self.ui.mapView.update()
 
@@ -1184,7 +1169,7 @@ class MainWindow(QtWidgets.QMainWindow):
     @staticmethod
     def loadSVGMapFile(cache, region_name) -> Optional[str]:
         """
-            Reads the regions svg content in order filesystem, cache or dotlan
+            Reads the regions svg content in order res/mapdata folder, filesystem, cache or dotlan
         Args:
             cache:
             region_name:
@@ -1192,30 +1177,36 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns:
 
         """
+        res_file_name = os.path.join("vi", "ui", "res", "mapdata",
+                                     "{0}.svg".format(evegate.convertRegionNameForDotlan(region_name)))
 
-        res_file_name = os.path.join(os.path.expanduser("~"),
-                                     "Documents", "EVE", "spyglass", "mapdata", "{0}.svg".format(
-                evegate.convertRegionNameForDotlan(region_name)))
-        if os.path.exists(res_file_name):
+        if resourcePathExists(res_file_name):
             with open(resourcePath(res_file_name)) as svgFile:
                 svg = svgFile.read()
                 return svg
-        else:
-            cache_key = "_".join(("mapdata", "svg", evegate.convertRegionNameForDotlan(region_name))).lower()
-            svg = cache.getFromCache(cache_key)
-            if svg is None or len(svg) < 100:
-                try:
-                    svg = evegate.getSvgFromDotlan(region=region_name, dark=True)
-                    if svg is None or len(svg) > 100:
-                        cache.putIntoCache(cache_key, value=svg, max_age=365*24*60*60)
-                        return svg
-                    else:
-                        return None
-                except (Exception,) as e:
-                    logging.error(e)
-                    return None
-            else:
+
+        file_name = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "mapdata", "{0}.svg".format(
+                evegate.convertRegionNameForDotlan(region_name)))
+        if os.path.exists(file_name):
+            with open(file_name) as svgFile:
+                svg = svgFile.read()
                 return svg
+
+        cache_key = "_".join(("mapdata", "svg", evegate.convertRegionNameForDotlan(region_name))).lower()
+        svg = cache.getFromCache(cache_key)
+        if svg is None or len(svg) < 100:
+            try:
+                svg = evegate.getSvgFromDotlan(region=region_name, dark=True)
+                if svg is None or len(svg) > 100:
+                    cache.putIntoCache(cache_key, value=svg, max_age=365*24*60*60)
+                    return svg
+                else:
+                    return None
+            except (Exception,) as e:
+                logging.error(e)
+                return None
+        else:
+            return svg
 
     def setupRegionMap(self, region_name):
         """
@@ -1345,7 +1336,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot(object)
     def changeTheme(self, th=None):
-        logging.info("change theme")
         if type(th) is str:
             if th is not None:
                 for action in self.themeGroup.actions():
@@ -1357,7 +1347,7 @@ class MainWindow(QtWidgets.QMainWindow):
         theme = styles.getStyle()
         self.dotlan.updateStyle()
         self.setStyleSheet(theme)
-        logging.info("Setting new theme: {}".format(action.theme))
+        logging.info("Chane to GUI theme: {}".format(action.theme))
         self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
 
     def changeSound(self, value=None, disable=False):
@@ -1638,7 +1628,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     concurrent_region_name = self.cache.getFromCache("region_name")
                     if selected_region_name != concurrent_region_name:
                         self.changeRegionByName(region_name=selected_region_name, system_id=system_id)
-                except Exception as e:
+                except (Exception,) as e:
                     logging.error(e)
                     pass
 

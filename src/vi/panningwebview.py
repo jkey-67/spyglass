@@ -96,6 +96,11 @@ class PanningWebView(QWidget):
     def scrollPosition(self) -> QPointF:
         return self.scrollPos
 
+    def scrollPositionFromMapCoordinate(self, pt_system: QPointF):
+        view_center = self.size() / 2
+        return QPointF(pt_system.center().x() * self.zoom - view_center.width(),
+                       pt_system.center().y() * self.zoom - view_center.height())
+
     def setScrollPosition(self, pos: QPointF):
         if not self.scrolling:
             self._setScrollPosition(pos)

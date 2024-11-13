@@ -184,7 +184,7 @@ class MapStatisticsThread(QThread):
 
                     if STAT.SOVEREIGNTY in tsk:
                         statistics_data[STAT.SOVEREIGNTY] = (
-                            evegate.getPlayerSovereignty(fore_refresh=False, show_npc=True))
+                            evegate.getPlayerSovereignty(show_npc=True))
                         tsk.remove(STAT.SOVEREIGNTY)
                         statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
@@ -205,14 +205,14 @@ class MapStatisticsThread(QThread):
                         continue
 
                     if STAT.INCURSIONS in tsk:
-                        statistics_data[STAT.INCURSIONS] = evegate.esiIncursions(False)
+                        statistics_data[STAT.INCURSIONS] = evegate.esiIncursions()
                         tsk.remove(STAT.INCURSIONS)
                         statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
                         continue
 
                     if STAT.CAMPAIGNS in tsk:
-                        statistics_data[STAT.CAMPAIGNS] = evegate.getCampaignsSystemsIds(False)
+                        statistics_data[STAT.CAMPAIGNS] = evegate.getCampaignsSystemsIds()
                         tsk.remove(STAT.CAMPAIGNS)
                         statistics_data[STAT.RESULT] = RESULT.OK
                         self.statistic_data_update.emit(statistics_data)
@@ -258,6 +258,7 @@ class MapStatisticsThread(QThread):
                     statistics_data[STAT.RESULT] = RESULT.ERROR
                     statistics_data[STAT.INFORMATION] = str(e)
                     self.statistic_data_update.emit(statistics_data)
+                    self.queue.put([STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS])
                     tsk = None
 
             if tsk and len(tsk):

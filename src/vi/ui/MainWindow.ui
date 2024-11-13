@@ -20,6 +20,9 @@
   <property name="windowOpacity">
    <double>1.000000000000000</double>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_5">
     <property name="spacing">
@@ -226,7 +229,7 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>200</width>
+                 <width>0</width>
                  <height>0</height>
                 </size>
                </property>
