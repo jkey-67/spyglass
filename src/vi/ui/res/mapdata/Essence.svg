@@ -127,7 +127,7 @@
 <defs>
   <symbol id="def30004999">
     <a xlink:href="http://evemaps.dotlan.net/system/Ladistier" class="sys link-5-30004999" target="_top">
-      <rect id="rect30004999" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-20);" />
+      <rect id="rect30004999" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Ladistier</text>
       <text id="txt30004999" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
@@ -501,9 +501,9 @@
   <symbol id="def30004982">
     <a xlink:href="http://evemaps.dotlan.net/system/Indregulle" class="sys link-5-30004982" target="_top">
     <rect id="ice30004982" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
-      <rect id="rect30004982" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-20);" />
+      <rect id="rect30004982" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-60);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Indregulle</text>
-      <text id="txt30004982" x="28" y="21.7" class="st" text-anchor="middle">Caldari</text>
+      <text id="txt30004982" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
   </symbol>
   <symbol id="def30004970">
@@ -532,9 +532,9 @@
   </symbol>
   <symbol id="def30004979">
     <a xlink:href="http://evemaps.dotlan.net/system/Heydieles" class="sys link-5-30004979" target="_top">
-      <rect id="rect30004979" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-0);" />
+      <rect id="rect30004979" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Heydieles</text>
-      <text id="txt30004979" x="28" y="21.7" class="st" text-anchor="middle">Caldari</text>
+      <text id="txt30004979" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -545,9 +545,9 @@
   </symbol>
   <symbol id="def30004984">
     <a xlink:href="http://evemaps.dotlan.net/system/Abune" class="sys link-5-30004984" target="_top">
-      <rect id="rect30004984" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-20);" />
+      <rect id="rect30004984" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-40);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Abune</text>
-      <text id="txt30004984" x="28" y="21.7" class="st" text-anchor="middle">Caldari</text>
+      <text id="txt30004984" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
   </symbol>
   <symbol id="def30004969">
@@ -650,9 +650,9 @@
   <symbol id="def30004980">
     <a xlink:href="http://evemaps.dotlan.net/system/Fliet" class="sys link-5-30004980" target="_top">
     <rect id="ice30004980" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
-      <rect id="rect30004980" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-20);" />
+      <rect id="rect30004980" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-60);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Fliet</text>
-      <text id="txt30004980" x="28" y="21.7" class="st" text-anchor="middle">Caldari</text>
+      <text id="txt30004980" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -708,7 +708,7 @@
   </symbol>
   <symbol id="def30004985">
     <a xlink:href="http://evemaps.dotlan.net/system/Deven" class="sys link-5-30004985" target="_top">
-      <rect id="rect30004985" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-0);" />
+      <rect id="rect30004985" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-40);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Deven</text>
       <text id="txt30004985" x="28" y="21.7" class="st" text-anchor="middle">Caldari</text>
     </a>
@@ -1361,7 +1361,7 @@
 </g>
 
 
-<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1730328322"></script>
 <script type="text/javascript"><![CDATA[
 
 function init(E) {

@@ -1028,14 +1028,7 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-  <rect id="inc30004287" x="241.5" y="371.5" width="85" height="46" class="incs" />
-  <rect id="inc30004284" x="246.5" y="486.5" width="85" height="46" class="inc" />
-  <rect id="inc30004286" x="316.5" y="371.5" width="85" height="46" class="inc" />
-  <rect id="inc30004285" x="316.5" y="431.5" width="85" height="46" class="inc" />
-  <rect id="inc30004283" x="316.5" y="486.5" width="85" height="46" class="inc" />
-  <rect id="inc30004282" x="396.5" y="431.5" width="85" height="46" class="inc" />
-  <rect id="inc30004281" x="446.5" y="371.5" width="85" height="46" class="inc" />
-  <rect id="inc30004280" x="451.5" y="486.5" width="85" height="46" class="inc" />
+
 
 </g>
 
@@ -1261,7 +1254,7 @@
 </g>
 
 
-<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1730328322"></script>
 <script type="text/javascript"><![CDATA[
 
 function init(E) {

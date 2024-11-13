@@ -486,17 +486,15 @@ QMainWindow::separator
 {
     background-color: #31363b;
     color: white;
-    padding-left: 4px;
+    padding-left: 2px;
     spacing: 2px;
-    border: 1px dashed #76797C;
 }
 
 QMainWindow::separator:hover
 {
-    background-color: #404249;
+    background-color: #363a3f;
     color: white;
-    padding-left: 4px;
-    border: 1px solid #76797C;
+    padding-left: 2px;
     spacing: 2px;
 }
 
@@ -1125,12 +1123,10 @@ QFrame[height="3"], QFrame[width="3"] {
 
 
 QSplitter::handle {
-    border: 1px dashed #404249;
 }
 
 QSplitter::handle:hover {
-    background-color: #404249;
-    border: 1px solid #404249;
+    background-color: #31363b;
 }
 
 QSplitter::handle:horizontal {
