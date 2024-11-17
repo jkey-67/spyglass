@@ -22,13 +22,14 @@
 ###########################################################################
 
 import math
-import datetime
 import json
+import os
+import datetime
 
 from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF
 from PySide6.QtGui import QPainter, QFont, QPen, QBrush, QColor, QRadialGradient, QPainterPath
 from vi.states import States
-from vi.cache.cache import Cache
+from vi.cache import Cache
 from vi.ui.styles import Styles, TextInverter
 from vi.universe import Universe
 from vi.globals import Globals
@@ -48,7 +49,7 @@ class System(object):
 
 
         ticker: str
-            Ticker of the alliance holding the soverinity
+            Ticker of the alliance holding the sovereignty
 
         svgElement:object
             object referencing the xml element
@@ -82,6 +83,11 @@ class System(object):
     SYSTEM_STYLE = "font-family: Arial, Helvetica, sans-serif; font-size: 8px; fill: {};"
     ALARM_STYLE = "font-family: Arial, Helvetica, sans-serif; font-size: 7px; fill: {};"
 
+    # structure type_id sorted by size
+    M_SIZE = [35832, 35825, 35826, 35835, 35836]
+    L_SIZE = [35833, 47512, 47513, 47514, 47515, 47516, 35827]
+    XL_SIZE = [35834, 40340]
+
     ALARM_COLORS = [(1.0,  "#d00000", "#D09B0F", "#C0C0C0"),
                     (0.75, "#D09B0F", "#D0FA0F", "#C0C0C0"),
                     (0.5,  "#D0FA0F", "#D0FDA2", "#C0C0C0"),
@@ -101,13 +107,21 @@ class System(object):
     ELEMENT_WIDTH = 62.5
     ELEMENT_HEIGHT = 30
 
-    def __init__(self, name, system_id, ticker="-?-"):
-        self.name = name
-        self.system_id = system_id
-        self.region_id = Universe.regionIDFromSystemID(system_id)
-        system_data = Universe.systemById(self.system_id)
-        self.constellation_id = system_data["constellation_id"]
-        self.ticker = ticker
+    def __init__(self, **kwargs):
+        self.name = None
+        self.system_id = None
+        self.constellation_id = None
+        self.planets = None
+        self.position = None
+        self.security_class = None
+        self.security_status = None
+        self.stargates = None
+        self.stations = None
+        self.structures = None
+        self.ticker = "-?-"
+        self.__dict__.update(kwargs)
+        self.region_id = Universe.regionIDFromSystemID(self.system_id)
+
         self._system_messages = []
         self.jumpBridges = set()
         self.theraWormholes = set()
@@ -120,20 +134,21 @@ class System(object):
         self.marker = 0.0
         self.wormhole_info = list()
 
+        self.is_vulnerable_visible = True
         self.is_statistics_visible = True
         self.is_jumpbridges_visible = True
 
         self._is_dirty = True
         self._status = None
         self._first_line = self.name
-        self._second_line = ticker
+        self._second_line = "-?-"
         self._second_line_flash = False
         self._last_alarm_timestamp = 0
         self._locatedCharacters = []
         self._neighbours = None
         self._hasCampaigns = False
         self._hasIncursion = False
-        self._hasIceBelt = False
+        self.has_ice_belt = False
         self._isStaging = False
         self._hasIncursionBoss = False
         self._hasThera = False
@@ -141,10 +156,21 @@ class System(object):
         self._hasKill = 0.0
         self._svg_text_string = "stats n/a"
         self._alarm_seconds = 0
-        # C cloning, R Refining, F Factory, R Research, O Offices, I Industry
-        self._hasKeepStar = set()  # set of station services
-        # C cloning, R Refining, F Factory, R Research, O Offices, I Industry
-        self._hasStation = set()   # set of station services
+        self._structure_type = None
+        self.vulnerability_occupancy_level = None
+        self.vulnerable_end_time = None
+        self.vulnerable_start_time = None
+        self._vulnerability_text = None
+
+        self.marking_color = None
+        self.marking_scale = 1.0
+
+        self.has_upwell_cyno_beacon = False
+        self.has_upwell_cyno_jammer = False
+
+    @property
+    def center(self) -> QPointF:
+        return self.rect.center()
 
     @property
     def is_dirty(self) -> bool:
@@ -169,7 +195,7 @@ class System(object):
             elif self._status == States.CLEAR:
                 self.setBackgroundColor(self.CLEAR_COLOR)
             elif self._status == States.UNKNOWN:
-                self.setBackgroundColor(self.UNKNOWN_COLOR)
+                self.setBackgroundColor(System.UNKNOWN_COLOR)
                 self._second_line_flash = False
         return self._status
 
@@ -187,7 +213,7 @@ class System(object):
             None
 
         """
-        painter.setPen(QColor("#ffc0c0c0"))
+        painter.setPen(QColor("#ffc0c0c0"))     # constellation
         for system in self.neighbours:
             if system.name in systems.keys():
                 if self.region_id == current_region_id:
@@ -202,7 +228,7 @@ class System(object):
 
     @staticmethod
     def renderLegend(painter: QPainter, region_name):
-        painter.setFont(QFont("Arial", 30, italic=True))
+        painter.setFont(QFont("Arial", 15, italic=True))
         painter.setPen(QColor("#10c0c0c0"))
         painter.drawText(QRectF(0.0, 0.0, 1024.0, 50.0), Qt.AlignLeft, region_name)
         # System.testRender(painter)
@@ -212,74 +238,89 @@ class System(object):
         system_id = Universe.systemIdByName("Umokka")
         region_id = Universe.regionIDFromSystemID(system_id)
         inx = 1
-        test = System("Name", system_id, "Ticker")
+        sys = {"name": "Umokka", "system_id": system_id, "security_status": 0.8, "security_class": "T9"}
+        test = System(**sys)
         test._first_line = "XXXX"
+        test.stations = [123]
+        test._structure_type = None
+        test.structures = [{"type_id":System.M_SIZE[0]}]
         test._second_line = "YYYYY"
         test.applySVG(QRectF(20.0, inx*50.0, System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT))
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = True
+        test._structure_type = None
+        test.structures = [{"type_id": System.L_SIZE[0]}]
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
-        test._hasIceBelt = True
+        test.has_ice_belt = True
+        test._structure_type = None
+        test.structures = [{"type_id": System.XL_SIZE[0]}]
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
-        test._hasIceBelt = False
+        test.has_ice_belt = False
         test._hasIncursion = True
+        test._structure_type = None
+        test.stations = [123]
+        test.structures = None
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
-        test._hasIceBelt = False
+        test.has_ice_belt = False
         test._hasIncursion = False
         test._isMonitored = 1
+        test._structure_type = None
+        test.stations = None
+        test.structures = None
+
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
-        test._hasIceBelt = False
+        test.has_ice_belt = False
         test._hasIncursion = False
         test._isMonitored = 0
         test._locatedCharacters = ["Test"]
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
-        test._hasIceBelt = False
+        test.has_ice_belt = False
         test._hasIncursion = False
         test._isMonitored = 0
         test._locatedCharacters = None
         test._hasKill = 1.0
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
         test._hasCampaigns = False
-        test._hasIceBelt = False
+        test.has_ice_belt = False
         test._hasIncursion = False
         test._isMonitored = 0
         test._locatedCharacters = None
         test._hasKill = 10.0
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
-        test.renderSystem(painter, region_id)
+        test.renderSystemTexts(painter, region_id)
         pass
 
     def renderWormHoles(self, painter: QPainter, current_region_id, systems):
@@ -405,6 +446,7 @@ class System(object):
         rc_out_back = self.rect.__copy__().marginsAdded(QMargins(20, 20, 20, 20))
         delta_h = self.ELEMENT_HEIGHT / 2
         delta_w = self.ELEMENT_WIDTH / 2
+
         if self._hasIncursion:
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30ffd700"))
@@ -416,11 +458,9 @@ class System(object):
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
             path.addRoundedRect(rc_out_back, delta_h, delta_h)
-
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
-            painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
 
         if self._hasCampaigns:
@@ -433,7 +473,6 @@ class System(object):
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
-            painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
 
         if self._isMonitored > 0:
@@ -445,7 +484,6 @@ class System(object):
             path = QPainterPath()
             path.addRoundedRect(rc_out_back_monitor, delta_h, delta_h)
             painter.fillPath(path, QBrush(gradient))
-            painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
 
         if self._hasKill > 0.0:
@@ -464,6 +502,23 @@ class System(object):
             painter.setBrush(Qt.NoBrush)
             self._hasKill = self._hasKill - 0.025
 
+        if self.marking_color:
+            path = QPainterPath()
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(self.marking_color))
+            scale = self.marking_scale
+            factor_a = 0.8 * scale
+            factor_a_y = 1.0 * scale
+            factor_b = 1.125 * scale
+            path.moveTo(self.rect.center().x() - delta_w * factor_a, self.rect.center().y() - delta_h * factor_a_y)
+            path.lineTo(self.rect.center().x() + delta_w * factor_a, self.rect.center().y() - delta_h * factor_a_y)
+            path.lineTo(self.rect.center().x() + delta_w * factor_b, self.rect.center().y() - delta_h * 0.0)
+            path.lineTo(self.rect.center().x() + delta_w * factor_a, self.rect.center().y() + delta_h * factor_a_y)
+            path.lineTo(self.rect.center().x() - delta_w * factor_a, self.rect.center().y() + delta_h * factor_a_y)
+            path.lineTo(self.rect.center().x() - delta_w * factor_b, self.rect.center().y() + delta_h * 0.0)
+            painter.drawPath(path)
+            painter.setBrush(Qt.NoBrush)
+
         if bool(self._locatedCharacters):
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30800080"))
@@ -474,13 +529,12 @@ class System(object):
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
-            painter.drawPath(path)
             painter.setBrush(Qt.NoBrush)
 
-        if self.marker > datetime.datetime.utcnow().timestamp():
+        if self.marker > datetime.datetime.now(datetime.UTC).timestamp():
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             marker_color = QColor("#6495ed")
-            marker_color.setAlphaF((self.marker-datetime.datetime.utcnow().timestamp())/10.0)
+            marker_color.setAlphaF((self.marker-datetime.datetime.now(datetime.UTC).timestamp())/10.0)
 
             gradient.setColorAt(0.0, marker_color)
             gradient.setColorAt(0.6, QColor("#006495ed"))
@@ -494,9 +548,121 @@ class System(object):
         else:
             self.marker = 0.0
 
-    def renderSystem(self, painter: QPainter, current_region_id):
+    def boundingRect(self, current_region_id) -> QRectF:
+        if self.region_id == current_region_id:
+            return self.rect.__copy__().marginsAdded(QMargins(-2, -2, -2, -2))
+        else:
+            return self.rect.__copy__().marginsAdded(QMargins(-6, -2, -6, -2))
+
+    @property
+    def structure_type(self):
+        if self._structure_type is None:
+            self._structure_type = 0
+            for struct in self.structures:
+                if "type_id" in struct:
+                    if struct["type_id"] in System.XL_SIZE:
+                        self._structure_type = max(3, self._structure_type)
+                    elif struct["type_id"] in System.L_SIZE:
+                        self._structure_type = max(2, self._structure_type)
+                    elif struct["type_id"] in System.M_SIZE:
+                        self._structure_type = max(1, self._structure_type)
+            return self._structure_type
+        else:
+            return self._structure_type
+
+    @staticmethod
+    def structurePen():
+        border_pen = QPen(QColor("#FFC0C0C0"))
+        border_pen.setWidthF(0.3)
+        return border_pen
+
+    @staticmethod
+    def structureBrush():
+        return QBrush(QColor(System.UNKNOWN_COLOR))
+
+    def drawLargeStructure(self, painter: QPainter, current_region_id):
+        painter.setPen(self.structurePen())
+        painter.setBrush(self.structureBrush())
+        bounding_rect = self.boundingRect(current_region_id)
+        rc_out = self.boundingRect(current_region_id)
+        box_border = 8.0
+        rc_out.setWidth(box_border)
+        rc_out.setHeight(box_border)
+        rc_out.translate(bounding_rect.width() - box_border / 2.0 + box_border / 4.0,
+                         bounding_rect.height() / 2.0 - box_border / 2.0)
+
+        path = QPainterPath()
+        scale = self.marking_scale
+        factor_a = 0.8 * scale
+        factor_a_y = 1.0 * scale
+        factor_b = 1.125 * scale
+
+        path.moveTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - box_border / 2.0)
+        path.lineTo(rc_out.center().x() - box_border / 6.0, rc_out.center().y() - box_border / 2.0)
+        path.lineTo(rc_out.center().x() - box_border / 6.0, rc_out.center().y() - 0)
+        path.lineTo(rc_out.center().x() + box_border / 6.0, rc_out.center().y() - 0)
+        path.lineTo(rc_out.center().x() + box_border / 6.0, rc_out.center().y() - box_border / 2.0)
+        path.lineTo(rc_out.center().x() + box_border / 2.0, rc_out.center().y() - box_border / 2.0)
+        path.lineTo(rc_out.center().x() + box_border / 2.0, rc_out.center().y() + box_border / 2.0)
+        path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() + box_border / 2.0)
+        path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - box_border / 2.0)
+        painter.drawPath(path)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(path)
+
+    def drawMediumStructure(self, painter: QPainter, current_region_id):
+        painter.setPen(self.structurePen())
+        painter.setBrush(self.structureBrush())
+        bounding_rect = self.boundingRect(current_region_id)
+        rc_out = self.boundingRect(current_region_id)
+        box_border = 7.0
+        rc_out.setWidth(box_border)
+        rc_out.setHeight(box_border)
+        rc_out.translate(bounding_rect.width() - box_border / 2.0 + box_border / 4.0,
+                         bounding_rect.height() / 2.0 - box_border / 2.0)
+
+        path = QPainterPath()
+
+        path.moveTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - 0)
+        path.lineTo(rc_out.center().x() - box_border / 6.0, rc_out.center().y() - 0)
+        path.lineTo(rc_out.center().x() - box_border / 6.0, rc_out.center().y() - box_border / 2.0)
+        path.lineTo(rc_out.center().x() + box_border / 6.0, rc_out.center().y() - box_border / 2.0)
+        path.lineTo(rc_out.center().x() + box_border / 6.0, rc_out.center().y() - 0)
+        path.lineTo(rc_out.center().x() + box_border / 2.0, rc_out.center().y() - 0)
+        path.lineTo(rc_out.center().x() + box_border / 2.0, rc_out.center().y() + box_border / 2.0)
+        path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() + box_border / 2.0)
+        path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - 0)
+
+        painter.drawPath(path)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(path)
+
+    def drawSmallStructure(self, painter: QPainter, current_region_id):
+        painter.setPen(self.structurePen())
+        painter.setBrush(self.structureBrush())
+        bounding_rect = self.boundingRect(current_region_id)
+        rc_out = self.boundingRect(current_region_id)
+        box_border = 6.0
+        rc_out.setWidth(box_border)
+        rc_out.setHeight(box_border)
+        rc_out.translate(bounding_rect.width() - box_border / 2.0 + box_border / 4.0,
+                         bounding_rect.height() / 2.0 - box_border / 2.0)
+
+        path = QPainterPath()
+
+        path.moveTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - 0)
+        path.lineTo(rc_out.center().x() + box_border / 2.0, rc_out.center().y() - 0)
+        path.lineTo(rc_out.center().x() + box_border / 2.0, rc_out.center().y() + box_border / 2.0)
+        path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() + box_border / 2.0)
+        path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - 0)
+
+        painter.drawPath(path)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(path)
+
+    def renderSystemTexts(self, painter: QPainter, current_region_id):
         """
-        Renders the system to a painter and resets the dirty flad
+        Renders the system to a painter and resets the dirty flag
         Args:
             painter: QPainter to use
             current_region_id: region id of map
@@ -505,13 +671,14 @@ class System(object):
 
         """
         delta_h = self.ELEMENT_HEIGHT / 8
-        rc_out = self.rect.__copy__().marginsAdded(QMargins(-2, -2, -2, -2))
+        delta_w = self.ELEMENT_WIDTH / 8
+        rc_out = self.boundingRect(current_region_id)
         painter.setBrush(self.getBackgroundBrush())
         if self.region_id == current_region_id:
             painter.setPen(QPen(QColor("#FFc0c0c0")))
             path = QPainterPath()
             path.addRoundedRect(rc_out, 12, 12)
-            painter.fillPath(path, QBrush(self.UNKNOWN_COLOR))
+            painter.fillPath(path, QBrush(System.UNKNOWN_COLOR))
             painter.drawPath(path)
         else:
             painter.setPen(QPen(QColor("#FFc0c0c0")))
@@ -520,11 +687,11 @@ class System(object):
         painter.setFont(QFont("Arial", delta_h*1.8))
         painter.drawText(rc_out, Qt.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
 
-        if self._hasIceBelt:
+        if self.has_ice_belt:
             if self.region_id == current_region_id:
                 rc_out = self.rect.__copy__()
                 ise_pen = QPen(QColor("#806495ED"))
-                ise_pen.setWidthF(2.5)
+                ise_pen.setWidthF(2.0)
                 painter.setPen(ise_pen)
                 painter.setBrush(QBrush(Qt.NoBrush))
                 path = QPainterPath()
@@ -532,13 +699,51 @@ class System(object):
                 painter.drawPath(path)
 
         if self.is_statistics_visible:
+            rc_out = self.rect.__copy__()
             rc_out.translate(0.0, rc_out.height())
             rc_out.setHeight(delta_h*2)
 
             painter.setFont(QFont("Arial", delta_h*1.3))
-            painter.setPen(QPen(QColor("#c0FF0000")))
+            painter.setPen(QPen(QColor("#C0FF0000")))
             painter.drawText(rc_out, Qt.AlignCenter, self._svg_text_string)
             painter.setBrush(Qt.NoBrush)
+
+        if self.is_vulnerable_visible:
+            rc_out = self.rect.__copy__()
+            rc_out.translate(0.0, -delta_h*2)
+            rc_out.setHeight(delta_h*2)
+
+            painter.setFont(QFont("Arial", delta_h*1.3))
+            painter.setPen(QPen(QColor("#C0FF8000")))
+            if self._vulnerability_text is None:
+                painter.drawText(rc_out, Qt.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
+            else:
+                painter.drawText(rc_out, Qt.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
+                painter.drawText(rc_out, Qt.AlignRight, self._vulnerability_text)
+                # painter.drawText(rc_out, Qt.AlignCenter, self._vulnerability_text)
+            painter.setBrush(Qt.NoBrush)
+
+        if self.stations and self.structures is None:
+            painter.setPen(self.structurePen())
+            painter.setBrush(QBrush(QColor(System.UNKNOWN_COLOR)))
+            bounding_rect = self.boundingRect(current_region_id)
+            rc_out = self.boundingRect(current_region_id)
+            box_border = 8.0
+            rc_out.setWidth(box_border)
+            rc_out.setHeight(box_border)
+            rc_out.translate(bounding_rect.width()-box_border/2.0, bounding_rect.height()/2.0 - box_border/2.0)
+            painter.drawRect(rc_out)
+            painter.setBrush(Qt.NoBrush)
+
+        if self.structures:
+            type_id = self.structure_type
+            if type_id == 3:
+                self.drawLargeStructure(painter, current_region_id)
+            elif type_id == 2:
+                self.drawMediumStructure(painter, current_region_id)
+            else:
+                self.drawSmallStructure(painter, current_region_id)
+
         self._is_dirty = False
 
     @property
@@ -559,7 +764,6 @@ class System(object):
         Returns:
         """
         self.rect = map_coordinates
-        self.center = map_coordinates.center()
         self._is_dirty = True
 
     def mark(self, sec=10.0):
@@ -571,7 +775,7 @@ class System(object):
         Returns:
 
         """
-        self.marker = datetime.datetime.utcnow().timestamp() + sec
+        self.marker = datetime.datetime.now(datetime.UTC).timestamp() + sec
         self._is_dirty = True
 
     def addLocatedCharacter(self, char_name, intel_range=None):
@@ -620,7 +824,7 @@ class System(object):
         """
         r = self.backgroundAlpha
         col_a = QColor(self.backgroundColor)
-        col_b = QColor(self.backgroundColorNext) if self.backgroundColorNext != "#BACKGD" else self.UNKNOWN_COLOR
+        col_b = QColor(self.backgroundColorNext) if self.backgroundColorNext != "#BACKGD" else System.UNKNOWN_COLOR
         brush_color = QColor(255*(col_b.redF() * (1 - r) + col_a.redF() * r),
                              255*(col_b.greenF() * (1 - r)+col_a.greenF() * r),
                              255*(col_b.blueF() * (1 - r) + col_a.blueF() * r))
@@ -705,6 +909,38 @@ class System(object):
             self._svg_text_string = "j-{jumps} f-{factionkills} s-{shipkills} p-{podkills}".format(**statistics)
         self._is_dirty = True
 
+    def setVulnerabilityInfo(self, sys_sov_structures: dict) -> None:
+        """
+        Updates the vulnerability information of the system
+        Args:
+            sys_sov_structures:
+
+        Returns:
+
+        """
+        if "vulnerability_occupancy_level" in sys_sov_structures:
+            self.vulnerability_occupancy_level = sys_sov_structures["vulnerability_occupancy_level"]
+            self._vulnerability_text = "({})".format(self.vulnerability_occupancy_level)
+        else:
+            self.vulnerability_occupancy_level = None
+            self._vulnerability_text = ""
+
+        if "vulnerable_start_time" in sys_sov_structures:
+            self.vulnerable_start_time = datetime.datetime.strptime(sys_sov_structures['vulnerable_start_time'],
+                                                                  "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+            self._vulnerability_text = (self.vulnerable_start_time.strftime("%m/%d %H:%M") + " " +
+                                        self._vulnerability_text)
+        else:
+            self.vulnerable_start_time = None
+
+        if "vulnerable_end_time" in sys_sov_structures:
+            self.vulnerable_end_time = datetime.datetime.strptime(sys_sov_structures['vulnerable_end_time'],
+                                                                  "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+        else:
+            self.vulnerable_end_time = None
+
+        self._is_dirty = True
+
     def updateSystemBackgroundColors(self) -> None:
         """
         Updated the background color depending on the current alarm state and current time
@@ -712,7 +948,7 @@ class System(object):
             None
         """
         last_cycle = True
-        alarm_time = datetime.datetime.utcnow().timestamp() - self._last_alarm_timestamp
+        alarm_time = datetime.datetime.now(datetime.UTC).timestamp() - self._last_alarm_timestamp
         if self.status == States.ALARM:
             for maxDiff, alarmColour, nextColor, lineColour in self.ALARM_COLORS:
                 curr_diff = alarm_time / (Globals().intel_time * 60.0)
@@ -739,8 +975,8 @@ class System(object):
                 self._second_line_flash = False
                 self._second_line = self.ticker
                 self.backgroundAlpha = 1.0
-                self.backgroundColor = self.UNKNOWN_COLOR
-                self.backgroundColorNext = self.UNKNOWN_COLOR
+                self.backgroundColor = System.UNKNOWN_COLOR
+                self.backgroundColorNext = System.UNKNOWN_COLOR
             else:
                 minutes = int(math.floor(alarm_time / 60))
                 seconds = int(alarm_time - minutes * 60)
@@ -754,24 +990,33 @@ class System(object):
         else:
             self._second_line_flash = False
             self._second_line = self.ticker
+
             self.backgroundAlpha = 1.0
-            self.backgroundColor = self.UNKNOWN_COLOR
-            self.backgroundColorNext = self.UNKNOWN_COLOR
+            self.backgroundColor = System.UNKNOWN_COLOR
+            self.backgroundColorNext = System.UNKNOWN_COLOR
 
     def updateStyle(self):
+        """
         for i in range(5):
-            self.ALARM_COLORS[i] = (self.ALARM_COLORS[i][0], self.styles.getCommons()["alarm_colours"][i],
+            self.ALARM_COLORS[i] = (self.ALARM_COLORS[i][0], System.styles.getCommons()["alarm_colours"][i],
                                     self.textInv.getTextColourFromBackground(self.ALARM_COLORS[i][1]))
         self.ALARM_COLOR = self.ALARM_COLORS[0][1]
-        self.UNKNOWN_COLOR = self.styles.getCommons()["unknown_colour"]
-        self.CLEAR_COLOR = self.styles.getCommons()["clear_colour"]
-        self.setBackgroundColor(self.UNKNOWN_COLOR)
+        """
+        System.UNKNOWN_COLOR = System.styles.getCommons()["unknown_colour"]
+        self.CLEAR_COLOR = System.styles.getCommons()["clear_colour"]
+        self.setBackgroundColor(System.UNKNOWN_COLOR)
         self._is_dirty = True
 
     def getTooltipText(self):
-        format_src = '''<span style="font-weight:medium; color:#e5a50a;">{system}</span>''' \
-                     '''<span style="font-weight:medium; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>''' \
-                     '''<br/><span style=" font-weight:medium; color:#e01b24;">{systemstats}</span>'''
+        if self.vulnerability_occupancy_level:
+            format_src = '<span style="font-weight:medium; color:#e5a50a;">{system}</span>' \
+                         '<span style="font-weight:medium; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>' \
+                         '<span style="font-weight:medium; font-style:italic; color:#deddda;">({adm})</span>' \
+                         '<br/><span style=" font-weight:medium; color:#e01b24;">{systemstats}</span>'
+        else:
+            format_src = '<span style="font-weight:medium; color:#e5a50a;">{system}</span>' \
+                     '<span style="font-weight:medium; font-style:italic; color:#deddda;">&lt;{ticker}&gt;</span>' \
+                     '<br/><span style=" font-weight:medium; color:#e01b24;">{systemstats}</span>'
 
         # '''<p><span style=" font-weight:bold; color:#deddda;">{timers}</span></p>'''
         # '''<p><span style=" font-weight:bold; color:#deddda;">{zkillinfo}</span></p>'''
@@ -829,6 +1074,7 @@ class System(object):
             system=self.name,
             ticker=self.ticker,
             systemstats=self._svg_text_string,
+            adm=self.vulnerability_occupancy_level,
             timers="",
             zkillinfo=""
         )
@@ -852,14 +1098,119 @@ class System(object):
 
 def _InitAllSystemsA():
     for system_id, sys in Universe.SYSTEMS.items():
-        Universe.SYSTEMS[system_id]["System"] = System(name=sys["name"], system_id=system_id)
+        Universe.SYSTEMS[system_id]["System"] = System(**sys)
+        Universe.SYSTEMS[system_id].merge()
     return Universe.SYSTEMS
+
+
+def _ApplyColorToSystem(data):
+    def applyColorToSystem(system_id, tokens):
+        if tokens[1][0] == '#' and len(tokens[1]) == 9:
+            data[system_id].marking_color = QColor(tokens[1])
+        else:
+            data[system_id].marking_color = QColor(tokens[1])
+            data[system_id].marking_color.setAlphaF(0.3)
+        if len(tokens) > 2:
+            data[system_id].marking_scale = max(1.0, min(float(tokens[2]), 2.0))
+    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "backgrounds.txt")
+
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            content = f.read()
+            lines = content.split("\n")
+            for line in lines:
+                if len(line) == 0:
+                    continue
+                if line.startswith('#'):
+                    continue
+                line = line.split(',')
+                if len(line) < 2:
+                    continue
+                constellation_id = Universe.constellationIdByName(line[0])
+                region_id = Universe.regionIdByName(line[0])
+                if region_id:
+                    region = Universe.regionByID(region_id)
+                    for constellation_id in region["constellations"]:
+                        constellation = Universe.constellationByID(constellation_id)
+                        for system_id in constellation["systems"]:
+                            applyColorToSystem(system_id, line)
+
+                if constellation_id:
+                    constellation = Universe.constellationByID(constellation_id)
+                    for system_id in constellation["systems"]:
+                        applyColorToSystem(system_id, line)
+
+                system_id = Universe.systemIdByName(line[0])
+                if system_id:
+                    applyColorToSystem(system_id, line)
+
+
+def _ApplyIceToSystem(data):
+    def applyIceToSystem(system_id, tokens):
+        if len(tokens):
+            data[system_id].has_ice_belt = True
+
+    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "icesystems.txt")
+
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            content = f.read()
+            lines = content.split("\n")
+            for line in lines:
+                if len(line) == 0:
+                    continue
+                if line.startswith('#'):
+                    continue
+                line = line.split(',')
+                if len(line) == 0:
+                    continue
+                system_id = Universe.systemIdByName(line[0])
+                if system_id:
+                    applyIceToSystem(system_id, line)
+
+
+def _applyStructuresToSystem(data, system_id_app, tokens):
+    if len(tokens) > 2:
+        new_data = {"type_id": int(tokens[0]), "structure_id": int(tokens[1]), "name": tokens[3]}
+        type_id = int(tokens[0])
+        if type_id in list(set().union(System.M_SIZE, System.L_SIZE, System.XL_SIZE)):
+            if data[system_id_app].structures is None:
+                data[system_id_app].structures = [new_data]
+            else:
+                data[system_id_app].structures.append(new_data)
+        elif type_id == 2017:
+            data[system_id_app].has_cyno_beacon = True
+
+
+def _ApplyStructuresToSystem(data):
+
+    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "structures.txt")
+
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            content = f.read()
+            lines = content.split("\n")
+            for line in lines:
+                if len(line) == 0:
+                    continue
+                if line.startswith('#'):
+                    continue
+                line = line.split(',')
+                if len(line) < 2:
+                    continue
+                system_id = Universe.systemIdByName(line[2])
+                if system_id:
+                    _applyStructuresToSystem(data, system_id, line)
 
 
 def _InitAllSystems():
     res = dict()
     for system_id, system_data in Universe.SYSTEMS.items():
-        res[system_id] = System(name=system_data["name"], system_id=system_id)
+        res[system_id] = System(**system_data)
+
+    _ApplyColorToSystem(res)
+    _ApplyIceToSystem(res)
+    _ApplyStructuresToSystem(res)
     return res
 
 

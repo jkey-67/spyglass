@@ -16,16 +16,19 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
+import datetime
 import logging
 import os
 import sys
 import stat
 import time
-import datetime
+from zoneinfo import ZoneInfo
 import threading
 
 from PySide6 import QtCore
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
+
+from vi.evetime import lastDowntime
 
 """
 There is a problem with the QFIleWatcher on Windows and the log
@@ -42,7 +45,7 @@ if a new file was created. We watch only the newest (last 24h), not all!
 
 class FileWatcher(QtCore.QThread):
 
-    file_change = pyqtSignal(str, bool)
+    file_change = Signal(str, bool)
     files_to_ignore = ["Fleet", "Alliance"]
     FILE_LOCK = threading.Lock()
 
@@ -58,15 +61,16 @@ class FileWatcher(QtCore.QThread):
         self.active = sys.platform.startswith("win32")
 
     def fileChanged(self, file_name):
-        with FileWatcher.FILE_LOCK:
-            path_stat = os.stat(file_name)
-            size_file = self.files[file_name]
-            if not stat.S_ISREG(path_stat.st_mode):
-                return
-            if size_file < path_stat.st_size:
-                logging.debug("Update file {}".format(file_name))
-                self.files[file_name] = path_stat.st_size
-        self.file_change.emit(file_name, False)
+        if os.path.exists(file_name):
+            with FileWatcher.FILE_LOCK:
+                path_stat = os.stat(file_name)
+                size_file = self.files[file_name]
+                if not stat.S_ISREG(path_stat.st_mode):
+                    return
+                if size_file < path_stat.st_size:
+                    logging.debug("Update file {}".format(file_name))
+                    self.files[file_name] = path_stat.st_size
+            self.file_change.emit(file_name, False)
 
     def directoryChanged(self, path_name):
         with FileWatcher.FILE_LOCK:
@@ -94,26 +98,16 @@ class FileWatcher(QtCore.QThread):
         self.active = False
         QtCore.QThread.quit(self)
 
-    @staticmethod
-    def lastDowntime():
-        """ Return the timestamp from the last downtime
-        """
-        target = datetime.datetime.utcnow()
-        if target.hour < 11:
-            target = target - datetime.timedelta(1)
-        target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
-        return target.timestamp()
-
     def updateWatchedFiles(self, path_name=None):
         """
-        Updates the list of monitored file, all Fleet and Alliance chats and files with mdate, earlier then the last
+        Updates the list of monitored file, all Fleet and Alliance chats and files with m-date, earlier then the last
         downtime, will be ignored by default.
 
         Returns:
             None: modifies the file member
         """
         path = self.path
-        last_downtime = self.lastDowntime()
+        last_downtime = lastDowntime()
         for f in os.listdir(path):
             try:
                 full_path = os.path.join(path, f)

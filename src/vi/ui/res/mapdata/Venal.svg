@@ -872,6 +872,13 @@
       <text x="28" y="21.7" class="er" text-anchor="middle">Branch</text>
     </a>
   </symbol>
+  <symbol id="def30100000">
+    <a xlink:href="http://evemaps.dotlan.net/map/Yasna_Zakh/Zarzakh" class="sys link-5-30100000" target="_top">
+      <rect id="rect30100000" x="3.5" y="3.5" width="50" height="22" class="e" />
+      <text x="28" y="14" class="es" text-anchor="middle">Zarzakh</text>
+      <text x="28" y="21.7" class="er" text-anchor="middle">Yasna Zakh</text>
+    </a>
+  </symbol>
   <symbol id="def30000872">
     <a xlink:href="http://evemaps.dotlan.net/map/Tribute/Q-CAB2" class="sys link-5-30000872" target="_top">
       <rect id="rect30000872" x="3.5" y="3.5" width="50" height="22" class="e" />
@@ -940,7 +947,12 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-
+  <rect id="inc30001278" x="181.5" y="276.5" width="85" height="46" class="inc" />
+  <rect id="inc30001277" x="181.5" y="311.5" width="85" height="46" class="inc" />
+  <rect id="inc30001279" x="186.5" y="236.5" width="85" height="46" class="incs" />
+  <rect id="inc30001276" x="191.5" y="351.5" width="85" height="46" class="inc" />
+  <rect id="inc30001275" x="201.5" y="391.5" width="85" height="46" class="inc" />
+  <rect id="inc30001274" x="216.5" y="431.5" width="85" height="46" class="inc" />
 
 </g>
 
@@ -960,6 +972,7 @@
 <line id="j-30001269-30001268" x1="303.5" y1="624.5" x2="358.5" y2="604.5" class="j" />
 <line id="j-30001270-30001269" x1="358.5" y1="604.5" x2="323.5" y2="574.5" class="j" />
 <line id="j-30001273-30001269" x1="358.5" y1="604.5" x2="408.5" y2="549.5" class="j" />
+<line id="j-30100000-30001269" x1="358.5" y1="604.5" x2="387.5" y2="665.5" class="jr" />
 <line id="j-30001271-30001270" x1="323.5" y1="574.5" x2="308.5" y2="534.5" class="j" />
 <line id="j-30001273-30001270" x1="323.5" y1="574.5" x2="408.5" y2="549.5" class="j" />
 <line id="j-30001272-30001271" x1="308.5" y1="534.5" x2="303.5" y2="494.5" class="j" />
@@ -1178,6 +1191,7 @@
 <use id="sys30002920" x="20" y="305" width="62.5" height="30" xlink:href="#def30002920" />
 <use id="sys30000858" x="65" y="745" width="62.5" height="30" xlink:href="#def30000858" />
 <use id="sys30004310" x="305" y="230" width="62.5" height="30" xlink:href="#def30004310" />
+<use id="sys30100000" x="359" y="651" width="62.5" height="30" xlink:href="#def30100000" />
 <use id="sys30000872" x="510" y="735" width="62.5" height="30" xlink:href="#def30000872" />
 <use id="sys30005189" x="630" y="460" width="62.5" height="30" xlink:href="#def30005189" />
 <use id="sys30000896" x="785" y="460" width="62.5" height="30" xlink:href="#def30000896" />
@@ -1203,7 +1217,7 @@
 </g>
 
 
-<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1730328322"></script>
 <script type="text/javascript"><![CDATA[
 
 function init(E) {

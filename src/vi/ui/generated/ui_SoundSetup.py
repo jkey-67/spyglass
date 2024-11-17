@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'SoundSetup.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.6.0
+## Created by: Qt User Interface Compiler version 6.8.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -45,14 +45,14 @@ class Ui_SoundSetup(object):
 
         self.horizontalLayout_2.addWidget(self.label_2)
 
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
         self.testSoundButton = QToolButton(self.frame)
         self.testSoundButton.setObjectName(u"testSoundButton")
         icon = QIcon()
-        icon.addFile(u":/Icons/res/play.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u":/Icons/res/play.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.testSoundButton.setIcon(icon)
         self.testSoundButton.setIconSize(QSize(24, 24))
 
@@ -72,7 +72,7 @@ class Ui_SoundSetup(object):
         self.selectAlarm_1 = QToolButton(self.frame)
         self.selectAlarm_1.setObjectName(u"selectAlarm_1")
         icon1 = QIcon()
-        icon1.addFile(u":/Icons/res/load.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u":/Icons/res/load.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.selectAlarm_1.setIcon(icon1)
         self.selectAlarm_1.setIconSize(QSize(24, 24))
 
@@ -193,7 +193,7 @@ class Ui_SoundSetup(object):
 
         self.verticalLayout.addLayout(self.gridLayout_2)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout.addItem(self.verticalSpacer)
 
@@ -202,7 +202,7 @@ class Ui_SoundSetup(object):
         self.applySoundSetting = QToolButton(self.frame)
         self.applySoundSetting.setObjectName(u"applySoundSetting")
         icon2 = QIcon()
-        icon2.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.applySoundSetting.setIcon(icon2)
         self.applySoundSetting.setIconSize(QSize(24, 24))
 
@@ -212,22 +212,35 @@ class Ui_SoundSetup(object):
         self.useSpokenNotifications.setObjectName(u"useSpokenNotifications")
         self.useSpokenNotifications.setMinimumSize(QSize(0, 0))
         icon3 = QIcon()
-        icon3.addFile(u":/Icons/res/speach.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u":/Icons/res/volume_off.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon3.addFile(u":/Icons/res/volume.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
         self.useSpokenNotifications.setIcon(icon3)
         self.useSpokenNotifications.setIconSize(QSize(24, 24))
         self.useSpokenNotifications.setCheckable(True)
 
         self.horizontalLayout.addWidget(self.useSpokenNotifications)
 
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.useSoundSystem = QToolButton(self.frame)
+        self.useSoundSystem.setObjectName(u"useSoundSystem")
+        self.useSoundSystem.setMinimumSize(QSize(0, 0))
+        icon4 = QIcon()
+        icon4.addFile(u":/Icons/res/speach_off.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon4.addFile(u":/Icons/res/speach.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.useSoundSystem.setIcon(icon4)
+        self.useSoundSystem.setIconSize(QSize(24, 24))
+        self.useSoundSystem.setCheckable(True)
+
+        self.horizontalLayout.addWidget(self.useSoundSystem)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer_2)
 
         self.defaultSounds = QToolButton(self.frame)
         self.defaultSounds.setObjectName(u"defaultSounds")
-        icon4 = QIcon()
-        icon4.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.defaultSounds.setIcon(icon4)
+        icon5 = QIcon()
+        icon5.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.defaultSounds.setIcon(icon5)
         self.defaultSounds.setIconSize(QSize(24, 24))
 
         self.horizontalLayout.addWidget(self.defaultSounds)
@@ -253,7 +266,7 @@ class Ui_SoundSetup(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.volumeSlider = QSlider(self.frame)
         self.volumeSlider.setObjectName(u"volumeSlider")
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.MinimumExpanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.volumeSlider.sizePolicy().hasHeightForWidth())
@@ -340,11 +353,15 @@ class Ui_SoundSetup(object):
 #endif // QT_CONFIG(tooltip)
         self.applySoundSetting.setText(QCoreApplication.translate("SoundSetup", u"...", None))
 #if QT_CONFIG(tooltip)
-        self.useSpokenNotifications.setToolTip(QCoreApplication.translate("SoundSetup", u"Enable test to speach", None))
+        self.useSpokenNotifications.setToolTip(QCoreApplication.translate("SoundSetup", u"Enable notification sounds.", None))
 #endif // QT_CONFIG(tooltip)
         self.useSpokenNotifications.setText(QCoreApplication.translate("SoundSetup", u"Use Spoken Notifications", None))
 #if QT_CONFIG(tooltip)
-        self.defaultSounds.setToolTip(QCoreApplication.translate("SoundSetup", u"Set to defaults", None))
+        self.useSoundSystem.setToolTip(QCoreApplication.translate("SoundSetup", u"Enable text to speach output.", None))
+#endif // QT_CONFIG(tooltip)
+        self.useSoundSystem.setText(QCoreApplication.translate("SoundSetup", u"Use Spoken Notifications", None))
+#if QT_CONFIG(tooltip)
+        self.defaultSounds.setToolTip(QCoreApplication.translate("SoundSetup", u"Reset all values to default.", None))
 #endif // QT_CONFIG(tooltip)
         self.defaultSounds.setText(QCoreApplication.translate("SoundSetup", u"Default", None))
         self.label.setText("")

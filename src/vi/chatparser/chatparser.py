@@ -23,12 +23,13 @@ import logging
 import time
 
 from typing import Optional
-from vi.states import States
-from vi.globals import Globals
-from vi.dotlan import System
 from .message import Message
 from .parser_functions import parseLocal, parseMessageForMap
+from vi.evetime import lastDowntime, currentEveTime
 from .line_parser import lineToDatetime
+from ..states import States
+from ..globals import Globals
+from ..dotlan import System
 
 # Names the local chat logs could start with (depends on l10n of the client)
 
@@ -52,18 +53,8 @@ class ChatParser(object):
         if path is not None:
             self._collectInitFileData(path)
 
-    @staticmethod
-    def lastDowntime():
-        """ Return the timestamp from the last downtime
-        """
-        target = datetime.datetime.utcnow()
-        if target.hour < 11:
-            target = target - datetime.timedelta(1)
-        target = datetime.datetime(target.year, target.month, target.day, 11, 5, 0, 0)
-        return target.timestamp()
-
     def _collectInitFileData(self, path):
-        last_downtime = self.lastDowntime()  # 60 * 60 * 24  # what is 1 day in seconds
+        last_downtime = lastDowntime()  # 60 * 60 * 24  # what is 1 day in seconds
         for filename in os.listdir(path):
             full_path = os.path.join(path, filename)
             file_time = os.path.getmtime(full_path)
@@ -120,21 +111,25 @@ class ChatParser(object):
             if roomname in LOCAL_NAMES:
                 charname = None
                 session_start = None
+                channel_id = None
                 # for local-chats we need more info
                 for line in lines:
-                    if "Listener:" in line:
+                    if "Listener" in line:
                         charname = line[line.find(":") + 1:].strip()
                     elif "Channel ID" in line:
                         channel_id = line[line.find(":") + 1:].strip()
-                    elif "Session started:" in line:
+                    elif "Session started" in line:
                         session_str = line[line.find(":") + 1:].strip()
-                        session_start = datetime.datetime.strptime(session_str, "%Y.%m.%d %H:%M:%S")
+                        session_start = datetime.datetime.strptime(session_str, "%Y.%m.%d %H:%M:%S").replace(
+                            tzinfo=datetime.timezone.utc)
 
-                    if charname and session_start:
+                    if charname and session_start and channel_id:
                         self.fileData[path]["charname"] = charname
                         self.fileData[path]["sessionstart"] = session_start
+                        self.fileData[path]["channel_id"] = channel_id
                         self.fileData[path]["lines"] = 1
                         break
+
         if "lines" in self.fileData[path].keys():
             prev_lines = self.fileData[path]["lines"]
         else:
@@ -152,7 +147,7 @@ class ChatParser(object):
 
         message = Message(room=room_name,
                           message=line)
-        valid_timestamp = datetime.datetime.utcnow()-datetime.timedelta(minutes=Globals().intel_time)
+        valid_timestamp = currentEveTime()-datetime.timedelta(minutes=Globals().intel_time)
         if message.timestamp < valid_timestamp:
             logging.debug("Skip {} Room:{}".format(line, room_name))
             return None
@@ -161,7 +156,7 @@ class ChatParser(object):
         if message in self.knownMessages:
             message.status = States.IGNORE
             logging.debug("Ignore {} Room:{}".format(line, room_name))
-            return message
+            return None
         # Parse new message only  if needed
         parseMessageForMap(systems_on_map, message)
         self.knownMessages.append(message)
@@ -199,9 +194,10 @@ class ChatParser(object):
                 if room_name in LOCAL_NAMES:
                     monitored_character_name = self.fileData[path]["charname"]
                     if monitored_character_name not in self.locations:
-                        self.locations[monitored_character_name] = {"system": "?",
-                                                                    "timestamp": datetime.datetime(1970, 1, 1, 0, 0, 0,
-                                                                                                   0)}
+                        self.locations[monitored_character_name] = {
+                            "system": "?", "timestamp": datetime.datetime(
+                                1970, 1, 1, 0, 0, 0,0,
+                                tzinfo=datetime.timezone.utc)}
                     message = parseLocal(path, monitored_character_name, line)
                     if message.status is States.LOCATION:
                         if message.timestamp > self.locations[monitored_character_name]["timestamp"]:

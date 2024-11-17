@@ -57,7 +57,7 @@ def textReplace(element, new_text):
     """
     new_text = "<t>" + new_text + "</t>"
     new_elements = []
-    for newPart in BeautifulSoup(new_text, 'html.parser').select("t")[0].contents:
+    for newPart in BeautifulSoup(new_text, 'lxml-xml').select("t")[0].contents:
         new_elements.append(newPart)
     for newElement in new_elements:
         element.insert_before(newElement)
@@ -68,6 +68,7 @@ def textReplace(element, new_text):
 def parsePlayerNames(rtext) -> bool:
     texts = [t for t in rtext.contents if isinstance(t, NavigableString)]
     for text in texts:
+        text.replace("  ", " ")
         tokens = text.strip().split()
 
         if len(tokens) == 0:
@@ -142,6 +143,7 @@ def parseStatus(rtext):
             return States.REQUEST
         elif text.strip().upper() in CTX.STATUS_BLUE:
             return States.CLEAR
+    return States.ALARM
 
 
 def parseShips(rtext) -> bool:
@@ -200,8 +202,6 @@ def parseSystems(systems_on_map, rtext, systems_found) -> bool:
     """
     # todo:parse systems may run in a loop
 
-    system_names = Universe.systemNamesUpperCase()
-
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:
             return in_text.replace(in_word, CTX.FORMAT_SYSTEM_IN_REGION.format(in_system, in_word))
@@ -246,9 +246,9 @@ def parseSystems(systems_on_map, rtext, systems_found) -> bool:
                 formatted_text = formatSystem(text, word, matched_system_name, system_on_map)
                 textReplace(text, formatted_text)
                 return True
-            elif 3 < len(upper_word) < 5:  # - upperWord < 4 chars.
-                for system in system_names:  # system begins with?
-                    if system.startswith(upper_word):
+            elif 2 < len(upper_word) < 5:  # - upperWord < 4 chars.
+                for system in Universe.systemNamesUpperCase():  # system begins with?
+                    if system.startswith(upper_word) and len(system) == 6 and '-' in system:
                         match_system_id = Universe.systemIdByName(system)
                         if match_system_id:  # - direct hit on name
                             matched_system_name = Universe.systemNameById(match_system_id)
@@ -336,7 +336,7 @@ def parseLocal(path: str, char_name: str, line: str) -> Message:
 
 def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> Message:
     """
-        Parse the massage based on the current systems an text
+        Parse the massage based on the current systems and text
     Args:
         systems_on_map:
         message:
@@ -346,7 +346,7 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
     """
     original_text = message.plainText
     formatted_text = u"<rtext>{0}</rtext>".format(original_text)
-    soup = BeautifulSoup(formatted_text, 'html.parser')
+    soup = BeautifulSoup(formatted_text, 'lxml-xml')
     rtext = soup.select("rtext")[0]
     message.affectedSystems = set()
 
@@ -355,13 +355,15 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
 
     parseSystems(systems_on_map, rtext, message.affectedSystems)
 
-    for system in message.affectedSystems:
-        if system.name in systems_on_map.keys():
-            while parsePlayerNames(rtext):
-                continue
-
     while parseShips(rtext):
         continue
+
+    """
+    #for system in message.affectedSystems:
+    #    if system.name in systems_on_map.keys():
+    #        #while parsePlayerNames(rtext):
+    #            continue
+    """
 
     parsed_status = parseStatus(rtext)
     message.status = parsed_status if parsed_status is not None else States.ALARM

@@ -20,7 +20,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
 
 from PySide6.QtGui import QPainter, QResizeEvent, QWheelEvent, QMouseEvent, QTransform
-from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF
+from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt, QEvent
 
 
@@ -28,7 +28,9 @@ class PanningWebView(QWidget):
     ZOOM_WHEEL = 0.4
     webViewIsScrolling = Signal(bool)
     webViewUpdateScrollbars = Signal()
-    webViewNavigateBackward = Signal(bool)
+    webViewNavigateForward = Signal()
+    webViewNavigateBackward = Signal()
+    webViewDoubleClicked = Signal(QPointF)
 
     def __init__(self, parent=None):
         super(PanningWebView, self).__init__(parent)
@@ -36,7 +38,6 @@ class PanningWebView(QWidget):
         self.transform = QTransform()
         self.zoom = 1.0
         self.wheel_dir = 1.0
-        self.imgSize = QSizeF(1024.0, 768.0)
         self.pressed = False
         self.scrolling = False
         self.positionMousePress = None
@@ -49,11 +50,29 @@ class PanningWebView(QWidget):
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
-    def setContent(self, cnt):
+    @property
+    def imgSize(self) -> QSizeF:
+        if self.content:
+            return self.content.svg_size
+        else:
+            return QSizeF(1024.0, 768.0)
+
+    def setContent(self, content):
+        """
+            Sets the content for the widget, the object content needs the following attributes nad functions.
+                content.svg_size QSizeF : the size of the map QSizeF
+                content.renderMap(QPainter)->None : Paints the map
+                content.renderLegend(QPainter)->None : Paints the legend of the map
+        Args:
+            content:
+
+        Returns:
+
+        """
         if self.scrolling:
             return False
-        self.content = cnt
-        self.update()
+        self.content = content
+        self.webViewUpdateScrollbars.emit()
         return True
 
     def resizeEvent(self, event: QResizeEvent):
@@ -71,8 +90,10 @@ class PanningWebView(QWidget):
             painter.setTransform(self.transform)
             self.content.renderMap(painter)
             self.transform.reset()
+            self.transform.scale(2.0, 2.0)
             painter.setTransform(self.transform)
             self.content.renderLegend(painter)
+            self.transform.reset()
         except (Exception,):
             pass
 
@@ -84,7 +105,6 @@ class PanningWebView(QWidget):
         if self.zoom != zoom:
             self.zoom = zoom
             self.webViewUpdateScrollbars.emit()
-            self.update()
 
     def zoomFactor(self):
         return self.zoom
@@ -92,16 +112,27 @@ class PanningWebView(QWidget):
     def scrollPosition(self) -> QPointF:
         return self.scrollPos
 
+    def scrollPositionFromMapCoordinate(self, pt_system: QRectF):
+        """
+            Calculates the scroll position for the center of the rectangle in relation to the view.
+        Args:
+            pt_system(QRectF):
+
+        Returns:
+
+        """
+        view_center = self.size() / 2
+        return QPointF(pt_system.center().x() * self.zoom - view_center.width(),
+                       pt_system.center().y() * self.zoom - view_center.height())
+
     def setScrollPosition(self, pos: QPointF):
-        if self.scrolling:
-            return
-        self._setScrollPosition(pos)
+        if not self.scrolling:
+            self._setScrollPosition(pos)
 
     def _setScrollPosition(self, pos: QPointF):
         if self.scrollPos != pos:
             self.scrollPos = pos
             self.webViewUpdateScrollbars.emit()
-            self.update()
 
     def setZoomAndScrollPos(self, zoom, pos):
         if self.scrolling:
@@ -121,7 +152,6 @@ class PanningWebView(QWidget):
                 changed = changed or True
         if changed:
             self.webViewUpdateScrollbars.emit()
-            self.update()
 
     def zoomIn(self, pos=None):
         if self.scrolling:
@@ -160,9 +190,9 @@ class PanningWebView(QWidget):
                 self.scrollMousePress = self.scrollPosition()
                 self.positionMousePress = mouse_event.pos()
             elif mouse_event.buttons() == Qt.ForwardButton:
-                self.webViewNavigateBackward.emit(False)
+                self.webViewNavigateForward.emit()
             elif mouse_event.buttons() == Qt.BackButton:
-                self.webViewNavigateBackward.emit(True)
+                self.webViewNavigateBackward.emit()
 
     def mouseReleaseEvent(self, mouse_event: QMouseEvent):
         if self.scrolling:
@@ -170,7 +200,8 @@ class PanningWebView(QWidget):
             self.scrolling = False
             self.handIsClosed = False
             self.positionMousePress = None
-            QApplication.restoreOverrideCursor()
+            if QApplication.overrideCursor():
+                QApplication.restoreOverrideCursor()
             self.webViewIsScrolling.emit(False)
             return
 
@@ -178,17 +209,15 @@ class PanningWebView(QWidget):
             self.pressed = False
             self.scrolling = False
             self.handIsClosed = False
-            QApplication.restoreOverrideCursor()
+            if QApplication.overrideCursor():
+                QApplication.restoreOverrideCursor()
             return
 
     def hoveCheck(self, global_pos: QPoint, map_pos: QPoint) -> bool:
         return False
 
-    def doubleClicked(self, pos: QPoint) -> bool:
-        return False
-
     def mouseDoubleClickEvent(self, mouse_event: QMouseEvent):
-        self.doubleClicked(self.mapPosFromEvent(mouse_event))
+        self.webViewDoubleClicked.emit(self.mapPosFromEvent(mouse_event))
 
     def mapPosFromPos(self, pos: QPointF) -> QPointF:
         return (pos + self.scrollPos) / self.zoom
@@ -202,28 +231,19 @@ class PanningWebView(QWidget):
     def mouseMoveEvent(self, mouse_event: QMouseEvent):
         if self.scrolling:
             if not self.handIsClosed:
-                QApplication.restoreOverrideCursor()
+                if QApplication.overrideCursor():
+                    QApplication.restoreOverrideCursor()
                 QApplication.setOverrideCursor(Qt.OpenHandCursor)
                 self.handIsClosed = True
             if self.scrollMousePress is not None:
                 delta = mouse_event.pos() - self.positionMousePress
                 self._setScrollPosition(self.scrollMousePress - delta)
-            return
-        if self.pressed:
+        elif self.pressed:
             self.pressed = False
             self.scrolling = True
             self.webViewIsScrolling.emit(True)
-            return
-        if self.hoveCheck(mouse_event.globalPos(), self.mapPosFromEvent(mouse_event)):
-            QApplication.setOverrideCursor(Qt.PointingHandCursor)
-            return
-        else:
-            QApplication.setOverrideCursor(Qt.ArrowCursor)
-            return
-        return
-
-    def tooltipAtMapPosition(self, global_pos: QPoint, map_pos: QPoint) -> bool:
-        return False
+        elif self.hoveCheck:
+            self.hoveCheck(mouse_event.globalPos(), self.mapPosFromEvent(mouse_event))
 
     def event(self, event) -> bool:
         if event.type() == QEvent.ToolTip:

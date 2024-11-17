@@ -1,882 +1,260 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   height="768"
-   id="svgdoc"
-   onload="init(evt)"
-   style="background: #111111"
-   version="1.1"
-   viewbox="0 0 1027 768"
-   width="1024"
-   sodipodi:docname="Yasna_Zakh.svg"
-   inkscape:version="1.3.1 (91b66b0783, 2023-11-16, custom)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <defs
-     id="defs42" />
-  <sodipodi:namedview
-     id="namedview42"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="1.0339595"
-     inkscape:cx="393.63243"
-     inkscape:cy="370.90427"
-     inkscape:window-width="5120"
-     inkscape:window-height="1371"
-     inkscape:window-x="0"
-     inkscape:window-y="32"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svgdoc" />
-  <style
-     type="text/css"
-     id="style1"><![CDATA[.jumps { stroke: #bbbbbb; stroke-width: 1; }
-.jc { stroke: #dd0000; stroke-width: 1; }
-.jr { stroke: #800080; stroke-width: 1; }
-.jx { stroke: #bbbbbb; stroke-width: 3; }
-.jxc { stroke: #dd0000; stroke-width: 3; }
-.jxr { stroke: #800080; stroke-width: 3; }
-.jb { stroke: #0000FF; stroke-width: 3; fill: none; }
-.external { stroke: #00B000; stroke-width: 1; fill: #333333; }
-.el { stroke: #F00000; stroke-width: 1; stroke-dasharray: 8, 4; fill: #333333; }
-.e { stroke: #cccccc; stroke-width: 1; fill: #333333; }
-.exh { stroke: #00B000; stroke-width: 2; fill: #333333; }
-.exl { stroke: #F00000; stroke-width: 2; stroke-dasharray: 8, 3; fill: #333333; }
-.ex { stroke: #cccccc; stroke-width: 2; fill: #333333; }
-.external { font-size: 9px; font-family: Arial, Helvetica, sans-serif; fill: #ffffff; }
-.er { font-weight: bold; font-size: 7px; font-family: verdana, Arial, sans-serif; fill: #dddddd; }
-.system { stroke: #00B000; stroke-width: 1; }
-.sl { stroke: #F00000; stroke-width: 1; stroke-dasharray: 8, 3; }
-.s { stroke: #777777; stroke-width: 1; }
-.sc { stroke-width: 1.2; stroke-dasharray: 4, 3; }
-.sx { stroke-width: 2.5; }
-.scl { stroke: transparent; stroke-width: 2; fill: transparent; }
-.system { font-family: Arial, Helvetica, sans-serif; font-size: 9px; fill: #ffffff; }
-.st { font-weight: bold; font-size: 7px; font-family: verdana, Arial, sans-serif; fill: #cccccc; }
-.so { fill: #ff2222; }
-.i { stroke: #0080FF; stroke-width: 1; fill: none; }
-.station { fill: #000000; }
-.oc { fill: #0000FF; }
-.oa { fill: #FFDC00; }
-.og { fill: #00FF00; }
-.om { fill: #FF0000; }
-.o1 { fill: #ffffff; stroke-width: 0.5; stroke: #888888; }
-.o2 { fill: #ffffff; stroke-width: 0.5; stroke: #888888; }
-.oo { fill: none; stroke: #AAAAAA; stroke-width: 1; }
-.station { fill: #FF0000; }
-.v2 { fill: #00FF00; }
-.v3 { fill: #FFDC00; }
-.v4 { fill: #0000FF; }
-.legend { stroke-width: 1; stroke: #777777; fill: #222222; }
-.lbt { stroke-width: 1; stroke: #777777; fill: #222222; }
-.lt { fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 12px; }
-.lc { fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
-.l { fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 10px; }
-.highlight { fill: none; stroke-width: 3; stroke: #FFFFFF; }
-.hw { fill: none; stroke-width: 2; stroke: #00AA00; }
-.hl { fill: none; stroke-width: 2; stroke: #F00000; }
-.hg { fill: none; stroke-width: 2; stroke: #00B000; }
-.incursion { fill: url(#incBg); }
-.incs { fill: url(#incStBg); }
-.contested { fill: url(#conBg); }
-.sov { fill: url(#camBg); }
-.cam-active { fill: url(#camActiveBg); }
-]]></style>
-  <g
-     id="map">
-    <g
-       id="legend">
-      <rect
-         class="lb"
-         height="188"
-         width="160"
-         x="860.5"
-         y="575.5"
-         id="rect1" />
-      <rect
-         class="lbt"
-         height="20"
-         width="160"
-         x="860.5"
-         y="860.5"
-         id="rect2" />
-      <text
-         class="lt"
-         text-anchor="middle"
-         x="942.5"
-         y="590.5"
-         id="text2">
-    Yasna Zakh
-   </text>
-      <rect
-         class="lb"
-         height="148"
-         width="160"
-         x="860.5"
-         y="595.5"
-         id="rect3" />
-      <rect
-         class="lb"
-         height="20"
-         width="160"
-         x="860.5"
-         y="743.5"
-         id="rect4" />
-      <text
-         class="lc"
-         text-anchor="middle"
-         x="942.5"
-         y="757.5"
-         id="text4">
-    © by Wollari &amp; CCP
-   </text>
-      <rect
-         class="s"
-         height="22"
-         rx="11"
-         ry="11"
-         style="fill: #111111;"
-         width="50"
-         x="875"
-         y="600"
-         id="rect5" />
-      <text
-         class="ss"
-         text-anchor="middle"
-         x="900"
-         y="611"
-         id="text5">
-    XXXXX
-   </text>
-      <text
-         class="st so"
-         text-anchor="middle"
-         x="900"
-         y="618.7"
-         id="text6">
-    YYYYY (Z)
-   </text>
-      <rect
-         class="o"
-         height="11"
-         width="11"
-         x="920.6"
-         y="605.5"
-         id="rect6" />
-      <polygon
-         class="o1"
-         points="922.8,611 929.4,607.7 929.4,614.3 922.8,611"
-         id="polygon6" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="920.6"
-         y="605.5"
-         id="rect7" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="877"
-         y="639.4"
-         id="text7">
-    X
-   </text>
-      <text
-         class="l"
-         text-anchor="start"
-         x="890"
-         y="639.4"
-         id="text8">
-    = System
-   </text>
-      <text
-         class="l"
-         text-anchor="start"
-         x="877"
-         y="654.8"
-         id="text9">
-    Y
-   </text>
-      <text
-         class="l"
-         text-anchor="start"
-         x="890"
-         y="654.8"
-         id="text10">
-    = Alliance
-   </text>
-      <text
-         class="l"
-         text-anchor="start"
-         x="877"
-         y="670.2"
-         id="text11">
-    Z
-   </text>
-      <text
-         class="l"
-         text-anchor="start"
-         x="890"
-         y="670.2"
-         id="text12">
-    = Sov. Lvl
-   </text>
-      <rect
-         class="o"
-         height="11"
-         width="11"
-         x="874"
-         y="679.8"
-         id="rect12" />
-      <polygon
-         class="o1"
-         points="876.2,685.3 882.8,682 882.8,688.6 876.2,685.3"
-         id="polygon12" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="874"
-         y="679.8"
-         id="rect13" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="890"
-         y="687.8"
-         id="text13">
-    = Outpost
-   </text>
-      <rect
-         class="o"
-         height="11"
-         width="11"
-         x="874"
-         y="695.2"
-         id="rect14" />
-      <rect
-         class="o2"
-         height="4.4"
-         width="4.4"
-         x="877.3"
-         y="698.5"
-         id="rect15" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="874"
-         y="695.2"
-         id="rect16" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="890"
-         y="703.2"
-         id="text16">
-    = Cq Stat.
-   </text>
-      <rect
-         class="o"
-         height="11"
-         width="11"
-         x="874"
-         y="710.6"
-         id="rect17" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="874"
-         y="710.6"
-         id="rect18" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="890"
-         y="718.6"
-         id="text18">
-    = NPC Stat.
-   </text>
-      <rect
-         class="i"
-         height="11"
-         rx="5.5"
-         ry="5.5"
-         width="15.4"
-         x="872"
-         y="726"
-         id="rect19" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="890"
-         y="734"
-         id="text19">
-    = Icebelt
-   </text>
-      <rect
-         class="om"
-         height="11"
-         width="11"
-         x="947"
-         y="603"
-         id="rect20" />
-      <polygon
-         class="o1"
-         points="949.2,608.5 955.8,605.2 955.8,611.8 949.2,608.5"
-         id="polygon20" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="947"
-         y="603"
-         id="rect21" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="611"
-         id="text21">
-    = Refinery
-   </text>
-      <rect
-         class="oa"
-         height="11"
-         width="11"
-         x="947"
-         y="618.4"
-         id="rect22" />
-      <polygon
-         class="o1"
-         points="949.2,623.9 955.8,620.6 955.8,627.2 949.2,623.9"
-         id="polygon22" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="947"
-         y="618.4"
-         id="rect23" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="626.4"
-         id="text23">
-    = Factory
-   </text>
-      <rect
-         class="oc"
-         height="11"
-         width="11"
-         x="947"
-         y="633.8"
-         id="rect24" />
-      <polygon
-         class="o1"
-         points="949.2,639.3 955.8,636 955.8,642.6 949.2,639.3"
-         id="polygon24" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="947"
-         y="633.8"
-         id="rect25" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="641.8"
-         id="text25">
-    = Research
-   </text>
-      <rect
-         class="og"
-         height="11"
-         width="11"
-         x="947"
-         y="649.2"
-         id="rect26" />
-      <polygon
-         class="o1"
-         points="949.2,654.7 955.8,651.4 955.8,658 949.2,654.7"
-         id="polygon26" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="947"
-         y="649.2"
-         id="rect27" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="657.2"
-         id="text27">
-    = Offices
-   </text>
-      <rect
-         class="o"
-         height="11"
-         width="11"
-         x="947"
-         y="664.6"
-         id="rect28" />
-      <polygon
-         class="v1"
-         points="947,664.6 958,664.6 952.5,670.1 947,664.6"
-         id="polygon28" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="947"
-         y="664.6"
-         id="rect29" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="672.6"
-         id="text29">
-    = Refining
-   </text>
-      <rect
-         class="o"
-         height="11"
-         width="11"
-         x="947"
-         y="680"
-         id="rect30" />
-      <polygon
-         class="v3"
-         points="958,691 952.5,685.5 947,691 958,691"
-         id="polygon30" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="947"
-         y="680"
-         id="rect31" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="688"
-         id="text31">
-    = Industry
-   </text>
-      <rect
-         class="o"
-         height="11"
-         width="11"
-         x="947"
-         y="695.4"
-         id="rect32" />
-      <polygon
-         class="v4"
-         points="947,706.4 952.5,700.9 947,695.4 947,706.4"
-         id="polygon32" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="947"
-         y="695.4"
-         id="rect33" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="703.4"
-         id="text33">
-    = Research
-   </text>
-      <rect
-         class="o"
-         height="11"
-         width="11"
-         x="947"
-         y="710.8"
-         id="rect34" />
-      <polygon
-         class="v2"
-         points="958,710.8 952.5,716.3 958,721.8 958,710.8"
-         id="polygon34" />
-      <rect
-         class="oo"
-         height="11"
-         width="11"
-         x="947"
-         y="710.8"
-         id="rect35" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="718.8"
-         id="text35">
-    = Cloning
-   </text>
-      <rect
-         class="sl"
-         height="11"
-         rx="5.5"
-         ry="5.5"
-         style="fill: #8F3496;"
-         width="15.4"
-         x="945"
-         y="726.2"
-         id="rect36" />
-      <text
-         class="l"
-         text-anchor="start"
-         x="963"
-         y="734.2"
-         id="text36">
-    = Contested
-   </text>
-    </g>
-    <defs
-       id="defs36" />
-    <symbol
-       height="46"
-       id="defCampaign"
-       width="85">
-      <rect
-         class="cam"
-         height="46"
-         width="85"
-         x="0"
-         y="0"
-         id="rect37" />
-    </symbol>
-    <symbol
-       height="46"
-       id="defCampaignActive"
-       width="85">
-      <rect
-         class="cam-active"
-         height="46"
-         width="85"
-         x="0"
-         y="0"
-         id="rect38" />
-    </symbol>
-    <radialgradient
-       id="conBg">
-      <stop
-         offset="50%"
-         stop-color="#FFA0FF" />
-      <stop
-         offset="95%"
-         stop-color="#FFA0FF"
-         stop-opacity="0" />
-    </radialgradient>
-    <radialgradient
-       id="camBg">
-      <stop
-         offset="30%"
-         stop-color="#FF8800"
-         stop-opacity="1" />
-      <stop
-         offset="95%"
-         stop-color="#FF8800"
-         stop-opacity="0" />
-    </radialgradient>
-    <radialgradient
-       id="camActiveBg">
-      <stop
-         offset="40%"
-         stop-color="#FF0000"
-         stop-opacity="1" />
-      <stop
-         offset="95%"
-         stop-color="#FF0000"
-         stop-opacity="0" />
-    </radialgradient>
-    <radialgradient
-       id="incBg">
-      <stop
-         offset="50%"
-         stop-color="#AFCE00" />
-      <stop
-         offset="100%"
-         stop-color="#AFCE00"
-         stop-opacity="0" />
-    </radialgradient>
-    <radialgradient
-       id="incStBg">
-      <stop
-         offset="50%"
-         stop-color="#808000" />
-      <stop
-         offset="100%"
-         stop-color="#808000"
-         stop-opacity="0" />
-    </radialgradient>
-    <symbol
-       id="def30100000">
-      <a
-         class="sys link-5-30100000"
-         constellation="20010000"
-         region="10001000"
-         xlink:href="http://evemaps.dotlan.net/system/Zarzakh"
-         id="a38">
-        <rect
-           class="s"
-           height="22"
-           id="rect30100000"
-           rx="11"
-           ry="11"
-           width="50"
-           x="4"
-           y="3.5" />
-        <text
-           class="ss"
-           text-anchor="middle"
-           x="28"
-           y="14"
-           id="text38">
-      Zarzakh
-     </text>
-        <text
-           class="st"
-           id="txt30100000"
-           text-anchor="middle"
-           x="28"
-           y="21.7">
-      ORE
-     </text>
-      </a>
-    </symbol>
-    <symbol
-       id="def30003841">
-      <a
-         class="sys link-5-30003841"
-         constellation="20000561"
-         region="10000048"
-         xlink:href="http://evemaps.dotlan.net/system/Alsavoinon"
-         id="a39">
-        <rect
-           class="e"
-           height="22"
-           id="rect30003841"
-           width="50"
-           x="4"
-           y="3.5" />
-        <text
-           class="ss"
-           text-anchor="middle"
-           x="28"
-           y="14"
-           id="text39">
-      Alsavoinon
-     </text>
-        <text
-           class="st"
-           id="txt30003841"
-           text-anchor="middle"
-           x="28"
-           y="21.7">
-      ORE
-     </text>
-      </a>
-    </symbol>
-    <symbol
-       id="def30002086">
-      <a
-         class="sys link-5-30002086"
-         constellation="20000307"
-         region="10000042"
-         xlink:href="http://evemaps.dotlan.net/system/Turnur"
-         id="a40">
-        <rect
-           class="e"
-           height="22"
-           id="rect30002086"
-           width="50"
-           x="4"
-           y="3.5" />
-        <text
-           class="ss"
-           text-anchor="middle"
-           x="28"
-           y="14"
-           id="text40">
-      Turnur
-     </text>
-        <text
-           class="st"
-           id="txt30002086"
-           text-anchor="middle"
-           x="28"
-           y="21.7">
-      ORE
-     </text>
-      </a>
-    </symbol>
-    <symbol
-       id="def30001041">
-      <a
-         class="sys link-5-30001041"
-         constellation="20000152"
-         region="10000012"
-         xlink:href="http://evemaps.dotlan.net/system/G-0Q86"
-         id="a41">
-        <rect
-           class="e"
-           height="22"
-           id="rect30001041"
-           width="50"
-           x="4"
-           y="3.5" />
-        <text
-           class="ss"
-           text-anchor="middle"
-           x="28"
-           y="14"
-           id="text41">
-      G-0Q86
-     </text>
-        <text
-           class="st"
-           id="txt30001041"
-           text-anchor="middle"
-           x="28"
-           y="21.7">
-      ORE
-     </text>
-      </a>
-    </symbol>
-    <symbol
-       id="def30001269">
-      <a
-         class="sys link-5-30001269"
-         constellation="20000185"
-         region="10000015"
-         xlink:href="http://evemaps.dotlan.net/system/H-PA29"
-         id="a42">
-        <rect
-           class="e"
-           height="22"
-           id="rect30001269"
-           width="50"
-           x="4"
-           y="3.5" />
-        <text
-           class="ss"
-           text-anchor="middle"
-           x="28"
-           y="14"
-           id="text42">
-      H-PA29
-     </text>
-        <text
-           class="st"
-           id="txt30001269"
-           text-anchor="middle"
-           x="28"
-           y="21.7">
-      ORE
-     </text>
-      </a>
-    </symbol>
-  </g>
-  <text
-     id="debug"
-     style="fill: #888888;"
-     x="10"
-     y="20" />
-  <g
-     id="glow" />
-  <g
-     id="campaigns" />
-  <g
-     id="jumps">
-    <line
-       class="jr"
-       id="j-30100000-30002086"
-       x1="543.0439450110241"
-       x2="671.2702234856807"
-       y1="398.88295019107346"
-       y2="471.7282539907992" />
-    <line
-       class="jr"
-       id="j-30100000-30003841"
-       x1="543.0439450110241"
-       x2="470.88044123393445"
-       y1="398.88295019107346"
-       y2="527.0470606637195" />
-    <line
-       class="jr"
-       id="j-30100000-30001269"
-       x1="543.0439450110241"
-       x2="415.27022348568073"
-       y1="398.88295019107346"
-       y2="326.2946744906882" />
-    <line
-       class="jr"
-       id="j-30100000-30001041"
-       x1="543.0439450110241"
-       x2="615.7851667836799"
-       y1="398.88295019107346"
-       y2="271.04706066371955" />
-  </g>
-  <g
-     id="sysuse">
-    <use
-       height="30"
-       id="sys30100000"
-       width="62.5"
-       x="511.7939450110241"
-       xlink:href="#def30100000"
-       y="383.88295019107346" />
-    <use
-       height="30"
-       id="sys30003841"
-       width="62.5"
-       x="439.63044123393445"
-       xlink:href="#def30003841"
-       y="512.0470606637195" />
-    <use
-       height="30"
-       id="sys30002086"
-       width="62.5"
-       x="640.0202234856807"
-       xlink:href="#def30002086"
-       y="456.7282539907992" />
-    <use
-       height="30"
-       id="sys30001041"
-       width="62.5"
-       x="584.5351667836799"
-       xlink:href="#def30001041"
-       y="256.04706066371955" />
-    <use
-       height="30"
-       id="sys30001269"
-       width="62.5"
-       x="384.02022348568073"
-       xlink:href="#def30001269"
-       y="311.2946744906882" />
-  </g>
-  <g
-     id="highlights" />
-  <g
-     id="notes" />
-  <g
-     id="standings" />
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg version="1.1"
+     id="svgdoc"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1024" height="768"
+     viewBox="0 0 1024 768"
+     style="background: #111111"
+     onload="init(evt)"
+>
+
+
+<style type="text/css">
+<![CDATA[
+/* jumps */
+.j	{ stroke: #bbbbbb; stroke-width: 1; }
+.jc	{ stroke: #dd0000; stroke-width: 1; }
+.jr	{ stroke: #800080; stroke-width: 1; }
+.jx	{ stroke: #bbbbbb; stroke-width: 3; }
+.jxc	{ stroke: #dd0000; stroke-width: 3; }
+.jxr	{ stroke: #800080; stroke-width: 3; }
+.jb	{ stroke: #0000FF; stroke-width: 3; fill: none; }
+
+/* external system */
+.eh	{ stroke: #00B000; stroke-width: 1; fill: #333333; }
+.el	{ stroke: #F00000; stroke-width: 1; stroke-dasharray: 8, 4; fill: #333333; }
+.e	{ stroke: #cccccc; stroke-width: 1; fill: #333333; }
+.exh	{ stroke: #00B000; stroke-width: 2; fill: #333333; }
+.exl	{ stroke: #F00000; stroke-width: 2; stroke-dasharray: 8, 3; fill: #333333; }
+.ex	{ stroke: #cccccc; stroke-width: 2; fill: #333333; }
+
+/* external system text */
+.es	{ font-size: 9px; font-family: Arial, Helvetica, sans-serif; fill: #ffffff; }
+.er	{ font-weight: bold; font-size: 7px; font-family: verdana, Arial, sans-serif; fill: #dddddd; }
+
+/* system */
+.sh	{ stroke: #00B000; stroke-width: 1; }
+.sl	{ stroke: #F00000; stroke-width: 1; stroke-dasharray: 8, 3; }
+.s	{ stroke: #777777; stroke-width: 1; }
+.sc	{ stroke-width: 1.2; stroke-dasharray: 4, 3; }
+.sx	{ stroke-width: 2.5; }
+
+.scl	{ stroke: transparent; stroke-width: 2; fill: transparent; }
+
+/* system text */
+.ss	{ font-family: Arial, Helvetica, sans-serif; font-size: 9px; fill: #ffffff; }
+.st	{ font-weight: bold; font-size: 7px; font-family: verdana, Arial, sans-serif; fill: #cccccc; }
+.so	{ fill: #ff2222; }
+.i	{ stroke: #0080FF; stroke-width: 1; fill: none; }
+
+/* station */
+.o	{ fill: #000000; }
+.oc	{ fill: #0000FF; }
+.oa	{ fill: #FFDC00; }
+.og	{ fill: #00FF00; }
+.om	{ fill: #FF0000; }
+.o1	{ fill: #ffffff; stroke-width: 0.5; stroke: #888888; }
+.o2	{ fill: #ffffff; stroke-width: 0.5; stroke: #888888; }
+.oo	{ fill: none; stroke: #AAAAAA; stroke-width: 1; }
+
+/* station services */
+.v1	{ fill: #FF0000; }
+.v2	{ fill: #00FF00; }
+.v3	{ fill: #FFDC00; }
+.v4	{ fill: #0000FF; }
+
+/* legend */
+.lb	{ stroke-width: 1; stroke: #777777; fill: #222222; }
+.lbt	{ stroke-width: 1; stroke: #777777; fill: #222222; }
+.lt	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 12px; }
+.lc	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
+.l	{ fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 10px; }
+
+/* highlight */
+.h	{ fill: none; stroke-width: 3; stroke: #FFFFFF; }
+.hw	{ fill: none; stroke-width: 2; stroke: #00AA00; }
+.hl	{ fill: none; stroke-width: 2; stroke: #F00000; }
+.hg	{ fill: none; stroke-width: 2; stroke: #00B000; }
+
+/* incursion */
+.inc	{ fill: url(#incBg); }
+.incs	{ fill: url(#incStBg); }
+
+/* contested */
+.con	{ fill: url(#conBg); }
+
+/* sov campaign triggered */
+.cam		{ fill: url(#camBg); }
+.cam-active	{ fill: url(#camActiveBg); }
+]]>
+</style>
+
+<g id="map">
+<g id="legend">
+<rect x="860.5" y="575.5" width="160" height="188" class="lb" />
+<rect x="860.5" y="860.5" width="160" height="20" class="lbt" />
+<text x="942.5" y="590.5" class="lt" text-anchor="middle">Yasna Zakh</text>
+<rect x="860.5" y="595.5" width="160" height="148" class="lb" />
+<rect x="860.5" y="743.5" width="160" height="20" class="lb" />
+<text x="942.5" y="757.5" class="lc" text-anchor="middle"> 	&#169; by Wollari &amp; CCP</text>
+
+<rect x="875" y="600" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" /><text x="900" y="611" class="ss" text-anchor="middle">XXXXX</text><text x="900" y="618.7" class="st so" text-anchor="middle">YYYYY (Z)</text>
+<rect x="920.6" y="605.5" height="11" width="11" class="o" /><polygon points="922.8,611 929.4,607.7 929.4,614.3 922.8,611"  class="o1" /><rect x="920.6" y="605.5" height="11" width="11"  class="oo" />
+<text x="877" y="639.4" class="l" text-anchor="start">X</text><text x="890" y="639.4" class="l" text-anchor="start">= System</text>
+<text x="877" y="654.8" class="l" text-anchor="start">Y</text><text x="890" y="654.8" class="l" text-anchor="start">= Alliance</text>
+<text x="877" y="670.2" class="l" text-anchor="start">Z</text><text x="890" y="670.2" class="l" text-anchor="start">= Sov. Lvl</text>
+<rect x="874" y="679.8" height="11" width="11" class="o" /><polygon points="876.2,685.3 882.8,682 882.8,688.6 876.2,685.3"  class="o1" /><rect x="874" y="679.8" height="11" width="11"  class="oo" /><text x="890" y="687.8" class="l" text-anchor="start">= Outpost</text>
+<rect x="874" y="695.2" height="11" width="11" class="o" /><rect x="877.3" y="698.5" height="4.4" width="4.4" class="o2" /><rect x="874" y="695.2" height="11" width="11"  class="oo" /><text x="890" y="703.2" class="l" text-anchor="start">= Cq Stat.</text>
+<rect x="874" y="710.6" height="11" width="11" class="o" /><rect x="874" y="710.6" height="11" width="11"  class="oo" /><text x="890" y="718.6" class="l" text-anchor="start">= NPC Stat.</text>
+<rect x="872" y="726" rx="5.5" ry="5.5" width="15.4" height="11" class="i" /><text x="890" y="734" class="l" text-anchor="start">= Icebelt</text>
+
+<rect x="947" y="603" height="11" width="11" class="om" /><polygon points="949.2,608.5 955.8,605.2 955.8,611.8 949.2,608.5"  class="o1" /><rect x="947" y="603" height="11" width="11"  class="oo" /><text x="963" y="611" class="l" text-anchor="start">= Refinery</text>
+<rect x="947" y="618.4" height="11" width="11" class="oa" /><polygon points="949.2,623.9 955.8,620.6 955.8,627.2 949.2,623.9"  class="o1" /><rect x="947" y="618.4" height="11" width="11"  class="oo" /><text x="963" y="626.4" class="l" text-anchor="start">= Factory</text>
+<rect x="947" y="633.8" height="11" width="11" class="oc" /><polygon points="949.2,639.3 955.8,636 955.8,642.6 949.2,639.3"  class="o1" /><rect x="947" y="633.8" height="11" width="11"  class="oo" /><text x="963" y="641.8" class="l" text-anchor="start">= Research</text>
+<rect x="947" y="649.2" height="11" width="11" class="og" /><polygon points="949.2,654.7 955.8,651.4 955.8,658 949.2,654.7"  class="o1" /><rect x="947" y="649.2" height="11" width="11"  class="oo" /><text x="963" y="657.2" class="l" text-anchor="start">= Offices</text>
+<rect x="947" y="664.6" height="11" width="11" class="o" /><polygon points="947,664.6 958,664.6 952.5,670.1 947,664.6" class="v1" /><rect x="947" y="664.6" height="11" width="11"  class="oo" /><text x="963" y="672.6" class="l" text-anchor="start">= Refining</text>
+<rect x="947" y="680" height="11" width="11" class="o" /><polygon points="958,691 952.5,685.5 947,691 958,691" class="v3" /><rect x="947" y="680" height="11" width="11"  class="oo" /><text x="963" y="688" class="l" text-anchor="start">= Industry</text>
+<rect x="947" y="695.4" height="11" width="11" class="o" /><polygon points="947,706.4 952.5,700.9 947,695.4 947,706.4" class="v4" /><rect x="947" y="695.4" height="11" width="11"  class="oo" /><text x="963" y="703.4" class="l" text-anchor="start">= Research</text>
+<rect x="947" y="710.8" height="11" width="11" class="o" /><polygon points="958,710.8 952.5,716.3 958,721.8 958,710.8" class="v2" /><rect x="947" y="710.8" height="11" width="11"  class="oo" /><text x="963" y="718.8" class="l" text-anchor="start">= Cloning</text>
+<rect x="945" y="726.2" rx="5.5" ry="5.5" width="15.4" height="11" class="sl" style="fill: #8F3496;" /><text x="963" y="734.2" class="l" text-anchor="start">= Contested</text>
+
+</g>
+
+<defs>
+  <symbol id="def30100000">
+    <a xlink:href="http://evemaps.dotlan.net/system/Zarzakh" class="sys link-5-30100000" target="_top">
+      <rect id="rect30100000" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <text x="28" y="14" class="ss" text-anchor="middle">Zarzakh</text>
+      <text id="txt30100000" x="28" y="21.7" class="st" text-anchor="middle"></text>
+    </a>
+  </symbol>
+  <symbol id="def30003841">
+    <a xlink:href="http://evemaps.dotlan.net/map/Placid/Alsavoinon" class="sys link-5-30003841" target="_top">
+      <rect id="rect30003841" x="3.5" y="3.5" width="50" height="22" class="el" />
+      <text x="28" y="14" class="es" text-anchor="middle">Alsavoinon</text>
+      <text x="28" y="21.7" class="er" text-anchor="middle">Placid</text>
+    </a>
+  </symbol>
+  <symbol id="def30002086">
+    <a xlink:href="http://evemaps.dotlan.net/map/Metropolis/Turnur" class="sys link-5-30002086" target="_top">
+      <rect id="rect30002086" x="3.5" y="3.5" width="50" height="22" class="el" />
+      <text x="28" y="14" class="es" text-anchor="middle">Turnur</text>
+      <text x="28" y="21.7" class="er" text-anchor="middle">Metropolis</text>
+    </a>
+    <rect x="49.6" y="9.5" height="11" width="11" class="o" />
+    <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
+    <polygon points="60.6,9.5 55.1,15 60.6,20.5 60.6,9.5" class="v2" />
+    <polygon points="60.6,20.5 55.1,15 49.6,20.5 60.6,20.5" class="v3" />
+    <rect x="49.6" y="9.5" height="11" width="11"  class="oo" />
+  </symbol>
+  <symbol id="def30001269">
+    <a xlink:href="http://evemaps.dotlan.net/map/Venal/H-PA29" class="sys link-5-30001269" target="_top">
+      <rect id="rect30001269" x="3.5" y="3.5" width="50" height="22" class="e" />
+      <text x="28" y="14" class="es" text-anchor="middle">H-PA29</text>
+      <text x="28" y="21.7" class="er" text-anchor="middle">Venal</text>
+    </a>
+    <rect x="49.6" y="9.5" height="11" width="11" class="o" />
+    <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
+    <polygon points="60.6,20.5 55.1,15 49.6,20.5 60.6,20.5" class="v3" />
+    <rect x="49.6" y="9.5" height="11" width="11"  class="oo" />
+  </symbol>
+  <symbol id="def30001041">
+    <a xlink:href="http://evemaps.dotlan.net/map/Curse/G-0Q86" class="sys link-5-30001041" target="_top">
+      <rect id="rect30001041" x="3.5" y="3.5" width="50" height="22" class="e" />
+      <text x="28" y="14" class="es" text-anchor="middle">G-0Q86</text>
+      <text x="28" y="21.7" class="er" text-anchor="middle">Curse</text>
+    </a>
+    <rect x="49.6" y="9.5" height="11" width="11" class="o" />
+    <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
+    <polygon points="60.6,9.5 55.1,15 60.6,20.5 60.6,9.5" class="v2" />
+    <polygon points="60.6,20.5 55.1,15 49.6,20.5 60.6,20.5" class="v3" />
+    <rect x="49.6" y="9.5" height="11" width="11"  class="oo" />
+  </symbol>
+
+
+  <symbol id="defCampaign" width="85" height="46">
+    <rect x="0" y="0" width="85" height="46" class="cam" />
+  </symbol>
+  <symbol id="defCampaignActive" width="85" height="46">
+    <rect x="0" y="0" width="85" height="46" class="cam-active" />
+  </symbol>
+  <radialGradient id="conBg">
+    <stop offset="50%" stop-color="#FFA0FF"/>
+    <stop offset="95%" stop-color="#FFA0FF" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="camBg">
+    <stop offset="30%" stop-color="#FF8800" stop-opacity="1"/>
+    <stop offset="95%" stop-color="#FF8800" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="camActiveBg">
+    <stop offset="40%" stop-color="#FF0000" stop-opacity="1"/>
+    <stop offset="95%" stop-color="#FF0000" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="incBg">
+    <stop offset="50%" stop-color="#AFCE00"/>
+    <stop offset="100%" stop-color="#AFCE00" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="incStBg">
+    <stop offset="50%" stop-color="#808000"/>
+    <stop offset="100%" stop-color="#808000" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
+
+<g id="glow">
+
+
+</g>
+
+<g id="campaigns"></g>
+
+<g id="jumps">
+<line id="j-30100000-30001041" x1="533.5" y1="302.5" x2="541.5" y2="396.5" class="jr" />
+<line id="j-30100000-30001269" x1="533.5" y1="302.5" x2="537.5" y2="154.5" class="jr" />
+<line id="j-30100000-30002086" x1="533.5" y1="302.5" x2="351.5" y2="347.5" class="jr" />
+<line id="j-30100000-30003841" x1="533.5" y1="302.5" x2="349.5" y2="150.5" class="jr" />
+
+</g>
+
+<g id="sysuse">
+<use id="sys30100000" x="505" y="288" width="62.5" height="30" xlink:href="#def30100000" />
+<use id="sys30003841" x="321" y="136" width="62.5" height="30" xlink:href="#def30003841" />
+<use id="sys30002086" x="323" y="333" width="62.5" height="30" xlink:href="#def30002086" />
+<use id="sys30001269" x="509" y="140" width="62.5" height="30" xlink:href="#def30001269" />
+<use id="sys30001041" x="513" y="382" width="62.5" height="30" xlink:href="#def30001041" />
+
+</g>
+
+<g id="highlights">
+
+</g>
+
+<g id="notes"></g>
+
+<g id="standings"></g>
+
+</g>
+<g id="controls" style="display: none;">
+  <a xlink:title="Zoom In"><image id="zoom_in" x="5" y="5" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/magnifier_zoom_in.png" style="cursor: pointer;"/></a>
+  <a xlink:title="Zoom Out"><image id="zoom_out" x="5" y="23" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/magnifier_zoom_out.png" style="cursor: pointer;"/></a>
+  <a xlink:title="Enable Mousewheel Support"><image id="wheel_on" x="5" y="42" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/mouse_add.png" style="cursor: pointer;"/> </a>
+  <a xlink:title="Disable Mousewheel Support"><image id="wheel_off" x="5" y="42" width="16" height="16" xlink:href="https://i.dotlan.net/images/icons/mouse_delete.png" style="cursor: pointer; display: none;"/></a>
+</g>
+
+
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1730328322"></script>
+<script type="text/javascript"><![CDATA[
+
+function init(E) {
+	SVGMap.init(E);
+}
+
+]]></script>
+
+
 </svg>

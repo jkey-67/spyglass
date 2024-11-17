@@ -214,7 +214,7 @@ def systemsInSameRegion(id_src, id_dst) -> bool:
         Universe.constellationByID(Universe.systemById(id_dst)["constellation_id"])["region_id"]
 
 
-def createSvgFile(region_ids):
+def createSvgFile(region_ids, seed=0, k=0.11):
     map_template = os.path.join(
         os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata", "MapTemplate.svg")
     svg_template = loadSvg(map_template)
@@ -260,16 +260,15 @@ def createSvgFile(region_ids):
             id_src = int(itm["system_id"])
             id_dst = int(itm["destination"]["system_id"])
             if systemsInSameConstellation(id_src, id_dst):
-                g.add_edge(id_src, id_dst, type="Gate", weight=0.8)
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.5)
             elif systemsInSameRegion(id_src, id_dst):
-                g.add_edge(id_src, id_dst, type="Gate", weight=0.05)
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.4)
             else:
-                g.add_edge(id_src, id_dst, type="Gate", weight=0.0001)
+                g.add_edge(id_src, id_dst, type="Gate", weight=0.4)
                 pass
 
-    # graph_positions = initialpos
-
-    graph_positions = nx.spring_layout(g, k=0.11, seed=0)
+    graph_positions = initialpos
+    # graph_positions = nx.spring_layout(g, k=k, seed=seed)
     # graph_positions = nx.kamada_kawai_layout(g)
     # graph_positions = nx.spring_layout(g, k=0.15, seed=61245)
     # graph_positions = nx.spring_layout(g, k=0.2, weight='weight', seed=61245)
@@ -393,23 +392,67 @@ def main():
         return
 
     if True:
+        id = Universe.regionIdByName("VR-01")
+        for region in [
+                # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Zarzakh"))),
+                Universe.regionByID(Universe.regionIdByName("Perrigen Falls")),
+                # Universe.regionByID(Universe.regionIdByName("VR-01")),
+                # Universe.regionByID(Universe.regionIdByName("VR-02")),
+                # Universe.regionByID(Universe.regionIdByName("VR-03")),
+                # Universe.regionByID(Universe.regionIdByName("A-R00001")),
+                # Universe.regionByID(Universe.regionIdByName("A-R00002")),
+                # Universe.regionByID(Universe.regionIdByName("A-R00003")),
+                # Universe.regionByID(Universe.regionIdByName("B-R00004")),
+                # Universe.regionByID(Universe.regionIdByName("B-R00005")),
+                # Universe.regionByID(Universe.regionIdByName("B-R00006")),
+                # Universe.regionByID(Universe.regionIdByName("B-R00007")),
+                # Universe.regionByID(Universe.regionIdByName("B-R00008")),
+                # Universe.regionByID(Universe.regionIdByName("C-R00009")),
+                # Universe.regionByID(Universe.regionIdByName("C-R00010")),
+                # Universe.regionByID(Universe.regionIdByName("C-R00011")),
+                # Universe.regionByID(Universe.regionIdByName("C-R00012")),
+                # Universe.regionByID(Universe.regionIdByName("C-R00013")),
+                # Universe.regionByID(Universe.regionIdByName("C-R00014")),
+                # Universe.regionByID(Universe.regionIdByName("C-R00015")),
+                # Universe.regionByID(Universe.regionIdByName("D-R00016")),
+                # Universe.regionByID(Universe.regionIdByName("D-R00017")),
+                # Universe.regionByID(Universe.regionIdByName("D-R00018")),
+                # Universe.regionByID(Universe.regionIdByName("D-R00019")),
+                # Universe.regionByID(Universe.regionIdByName("D-R00020")),
+                # Universe.regionByID(Universe.regionIdByName("D-R00021")),
+                # Universe.regionByID(Universe.regionIdByName("D-R00022")),
+                # Universe.regionByID(Universe.regionIdByName("D-R00023")),
+                # Universe.regionByID(Universe.regionIdByName("E-R00024")),
+                # Universe.regionByID(Universe.regionIdByName("E-R00025")),
+                # Universe.regionByID(Universe.regionIdByName("E-R00026")),
+                # Universe.regionByID(Universe.regionIdByName("E-R00027")),
+                # Universe.regionByID(Universe.regionIdByName("E-R00028")),
+                # Universe.regionByID(Universe.regionIdByName("E-R00029")),
+                # Universe.regionByID(Universe.regionIdByName("F-R00030")),
+                # Universe.regionByID(Universe.regionIdByName("G-R00031")),
+                # Universe.regionByID(Universe.regionIdByName("H-R00032")),
+                # Universe.regionByID(Universe.regionIdByName("K-R00033")),
+                # Universe.regionByID(Universe.regionIdByName("ADR01")),
+                # Universe.regionByID(Universe.regionIdByName("ADR02")),
+                # Universe.regionByID(Universe.regionIdByName("ADR03")),
+                # Universe.regionByID(Universe.regionIdByName("ADR04")),
+                # Universe.regionByID(Universe.regionIdByName("ADR05")),
+                # Universe.regionByID(Universe.regionIdByName("VR-01")),
+                # Universe.regionByID(Universe.regionIdByName("VR-02")),
+                # Universe.regionByID(Universe.regionIdByName("VR-03")),
+                # Universe.regionByID(Universe.regionIdByName("VR-04")),
+                # Universe.regionByID(Universe.regionIdByName("VR-05")),
 
-        for region in [# Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Zarzakh"))),
-                       # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Z-ENUD"))),
-                       Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Jita"))),
-                       # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("D-GTMI"))),
-                       # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("YKSC-A")))
-                       ]:  # Universe.REGIONS:
+        ]:  # Universe.REGIONS:
             region_name = region["name"]
             region_id = region["region_id"]
-            new_svg = createSvgFile(list({region_id}))
+            new_svg = createSvgFile(list({region_id}), k=0.11, seed=7107)
             result = new_svg.encode("utf-8")
             fname = "{}.svg".format(evegate.convertRegionNameForDotlan(region_name))
             with open(os.path.join(base_path, fname), "wb") as svgFile:
                 svgFile.write(result)
                 svgFile.close()
         return
-
         # system_id = Universe.systemIdByName("Jita" )
         # system_id = Universe.systemIdByName("Zarzakh")
         system_id = Universe.systemIdByName("Z-ENUD")

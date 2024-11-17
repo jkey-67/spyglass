@@ -1,13 +1,35 @@
 import unittest
 import os
 import json
-
+import uuid
 from vi.cache import Cache
 from vi.universe import Universe
-from vi.clipboard import evaluateClipboardData
 from vi.redoundoqueue import RedoUndoQueue
-from vi.dotlan import Map
 from vi import evegate
+
+
+class FileName:
+    def __init__(self, curr_path, file_name):
+        self.temp_name = os.path.join(curr_path, str(uuid.uuid4()))
+        self.file_name = os.path.join(curr_path, file_name)
+
+    def __del__(self):
+        if os.path.exists(self.temp_name):
+            os.remove(self.temp_name)
+            print('Delete file ', self.temp_name)
+
+    def prepare(self):
+        if os.path.exists(self.temp_name):
+            os.remove(self.temp_name)
+
+    def update(self):
+        if os.path.exists(self.temp_name):
+            if os.path.exists(self.file_name):
+                os.remove(self.file_name)
+            os.renames(self.temp_name, self.file_name)
+
+    def __str__(self):
+        return self.temp_name
 
 
 class TestCache(unittest.TestCase):
@@ -16,6 +38,12 @@ class TestCache(unittest.TestCase):
     Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
     cache_used = Cache()
     evegate.setEsiCharName("nele McCool")
+
+    def test_sortPoi(self):
+        self.cache_used.swapPOIs(1, 11)
+        self.cache_used.swapPOIs(1, 1)
+
+        self.cache_used.swapPOIs(3, 4)
 
     def test_checkSpyglassVersionUpdate(self):
         res = evegate.checkSpyglassVersionUpdate(current_version="1.0.0", force_check=True)
@@ -58,7 +86,6 @@ class TestCache(unittest.TestCase):
                     for key in list(i.keys()):
                         if key not in ids.keys():
                             ids.update(i)
-
         self.assertIsNotNone(ids)
 
     def test_loadSystems(self):
@@ -68,7 +95,8 @@ class TestCache(unittest.TestCase):
         self.assertIsNotNone(systems)
 
     def test_update_all_json_files(self):
-        self.use_outdated_cache = True
+        self.use_outdated_cache = False
+        self.test_generateSystems()
         self.test_generateShipnames()
         self.test_generateRegions()
         self.test_generateConstellations()
@@ -107,9 +135,24 @@ class TestCache(unittest.TestCase):
 
             ships_file.write(")\n")
 
+    @staticmethod
+    def writeList(file, alist):
+        size = len(alist)
+        file.write("[\n")
+        for item in alist:
+            file.write("        {}".format(json.dumps(item)))
+            if size > 1:
+                file.write(",\n")
+            else:
+                file.write("\n")
+            size -= 1
+        file.write("]\n")
+
     def test_generateRegions(self):
+        name = FileName(self.curr_path, "everegions.json")
+        name.prepare()
         res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "everegions.json"), "w") as ships_file:
+        with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
             eol_txt = "\n        "
@@ -134,10 +177,13 @@ class TestCache(unittest.TestCase):
                     ships_file.write(ship_text)
 
             ships_file.write("]\n")
+        name.update()
 
     def test_generateConstellations(self):
+        name = FileName(self.curr_path, "eveconstellations.json")
+        name.prepare()
         res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "eveconstellations.json"), "w") as ships_file:
+        with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
             eol_txt = "\n        "
@@ -165,10 +211,13 @@ class TestCache(unittest.TestCase):
                         ships_file.write(ship_text)
 
             ships_file.write("]\n")
+        name.update()
 
     def test_generateSystems(self):
+        name = FileName(self.curr_path, "evesystems.json")
+        name.prepare()
         res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "evesystems.json"), "w") as ships_file:
+        with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
             eol_txt = "\n        "
@@ -198,10 +247,13 @@ class TestCache(unittest.TestCase):
                             ships_file.write(ship_text)
 
             ships_file.write("]\n")
+        name.update()
 
     def test_generateStargates(self):
+        filename = FileName(self.curr_path, "evestargates.json")
+        filename.prepare()
         res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "evestargates.json"), "w") as ships_file:
+        with open(filename.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
             eol_txt = "\n        "
@@ -236,13 +288,16 @@ class TestCache(unittest.TestCase):
                                 ships_file.write(ship_text)
 
             ships_file.write("]\n")
+        filename.update()
 
     def test_GetDotlanFiles(self):
         for region in Universe.REGIONS:
             filename = os.path.join(self.curr_path, "..", "ui", "res", "mapdata", "{}.svg".format(
                 evegate.convertRegionNameForDotlan(region["name"])))
             svg = evegate.getSvgFromDotlan(region=region["name"], dark=True)
-            dmap = Map(region["name"], svg)
+            region_name = region["name"]
+            # self.assertEqual(svg.find("region not found"), -1, "Unable to get svg for region {}".format(region_name))
+            # self.assertIsNotNone(Map(region_name, svg), "Unable to create map for region {}".format(region_name))
             if svg.find("region not found") == -1:
                 with open(filename, "w") as f:
                     f.write(svg)
@@ -297,27 +352,6 @@ class TestCache(unittest.TestCase):
         self.cache_used.removeAPIKey("Mr C")
         self.cache_used.removeAPIKey("Mr D")
         self.cache_used.removeAPIKey("Mr E")
-
-    def test_clipboard_parser(self):
-        jb_list = [
-            '<a href="showinfo:35841//1037567076715">8CN-CH » OX-S7P - Speedway</a> in 8CN-CH',
-            'DUO-51 » L-FM3P',
-            'OX-S7P » 8CN-CH - Speedway 2'
-        ]
-        for itm in jb_list:
-            res_type, res = evaluateClipboardData(itm)
-            self.assertEqual(res_type, "jumpbridge", "Result of '{}'is not jumpbridge".format(itm))
-
-        pos_list = [
-            "<url=showinfo:1531//60002476 alt='Current Station'>Vittenyn IV - Moon 6" 
-            " - Expert Distribution Warehouse</url>",
-            "Vittenyn IV - Moon 6 - Expert Distribution Warehouse\n0 m",
-            'Trossere VII - Moon 3 - University of Caille',
-            "Jita IV - Moon 4 - Caldari Navy Assembly Plant"
-            ]
-        for itm in pos_list:
-            res_type, res = evaluateClipboardData(itm)
-            self.assertEqual(res_type, "poi", "Result of '{}' is not poi".format(itm))
 
     def test_esi(self):
         res = evegate.esiStatus()

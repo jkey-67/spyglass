@@ -1,5 +1,14 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>res/volume_off.svg</file>
+    <file>res/speach_off.svg</file>
+    <file>res/qmark.svg</file>
+    <file>res/avatar.svg</file>
+    <file>res/route_off.svg</file>
+    <file>res/offline.svg</file>
+    <file>res/online.svg</file>
+    <file>res/locate.svg</file>
+    <file>res/adm_vul.svg</file>
     <file>res/search.svg</file>
     <file>res/down.svg</file>
     <file>res/apply.svg</file>
@@ -15,6 +24,7 @@
     <file>res/eve-sso-login-black-small.png</file>
     <file>res/eve-sso-login-white-large.png</file>
     <file>res/eve-sso-login-white-small.png</file>
+    <file>res/logo_splash.png</file>
     <file>res/jumpbridge.svg</file>
     <file>res/minus.svg</file>
     <file>res/logo.svg</file>

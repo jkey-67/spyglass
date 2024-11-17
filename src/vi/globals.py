@@ -32,3 +32,7 @@ class Globals(object):
     @intel_time.setter
     def intel_time(self, intel_time):
         Globals._INTEL_TIME = intel_time
+
+    @property
+    def follow_kills(self):
+        return False

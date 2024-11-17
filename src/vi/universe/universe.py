@@ -19,17 +19,17 @@
 
 import json
 import os
-from vi.universe.shipnames import SHIPNAMES
-from vi.universe.npcnames import NPCNAMES
+from .shipnames import SHIPNAMES
+from .npcnames import NPCNAMES
 
 try:
-    from vi.universe.regionnames import REGION_IDS_BY_NAME
+    from .regionnames import REGION_IDS_BY_NAME
 except (Exception,):
     REGION_IDS_BY_NAME = {}
     pass
 
 try:
-    from vi.universe.constellationnames import CONNSTELLATION_IDS_BY_NAME
+    from .constellationnames import CONNSTELLATION_IDS_BY_NAME
 except (Exception,):
     CONNSTELLATION_IDS_BY_NAME = {}
     pass
@@ -88,13 +88,17 @@ class Universe(object):
     CONSTELLATIONS = _loadJsonFile(os.path.join(curr_path, "eveconstellations.json"))
     # CONSTELLATIONSONJ = [Constellation(**constellation) for constellation in CONSTELLATIONS]
 
-    for system in _loadJsonFile(os.path.join(curr_path, "evesystems.json")):
-        SYSTEMS[system["system_id"]] = system
-        SYSTEM_NAMES.append(system["name"])
-        UPPER_SYSTEM_NAMES.append(system["name"].upper())
+    try:
+        for system in _loadJsonFile(os.path.join(curr_path, "evesystems.json")):
+            SYSTEMS[system["system_id"]] = system
+            SYSTEM_NAMES.append(system["name"])
+            UPPER_SYSTEM_NAMES.append(system["name"].upper())
+    except (Exception,):
+        pass
 
     STARGATES = _loadJsonFile(os.path.join(curr_path, "evestargates.json"))
     SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]
+    SHIP_NAMES.sort(key=lambda name: -len(name))
     NPC_FACTION_NAMES = NPCNAMES
     LOCATED_CHARS = set()
 

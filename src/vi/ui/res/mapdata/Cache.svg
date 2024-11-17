@@ -385,9 +385,9 @@
   </symbol>
   <symbol id="def30000652">
     <a xlink:href="http://evemaps.dotlan.net/system/8OYE-Z" class="sys link-5-30000652" target="_top">
-      <rect id="rect30000652" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
+      <rect id="rect30000652" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #444444;" />
       <text x="28" y="14" class="ss" text-anchor="middle">8OYE-Z</text>
-      <text id="txt30000652" x="28" y="21.7" class="st so" text-anchor="middle">NC (5)</text>
+      <text id="txt30000652" x="28" y="21.7" class="st so" text-anchor="middle">-X3- (5)</text>
     </a>
   </symbol>
   <symbol id="def30000647">
@@ -400,16 +400,16 @@
   <symbol id="def30000650">
     <a xlink:href="http://evemaps.dotlan.net/system/NG-M8K" class="sys link-5-30000650" target="_top">
     <rect id="ice30000650" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
-      <rect id="rect30000650" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
+      <rect id="rect30000650" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #444444;" />
       <text x="28" y="14" class="ss" text-anchor="middle">NG-M8K</text>
-      <text id="txt30000650" x="28" y="21.7" class="st so" text-anchor="middle">NC (5)</text>
+      <text id="txt30000650" x="28" y="21.7" class="st so" text-anchor="middle">-X3- (5)</text>
     </a>
   </symbol>
   <symbol id="def30000649">
     <a xlink:href="http://evemaps.dotlan.net/system/LQ-01M" class="sys link-5-30000649" target="_top">
-      <rect id="rect30000649" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
+      <rect id="rect30000649" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #444444;" />
       <text x="28" y="14" class="ss" text-anchor="middle">LQ-01M</text>
-      <text id="txt30000649" x="28" y="21.7" class="st so" text-anchor="middle">NC (5)</text>
+      <text id="txt30000649" x="28" y="21.7" class="st so" text-anchor="middle">-X3- (5)</text>
     </a>
   </symbol>
   <symbol id="def30000639">
@@ -442,9 +442,9 @@
   </symbol>
   <symbol id="def30000653">
     <a xlink:href="http://evemaps.dotlan.net/system/K85Y-6" class="sys link-5-30000653" target="_top">
-      <rect id="rect30000653" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
+      <rect id="rect30000653" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #444444;" />
       <text x="28" y="14" class="ss" text-anchor="middle">K85Y-6</text>
-      <text id="txt30000653" x="28" y="21.7" class="st so" text-anchor="middle">NC (5)</text>
+      <text id="txt30000653" x="28" y="21.7" class="st so" text-anchor="middle">-X3- (5)</text>
     </a>
   </symbol>
   <symbol id="def30000641">
@@ -456,16 +456,16 @@
   </symbol>
   <symbol id="def30000651">
     <a xlink:href="http://evemaps.dotlan.net/system/RV5-TT" class="sys link-5-30000651" target="_top">
-      <rect id="rect30000651" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
+      <rect id="rect30000651" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #444444;" />
       <text x="28" y="14" class="ss" text-anchor="middle">RV5-TT</text>
-      <text id="txt30000651" x="28" y="21.7" class="st so" text-anchor="middle">NC (5)</text>
+      <text id="txt30000651" x="28" y="21.7" class="st so" text-anchor="middle">-X3- (5)</text>
     </a>
   </symbol>
   <symbol id="def30000654">
     <a xlink:href="http://evemaps.dotlan.net/system/PKN-NJ" class="sys link-5-30000654" target="_top">
-      <rect id="rect30000654" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
+      <rect id="rect30000654" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #444444;" />
       <text x="28" y="14" class="ss" text-anchor="middle">PKN-NJ</text>
-      <text id="txt30000654" x="28" y="21.7" class="st so" text-anchor="middle">NC (5)</text>
+      <text id="txt30000654" x="28" y="21.7" class="st so" text-anchor="middle">-X3- (5)</text>
     </a>
   </symbol>
   <symbol id="def30001000">
@@ -752,7 +752,7 @@
 </g>
 
 
-<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1730328322"></script>
 <script type="text/javascript"><![CDATA[
 
 function init(E) {

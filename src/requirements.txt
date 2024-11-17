@@ -12,3 +12,6 @@ pyttsx3
 espeakng
 pygame
 networkx
+numpy
+scipy
+lxml

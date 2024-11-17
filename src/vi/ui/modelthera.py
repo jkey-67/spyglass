@@ -22,14 +22,12 @@ from typing import Union, Any
 from PySide6 import QtGui
 from PySide6.QtCore import QAbstractTableModel, Qt
 from PySide6.QtCore import QModelIndex, QPersistentModelIndex
-from vi.evegate import checkTheraConnections
 
 
 class TableModelThera(QAbstractTableModel):
-    def __init__(self, system_name="V-F6DQ", parent=None):
+    def __init__(self, parent=None):
         super(TableModelThera, self).__init__(parent)
-        self.system_name = system_name
-        self.thera_data = checkTheraConnections(system_name)
+        self.thera_data = []  # checkTheraConnections(system_name)
         self.model_display_list = [
             # {"created_at": ["created_at"]},
             # {"Created by ID": ["created_by_id"]},
@@ -59,12 +57,11 @@ class TableModelThera(QAbstractTableModel):
             {"Comment": ["comment"]}
         ]
 
-    def updateData(self, system_name=None):
-        if system_name:
-            self.system_name = system_name
-        self.beginResetModel()
-        self.thera_data = checkTheraConnections(self.system_name)
-        self.endResetModel()
+    def setTheraConnections(self, connections):
+        if self.thera_data != connections:
+            self.beginResetModel()
+            self.thera_data = connections
+            self.endResetModel()
 
     def rowCount(self, parent: Union[QModelIndex, QPersistentModelIndex] = ...) -> int:
         return len(self.thera_data)

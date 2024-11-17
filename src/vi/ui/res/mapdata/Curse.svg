@@ -684,6 +684,13 @@
       <text x="28" y="21.7" class="er" text-anchor="middle">Catch</text>
     </a>
   </symbol>
+  <symbol id="def30100000">
+    <a xlink:href="http://evemaps.dotlan.net/map/Yasna_Zakh/Zarzakh" class="sys link-5-30100000" target="_top">
+      <rect id="rect30100000" x="3.5" y="3.5" width="50" height="22" class="e" />
+      <text x="28" y="14" class="es" text-anchor="middle">Zarzakh</text>
+      <text x="28" y="21.7" class="er" text-anchor="middle">Yasna Zakh</text>
+    </a>
+  </symbol>
   <symbol id="def30000921">
     <a xlink:href="http://evemaps.dotlan.net/map/Great_Wildlands/UT-UZB" class="sys link-5-30000921" target="_top">
       <rect id="rect30000921" x="3.5" y="3.5" width="50" height="22" class="e" />
@@ -834,6 +841,7 @@
 <line id="j-30001042-30001038" x1="233.5" y1="104.5" x2="153.5" y2="104.5" class="j" />
 <line id="j-30001040-30001039" x1="268.5" y1="144.5" x2="258.5" y2="184.5" class="j" />
 <line id="j-30001041-30001039" x1="268.5" y1="144.5" x2="313.5" y2="104.5" class="j" />
+<line id="j-30100000-30001041" x1="313.5" y1="104.5" x2="403.5" y2="71.5" class="jr" />
 <line id="j-30001043-30001042" x1="153.5" y1="104.5" x2="78.5" y2="104.5" class="j" />
 <line id="j-30001045-30001044" x1="163.5" y1="362.5" x2="123.5" y2="412.5" class="j" />
 <line id="j-30001046-30001044" x1="163.5" y1="362.5" x2="123.5" y2="312.5" class="j" />
@@ -905,6 +913,7 @@
 <use id="sys30000015" x="0" y="278" width="62.5" height="30" xlink:href="#def30000015" />
 <use id="sys30001170" x="5" y="563" width="62.5" height="30" xlink:href="#def30001170" />
 <use id="sys30001155" x="255" y="568" width="62.5" height="30" xlink:href="#def30001155" />
+<use id="sys30100000" x="375" y="57" width="62.5" height="30" xlink:href="#def30100000" />
 <use id="sys30000921" x="515" y="80" width="62.5" height="30" xlink:href="#def30000921" />
 <use id="sys30000656" x="615" y="305" width="62.5" height="30" xlink:href="#def30000656" />
 <use id="sys30000660" x="625" y="455" width="62.5" height="30" xlink:href="#def30000660" />
@@ -932,7 +941,7 @@
 </g>
 
 
-<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1730328322"></script>
 <script type="text/javascript"><![CDATA[
 
 function init(E) {

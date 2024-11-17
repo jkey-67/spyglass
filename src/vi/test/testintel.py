@@ -8,7 +8,7 @@ from vi.clipboard import evaluateClipboardData
 from vi.evegate import getSvgFromDotlan
 
 SVG_SYSTEM_USED = getSvgFromDotlan(region="providence", dark=True)
-ALL_SYSTEMS_FROM_SVG = Map(SVG_SYSTEM_USED).systems
+ALL_SYSTEMS_FROM_SVG = Map("Providence", SVG_SYSTEM_USED).systems
 
 
 class TestIntel(unittest.TestCase):
@@ -56,7 +56,6 @@ class TestIntel(unittest.TestCase):
         self.assertEqual(message.status, States.LOCATION, "System change should be detected.")
         self.assertIn(u'Josameto', message.affectedSystems, "System Josameto should be detected.")
 
-
     def test_mesage_parser_with(self):
 
         system = ALL_SYSTEMS_FROM_SVG.get("18-GZM")
@@ -77,7 +76,7 @@ class TestIntel(unittest.TestCase):
     def test_system_parser_with_camel_case(self):
         region_name = [sys.upper() for sys in ALL_SYSTEMS_FROM_SVG]
         formatted_text = u"<rtext>{0}</rtext>".format("Dital clr")
-        soup = BeautifulSoup(formatted_text, 'html.parser')
+        soup = BeautifulSoup(formatted_text, 'lxml-xml')
         rtext = soup.select("rtext")[0]
         res_systems = set()
         parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
@@ -89,27 +88,30 @@ class TestIntel(unittest.TestCase):
     def test_system_parser_two_system_one_read_one_clr(self):
         region_name = [sys.upper() for sys in ALL_SYSTEMS_FROM_SVG]
         formatted_text = u"<rtext>{0}</rtext>".format("18-GZM +6")
-        soup = BeautifulSoup(formatted_text, 'html.parser')
+        soup = BeautifulSoup(formatted_text, 'lxml-xml')
         rtext = soup.select("rtext")[0]
         res_systems = set()
-        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
+        while parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems):
+            pass
+        res_state = parser_functions.parseStatus(rtext)
         self.assertFalse(res_systems == set(), "System name '18-GZM' not fetched correct as 18-GZM")
         if res_systems:
             for item in res_systems:
                 self.assertEqual("18-GZM", item.name, "System name '18-GZM' not fetched correct as 18-GZM")
-                self.assertEqual(States.UNKNOWN, item.status, "System state for '18-GZM' not fetched correct as UNKNOWN")
+                self.assertEqual(States.ALARM, res_state, "System state for '18-GZM' not fetched correct as UNKNOWN")
 
         formatted_text = u"<rtext>{0}</rtext>".format("juk clr")
-        soup = BeautifulSoup(formatted_text, 'html.parser')
+        soup = BeautifulSoup(formatted_text, 'lxml-xml')
         rtext = soup.select("rtext")[0]
         res_systems_two = set()
-        parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems_two)
+        while parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems_two):
+            pass
 
-        self.assertTrue(res_systems_two == set(), "System name 'Juk' not fetched correct as empty set")
+        self.assertFalse(res_systems_two == set(), "System name 'Juk' not correct fetched as empty set")
 
     def test_system_parser_with_upper_case(self):
         formatted_text = u"<rtext>{0}</rtext>".format("DITAL clr")
-        soup = BeautifulSoup(formatted_text, 'html.parser')
+        soup = BeautifulSoup(formatted_text, 'lxml-xml')
         rtext = soup.select("rtext")[0]
         res_systems = set()
         parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
@@ -120,7 +122,7 @@ class TestIntel(unittest.TestCase):
 
     def test_system_parser_with_start_case(self):
         formatted_text = u"<rtext>{0}</rtext>".format("Dital* clr")
-        soup = BeautifulSoup(formatted_text, 'html.parser')
+        soup = BeautifulSoup(formatted_text, 'lxml-xml')
         rtext = soup.select("rtext")[0]
         res_systems = set()
         parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
@@ -131,7 +133,7 @@ class TestIntel(unittest.TestCase):
 
     def test_system_parser_with_segment_case(self):
         formatted_text = u"<rtext>{0}</rtext>".format("TXJ clear")
-        soup = BeautifulSoup(formatted_text, 'html.parser')
+        soup = BeautifulSoup(formatted_text, 'lxml-xml')
         rtext = soup.select("rtext")[0]
         res_systems = set()
         parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
@@ -141,8 +143,8 @@ class TestIntel(unittest.TestCase):
                 self.assertEqual("TXJ-II", item.name, "System name 'TXJ' not fetched correct as TXJ-II")
 
     def test_system_parser_ship_names(self):
-        formatted_text = u"<rtext>{0}</rtext>".format("TXJ Anna Succubus")
-        soup = BeautifulSoup(formatted_text, 'html.parser')
+        formatted_text = u"<rtext>{0}</rtext>".format("TXJ Anna caldari navy hookbill")
+        soup = BeautifulSoup(formatted_text, 'lxml-xml')
         rtext = soup.select("rtext")[0]
         res_systems = set()
         parser_functions.parseSystems(ALL_SYSTEMS_FROM_SVG, rtext, res_systems)
@@ -161,7 +163,7 @@ class TestIntel(unittest.TestCase):
         self.assertEqual(res, "jumpbridge", "Structure should be jumpbridge")
 
     def test_removeXmlData(self):
-        soup = BeautifulSoup('<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>', 'html.parser')
+        soup = BeautifulSoup('<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>', 'lxml-xml')
         [s.extract() for s in soup(['href', 'br'])]
         res = soup.getText()
         http_start = res.find("http")

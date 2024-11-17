@@ -18,7 +18,7 @@
 ###########################################################################
 
 from PySide6 import QtWidgets
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QDesktopServices
 from vi.ui import Ui_SystemChat
 from vi.ui.chatentrywidget import ChatEntryWidget
@@ -27,14 +27,14 @@ from .chatentrywidget import ChatEntryItem
 
 class SystemChat(QtWidgets.QDialog):
     SYSTEM = 0
-    location_set = pyqtSignal(str, str)
-    repaint_needed = pyqtSignal()
+    location_set = Signal(str, str)
+    repaint_needed = Signal()
 
     def __init__(self, parent, chat_type, selector, chat_entries, known_player_names):
         QtWidgets.QDialog.__init__(self, parent)
         self.ui = Ui_SystemChat()
         self.ui.setupUi(self)
-        self.chatType = 0
+        self.chatType = chat_type
         self.selector = selector
         self.chatEntries = []
         for entry in chat_entries:
@@ -97,11 +97,11 @@ class SystemChat(QtWidgets.QDialog):
                 entry.updateAvatar(avatar_data)
 
     def setSystemAlarm(self):
-        # self.system.setStatus(States.ALARM, datetime.datetime.utcnow())
+        # self.system.setStatus(States.ALARM, datetime.datetime.now(datetime.UTC))
         self.repaint_needed.emit()
 
     def setSystemClear(self):
-        # self.system.setStatus(States.CLEAR, datetime.datetime.utcnow())
+        # self.system.setStatus(States.CLEAR, datetime.datetime.now(datetime.UTC))
         self.repaint_needed.emit()
 
     def closeDialog(self):

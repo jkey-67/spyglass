@@ -17,8 +17,8 @@
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
 
+import datetime
 from typing import Optional
-from datetime import datetime
 
 
 def lineToDatetime(line: str) -> Optional[datetime]:
@@ -36,10 +36,10 @@ def lineToDatetime(line: str) -> Optional[datetime]:
     time_ends = line.find("]")
     time_str = line[time_start:time_ends].strip()
     try:
-        return datetime.strptime(time_str, "%Y.%m.%d %H:%M:%S")
+        return datetime.datetime.strptime(time_str, "%Y.%m.%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc)
     except ValueError:
         try:
-            return datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ")
+            return datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
         except ValueError:
             return None
 
