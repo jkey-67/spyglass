@@ -334,7 +334,7 @@ QScrollBar:horizontal
     margin: 3px 15px 3px 15px;
     border: 1px transparent #2A2929;
     border-radius: 4px;
-    background-color: #2A2929;
+    background-color: #323232;
 }
 
 QScrollBar::handle:horizontal
@@ -392,7 +392,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
 
 QScrollBar:vertical
 {
-    background-color: #2A2929;
+    background-color: #323232;
     width: 15px;
     margin: 15px 3px 15px 3px;
     border: 1px transparent #2A2929;
@@ -486,17 +486,15 @@ QMainWindow::separator
 {
     background-color: #31363b;
     color: white;
-    padding-left: 4px;
+    padding-left: 2px;
     spacing: 2px;
-    border: 1px dashed #76797C;
 }
 
 QMainWindow::separator:hover
 {
-    background-color: #404249;
+    background-color: #363a3f;
     color: white;
-    padding-left: 4px;
-    border: 1px solid #76797C;
+    padding-left: 2px;
     spacing: 2px;
 }
 
@@ -865,8 +863,9 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 
 QTreeView, QListView
 {
-    border: 1px solid #76797C;
-    background-color: #232629;
+    border: 1px solid #404249;
+    background-color: #404249;
+
 }
 
 QTreeView:branch:selected, QTreeView:branch:hover
@@ -1013,8 +1012,8 @@ QPushButton::menu-indicator  {
 QTableView
 {
     border: 1px solid #404249;
-    gridline-color: #31363b;
-    background-color: #232629;
+    gridline-color: #404249;
+    background-color:  #31363b;
 }
 
 
@@ -1024,12 +1023,12 @@ QTableView, QHeaderView
 }
 
 QTableView::item:pressed, QListView::item:pressed, QTreeView::item:pressed  {
-    background: #585c5e;
+    background: #31363b;
     color: #eff0f1;
 }
 
 QTableView::item:selected:active, QTreeView::item:selected:active, QListView::item:selected:active  {
-    background: #484b4d;
+    background: #31363b;
     color: #eff0f1;
 }
 
@@ -1077,7 +1076,7 @@ QHeaderView::section::horizontal
 QHeaderView::section:checked
  {
     color: white;
-    background-color: #334e5e;
+    background-color: #404249;
  }
 
  /* style the sort indicator */
@@ -1124,12 +1123,10 @@ QFrame[height="3"], QFrame[width="3"] {
 
 
 QSplitter::handle {
-    border: 1px dashed #404249;
 }
 
 QSplitter::handle:hover {
-    background-color: #404249;
-    border: 1px solid #404249;
+    background-color: #31363b;
 }
 
 QSplitter::handle:horizontal {

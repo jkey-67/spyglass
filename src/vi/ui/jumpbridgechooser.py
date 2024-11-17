@@ -21,7 +21,7 @@ import os
 
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox, QFileDialog
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from vi.ui import Ui_JumpbridgeChooser
 from vi import evegate
 from vi.cache import Cache
@@ -29,9 +29,9 @@ from vi.universe import Universe
 
 
 class JumpbridgeChooser(QtWidgets.QDialog):
-    set_jumpbridge_url = pyqtSignal(str)
-    update_jumpbridge = pyqtSignal()
-    delete_jumpbridge = pyqtSignal()
+    set_jumpbridge_url = Signal(str)
+    update_jumpbridge = Signal()
+    delete_jumpbridge = Signal()
     run_jb_generation = False
 
     def __init__(self, parent, url):

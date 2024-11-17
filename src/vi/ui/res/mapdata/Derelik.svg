@@ -1296,7 +1296,19 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-
+  <rect id="inc30000061" x="456.5" y="336.5" width="85" height="46" class="inc" />
+  <rect id="inc30000057" x="471.5" y="306.5" width="85" height="46" class="inc" />
+  <rect id="inc30000068" x="541.5" y="291.5" width="85" height="46" class="inc" />
+  <rect id="inc30000058" x="596.5" y="326.5" width="85" height="46" class="inc" />
+  <rect id="inc30000064" x="726.5" y="281.5" width="85" height="46" class="inc" />
+  <rect id="inc30000066" x="741.5" y="236.5" width="85" height="46" class="incs" />
+  <rect id="inc30000059" x="756.5" y="336.5" width="85" height="46" class="inc" />
+  <rect id="inc30000063" x="796.5" y="291.5" width="85" height="46" class="inc" />
+  <rect id="inc30000069" x="806.5" y="246.5" width="85" height="46" class="inc" />
+  <rect id="inc30000060" x="866.5" y="301.5" width="85" height="46" class="inc" />
+  <rect id="inc30000065" x="881.5" y="211.5" width="85" height="46" class="inc" />
+  <rect id="inc30000062" x="936.5" y="281.5" width="85" height="46" class="inc" />
+  <rect id="inc30000067" x="941.5" y="241.5" width="85" height="46" class="inc" />
 
 </g>
 
@@ -1619,7 +1631,7 @@
 </g>
 
 
-<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1730328322"></script>
 <script type="text/javascript"><![CDATA[
 
 function init(E) {

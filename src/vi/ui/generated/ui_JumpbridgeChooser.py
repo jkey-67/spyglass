@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'JumpbridgeChooser.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.1
+## Created by: Qt User Interface Compiler version 6.8.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -39,7 +39,7 @@ class Ui_JumpbridgeChooser(object):
         self.cancelButton = QToolButton(self.widget3)
         self.cancelButton.setObjectName(u"cancelButton")
         icon = QIcon()
-        icon.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.cancelButton.setIcon(icon)
         self.cancelButton.setIconSize(QSize(24, 24))
 
@@ -52,7 +52,7 @@ class Ui_JumpbridgeChooser(object):
         self.deleteAllJumpBridgeButton = QToolButton(self.widget3)
         self.deleteAllJumpBridgeButton.setObjectName(u"deleteAllJumpBridgeButton")
         icon1 = QIcon()
-        icon1.addFile(u":/Icons/res/trash-box.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u":/Icons/res/trash-box.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.deleteAllJumpBridgeButton.setIcon(icon1)
         self.deleteAllJumpBridgeButton.setIconSize(QSize(24, 24))
 
@@ -65,7 +65,7 @@ class Ui_JumpbridgeChooser(object):
         self.generateJumpBridgeButton = QToolButton(self.widget3)
         self.generateJumpBridgeButton.setObjectName(u"generateJumpBridgeButton")
         icon2 = QIcon()
-        icon2.addFile(u":/Icons/res/arrows-rotate.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u":/Icons/res/arrows-rotate.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.generateJumpBridgeButton.setIcon(icon2)
         self.generateJumpBridgeButton.setIconSize(QSize(24, 24))
 
@@ -96,7 +96,7 @@ class Ui_JumpbridgeChooser(object):
         self.fileChooser = QToolButton(self.widget2)
         self.fileChooser.setObjectName(u"fileChooser")
         icon3 = QIcon()
-        icon3.addFile(u":/Icons/res/load.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u":/Icons/res/load.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.fileChooser.setIcon(icon3)
         self.fileChooser.setIconSize(QSize(24, 24))
 
@@ -105,7 +105,7 @@ class Ui_JumpbridgeChooser(object):
         self.saveButton = QToolButton(self.widget2)
         self.saveButton.setObjectName(u"saveButton")
         icon4 = QIcon()
-        icon4.addFile(u":/Icons/res/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u":/Icons/res/save.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.saveButton.setIcon(icon4)
         self.saveButton.setIconSize(QSize(24, 24))
 
@@ -153,11 +153,11 @@ class Ui_JumpbridgeChooser(object):
 #endif // QT_CONFIG(tooltip)
         self.cancelButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Apply", None))
 #if QT_CONFIG(tooltip)
-        self.deleteAllJumpBridgeButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Clears all Junp Briidge data.", None))
+        self.deleteAllJumpBridgeButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Clears all Junp Bridge data.", None))
 #endif // QT_CONFIG(tooltip)
         self.deleteAllJumpBridgeButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Generate ", None))
 #if QT_CONFIG(tooltip)
-        self.generateJumpBridgeButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Generate the list uf jumpbridges online", None))
+        self.generateJumpBridgeButton.setToolTip(QCoreApplication.translate("JumpbridgeChooser", u"Generate the list of jumpbridges with the current api registerd char.", None))
 #endif // QT_CONFIG(tooltip)
         self.generateJumpBridgeButton.setText(QCoreApplication.translate("JumpbridgeChooser", u"Generate ", None))
 #if QT_CONFIG(tooltip)

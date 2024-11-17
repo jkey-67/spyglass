@@ -18,7 +18,7 @@
 ###########################################################################
 
 from PySide6 import QtWidgets
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QDesktopServices
 from vi.ui import Ui_SystemChat
 from vi.ui.chatentrywidget import ChatEntryWidget
@@ -27,8 +27,8 @@ from .chatentrywidget import ChatEntryItem
 
 class SystemChat(QtWidgets.QDialog):
     SYSTEM = 0
-    location_set = pyqtSignal(str, str)
-    repaint_needed = pyqtSignal()
+    location_set = Signal(str, str)
+    repaint_needed = Signal()
 
     def __init__(self, parent, chat_type, selector, chat_entries, known_player_names):
         QtWidgets.QDialog.__init__(self, parent)

@@ -19,12 +19,12 @@
 
 from vi.cache import Cache
 from PySide6 import QtWidgets
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from vi.ui import Ui_ChatroomsChooser
 
 
 class ChatroomChooser(QtWidgets.QDialog):
-    rooms_changed = pyqtSignal(list)
+    rooms_changed = Signal(list)
     DEFAULT_ROOM_MANES = [u"Bean-Intel", u"zKillboard", u"INTEL DRONE'S"]
 
     def __init__(self, parent):

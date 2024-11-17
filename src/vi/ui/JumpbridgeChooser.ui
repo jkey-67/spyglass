@@ -83,7 +83,7 @@
       <item>
        <widget class="QToolButton" name="deleteAllJumpBridgeButton">
         <property name="toolTip">
-         <string>Clears all Junp Briidge data.</string>
+         <string>Clears all Junp Bridge data.</string>
         </property>
         <property name="text">
          <string>Generate </string>
@@ -119,7 +119,7 @@
       <item>
        <widget class="QToolButton" name="generateJumpBridgeButton">
         <property name="toolTip">
-         <string>Generate the list uf jumpbridges online</string>
+         <string>Generate the list of jumpbridges with the current api registerd char.</string>
         </property>
         <property name="text">
          <string>Generate </string>

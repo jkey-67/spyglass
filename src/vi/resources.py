@@ -32,7 +32,7 @@ def resourcePath(relative_path):
         base_path = os.path.abspath(".")
     base_path = os.path.join(base_path, relative_path)
     if not os.path.exists(base_path):
-        logging.error("Unable to load file {}.".format(base_path))
+        logging.info("Resource path not exists: {}.".format(base_path))
     return base_path
 
 

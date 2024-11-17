@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ChatroomsChooser.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.1
+## Created by: Qt User Interface Compiler version 6.8.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -46,7 +46,7 @@ class Ui_ChatroomsChooser(object):
         self.saveButton = QToolButton(ChatroomsChooser)
         self.saveButton.setObjectName(u"saveButton")
         icon = QIcon()
-        icon.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u":/Icons/res/apply.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.saveButton.setIcon(icon)
         self.saveButton.setIconSize(QSize(24, 24))
 
@@ -59,7 +59,7 @@ class Ui_ChatroomsChooser(object):
         self.defaultButton = QToolButton(ChatroomsChooser)
         self.defaultButton.setObjectName(u"defaultButton")
         icon1 = QIcon()
-        icon1.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u":/Icons/res/default.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.defaultButton.setIcon(icon1)
         self.defaultButton.setIconSize(QSize(24, 24))
 
@@ -79,11 +79,20 @@ class Ui_ChatroomsChooser(object):
 
     def retranslateUi(self, ChatroomsChooser):
         ChatroomsChooser.setWindowTitle(QCoreApplication.translate("ChatroomsChooser", u"Chatrooms", None))
+#if QT_CONFIG(tooltip)
+        self.label.setToolTip("")
+#endif // QT_CONFIG(tooltip)
         self.label.setText(QCoreApplication.translate("ChatroomsChooser", u"Enter the chatrooms to watch into the following field. Separate them by comma.", None))
 #if QT_CONFIG(tooltip)
-        self.saveButton.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Apply setting and close", None))
+        self.roomnamesField.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Enter the chatrooms to watch into the following field. Separate them by comma.", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.saveButton.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Apply setting and close the dialog.", None))
 #endif // QT_CONFIG(tooltip)
         self.saveButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Save", None))
+#if QT_CONFIG(tooltip)
+        self.defaultButton.setToolTip(QCoreApplication.translate("ChatroomsChooser", u"Restore the default configuration.", None))
+#endif // QT_CONFIG(tooltip)
         self.defaultButton.setText(QCoreApplication.translate("ChatroomsChooser", u"Restore Defaults", None))
     # retranslateUi
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1263</width>
-    <height>758</height>
+    <width>1417</width>
+    <height>843</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,8 +20,11 @@
   <property name="windowOpacity">
    <double>1.000000000000000</double>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_7">
+   <layout class="QVBoxLayout" name="verticalLayout_5">
     <property name="spacing">
      <number>0</number>
     </property>
@@ -42,6 +45,9 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
+      <property name="handleWidth">
+       <number>20</number>
+      </property>
       <widget class="QWidget" name="mapwidget" native="true">
        <layout class="QGridLayout" name="gridLayout">
         <property name="leftMargin">
@@ -59,13 +65,6 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <item row="4" column="0" rowspan="2">
-         <widget class="QScrollBar" name="mapHorzScrollBar">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="0">
          <widget class="QWidget" name="mapbuttonwidget" native="true">
           <property name="minimumSize">
@@ -99,6 +98,15 @@
            <item row="0" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0">
              <property name="spacing">
+              <number>2</number>
+             </property>
+             <property name="leftMargin">
+              <number>2</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
               <number>0</number>
              </property>
              <property name="bottomMargin">
@@ -108,13 +116,13 @@
               <widget class="QToolButton" name="frameButton">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
+                 <width>32</width>
                  <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>64</width>
+                 <width>32</width>
                  <height>32</height>
                 </size>
                </property>
@@ -189,22 +197,12 @@
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
               <widget class="QLabel" name="label_2">
                <property name="text">
                 <string>Region</string>
+               </property>
+               <property name="buddy">
+                <cstring>regionNameField</cstring>
                </property>
               </widget>
              </item>
@@ -218,13 +216,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>200</width>
+                 <width>0</width>
                  <height>0</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>300</width>
+                 <width>250</width>
                  <height>500</height>
                 </size>
                </property>
@@ -255,9 +253,12 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label">
+              <widget class="QLabel" name="apiCharLabel">
                <property name="text">
                 <string>API Char</string>
+               </property>
+               <property name="buddy">
+                <cstring>currentESICharacter</cstring>
                </property>
               </widget>
              </item>
@@ -275,8 +276,8 @@
               <widget class="QToolButton" name="locateChar">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
-                 <height>27</height>
+                 <width>32</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -310,11 +311,24 @@
               </widget>
              </item>
              <item>
+              <spacer name="horizontalSpacer_6">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
               <widget class="QToolButton" name="zoomInButton">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
-                 <height>27</height>
+                 <width>32</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -342,6 +356,9 @@
                  <height>20</height>
                 </size>
                </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
                <property name="autoRaise">
                 <bool>true</bool>
                </property>
@@ -351,8 +368,8 @@
               <widget class="QToolButton" name="zoomOutButton">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
-                 <height>27</height>
+                 <width>32</width>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -387,6 +404,9 @@
                  <height>20</height>
                 </size>
                </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
                <property name="autoRaise">
                 <bool>true</bool>
                </property>
@@ -397,7 +417,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>27</height>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -430,11 +450,14 @@
                  <height>20</height>
                 </size>
                </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
                <property name="checkable">
                 <bool>true</bool>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -446,7 +469,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>27</height>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -479,11 +502,14 @@
                  <height>20</height>
                 </size>
                </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
                <property name="checkable">
                 <bool>true</bool>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -492,10 +518,13 @@
              </item>
              <item>
               <widget class="QToolButton" name="adm_vul_Button">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>27</height>
+                 <height>32</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -528,11 +557,14 @@
                  <height>20</height>
                 </size>
                </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
                <property name="checkable">
                 <bool>true</bool>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -551,7 +583,14 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item row="4" column="0" rowspan="2">
+         <widget class="QScrollBar" name="mapHorzScrollBar">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
          <widget class="PanningWebView" name="mapView" native="true">
           <property name="enabled">
            <bool>true</bool>
@@ -585,837 +624,6 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="chatbox" native="true">
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QTabWidget" name="qSidepannel">
-          <property name="tabPosition">
-           <enum>QTabWidget::East</enum>
-          </property>
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <property name="documentMode">
-           <bool>true</bool>
-          </property>
-          <property name="movable">
-           <bool>true</bool>
-          </property>
-          <property name="tabBarAutoHide">
-           <bool>true</bool>
-          </property>
-          <widget class="QWidget" name="qTabIntel">
-           <attribute name="title">
-            <string>Intel</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_2">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QLabel" name="timeInfo">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>32</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>32</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>All Intel (past 20 minutes)</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_3">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QToolButton" name="clearIntel">
-                <property name="toolTip">
-                 <string>Clear intel chat.</string>
-                </property>
-                <property name="text">
-                 <string>Remove</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="resource.qrc">
-                  <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="rescanIntel">
-                <property name="toolTip">
-                 <string>Rescan intel chat.</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="resource.qrc">
-                  <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-                <property name="checkable">
-                 <bool>false</bool>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="chatLargeButton">
-                <property name="minimumSize">
-                 <size>
-                  <width>32</width>
-                  <height>32</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>32</width>
-                  <height>32</height>
-                 </size>
-                </property>
-                <property name="focusPolicy">
-                 <enum>Qt::NoFocus</enum>
-                </property>
-                <property name="toolTip">
-                 <string>Larger Text.</string>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="icon">
-                 <iconset resource="resource.qrc">
-                  <normaloff>:/Icons/res/plus.svg</normaloff>:/Icons/res/plus.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="chatSmallButton">
-                <property name="minimumSize">
-                 <size>
-                  <width>32</width>
-                  <height>32</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>32</width>
-                  <height>32</height>
-                 </size>
-                </property>
-                <property name="focusPolicy">
-                 <enum>Qt::NoFocus</enum>
-                </property>
-                <property name="toolTip">
-                 <string>Smaller Text.</string>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="icon">
-                 <iconset resource="resource.qrc">
-                  <normaloff>:/Icons/res/minus.svg</normaloff>:/Icons/res/minus.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="shortcut">
-                 <string>Ctrl+S</string>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QListWidget" name="chatListWidget">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
-              </property>
-              <property name="horizontalScrollBarPolicy">
-               <enum>Qt::ScrollBarAsNeeded</enum>
-              </property>
-              <property name="editTriggers">
-               <set>QAbstractItemView::NoEditTriggers</set>
-              </property>
-              <property name="selectionMode">
-               <enum>QAbstractItemView::NoSelection</enum>
-              </property>
-              <property name="textElideMode">
-               <enum>Qt::ElideNone</enum>
-              </property>
-              <property name="horizontalScrollMode">
-               <enum>QAbstractItemView::ScrollPerPixel</enum>
-              </property>
-              <property name="resizeMode">
-               <enum>QListView::Adjust</enum>
-              </property>
-              <property name="sortingEnabled">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="qTabPOIS">
-           <attribute name="title">
-            <string>POIs</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_5">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QTableView" name="tableViewPOIs">
-              <property name="editTriggers">
-               <set>QAbstractItemView::DoubleClicked</set>
-              </property>
-              <property name="tabKeyNavigation">
-               <bool>false</bool>
-              </property>
-              <property name="showDropIndicator" stdset="0">
-               <bool>false</bool>
-              </property>
-              <property name="dragDropOverwriteMode">
-               <bool>false</bool>
-              </property>
-              <property name="textElideMode">
-               <enum>Qt::ElideNone</enum>
-              </property>
-              <property name="sortingEnabled">
-               <bool>true</bool>
-              </property>
-              <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-               <bool>true</bool>
-              </attribute>
-              <attribute name="horizontalHeaderStretchLastSection">
-               <bool>true</bool>
-              </attribute>
-              <attribute name="verticalHeaderVisible">
-               <bool>false</bool>
-              </attribute>
-              <attribute name="verticalHeaderHighlightSections">
-               <bool>false</bool>
-              </attribute>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="qTabJumpbridges">
-           <attribute name="title">
-            <string>JBs</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QTableView" name="tableViewJBs">
-              <property name="editTriggers">
-               <set>QAbstractItemView::NoEditTriggers</set>
-              </property>
-              <property name="tabKeyNavigation">
-               <bool>false</bool>
-              </property>
-              <property name="showDropIndicator" stdset="0">
-               <bool>false</bool>
-              </property>
-              <property name="alternatingRowColors">
-               <bool>false</bool>
-              </property>
-              <property name="selectionMode">
-               <enum>QAbstractItemView::ContiguousSelection</enum>
-              </property>
-              <property name="selectionBehavior">
-               <enum>QAbstractItemView::SelectRows</enum>
-              </property>
-              <property name="textElideMode">
-               <enum>Qt::ElideNone</enum>
-              </property>
-              <property name="gridStyle">
-               <enum>Qt::SolidLine</enum>
-              </property>
-              <property name="sortingEnabled">
-               <bool>true</bool>
-              </property>
-              <property name="cornerButtonEnabled">
-               <bool>false</bool>
-              </property>
-              <attribute name="horizontalHeaderDefaultSectionSize">
-               <number>150</number>
-              </attribute>
-              <attribute name="horizontalHeaderHighlightSections">
-               <bool>false</bool>
-              </attribute>
-              <attribute name="horizontalHeaderStretchLastSection">
-               <bool>true</bool>
-              </attribute>
-              <attribute name="verticalHeaderVisible">
-               <bool>false</bool>
-              </attribute>
-              <attribute name="verticalHeaderHighlightSections">
-               <bool>false</bool>
-              </attribute>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="qTabAPIChar">
-           <attribute name="title">
-            <string>API Chars</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0,0,0,0">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QPushButton" name="connectToEveOnline">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>27</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>166</width>
-                  <height>22</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>Login with EVE Online.</string>
-                </property>
-                <property name="autoFillBackground">
-                 <bool>false</bool>
-                </property>
-                <property name="text">
-                 <string notr="true"/>
-                </property>
-                <property name="icon">
-                 <iconset>
-                  <normaloff>res/eve-sso-login-black-small.png</normaloff>res/eve-sso-login-black-small.png</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>163</width>
-                  <height>38</height>
-                 </size>
-                </property>
-                <property name="flat">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>10</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QToolButton" name="removeChar">
-                <property name="toolTip">
-                 <string>Remove API Key for the selected character.</string>
-                </property>
-                <property name="text">
-                 <string>Remove</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="resource.qrc">
-                  <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QTableView" name="tableChars">
-              <property name="editTriggers">
-               <set>QAbstractItemView::CurrentChanged|QAbstractItemView::DoubleClicked|QAbstractItemView::SelectedClicked</set>
-              </property>
-              <property name="textElideMode">
-               <enum>Qt::ElideNone</enum>
-              </property>
-              <property name="sortingEnabled">
-               <bool>true</bool>
-              </property>
-              <property name="cornerButtonEnabled">
-               <bool>false</bool>
-              </property>
-              <attribute name="horizontalHeaderStretchLastSection">
-               <bool>true</bool>
-              </attribute>
-              <attribute name="verticalHeaderVisible">
-               <bool>false</bool>
-              </attribute>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_6">
-              <item>
-               <widget class="QLabel" name="m_qLedOnline">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="pixmap">
-                 <pixmap resource="resource.qrc">:/Icons/res/online.svg</pixmap>
-                </property>
-                <property name="scaledContents">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="m_qPlayerOnline">
-                <property name="text">
-                 <string>(0) Players</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_7">
-              <item>
-               <widget class="QLabel" name="m_qLedZKillboarOnline">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="pixmap">
-                 <pixmap resource="resource.qrc">:/Icons/res/online.svg</pixmap>
-                </property>
-                <property name="scaledContents">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="m_qZKillboard">
-                <property name="text">
-                 <string>Webserver connection to zKillboard </string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_8">
-              <item>
-               <widget class="QLabel" name="m_qLedEveScout">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="pixmap">
-                 <pixmap resource="resource.qrc">:/Icons/res/online.svg</pixmap>
-                </property>
-                <property name="scaledContents">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="m_qEveScout">
-                <property name="text">
-                 <string>Connection to EVE-Scout</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>42</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="qTabThera">
-           <attribute name="title">
-            <string>Thera</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_6">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QLineEdit" name="lineEditThera">
-                <property name="toolTip">
-                 <string>System name used for distance calculation.</string>
-                </property>
-                <property name="inputMask">
-                 <string notr="true"/>
-                </property>
-                <property name="text">
-                 <string notr="true"/>
-                </property>
-                <property name="placeholderText">
-                 <string notr="true"/>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="toolUseTheraRouting">
-                <property name="toolTip">
-                 <string>Use Wormhole connections for Route calculatrion.</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="resource.qrc">
-                  <normaloff>:/Icons/res/route.svg</normaloff>:/Icons/res/route.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-                <property name="shortcut">
-                 <string notr="true"/>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="toolRescanThrea">
-                <property name="toolTip">
-                 <string>Fetch the latest Thera and Turnur connections from EvE-Scout.</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="resource.qrc">
-                  <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-                <property name="checkable">
-                 <bool>false</bool>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QTableView" name="tableViewThera">
-              <property name="editTriggers">
-               <set>QAbstractItemView::NoEditTriggers</set>
-              </property>
-              <property name="textElideMode">
-               <enum>Qt::ElideNone</enum>
-              </property>
-              <property name="sortingEnabled">
-               <bool>true</bool>
-              </property>
-              <property name="cornerButtonEnabled">
-               <bool>false</bool>
-              </property>
-              <attribute name="horizontalHeaderStretchLastSection">
-               <bool>true</bool>
-              </attribute>
-              <attribute name="verticalHeaderVisible">
-               <bool>false</bool>
-              </attribute>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="qTabStorm">
-           <attribute name="title">
-            <string>Storm</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_8">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_5">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <item>
-               <spacer name="horizontalSpacer_4">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QToolButton" name="toolRescanStorm">
-                <property name="toolTip">
-                 <string>Fetch latest storm data from EvE-Scout</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="resource.qrc">
-                  <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>24</width>
-                  <height>24</height>
-                 </size>
-                </property>
-                <property name="checkable">
-                 <bool>false</bool>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QTableView" name="tableViewStorm">
-              <property name="showDropIndicator" stdset="0">
-               <bool>false</bool>
-              </property>
-              <property name="textElideMode">
-               <enum>Qt::ElideNone</enum>
-              </property>
-              <property name="sortingEnabled">
-               <bool>true</bool>
-              </property>
-              <property name="cornerButtonEnabled">
-               <bool>false</bool>
-              </property>
-              <attribute name="horizontalHeaderStretchLastSection">
-               <bool>true</bool>
-              </attribute>
-              <attribute name="verticalHeaderVisible">
-               <bool>false</bool>
-              </attribute>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-       </layout>
-      </widget>
      </widget>
     </item>
     <item>
@@ -1435,7 +643,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1263</width>
+     <width>1417</width>
      <height>24</height>
     </rect>
    </property>
@@ -1444,42 +652,45 @@
      <string>EVE-Spyglass</string>
     </property>
     <addaction name="separator"/>
-    <addaction name="infoAction"/>
+    <addaction name="actionShowInfo"/>
     <addaction name="separator"/>
-    <addaction name="quitAction"/>
+    <addaction name="actionQuitAppl"/>
    </widget>
    <widget class="QMenu" name="menuChat">
     <property name="title">
      <string>Chatrooms</string>
     </property>
-    <addaction name="showChatAvatarsAction"/>
-    <addaction name="chooseChatRoomsAction"/>
+    <addaction name="actionShowChatAvatars"/>
+    <addaction name="actionChooseChatRooms"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuSound">
     <property name="title">
      <string>Sound</string>
     </property>
-    <addaction name="activateSoundAction"/>
-    <addaction name="useSpokenNotificationsAction"/>
-    <addaction name="soundSetupAction"/>
+    <addaction name="actionActivateSound"/>
+    <addaction name="actionUseSpokenNotifications"/>
+    <addaction name="actionSoundSetup"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuRegion">
     <property name="title">
      <string>Navigation</string>
     </property>
-    <addaction name="catchRegionAction"/>
-    <addaction name="providenceRegionAction"/>
-    <addaction name="queriousRegionAction"/>
-    <addaction name="providenceCatchRegionAction"/>
-    <addaction name="providenceCatchCompactRegionAction"/>
-    <addaction name="wickedcreekScaldingpassRegionAction"/>
-    <addaction name="actionAuto_switch"/>
+    <addaction name="actionCatchRegion"/>
+    <addaction name="actionProvidenceRegion"/>
+    <addaction name="actionQueriousRegion"/>
+    <addaction name="actionProvidenceCatchRegion"/>
+    <addaction name="actionProvidenceCatchCompactRegion"/>
+    <addaction name="actionWickedcreekScaldingpassRegion"/>
+    <addaction name="actionAutoSwitchRegions"/>
     <addaction name="separator"/>
+    <addaction name="actionShowJumpBridgeConnectionsOnMap"/>
+    <addaction name="actionShowSystemStatisticOnMap"/>
+    <addaction name="actionShowADMonMap"/>
     <addaction name="actionUserTheraRoutes"/>
     <addaction name="separator"/>
-    <addaction name="jumpbridgeDataAction"/>
+    <addaction name="actionJumpbridgeData"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -1489,18 +700,24 @@
      <property name="title">
       <string>Transparency</string>
      </property>
+     <addaction name="actionOpacity_100"/>
+     <addaction name="actionOpacity_80"/>
+     <addaction name="actionOpacity_60"/>
+     <addaction name="actionOpacity_40"/>
+     <addaction name="actionOpacity_20"/>
     </widget>
     <widget class="QMenu" name="menuTheme">
      <property name="title">
       <string>Theme</string>
      </property>
     </widget>
-    <addaction name="showChatAction"/>
-    <addaction name="alwaysOnTopAction"/>
-    <addaction name="actionInvertMouseWheel"/>
-    <addaction name="framelessWindowAction"/>
-    <addaction name="menuTransparency"/>
+    <addaction name="actionShowTabs"/>
+    <addaction name="actionAlwaysOnTop"/>
+    <addaction name="actionFramelessWindow"/>
     <addaction name="separator"/>
+    <addaction name="actionInvertMouseWheel"/>
+    <addaction name="separator"/>
+    <addaction name="menuTransparency"/>
     <addaction name="menuTheme"/>
    </widget>
    <widget class="QMenu" name="menuIntel">
@@ -1512,17 +729,40 @@
       <string>Intel Time</string>
      </property>
      <addaction name="separator"/>
+     <addaction name="actionIntel_Time_5_min"/>
+     <addaction name="actionIntel_Time_10_min"/>
+     <addaction name="actionIntel_Time_20_min"/>
+     <addaction name="actionIntel_Time_30_min"/>
+     <addaction name="actionIntel_Time_60_min"/>
     </widget>
     <widget class="QMenu" name="menuChars">
      <property name="title">
       <string>Chars used</string>
      </property>
     </widget>
+    <widget class="QMenu" name="menuAlarm_distance">
+     <property name="title">
+      <string>Alarm distance</string>
+     </property>
+     <addaction name="actionAlarm_distance_0"/>
+     <addaction name="actionAlarm_distance_1"/>
+     <addaction name="actionAlarm_distance_2"/>
+     <addaction name="actionAlarm_distance_3"/>
+     <addaction name="actionAlarm_distance_4"/>
+     <addaction name="actionAlarm_distance_5"/>
+    </widget>
+    <widget class="QMenu" name="menuType_Here_2">
+     <property name="title">
+      <string>Type Here</string>
+     </property>
+    </widget>
     <addaction name="menuChars"/>
     <addaction name="menuTime"/>
-    <addaction name="clearIntelAction"/>
-    <addaction name="rescanNowAction"/>
+    <addaction name="actionClear_Intel_Chat"/>
+    <addaction name="actionRescanIntelNow"/>
     <addaction name="separator"/>
+    <addaction name="menuAlarm_distance"/>
+    <addaction name="menuType_Here_2"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menuChat"/>
@@ -1531,12 +771,1127 @@
    <addaction name="menuWindow"/>
    <addaction name="menuIntel"/>
   </widget>
-  <action name="infoAction">
+  <widget class="QDockWidget" name="dockWidget">
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
+   </property>
+   <property name="windowTitle">
+    <string>Intel</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout_9">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_12">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="timeInfo">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>All Intel (past 20 minutes)</string>
+           </property>
+           <property name="buddy">
+            <cstring>chatListWidget</cstring>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QToolButton" name="clearIntel">
+           <property name="minimumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Clear intel chat.</string>
+           </property>
+           <property name="text">
+            <string>Remove</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="rescanIntel">
+           <property name="minimumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Rescan intel chat.</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="chatLargeButton">
+           <property name="minimumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="toolTip">
+            <string>Larger Text.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/plus.svg</normaloff>:/Icons/res/plus.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="chatSmallButton">
+           <property name="minimumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="toolTip">
+            <string>Smaller Text.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/minus.svg</normaloff>:/Icons/res/minus.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true">Ctrl+S</string>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="showAvatar">
+           <property name="minimumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>36</width>
+             <height>36</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Show the Avatars inside the chat log.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/avatar.svg</normaloff>:/Icons/res/avatar.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QListWidget" name="chatListWidget">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="contextMenuPolicy">
+          <enum>Qt::ActionsContextMenu</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+         <property name="horizontalScrollBarPolicy">
+          <enum>Qt::ScrollBarAsNeeded</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::NoSelection</enum>
+         </property>
+         <property name="textElideMode">
+          <enum>Qt::ElideNone</enum>
+         </property>
+         <property name="horizontalScrollMode">
+          <enum>QAbstractItemView::ScrollPerPixel</enum>
+         </property>
+         <property name="resizeMode">
+          <enum>QListView::Adjust</enum>
+         </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_2">
+   <property name="minimumSize">
+    <size>
+     <width>300</width>
+     <height>93</height>
+    </size>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>POI</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_10">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QTableView" name="tableViewPOIs">
+         <property name="minimumSize">
+          <size>
+           <width>270</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::DoubleClicked</set>
+         </property>
+         <property name="tabKeyNavigation">
+          <bool>false</bool>
+         </property>
+         <property name="showDropIndicator" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="dragDropOverwriteMode">
+          <bool>false</bool>
+         </property>
+         <property name="dragDropMode">
+          <enum>QAbstractItemView::DragDrop</enum>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::ContiguousSelection</enum>
+         </property>
+         <property name="textElideMode">
+          <enum>Qt::ElideNone</enum>
+         </property>
+         <property name="sortingEnabled">
+          <bool>false</bool>
+         </property>
+         <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="verticalHeaderHighlightSections">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_3">
+   <property name="minimumSize">
+    <size>
+     <width>300</width>
+     <height>93</height>
+    </size>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>JB</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QTableView" name="tableViewJBs">
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="tabKeyNavigation">
+          <bool>false</bool>
+         </property>
+         <property name="showDropIndicator" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alternatingRowColors">
+          <bool>false</bool>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::ContiguousSelection</enum>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="textElideMode">
+          <enum>Qt::ElideNone</enum>
+         </property>
+         <property name="gridStyle">
+          <enum>Qt::SolidLine</enum>
+         </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+         <property name="cornerButtonEnabled">
+          <bool>false</bool>
+         </property>
+         <attribute name="horizontalHeaderDefaultSectionSize">
+          <number>150</number>
+         </attribute>
+         <attribute name="horizontalHeaderHighlightSections">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="verticalHeaderHighlightSections">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_4">
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Chars &amp; API</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_4">
+    <layout class="QVBoxLayout" name="verticalLayout_7">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_13">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="connectToEveOnline">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>27</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>166</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Login with EVE Online.</string>
+           </property>
+           <property name="autoFillBackground">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string notr="true"/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>res/eve-sso-login-black-small.png</normaloff>res/eve-sso-login-black-small.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>163</width>
+             <height>38</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>10</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QToolButton" name="removeChar">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Remove API Key for the selected character.</string>
+           </property>
+           <property name="text">
+            <string>Remove</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <item>
+          <widget class="QLabel" name="m_qLedEveScout">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap resource="resource.qrc">:/Icons/res/online.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="m_qEveScout">
+           <property name="text">
+            <string>Connection to EVE-Scout</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="m_qEveScoutVersion">
+           <property name="text">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <item>
+          <widget class="QLabel" name="m_qLedZKillboarOnline">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap resource="resource.qrc">:/Icons/res/online.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="m_qZKillboard">
+           <property name="text">
+            <string>Webserver connection to zKillboard </string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item>
+          <widget class="QLabel" name="m_qLedOnline">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap resource="resource.qrc">:/Icons/res/online.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="m_qPlayerOnline">
+           <property name="text">
+            <string>(0) Players</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableView" name="tableChars">
+         <property name="editTriggers">
+          <set>QAbstractItemView::CurrentChanged|QAbstractItemView::DoubleClicked|QAbstractItemView::SelectedClicked</set>
+         </property>
+         <property name="textElideMode">
+          <enum>Qt::ElideNone</enum>
+         </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+         <property name="cornerButtonEnabled">
+          <bool>false</bool>
+         </property>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_10">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Clear cache file</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="clearCache">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Clears the cache file, removes non essential items only.</string>
+           </property>
+           <property name="text">
+            <string>Remove</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_5">
+   <property name="minimumSize">
+    <size>
+     <width>270</width>
+     <height>127</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Thera</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_5">
+    <layout class="QVBoxLayout" name="verticalLayout_4">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_14">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="lineEditThera">
+           <property name="toolTip">
+            <string>System name used for distance calculation.</string>
+           </property>
+           <property name="inputMask">
+            <string notr="true"/>
+           </property>
+           <property name="text">
+            <string notr="true"/>
+           </property>
+           <property name="placeholderText">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolUseTheraRouting">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Use Wormhole connections for Route calculatrion.</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/route.svg</normaloff>:/Icons/res/route.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true"/>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolRescanThrea">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Fetch the latest Thera and Turnur connections from EvE-Scout.</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableView" name="tableViewThera">
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="textElideMode">
+          <enum>Qt::ElideNone</enum>
+         </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+         <property name="cornerButtonEnabled">
+          <bool>false</bool>
+         </property>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_6">
+   <property name="minimumSize">
+    <size>
+     <width>270</width>
+     <height>131</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Storm</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_6">
+    <layout class="QVBoxLayout" name="verticalLayout_6">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_18">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolRescanStorm">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Fetch latest storm data from EvE-Scout</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resource.qrc">
+             <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableView" name="tableViewStorm">
+         <property name="showDropIndicator" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="textElideMode">
+          <enum>Qt::ElideNone</enum>
+         </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+         <property name="cornerButtonEnabled">
+          <bool>false</bool>
+         </property>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionShowInfo">
    <property name="text">
     <string>Info ...</string>
    </property>
   </action>
-  <action name="alwaysOnTopAction">
+  <action name="actionAlwaysOnTop">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1547,32 +1902,7 @@
     <string>Always On Top</string>
    </property>
   </action>
-  <action name="opac100">
-   <property name="text">
-    <string>Opacity 100%</string>
-   </property>
-  </action>
-  <action name="opac80">
-   <property name="text">
-    <string>Opacity 80%</string>
-   </property>
-  </action>
-  <action name="opac60">
-   <property name="text">
-    <string>Opacity 60%</string>
-   </property>
-  </action>
-  <action name="opac40">
-   <property name="text">
-    <string>Opacity 40%</string>
-   </property>
-  </action>
-  <action name="opac20">
-   <property name="text">
-    <string>Opacity 20%</string>
-   </property>
-  </action>
-  <action name="chooseChatRoomsAction">
+  <action name="actionChooseChatRooms">
    <property name="checkable">
     <bool>false</bool>
    </property>
@@ -1582,19 +1912,29 @@
    <property name="text">
     <string>Choose Chatrooms ...</string>
    </property>
+   <property name="toolTip">
+    <string>Choose the monitord chat rooms.</string>
+   </property>
   </action>
-  <action name="showChatAvatarsAction">
+  <action name="actionShowChatAvatars">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="checked">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/avatar.svg</normaloff>:/Icons/res/avatar.svg</iconset>
+   </property>
    <property name="text">
     <string>Show Chat Avatars</string>
    </property>
+   <property name="toolTip">
+    <string>Change the visibility of the avatars inside the chat log window.</string>
+   </property>
   </action>
-  <action name="showChatAction">
+  <action name="actionShowTabs">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1605,20 +1945,29 @@
     <string>Show Tabs</string>
    </property>
   </action>
-  <action name="activateSoundAction">
+  <action name="actionActivateSound">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="checked">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/volume_off.svg</normaloff>
+     <normalon>:/Icons/res/volume.svg</normalon>:/Icons/res/volume_off.svg</iconset>
+   </property>
    <property name="text">
     <string>Activate Sound</string>
    </property>
   </action>
-  <action name="framelessWindowAction">
+  <action name="actionFramelessWindow">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/restoreframe.svg</normaloff>:/Icons/res/restoreframe.svg</iconset>
    </property>
    <property name="text">
     <string>Frameless Main Window</string>
@@ -1627,30 +1976,35 @@
     <string>Frameless Main Window</string>
    </property>
   </action>
-  <action name="quitAction">
+  <action name="actionQuitAppl">
    <property name="text">
     <string>Quit</string>
    </property>
   </action>
-  <action name="soundSetupAction">
+  <action name="actionSoundSetup">
    <property name="text">
     <string>Sound Setup...</string>
    </property>
   </action>
-  <action name="jumpbridgeDataAction">
+  <action name="actionJumpbridgeData">
    <property name="text">
     <string>Jumpbridge Data...</string>
    </property>
   </action>
-  <action name="useSpokenNotificationsAction">
+  <action name="actionUseSpokenNotifications">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/speach_off.svg</normaloff>
+     <normalon>:/Icons/res/speach.svg</normalon>:/Icons/res/speach_off.svg</iconset>
    </property>
    <property name="text">
     <string>Spoken Notifications</string>
    </property>
    <property name="toolTip">
-    <string>Spoken KOS results</string>
+    <string>The system text to speak interface reads messages.</string>
    </property>
   </action>
   <action name="actionAlway_On_Top">
@@ -1658,17 +2012,12 @@
     <string>Always On Top</string>
    </property>
   </action>
-  <action name="actionFrameless">
-   <property name="text">
-    <string>Frameless</string>
-   </property>
-  </action>
   <action name="actionTransparency">
    <property name="text">
     <string>Transparency</string>
    </property>
   </action>
-  <action name="providenceRegionAction">
+  <action name="actionProvidenceRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1679,7 +2028,7 @@
     <string notr="true">Providence</string>
    </property>
   </action>
-  <action name="catchRegionAction">
+  <action name="actionCatchRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1690,7 +2039,7 @@
     <string notr="true">Catch</string>
    </property>
   </action>
-  <action name="providenceCatchRegionAction">
+  <action name="actionProvidenceCatchRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1701,7 +2050,7 @@
     <string notr="true">Perrigen Falls</string>
    </property>
   </action>
-  <action name="providenceCatchCompactRegionAction">
+  <action name="actionProvidenceCatchCompactRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1712,7 +2061,7 @@
     <string notr="true">Pure Blind</string>
    </property>
   </action>
-  <action name="queriousRegionAction">
+  <action name="actionQueriousRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1733,22 +2082,16 @@
     <string>darkstyle</string>
    </property>
   </action>
-  <action name="actionScan_on_Window_Change">
-   <property name="text">
-    <string>Scan on Window Change</string>
+  <action name="actionRescanIntelNow">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/arrows-rotate.svg</normaloff>:/Icons/res/arrows-rotate.svg</iconset>
    </property>
-  </action>
-  <action name="rescanNowAction">
    <property name="text">
     <string>Rescan Now</string>
    </property>
   </action>
-  <action name="clearIntelAction">
-   <property name="text">
-    <string>Clear Intel</string>
-   </property>
-  </action>
-  <action name="actionAuto_switch">
+  <action name="actionAutoSwitchRegions">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1756,31 +2099,7 @@
     <string>Auto  switch Region</string>
    </property>
   </action>
-  <action name="action20_min">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>20min</string>
-   </property>
-  </action>
-  <action name="action40_min">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>40 min</string>
-   </property>
-  </action>
-  <action name="action60_min">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>60 min</string>
-   </property>
-  </action>
-  <action name="wickedcreekScaldingpassRegionAction">
+  <action name="actionWickedcreekScaldingpassRegion">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1806,11 +2125,265 @@
    <property name="checked">
     <bool>false</bool>
    </property>
+   <property name="icon">
+    <iconset>
+     <normalon>:/Icons/res/route.svg</normalon>
+    </iconset>
+   </property>
    <property name="text">
     <string>User Wormholes for routing</string>
    </property>
    <property name="toolTip">
     <string>User Thera and Thumu connections for routing.</string>
+   </property>
+  </action>
+  <action name="actionShowADMonMap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/adm_vul.svg</normaloff>:/Icons/res/adm_vul.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Show ADM on map</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the ADM information on the map.</string>
+   </property>
+  </action>
+  <action name="actionShowSystemStatisticOnMap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/statistic.svg</normaloff>:/Icons/res/statistic.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Show system statistic on map.</string>
+   </property>
+   <property name="toolTip">
+    <string>Show system statistic on map.</string>
+   </property>
+  </action>
+  <action name="actionShowJumpBridgeConnectionsOnMap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/jumpbridge.svg</normaloff>:/Icons/res/jumpbridge.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Show jump bridge connections on map.</string>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_0">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 0</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>0</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_1">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 1</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>1</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 2</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>2</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_3">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 3</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>3</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_4">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 4</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>4</number>
+   </property>
+  </action>
+  <action name="actionAlarm_distance_5">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alarm distance 5</string>
+   </property>
+   <property name="distance" stdset="0">
+    <number>5</number>
+   </property>
+  </action>
+  <action name="actionChange_Region_to">
+   <property name="text">
+    <string>Change Region to</string>
+   </property>
+  </action>
+  <action name="actionOpen_on_dotlan">
+   <property name="text">
+    <string>Open on dotlan</string>
+   </property>
+  </action>
+  <action name="actionOpen_on_zKillboard">
+   <property name="text">
+    <string>Open on zKillboard</string>
+   </property>
+  </action>
+  <action name="actionIntel_Time_5_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 5 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>5</number>
+   </property>
+  </action>
+  <action name="actionIntel_Time_10_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 10 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>10</number>
+   </property>
+  </action>
+  <action name="actionIntel_Time_20_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 20 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>20</number>
+   </property>
+  </action>
+  <action name="actionIntel_Time_30_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 30 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>30</number>
+   </property>
+  </action>
+  <action name="actionIntel_Time_60_min">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Past 60 min</string>
+   </property>
+   <property name="time" stdset="0">
+    <number>60</number>
+   </property>
+  </action>
+  <action name="actionSlyle_abyss">
+   <property name="text">
+    <string>Abyss</string>
+   </property>
+   <property name="toolTip">
+    <string>Select the dark abyss style.</string>
+   </property>
+   <property name="style" stdset="0">
+    <string>abyss</string>
+   </property>
+  </action>
+  <action name="actionStyle_light">
+   <property name="text">
+    <string>Light</string>
+   </property>
+   <property name="toolTip">
+    <string>Select the light style</string>
+   </property>
+   <property name="style" stdset="0">
+    <string>light</string>
+   </property>
+  </action>
+  <action name="actionClear_Intel_Chat">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/trash-box.svg</normaloff>:/Icons/res/trash-box.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Clear Intel Chat</string>
+   </property>
+  </action>
+  <action name="actionOpacity_100">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 100%</string>
+   </property>
+  </action>
+  <action name="actionOpacity_80">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 80%</string>
+   </property>
+  </action>
+  <action name="actionOpacity_60">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 60%</string>
+   </property>
+  </action>
+  <action name="actionOpacity_40">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 40%</string>
+   </property>
+  </action>
+  <action name="actionOpacity_20">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Opacity 20%</string>
    </property>
   </action>
  </widget>
@@ -1820,8 +2393,35 @@
    <extends>QWidget</extends>
    <header>vi/panningwebview</header>
    <container>1</container>
+   <slots>
+    <signal>webViewNavigateForward()</signal>
+    <signal>webViewNavigateBackward()</signal>
+    <slot>webViewIsScrolling(bool)</slot>
+    <slot>webViewUpdateScrollbars()</slot>
+    <slot>webViewDoubleClicked()</slot>
+   </slots>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>systemNames</tabstop>
+  <tabstop>regionNameField</tabstop>
+  <tabstop>currentESICharacter</tabstop>
+  <tabstop>clearIntel</tabstop>
+  <tabstop>rescanIntel</tabstop>
+  <tabstop>chatListWidget</tabstop>
+  <tabstop>tableViewPOIs</tabstop>
+  <tabstop>tableViewJBs</tabstop>
+  <tabstop>connectToEveOnline</tabstop>
+  <tabstop>removeChar</tabstop>
+  <tabstop>tableChars</tabstop>
+  <tabstop>lineEditThera</tabstop>
+  <tabstop>toolUseTheraRouting</tabstop>
+  <tabstop>toolRescanThrea</tabstop>
+  <tabstop>tableViewThera</tabstop>
+  <tabstop>toolRescanStorm</tabstop>
+  <tabstop>tableViewStorm</tabstop>
+  <tabstop>updateAvail</tabstop>
+ </tabstops>
  <resources>
   <include location="resource.qrc"/>
  </resources>
@@ -1833,8 +2433,8 @@
    <slot>rescanIntel()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>897</x>
-     <y>49</y>
+     <x>1318</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
      <x>511</x>
@@ -1849,28 +2449,12 @@
    <slot>clearIntelChat()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>881</x>
-     <y>49</y>
+     <x>1286</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>520</x>
-     <y>378</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>frameButton</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>changeFrameless(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>35</x>
-     <y>51</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>520</x>
-     <y>378</y>
+     <x>708</x>
+     <y>421</y>
     </hint>
    </hints>
   </connection>
@@ -1881,8 +2465,8 @@
    <slot>zoomMapIn()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>500</x>
-     <y>51</y>
+     <x>843</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -1897,28 +2481,12 @@
    <slot>zoomMapOut()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>534</x>
-     <y>51</y>
+     <x>875</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
      <y>378</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MainWindow</sender>
-   <signal>current_system_changed(QString)</signal>
-   <receiver>lineEditThera</receiver>
-   <slot>setText(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>520</x>
-     <y>378</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>818</x>
-     <y>49</y>
     </hint>
    </hints>
   </connection>
@@ -1929,8 +2497,8 @@
    <slot>chatLarger()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
-     <y>49</y>
+     <x>1350</x>
+     <y>78</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -1945,8 +2513,8 @@
    <slot>chatSmaller()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>984</x>
-     <y>49</y>
+     <x>1382</x>
+     <y>78</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -1955,7 +2523,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>rescanNowAction</sender>
+   <sender>actionRescanIntelNow</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
    <slot>rescanIntel()</slot>
@@ -1971,34 +2539,18 @@
    </hints>
   </connection>
   <connection>
-   <sender>toolUseTheraRouting</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>actionUserTheraRoutes</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>946</x>
-     <y>49</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>searchSystem</sender>
    <signal>toggled(bool)</signal>
    <receiver>systemNames</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>139</x>
-     <y>51</y>
+     <x>362</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
-     <x>220</x>
-     <y>51</y>
+     <x>502</x>
+     <y>91</y>
     </hint>
    </hints>
   </connection>
@@ -2009,8 +2561,8 @@
    <slot>locateChar()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>560</x>
-     <y>51</y>
+     <x>811</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
      <x>631</x>
@@ -2019,18 +2571,434 @@
    </hints>
   </connection>
   <connection>
+   <sender>MainWindow</sender>
+   <signal>current_system_changed(QString)</signal>
+   <receiver>lineEditThera</receiver>
+   <slot>setText(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>520</x>
+     <y>378</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>207</x>
+     <y>394</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>actionUserTheraRoutes</sender>
    <signal>toggled(bool)</signal>
-   <receiver>toolUseTheraRouting</receiver>
-   <slot>setChecked(bool)</slot>
+   <receiver>MainWindow</receiver>
+   <slot>setUseThreaRoutes(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1167</x>
-     <y>49</y>
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowADMonMap</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeADMVisibility(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>277</x>
+     <y>528</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolRescanThrea</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>updateTheraConnections()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>382</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>338</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowInfo</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>showInfo()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionChooseChatRooms</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>showChatroomChooser()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>regionNameField</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>regionNameChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>590</x>
+     <y>40</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>160</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>currentESICharacter</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>selectESIChar(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>773</x>
+     <y>46</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>279</x>
+     <y>134</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionQuitAppl</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowChatAvatars</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeShowAvatars(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mapView</sender>
+   <signal>webViewNavigateBackward()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>navigateBackward()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>610</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1072</x>
+     <y>738</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mapView</sender>
+   <signal>webViewNavigateForward()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>navigateForward()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>985</x>
+     <y>671</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1073</x>
+     <y>689</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>region_changed(QString)</signal>
+   <receiver>regionNameField</receiver>
+   <slot>setCurrentText(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>570</x>
+     <y>42</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolRescanStorm</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>updateObservationsRecords()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>253</x>
+     <y>635</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>634</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>clearCache</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>clearCacheFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>271</x>
+     <y>350</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>303</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowJumpBridgeConnectionsOnMap</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeJumpbridgesVisibility(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowSystemStatisticOnMap</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeStatisticsVisibility(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>connectToEveOnline</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>addNewESICharacter()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>65</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>94</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionInvertMouseWheel</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeInvertMouseWheel(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolUseTheraRouting</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>setUseThreaRoutes(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>223</x>
+     <y>397</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>dockWidget</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1219</x>
+     <y>173</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_2</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1219</x>
+     <y>455</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_3</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1219</x>
+     <y>715</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_4</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>189</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_5</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>479</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShowTabs</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockWidget_6</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>723</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionAutoSwitchRegions</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeAutoChangeRegion(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>708</x>
+     <y>421</y>
     </hint>
    </hints>
   </connection>
@@ -2046,10 +3014,34 @@
   <slot>chatLarger()</slot>
   <slot>chatSmaller()</slot>
   <slot>updateTheraConnections()</slot>
+  <slot>updateObservationsRecords()</slot>
   <slot>changeTheraSystem(str)</slot>
   <slot>changeCurrentSystem(str)</slot>
   <slot>showInfo()</slot>
   <slot>changeFrameless(bool)</slot>
   <slot>locateChar()</slot>
+  <slot>addNewESICharacter()</slot>
+  <slot>changeJumpbridgesVisibility(bool)</slot>
+  <slot>changeADMVisibility(bool)</slot>
+  <slot>changeShowAvatars(bool)</slot>
+  <slot>changeAlwaysOnTop(bool)</slot>
+  <slot>showChatroomChooser()</slot>
+  <slot>changeChatVisibility(bool)</slot>
+  <slot>showSoundSetup()</slot>
+  <slot>changeSound()</slot>
+  <slot>changeUseSpokenNotifications(bool)</slot>
+  <slot>showJumpbridgeChooser()</slot>
+  <slot>fixupScrollBars()</slot>
+  <slot>showMapContextMenu(QEvent)</slot>
+  <slot>regionNameChanged(QString)</slot>
+  <slot>selectESIChar(QString)</slot>
+  <slot>navigateBackward()</slot>
+  <slot>navigateForward()</slot>
+  <slot>theraSystemChanged()</slot>
+  <slot>clearCacheFile()</slot>
+  <slot>changeStatisticsVisibility(bool)</slot>
+  <slot>setUseThreaRoutes(bool)</slot>
+  <slot>changeInvertMouseWheel(bool)</slot>
+  <slot>changeAutoChangeRegion(bool)</slot>
  </slots>
 </ui>

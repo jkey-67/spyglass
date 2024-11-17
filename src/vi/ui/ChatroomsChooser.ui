@@ -18,6 +18,9 @@
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <widget class="QLabel" name="label">
+       <property name="toolTip">
+        <string/>
+       </property>
        <property name="text">
         <string>Enter the chatrooms to watch into the following field. Separate them by comma.</string>
        </property>
@@ -30,14 +33,18 @@
       </widget>
      </item>
      <item>
-      <widget class="QPlainTextEdit" name="roomnamesField"/>
+      <widget class="QPlainTextEdit" name="roomnamesField">
+       <property name="toolTip">
+        <string>Enter the chatrooms to watch into the following field. Separate them by comma.</string>
+       </property>
+      </widget>
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
         <widget class="QToolButton" name="saveButton">
          <property name="toolTip">
-          <string>Apply setting and close</string>
+          <string>Apply setting and close the dialog.</string>
          </property>
          <property name="text">
           <string>Save</string>
@@ -69,6 +76,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="defaultButton">
+         <property name="toolTip">
+          <string>Restore the default configuration.</string>
+         </property>
          <property name="text">
           <string>Restore Defaults</string>
          </property>

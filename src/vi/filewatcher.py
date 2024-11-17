@@ -26,7 +26,7 @@ from zoneinfo import ZoneInfo
 import threading
 
 from PySide6 import QtCore
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 
 from vi.evetime import lastDowntime
 
@@ -45,7 +45,7 @@ if a new file was created. We watch only the newest (last 24h), not all!
 
 class FileWatcher(QtCore.QThread):
 
-    file_change = pyqtSignal(str, bool)
+    file_change = Signal(str, bool)
     files_to_ignore = ["Fleet", "Alliance"]
     FILE_LOCK = threading.Lock()
 

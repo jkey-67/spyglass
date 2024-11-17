@@ -20,7 +20,7 @@
 from typing import Union
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import Qt
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from PySide6.QtSql import QSqlQueryModel
 from vi.cache.cache import Cache
 
@@ -37,7 +37,7 @@ class TableModelPlayers(QSqlQueryModel):
 
 
 class StyledItemDelegatePlayers(QtWidgets.QStyledItemDelegate):
-    players_edit_changed = pyqtSignal()
+    players_edit_changed = Signal()
 
     def __init__(self, parent=None):
         super(StyledItemDelegatePlayers, self).__init__(parent)

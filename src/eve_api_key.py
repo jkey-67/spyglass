@@ -1,1 +1,2 @@
-CLIENTS_API_KEY = "9eaf6cb03a9649998b2bad63b9e9fa8e"
+# eve-spy using 127.0.0.1 instead of localhost to avoid redirection
+APPLICATION_CLIENTS_ID = "721dcca2c1264b92802cbc5a7fe5f051"

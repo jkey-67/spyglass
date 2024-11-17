@@ -198,7 +198,7 @@
   </symbol>
   <symbol id="def30002981">
     <a xlink:href="http://evemaps.dotlan.net/system/Halmah" class="sys link-5-30002981" target="_top">
-      <rect id="rect30002981" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
+      <rect id="rect30002981" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Halmah</text>
       <text id="txt30002981" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -243,7 +243,7 @@
   </symbol>
   <symbol id="def30002979">
     <a xlink:href="http://evemaps.dotlan.net/system/Tararan" class="sys link-5-30002979" target="_top">
-      <rect id="rect30002979" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-20);" />
+      <rect id="rect30002979" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Tararan</text>
       <text id="txt30002979" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -278,7 +278,7 @@
   </symbol>
   <symbol id="def30002976">
     <a xlink:href="http://evemaps.dotlan.net/system/Labapi" class="sys link-5-30002976" target="_top">
-      <rect id="rect30002976" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
+      <rect id="rect30002976" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Labapi</text>
       <text id="txt30002976" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -286,7 +286,7 @@
   <symbol id="def30002980">
     <a xlink:href="http://evemaps.dotlan.net/system/Sosan" class="sys link-5-30002980" target="_top">
     <rect id="ice30002980" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
-      <rect id="rect30002980" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-80);" />
+      <rect id="rect30002980" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Sosan</text>
       <text id="txt30002980" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -298,9 +298,9 @@
   </symbol>
   <symbol id="def30002975">
     <a xlink:href="http://evemaps.dotlan.net/system/Roushzar" class="sys link-5-30002975" target="_top">
-      <rect id="rect30002975" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-60);" />
+      <rect id="rect30002975" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Roushzar</text>
-      <text id="txt30002975" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
+      <text id="txt30002975" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -393,9 +393,9 @@
   </symbol>
   <symbol id="def30002962">
     <a xlink:href="http://evemaps.dotlan.net/system/Ezzara" class="sys link-5-30002962" target="_top">
-      <rect id="rect30002962" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-100);" />
+      <rect id="rect30002962" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-60);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Ezzara</text>
-      <text id="txt30002962" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
+      <text id="txt30002962" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
   </symbol>
   <symbol id="def30002960">
@@ -451,14 +451,14 @@
   </symbol>
   <symbol id="def30002959">
     <a xlink:href="http://evemaps.dotlan.net/system/Sifilar" class="sys link-5-30002959" target="_top">
-      <rect id="rect30002959" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-60);" />
+      <rect id="rect30002959" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Sifilar</text>
       <text id="txt30002959" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
   </symbol>
   <symbol id="def30002961">
     <a xlink:href="http://evemaps.dotlan.net/system/Oyeman" class="sys link-5-30002961" target="_top">
-      <rect id="rect30002961" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-80);" />
+      <rect id="rect30002961" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Oyeman</text>
       <text id="txt30002961" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -506,14 +506,14 @@
   </symbol>
   <symbol id="def30002958">
     <a xlink:href="http://evemaps.dotlan.net/system/Raa" class="sys link-5-30002958" target="_top">
-      <rect id="rect30002958" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-20);" />
+      <rect id="rect30002958" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Raa</text>
       <text id="txt30002958" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
   </symbol>
   <symbol id="def30002957">
     <a xlink:href="http://evemaps.dotlan.net/system/Tzvi" class="sys link-5-30002957" target="_top">
-      <rect id="rect30002957" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-80);" />
+      <rect id="rect30002957" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Tzvi</text>
       <text id="txt30002957" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -1023,7 +1023,7 @@
 </g>
 
 
-<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1677584945"></script>
+<script type="text/javascript" xlink:href="https://s.dotlan.net/lib/dotSvg.js?1730328322"></script>
 <script type="text/javascript"><![CDATA[
 
 function init(E) {

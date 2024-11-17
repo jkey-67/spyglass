@@ -57,7 +57,7 @@ def textReplace(element, new_text):
     """
     new_text = "<t>" + new_text + "</t>"
     new_elements = []
-    for newPart in BeautifulSoup(new_text, 'html.parser').select("t")[0].contents:
+    for newPart in BeautifulSoup(new_text, 'lxml-xml').select("t")[0].contents:
         new_elements.append(newPart)
     for newElement in new_elements:
         element.insert_before(newElement)
@@ -202,8 +202,6 @@ def parseSystems(systems_on_map, rtext, systems_found) -> bool:
     """
     # todo:parse systems may run in a loop
 
-    system_names = Universe.systemNamesUpperCase()
-
     def formatSystem(in_text, in_word, in_system, in_rgn):
         if in_rgn:
             return in_text.replace(in_word, CTX.FORMAT_SYSTEM_IN_REGION.format(in_system, in_word))
@@ -249,7 +247,7 @@ def parseSystems(systems_on_map, rtext, systems_found) -> bool:
                 textReplace(text, formatted_text)
                 return True
             elif 2 < len(upper_word) < 5:  # - upperWord < 4 chars.
-                for system in system_names:  # system begins with?
+                for system in Universe.systemNamesUpperCase():  # system begins with?
                     if system.startswith(upper_word) and len(system) == 6 and '-' in system:
                         match_system_id = Universe.systemIdByName(system)
                         if match_system_id:  # - direct hit on name
@@ -348,7 +346,7 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
     """
     original_text = message.plainText
     formatted_text = u"<rtext>{0}</rtext>".format(original_text)
-    soup = BeautifulSoup(formatted_text, 'html.parser')
+    soup = BeautifulSoup(formatted_text, 'lxml-xml')
     rtext = soup.select("rtext")[0]
     message.affectedSystems = set()
 
@@ -360,11 +358,12 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
     while parseShips(rtext):
         continue
 
-
+    """
     #for system in message.affectedSystems:
     #    if system.name in systems_on_map.keys():
     #        #while parsePlayerNames(rtext):
     #            continue
+    """
 
     parsed_status = parseStatus(rtext)
     message.status = parsed_status if parsed_status is not None else States.ALARM

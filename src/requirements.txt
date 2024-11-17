@@ -14,3 +14,4 @@ pygame
 networkx
 numpy
 scipy
+lxml
