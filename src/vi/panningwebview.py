@@ -20,7 +20,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
 
 from PySide6.QtGui import QPainter, QResizeEvent, QWheelEvent, QMouseEvent, QTransform
-from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF
+from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt, QEvent
 
 
@@ -38,7 +38,6 @@ class PanningWebView(QWidget):
         self.transform = QTransform()
         self.zoom = 1.0
         self.wheel_dir = 1.0
-        self.imgSize = QSizeF(1024.0, 768.0)
         self.pressed = False
         self.scrolling = False
         self.positionMousePress = None
@@ -51,11 +50,29 @@ class PanningWebView(QWidget):
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
-    def setContent(self, cnt):
+    @property
+    def imgSize(self) -> QSizeF:
+        if self.content:
+            return self.content.svg_size
+        else:
+            return QSizeF(1024.0, 768.0)
+
+    def setContent(self, content):
+        """
+            Sets the content for the widget, the object content needs the following attributes nad functions.
+                content.svg_size QSizeF : the size of the map QSizeF
+                content.renderMap(QPainter)->None : Paints the map
+                content.renderLegend(QPainter)->None : Paints the legend of the map
+        Args:
+            content:
+
+        Returns:
+
+        """
         if self.scrolling:
             return False
-        self.content = cnt
-        self.update()
+        self.content = content
+        self.webViewUpdateScrollbars.emit()
         return True
 
     def resizeEvent(self, event: QResizeEvent):
@@ -88,7 +105,6 @@ class PanningWebView(QWidget):
         if self.zoom != zoom:
             self.zoom = zoom
             self.webViewUpdateScrollbars.emit()
-            self.update()
 
     def zoomFactor(self):
         return self.zoom
@@ -96,7 +112,15 @@ class PanningWebView(QWidget):
     def scrollPosition(self) -> QPointF:
         return self.scrollPos
 
-    def scrollPositionFromMapCoordinate(self, pt_system: QPointF):
+    def scrollPositionFromMapCoordinate(self, pt_system: QRectF):
+        """
+            Calculates the scroll position for the center of the rectangle in relation to the view.
+        Args:
+            pt_system(QRectF):
+
+        Returns:
+
+        """
         view_center = self.size() / 2
         return QPointF(pt_system.center().x() * self.zoom - view_center.width(),
                        pt_system.center().y() * self.zoom - view_center.height())
@@ -109,7 +133,6 @@ class PanningWebView(QWidget):
         if self.scrollPos != pos:
             self.scrollPos = pos
             self.webViewUpdateScrollbars.emit()
-            self.update()
 
     def setZoomAndScrollPos(self, zoom, pos):
         if self.scrolling:
@@ -129,7 +152,6 @@ class PanningWebView(QWidget):
                 changed = changed or True
         if changed:
             self.webViewUpdateScrollbars.emit()
-            self.update()
 
     def zoomIn(self, pos=None):
         if self.scrolling:
