@@ -24,12 +24,11 @@ import os.path
 import time
 import parse
 import threading
-from inspect import currentframe, getframeinfo
+
 from PySide6 import QtWidgets
-from PySide6.QtCore import QThread, QUrl
+from PySide6.QtCore import QThread, QUrl, QFile, QIODevice
 from PySide6.QtCore import Signal
 from PySide6.QtWebEngineWidgets import QWebEngineView
-
 from packaging import version
 
 import queue
@@ -45,7 +44,7 @@ import hashlib
 import secrets
 from typing import Optional
 from enum import Enum
-from eve_api_key import CLIENTS_API_KEY
+from eve_api_key import APPLICATION_CLIENTS_ID
 from vi.cache.cache import Cache
 from vi.version import VERSION
 from vi.universe import Universe
@@ -448,7 +447,7 @@ def esiCharactersPortrait(char_name, image_size=64, use_cache=True):
         return cached_data
 
 
-def esiCharactersPublicInfo(char_name: str, use_cache: object = True) -> object:
+def esiCharactersPublicInfo(char_name: str, use_cache: bool = True) -> object:
     """Downloading the public player/character info
 
     Args:
@@ -734,12 +733,29 @@ class APIServerThread(QThread):
         self.browser = browser
         self.webserver = None
 
+    # todo: use https server here see: https://anvileight.com/blog/posts/simple-python-http-server/
+
+    """
+        openssl req -x509 -newkey rsa:2048 -keyout spyglass-key.pem -out spyglass-cert.pem -days 365
+        openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out cert.crt -keyout private.key
+
+        https://learn.microsoft.com/en-us/azure/application-gateway/self-signed-certificates
+        
+        openssl ecparam -out contoso.key -name prime256v1 -genkey
+        openssl req -new -sha256 -key contoso.key -out contoso.csr
+        openssl x509 -req -sha256 -days 365 -in contoso.csr -signkey contoso.key -out contoso.crt
+        openssl ecparam -out fabrikam.key -name prime256v1 -genkey
+        openssl req -new -sha256 -key fabrikam.key -out fabrikam.csr
+        openssl x509 -req -in fabrikam.csr -CA  contoso.crt -CAkey contoso.key -CAcreateserial -out fabrikam.crt -days 365 -sha256
+        openssl x509 -in fabrikam.crt -text -noout
+        
+    """
     def run(self):
         while self.active:
             try:
                 with APIServerThread.WEB_SERVER_LOCK:
-                    self.webserver = http.server.HTTPServer(("localhost", 8182), MyApiServer)
-                    self.webserver.timeout = 120
+                    self.webserver = http.server.HTTPServer(("127.0.0.1", 8182), MyApiServer)
+                    self.webserver.timeout = 240
                     self.webserver.api_code = None
                     self.webserver.close_connection = True
                 self.webserver.handle_request()
@@ -748,7 +764,7 @@ class APIServerThread(QThread):
                     self.webserver = None
                 if self.auth_code is not None:
                     esiOauthToken(self.client_param, self.auth_code)
-            except Exception as e:
+            except (Exception,) as e:
                 logging.error("Error in APIServerThread.run: %s", e)
 
             self.browser = None
@@ -790,7 +806,7 @@ class APIServerThread(QThread):
             self.browser.close()
         with APIServerThread.WEB_SERVER_LOCK:
             if self.webserver:
-                getSession().get(url="http://localhost:8182/oauth-callback")
+                getSession().get(url="http://127.0.0.1:8182/oauth-callback")
         QThread.quit(self)
 
 
@@ -802,6 +818,16 @@ class WebHostWidget(QWebEngineView):
 
     def __init__(self, parent=None):
         super(WebHostWidget, self).__init__(parent)
+        self.page().certificateError.connect(self.on_cert_error)
+
+    def on_cert_error(self, e):
+        print(f"cert error: {e.description()}")
+        print(f"type: {e.type()}")
+        print(f"overridable: {e.isOverridable()}")
+        print(f"url: {e.url()}")
+        for c in e.certificateChain():
+            print(c.toText())
+        e.acceptCertificate()
 
     def closeEvent(self, event):
         self.terminate_thread.emit()
@@ -810,7 +836,7 @@ class WebHostWidget(QWebEngineView):
 
 def oauthLoginEveOnline(client_param, parent=None):
     """ Queries the eve-online api key valid for one eve online account,
-        using http://localhost:8182/oauth-callback as application defined
+        using http://127.0.0.1:8182/oauth-callback as application defined
         callback from inside the webb browser
         params client_id, scope and state see esi-docs
     """
@@ -820,7 +846,7 @@ def oauthLoginEveOnline(client_param, parent=None):
     code_challenge = base64.urlsafe_b64encode(digs).decode().replace("=", "")
     params = {
         "response_type": "code",
-        "redirect_uri": "http://localhost:8182/oauth-callback",
+        "redirect_uri": "http://127.0.0.1:8182/oauth-callback",
         "client_id": client_param["client_id"],
         "scope": client_param["scope"],
         "state": client_param["state"],
@@ -863,7 +889,7 @@ def esiOauthToken(client_param, auth_code: str, add_headers: dict = None) -> Opt
     if add_headers:
         headers.update(add_headers)
     response = getSession().post(
-        "https://login.eveonline.com/v2/oauth/token",
+        url="https://login.eveonline.com/v2/oauth/token",
         data=form_values,
         headers=headers,
     )
@@ -893,7 +919,7 @@ def openWithEveonline(parent=None):
         see: https://developers.eveonline.com/applications/details/69202
     """
     client_param_set = {
-        "client_id": CLIENTS_API_KEY,
+        "client_id": APPLICATION_CLIENTS_ID,
         "scope": "esi-location.read_location.v1 esi-search.search_structures.v1 esi-universe.read_structures.v1 "
                  "esi-ui.write_waypoint.v1 esi-characters.read_standings.v1 esi-location.read_online.v1",
         "random": base64.urlsafe_b64encode(secrets.token_bytes(32)),
@@ -932,7 +958,7 @@ def refreshToken(params: Optional[ApiKey]) -> Optional[ApiKey]:
     data = {
         "grant_type": "refresh_token",
         "refresh_token": params.refresh_token,
-        "client_id": CLIENTS_API_KEY,
+        "client_id": APPLICATION_CLIENTS_ID,
     }
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -2159,6 +2185,7 @@ def dumpSpyglassDownloadStats():
     else:
         _logResponseError(response)
         response.raise_for_status()
+
 
 def generate_universe_constellation_names(use_outdated=True):
     esiUniverseAllSystems()

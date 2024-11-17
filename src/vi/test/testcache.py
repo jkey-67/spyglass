@@ -2,7 +2,6 @@ import unittest
 import os
 import json
 import uuid
-
 from vi.cache import Cache
 from vi.universe import Universe
 from vi.redoundoqueue import RedoUndoQueue
@@ -45,6 +44,7 @@ class TestCache(unittest.TestCase):
         self.cache_used.swapPOIs(1, 1)
 
         self.cache_used.swapPOIs(3, 4)
+
     def test_checkSpyglassVersionUpdate(self):
         res = evegate.checkSpyglassVersionUpdate(current_version="1.0.0", force_check=True)
         self.assertIsNotNone(res)
@@ -134,6 +134,19 @@ class TestCache(unittest.TestCase):
                         ships_file.write(ship_text)
 
             ships_file.write(")\n")
+
+    @staticmethod
+    def writeList(file, alist):
+        size = len(alist)
+        file.write("[\n")
+        for item in alist:
+            file.write("        {}".format(json.dumps(item)))
+            if size > 1:
+                file.write(",\n")
+            else:
+                file.write("\n")
+            size -= 1
+        file.write("]\n")
 
     def test_generateRegions(self):
         name = FileName(self.curr_path, "everegions.json")
