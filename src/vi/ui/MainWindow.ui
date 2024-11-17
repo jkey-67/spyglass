@@ -98,10 +98,10 @@
            <item row="0" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0">
              <property name="spacing">
-              <number>0</number>
+              <number>2</number>
              </property>
              <property name="leftMargin">
-              <number>0</number>
+              <number>2</number>
              </property>
              <property name="topMargin">
               <number>0</number>
@@ -197,19 +197,6 @@
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
               <widget class="QLabel" name="label_2">
                <property name="text">
                 <string>Region</string>
@@ -235,7 +222,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>300</width>
+                 <width>250</width>
                  <height>500</height>
                 </size>
                </property>
@@ -266,7 +253,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label">
+              <widget class="QLabel" name="apiCharLabel">
                <property name="text">
                 <string>API Char</string>
                </property>
@@ -322,6 +309,19 @@
                 <bool>true</bool>
                </property>
               </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_6">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
              </item>
              <item>
               <widget class="QToolButton" name="zoomInButton">
@@ -812,7 +812,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <property name="spacing">
-          <number>0</number>
+          <number>2</number>
          </property>
          <item>
           <widget class="QLabel" name="timeInfo">
@@ -1314,7 +1314,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0">
          <property name="spacing">
-          <number>0</number>
+          <number>2</number>
          </property>
          <item>
           <widget class="QPushButton" name="connectToEveOnline">
@@ -1637,7 +1637,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <property name="spacing">
-          <number>0</number>
+          <number>2</number>
          </property>
          <item>
           <widget class="QLineEdit" name="lineEditThera">

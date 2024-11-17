@@ -252,9 +252,9 @@ class Ui_MainWindow(object):
         self.gridLayout_5.setObjectName(u"gridLayout_5")
         self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setSpacing(0)
+        self.horizontalLayout_2.setSpacing(2)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_2.setContentsMargins(2, 0, 0, 0)
         self.frameButton = QToolButton(self.mapbuttonwidget)
         self.frameButton.setObjectName(u"frameButton")
         self.frameButton.setMinimumSize(QSize(32, 32))
@@ -285,10 +285,6 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.searchSystem)
 
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
-
         self.label_2 = QLabel(self.mapbuttonwidget)
         self.label_2.setObjectName(u"label_2")
 
@@ -302,7 +298,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.regionNameField.sizePolicy().hasHeightForWidth())
         self.regionNameField.setSizePolicy(sizePolicy)
         self.regionNameField.setMinimumSize(QSize(0, 0))
-        self.regionNameField.setMaximumSize(QSize(300, 500))
+        self.regionNameField.setMaximumSize(QSize(250, 500))
         self.regionNameField.setEditable(False)
         self.regionNameField.setCurrentText(u"")
         self.regionNameField.setMaxVisibleItems(30)
@@ -313,10 +309,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.regionNameField)
 
-        self.label = QLabel(self.mapbuttonwidget)
-        self.label.setObjectName(u"label")
+        self.apiCharLabel = QLabel(self.mapbuttonwidget)
+        self.apiCharLabel.setObjectName(u"apiCharLabel")
 
-        self.horizontalLayout_2.addWidget(self.label)
+        self.horizontalLayout_2.addWidget(self.apiCharLabel)
 
         self.currentESICharacter = QComboBox(self.mapbuttonwidget)
         self.currentESICharacter.setObjectName(u"currentESICharacter")
@@ -336,6 +332,10 @@ class Ui_MainWindow(object):
         self.locateChar.setAutoRaise(True)
 
         self.horizontalLayout_2.addWidget(self.locateChar)
+
+        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_6)
 
         self.zoomInButton = QToolButton(self.mapbuttonwidget)
         self.zoomInButton.setObjectName(u"zoomInButton")
@@ -515,7 +515,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_12.setSpacing(0)
         self.verticalLayout_12.setObjectName(u"verticalLayout_12")
         self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setSpacing(0)
+        self.horizontalLayout.setSpacing(2)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.timeInfo = QLabel(self.dockWidgetContents)
         self.timeInfo.setObjectName(u"timeInfo")
@@ -709,7 +709,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_13.setSpacing(0)
         self.verticalLayout_13.setObjectName(u"verticalLayout_13")
         self.horizontalLayout_3 = QHBoxLayout()
-        self.horizontalLayout_3.setSpacing(0)
+        self.horizontalLayout_3.setSpacing(2)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.connectToEveOnline = QPushButton(self.dockWidgetContents_4)
         self.connectToEveOnline.setObjectName(u"connectToEveOnline")
@@ -861,7 +861,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_14.setSpacing(0)
         self.verticalLayout_14.setObjectName(u"verticalLayout_14")
         self.horizontalLayout_4 = QHBoxLayout()
-        self.horizontalLayout_4.setSpacing(0)
+        self.horizontalLayout_4.setSpacing(2)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.lineEditThera = QLineEdit(self.dockWidgetContents_5)
         self.lineEditThera.setObjectName(u"lineEditThera")
@@ -969,7 +969,7 @@ class Ui_MainWindow(object):
         MainWindow.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dockWidget_6)
 #if QT_CONFIG(shortcut)
         self.label_2.setBuddy(self.regionNameField)
-        self.label.setBuddy(self.currentESICharacter)
+        self.apiCharLabel.setBuddy(self.currentESICharacter)
         self.timeInfo.setBuddy(self.chatListWidget)
 #endif // QT_CONFIG(shortcut)
         QWidget.setTabOrder(self.systemNames, self.regionNameField)
@@ -1188,7 +1188,7 @@ class Ui_MainWindow(object):
 #if QT_CONFIG(tooltip)
         self.regionNameField.setToolTip(QCoreApplication.translate("MainWindow", u"Current Region on Map.", None))
 #endif // QT_CONFIG(tooltip)
-        self.label.setText(QCoreApplication.translate("MainWindow", u"API Char", None))
+        self.apiCharLabel.setText(QCoreApplication.translate("MainWindow", u"API Char", None))
 #if QT_CONFIG(tooltip)
         self.currentESICharacter.setToolTip(QCoreApplication.translate("MainWindow", u"Current Char used vor ESI.", None))
 #endif // QT_CONFIG(tooltip)

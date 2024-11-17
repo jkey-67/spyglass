@@ -29,12 +29,11 @@ from typing import Optional
 import logging
 from PySide6.QtGui import Qt
 from PySide6 import QtGui, QtCore, QtWidgets
-from PySide6.QtCore import QPoint, QPointF, QSortFilterProxyModel, QTimer, Qt
+from PySide6.QtCore import QPoint, QPointF, QRectF, QSortFilterProxyModel, QTimer, Qt
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QIcon, QImage, QPixmap, QDesktopServices
-from PySide6.QtWidgets import (QMessageBox, QStyleOption, QStyle, QFileDialog,
-                               QApplication, QAbstractItemView)
+from PySide6.QtGui import QIcon, QPixmap, QDesktopServices
+from PySide6.QtWidgets import (QMessageBox, QFileDialog, QApplication, QAbstractItemView)
 
 import vi.version
 from vi.universe import Universe
@@ -211,13 +210,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if evegate.esiCharactersOnline(api_char_names):
                 self._updateKnownPlayerAndMenu(api_char_names)
 
-        if len(self.knownPlayerNames) == 0:
-            info_text = "Spyglass scans EVE system logs and remembers your characters as they change systems.\n\n" \
-                        "Some features (clipboard KOS checking, alarms, etc.) may not work until your character(s)" "" \
-                        "have been registered. Change systems, with each character you want to monitor, while " \
-                        "Spyglass is running to remedy this."
-            QMessageBox.warning(self, "Known Characters not Found", info_text)
-
+        self._updateKnownPlayerAndMenu(None)
         self._update_splash_window_info("Update player names")
         # Set up Theme menu - fill in list of themes and add connections
 
@@ -260,8 +253,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._update_splash_window_info("Start all worker threads")
         self._startThreads()
-
-        self.updateSidePanel()
 
         self._update_splash_window_info("Apply theme.")
 
@@ -317,7 +308,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def setShowADMOnMap(self, val) -> None:
         self.ui.actionShowADMonMap.setChecked(val)
 
-    def useThreaRoutes(self) -> bool:
+    def useThreaRoutes(self):
         self.ui.actionUserTheraRoutes.isChecked()
 
     def setUseThreaRoutes(self, val) -> None:
@@ -367,6 +358,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
         known_player_names = self.knownPlayerNames
+        chars_registered = len(known_player_names) != 0
+        self.ui.apiCharLabel.setVisible(chars_registered)
+        self.ui.currentESICharacter.setVisible(chars_registered)
+        self.ui.locateChar.setVisible(chars_registered)
 
         if names is None:
             self.players_changed.emit()
@@ -381,8 +376,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if known_player_names != self.knownPlayerNames:
             self.cache.setKnownPlayerNames(known_player_names)
             self.players_changed.emit()
-
-        self.updateSidePanel()
 
     def _addPlayerMenu(self):
         self.playerGroup = QActionGroup(self.ui.menu)
@@ -422,14 +415,6 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.ui.mapView.wheel_dir = 1.0
         self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
-
-    def paintEvent__(self, event):
-        painter = QtGui.QPainter()
-        painter.begin(self)
-        opt = QStyleOption()
-        opt.initFrom(self)
-        self.style().drawPrimitive(QStyle.PE_Widget, opt, painter, self)
-        painter.end()
 
     def _recallCachedSettings(self):
         try:
@@ -531,7 +516,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionOpen_on_zKillboard.triggered.connect(lambda: QDesktopServices.openUrl(
             "https://zkillboard.com/system/{}".format(self.currentSystem.system_id)))
 
-        self.ui.actionChange_Region_to.triggered.connect(lambda: self.changeRegionBySystemID(self.currentSystem.system_id))
+        self.ui.actionChange_Region_to.triggered.connect(lambda: self.changeRegionBySystemID(
+            self.currentSystem.system_id))
 
         self.ui.actionAlarm_distance_0.triggered.connect(lambda: self.changeAlarmDistance(0))
         self.ui.actionAlarm_distance_1.triggered.connect(lambda: self.changeAlarmDistance(1))
@@ -682,17 +668,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wireUpDatabaseCharacters()
         self._wireUpThera()
         self._wireUpStorm()
-
-    def updateSidePanel(self):
-        return
-        inx_poi = self.ui.qSidepannel.indexOf(self.ui.qTabPOIS)
-        inx_jumpbridges = self.ui.qSidepannel.indexOf(self.ui.qTabJumpbridges)
-        if evegate.esiCharName() is None:
-            self.ui.qSidepannel.setTabVisible(inx_poi, False)
-            self.ui.qSidepannel.setTabVisible(inx_jumpbridges, False)
-        else:
-            self.ui.qSidepannel.setTabVisible(inx_poi, True)
-            self.ui.qSidepannel.setTabVisible(inx_jumpbridges, True)
 
     def _wireUpDatabaseViewPOI(self):
         model = POITableModel()
@@ -1022,7 +997,6 @@ class MainWindow(QtWidgets.QMainWindow):
         ALL_SYSTEMS[system_id].addKill()
         if Globals().follow_kills:
             self.changeRegionBySystemID(system_id)
-            # self.focusMapOnSystem(system_id)
 
     def _setupThreads(self):
         logging.info("Set up threads and their connections...")
@@ -1075,14 +1049,19 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.critical(ex)
             pass
 
-    def focusMapOnSystem(self, system_id: int):
-        """sets the system defined by the id to the focus of the map
+    def focusMapOnSystem(self, system):
         """
+            Centers the given system on the current map, if the System is not part of the map, noting will be changed.
+        Args:
+            system: System or system_id of the system to be centered on screen
 
-        if type(system_id) is System:
-            selected_system = system_id
-        elif type(system_id) is int and system_id in self.systemsById:
-            selected_system = self.systemsById[system_id]
+        Returns:
+            None
+        """
+        if type(system) is System:
+            selected_system = system
+        elif type(system) is int and system in self.systemsById:
+            selected_system = self.systemsById[system]
         else:
             return
         if selected_system in self.systems_on_map.values():
@@ -1142,12 +1121,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if system_id is not None:
                 self.focusMapOnSystem(system_id)
             else:
-                view_center = self.ui.mapView.size() / 2
-                size_of_image = self.ui.mapView.imgSize
-                pt_system = QPointF(size_of_image.width()/2.0
-                                    * self.ui.mapView.zoom - view_center.width(),
-                                    size_of_image.height()/2.0
-                                    * self.ui.mapView.zoom - view_center.height())
+                pt_system = self.ui.mapView.scrollPositionFromMapCoordinate(
+                    QRectF(QPointF(0.0, 0.0), self.ui.mapView.imgSize))
                 self.ui.mapView.setScrollPosition(pt_system)
                 self.ui.mapView.update()
         self.rescanIntel()
@@ -1620,7 +1595,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.updateCharLocationOnMap(system_id, char_name, self.alarmDistance)
 
         if system_name in self.systems_on_map:
-            self.focusMapOnSystem(system_id)
+            if change_region:
+                self.focusMapOnSystem(system_id)
         else:
             if change_region:
                 try:
@@ -1671,6 +1647,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.mapVertScrollBar.setRange(int(min(pos.y(), 0)), int(size.height()*fac))
         self.ui.mapHorzScrollBar.setValue(int(pos.x()))
         self.ui.mapVertScrollBar.setValue(int(pos.y()))
+        self.ui.mapView.update()
 
     def showChatroomChooser(self):
         chooser = ChatroomChooser(self)
