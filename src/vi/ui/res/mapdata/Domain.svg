@@ -2317,16 +2317,7 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-  <rect id="inc30002235" x="-3.5" y="401.5" width="72.5" height="40.5" class="incs" />
-  <rect id="inc30002232" x="56.5" y="401.5" width="72.5" height="40.5" class="inc" />
-  <rect id="inc30002231" x="121.5" y="401.5" width="72.5" height="40.5" class="inc" />
-  <rect id="inc30002234" x="176.5" y="486.5" width="72.5" height="40.5" class="inc" />
-  <rect id="inc30002228" x="206.5" y="451.5" width="72.5" height="40.5" class="inc" />
-  <rect id="inc30002230" x="236.5" y="486.5" width="72.5" height="40.5" class="inc" />
-  <rect id="inc30002227" x="281.5" y="451.5" width="72.5" height="40.5" class="inc" />
-  <rect id="inc30002226" x="301.5" y="376.5" width="72.5" height="40.5" class="inc" />
-  <rect id="inc30002229" x="336.5" y="416.5" width="72.5" height="40.5" class="inc" />
-  <rect id="inc30002233" x="336.5" y="451.5" width="72.5" height="40.5" class="inc" />
+
 
 </g>
 

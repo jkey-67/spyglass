@@ -151,7 +151,7 @@
   </symbol>
   <symbol id="def30002539">
     <a xlink:href="http://evemaps.dotlan.net/system/Siseide" class="sys link-5-30002539" target="_top">
-      <rect id="rect30002539" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-60);" />
+      <rect id="rect30002539" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-80);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Siseide</text>
       <text id="txt30002539" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>
@@ -266,7 +266,7 @@
   </symbol>
   <symbol id="def30002540">
     <a xlink:href="http://evemaps.dotlan.net/system/Lantorn" class="sys link-5-30002540" target="_top">
-      <rect id="rect30002540" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-80);" />
+      <rect id="rect30002540" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-100);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Lantorn</text>
       <text id="txt30002540" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -276,7 +276,7 @@
   </symbol>
   <symbol id="def30002537">
     <a xlink:href="http://evemaps.dotlan.net/system/Amamake" class="sys link-5-30002537" target="_top">
-      <rect id="rect30002537" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-40);" />
+      <rect id="rect30002537" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Amamake</text>
       <text id="txt30002537" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>

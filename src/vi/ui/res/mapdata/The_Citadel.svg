@@ -182,7 +182,7 @@
   </symbol>
   <symbol id="def30002806">
     <a xlink:href="http://evemaps.dotlan.net/system/Hasmijaala" class="sys link-5-30002806" target="_top">
-      <rect id="rect30002806" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: #233C61;" />
+      <rect id="rect30002806" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Hasmijaala</text>
       <text id="txt30002806" x="28" y="21.7" class="st" text-anchor="middle">Caldari</text>
     </a>
@@ -350,7 +350,7 @@
   </symbol>
   <symbol id="def30002810">
     <a xlink:href="http://evemaps.dotlan.net/system/Eranakko" class="sys link-5-30002810" target="_top">
-      <rect id="rect30002810" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-60);" />
+      <rect id="rect30002810" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-40);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Eranakko</text>
       <text id="txt30002810" x="28" y="21.7" class="st" text-anchor="middle">Caldari</text>
     </a>
@@ -1026,7 +1026,7 @@
   </symbol>
   <symbol id="def30002757">
     <a xlink:href="http://evemaps.dotlan.net/system/Nikkishina" class="sys link-5-30002757" target="_top">
-      <rect id="rect30002757" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-80);" />
+      <rect id="rect30002757" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500001-60);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Nikkishina</text>
       <text id="txt30002757" x="28" y="21.7" class="st" text-anchor="middle">Caldari</text>
     </a>
@@ -1375,6 +1375,7 @@
 
   <rect id="inc30002808" x="-6.5" y="310.5" width="71" height="38" class="con" />
   <rect id="inc30002812" x="53.5" y="185.5" width="71" height="38" class="con" />
+  <rect id="inc30002806" x="53.5" y="335.5" width="71" height="38" class="con" />
   <rect id="inc30002807" x="63.5" y="290.5" width="71" height="38" class="con" />
   <rect id="inc30002796" x="63.5" y="385.5" width="71" height="38" class="con" />
   <rect id="inc30002811" x="118.5" y="200.5" width="71" height="38" class="con" />

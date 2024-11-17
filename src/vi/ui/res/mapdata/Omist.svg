@@ -216,7 +216,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/3FKU-H" class="sys link-5-30004900" target="_top">
       <rect id="rect30004900" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #282828;" />
       <text x="28" y="14" class="ss" text-anchor="middle">3FKU-H</text>
-      <text id="txt30004900" x="28" y="21.7" class="st so" text-anchor="middle">B0SS (2)</text>
+      <text id="txt30004900" x="28" y="21.7" class="st so" text-anchor="middle">B0SS (3)</text>
     </a>
   </symbol>
   <symbol id="def30004894">
@@ -244,14 +244,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/M9-FIB" class="sys link-5-30004901" target="_top">
       <rect id="rect30004901" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #282828;" />
       <text x="28" y="14" class="ss" text-anchor="middle">M9-FIB</text>
-      <text id="txt30004901" x="28" y="21.7" class="st so" text-anchor="middle">B0SS (2)</text>
+      <text id="txt30004901" x="28" y="21.7" class="st so" text-anchor="middle">B0SS (3)</text>
     </a>
   </symbol>
   <symbol id="def30004898">
     <a xlink:href="http://evemaps.dotlan.net/system/Y-MSJN" class="sys link-5-30004898" target="_top">
       <rect id="rect30004898" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #282828;" />
       <text x="28" y="14" class="ss" text-anchor="middle">Y-MSJN</text>
-      <text id="txt30004898" x="28" y="21.7" class="st so" text-anchor="middle">B0SS (2)</text>
+      <text id="txt30004898" x="28" y="21.7" class="st so" text-anchor="middle">B0SS (3)</text>
     </a>
   </symbol>
   <symbol id="def30004897">
@@ -308,7 +308,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/RI-JB1" class="sys link-5-30004918" target="_top">
       <rect id="rect30004918" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D35;" />
       <text x="28" y="14" class="ss" text-anchor="middle">RI-JB1</text>
-      <text id="txt30004918" x="28" y="21.7" class="st so" text-anchor="middle">KWHA (4)</text>
+      <text id="txt30004918" x="28" y="21.7" class="st so" text-anchor="middle">KWHA (5)</text>
     </a>
   </symbol>
   <symbol id="def30004911">
@@ -329,7 +329,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/X-3AUU" class="sys link-5-30004915" target="_top">
       <rect id="rect30004915" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D35;" />
       <text x="28" y="14" class="ss" text-anchor="middle">X-3AUU</text>
-      <text id="txt30004915" x="28" y="21.7" class="st so" text-anchor="middle">KWHA (4)</text>
+      <text id="txt30004915" x="28" y="21.7" class="st so" text-anchor="middle">KWHA (5)</text>
     </a>
   </symbol>
   <symbol id="def30004910">
@@ -380,7 +380,7 @@
     <rect id="ice30004917" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30004917" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D35;" />
       <text x="28" y="14" class="ss" text-anchor="middle">0DD-MH</text>
-      <text id="txt30004917" x="28" y="21.7" class="st so" text-anchor="middle">KWHA (4)</text>
+      <text id="txt30004917" x="28" y="21.7" class="st so" text-anchor="middle">KWHA (5)</text>
     </a>
   </symbol>
   <symbol id="def30004926">

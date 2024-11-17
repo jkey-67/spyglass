@@ -947,7 +947,12 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-
+  <rect id="inc30001278" x="181.5" y="276.5" width="85" height="46" class="inc" />
+  <rect id="inc30001277" x="181.5" y="311.5" width="85" height="46" class="inc" />
+  <rect id="inc30001279" x="186.5" y="236.5" width="85" height="46" class="incs" />
+  <rect id="inc30001276" x="191.5" y="351.5" width="85" height="46" class="inc" />
+  <rect id="inc30001275" x="201.5" y="391.5" width="85" height="46" class="inc" />
+  <rect id="inc30001274" x="216.5" y="431.5" width="85" height="46" class="inc" />
 
 </g>
 

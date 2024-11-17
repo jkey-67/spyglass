@@ -127,16 +127,16 @@
 <defs>
   <symbol id="def30002454">
     <a xlink:href="http://evemaps.dotlan.net/system/0-GZX9" class="sys link-5-30002454" target="_top">
-      <rect id="rect30002454" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #392100;" />
+      <rect id="rect30002454" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">0-GZX9</text>
-      <text id="txt30002454" x="28" y="21.7" class="st so" text-anchor="middle">.S0B. (5)</text>
+      <text id="txt30002454" x="28" y="21.7" class="st so" text-anchor="middle">FRT (0)</text>
     </a>
   </symbol>
   <symbol id="def30002455">
     <a xlink:href="http://evemaps.dotlan.net/system/2H-TSE" class="sys link-5-30002455" target="_top">
-      <rect id="rect30002455" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #392100;" />
+      <rect id="rect30002455" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">2H-TSE</text>
-      <text id="txt30002455" x="28" y="21.7" class="st so" text-anchor="middle">.S0B. (5)</text>
+      <text id="txt30002455" x="28" y="21.7" class="st so" text-anchor="middle">FRT (0)</text>
     </a>
   </symbol>
   <symbol id="def30002431">
@@ -157,9 +157,9 @@
   <symbol id="def30002452">
     <a xlink:href="http://evemaps.dotlan.net/system/KR-V6G" class="sys link-5-30002452" target="_top">
     <rect id="ice30002452" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
-      <rect id="rect30002452" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #392100;" />
+      <rect id="rect30002452" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">KR-V6G</text>
-      <text id="txt30002452" x="28" y="21.7" class="st so" text-anchor="middle">.S0B. (5)</text>
+      <text id="txt30002452" x="28" y="21.7" class="st so" text-anchor="middle">FRT (0)</text>
     </a>
   </symbol>
   <symbol id="def30002453">
@@ -319,14 +319,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/TZL-WT" class="sys link-5-30002494" target="_top">
       <rect id="rect30002494" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">TZL-WT</text>
-      <text id="txt30002494" x="28" y="21.7" class="st so" text-anchor="middle">FRT (1)</text>
+      <text id="txt30002494" x="28" y="21.7" class="st so" text-anchor="middle">FRT (2)</text>
     </a>
   </symbol>
   <symbol id="def30002495">
     <a xlink:href="http://evemaps.dotlan.net/system/4K0N-J" class="sys link-5-30002495" target="_top">
       <rect id="rect30002495" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">4K0N-J</text>
-      <text id="txt30002495" x="28" y="21.7" class="st so" text-anchor="middle">FRT (1)</text>
+      <text id="txt30002495" x="28" y="21.7" class="st so" text-anchor="middle">FRT (2)</text>
     </a>
   </symbol>
   <symbol id="def30002430">
@@ -348,7 +348,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/W-3BSU" class="sys link-5-30002497" target="_top">
       <rect id="rect30002497" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">W-3BSU</text>
-      <text id="txt30002497" x="28" y="21.7" class="st so" text-anchor="middle">FRT (1)</text>
+      <text id="txt30002497" x="28" y="21.7" class="st so" text-anchor="middle">FRT (2)</text>
     </a>
   </symbol>
   <symbol id="def30002424">
@@ -363,14 +363,14 @@
     <rect id="ice30002493" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30002493" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">LR-2XT</text>
-      <text id="txt30002493" x="28" y="21.7" class="st so" text-anchor="middle">FRT (1)</text>
+      <text id="txt30002493" x="28" y="21.7" class="st so" text-anchor="middle">FRT (2)</text>
     </a>
   </symbol>
   <symbol id="def30002496">
     <a xlink:href="http://evemaps.dotlan.net/system/B-F1MI" class="sys link-5-30002496" target="_top">
       <rect id="rect30002496" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">B-F1MI</text>
-      <text id="txt30002496" x="28" y="21.7" class="st so" text-anchor="middle">FRT (1)</text>
+      <text id="txt30002496" x="28" y="21.7" class="st so" text-anchor="middle">FRT (2)</text>
     </a>
   </symbol>
   <symbol id="def30002442">
@@ -406,7 +406,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/BE-UUN" class="sys link-5-30002498" target="_top">
       <rect id="rect30002498" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #314F69;" />
       <text x="28" y="14" class="ss" text-anchor="middle">BE-UUN</text>
-      <text id="txt30002498" x="28" y="21.7" class="st so" text-anchor="middle">FRT (1)</text>
+      <text id="txt30002498" x="28" y="21.7" class="st so" text-anchor="middle">FRT (2)</text>
     </a>
   </symbol>
   <symbol id="def30002440">

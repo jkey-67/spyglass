@@ -130,35 +130,35 @@
     <rect id="ice30001221" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30001221" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">HP-64T</text>
-      <text id="txt30001221" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001221" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001222">
     <a xlink:href="http://evemaps.dotlan.net/system/V2-VC2" class="sys link-5-30001222" target="_top">
       <rect id="rect30001222" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">V2-VC2</text>
-      <text id="txt30001222" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001222" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001223">
     <a xlink:href="http://evemaps.dotlan.net/system/L-B55M" class="sys link-5-30001223" target="_top">
       <rect id="rect30001223" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">L-B55M</text>
-      <text id="txt30001223" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001223" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001238">
     <a xlink:href="http://evemaps.dotlan.net/system/K717-8" class="sys link-5-30001238" target="_top">
       <rect id="rect30001238" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">K717-8</text>
-      <text id="txt30001238" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001238" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001220">
     <a xlink:href="http://evemaps.dotlan.net/system/SNFV-I" class="sys link-5-30001220" target="_top">
       <rect id="rect30001220" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">SNFV-I</text>
-      <text id="txt30001220" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001220" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001239">
@@ -214,7 +214,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/5-N2EY" class="sys link-5-30001241" target="_top">
       <rect id="rect30001241" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">5-N2EY</text>
-      <text id="txt30001241" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001241" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001240">
@@ -349,7 +349,7 @@
     <rect id="ice30001200" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30001200" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">3GD6-8</text>
-      <text id="txt30001200" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001200" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001236">
@@ -585,7 +585,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/6X7-JO" class="sys link-5-30001197" target="_top">
       <rect id="rect30001197" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">6X7-JO</text>
-      <text id="txt30001197" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001197" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001250">
@@ -627,14 +627,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/A-803L" class="sys link-5-30001193" target="_top">
       <rect id="rect30001193" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">A-803L</text>
-      <text id="txt30001193" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001193" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001192">
     <a xlink:href="http://evemaps.dotlan.net/system/GJ0-OJ" class="sys link-5-30001192" target="_top">
       <rect id="rect30001192" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">GJ0-OJ</text>
-      <text id="txt30001192" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001192" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001190">
@@ -642,7 +642,7 @@
     <rect id="ice30001190" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30001190" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">JWZ2-V</text>
-      <text id="txt30001190" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001190" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001167">
@@ -664,7 +664,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/J-ODE7" class="sys link-5-30001195" target="_top">
       <rect id="rect30001195" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">J-ODE7</text>
-      <text id="txt30001195" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001195" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001231">
@@ -678,14 +678,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/I-8D0G" class="sys link-5-30001188" target="_top">
       <rect id="rect30001188" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">I-8D0G</text>
-      <text id="txt30001188" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001188" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001196">
     <a xlink:href="http://evemaps.dotlan.net/system/Q-S7ZD" class="sys link-5-30001196" target="_top">
       <rect id="rect30001196" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">Q-S7ZD</text>
-      <text id="txt30001196" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001196" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001169">
@@ -706,14 +706,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/WQH-4K" class="sys link-5-30001194" target="_top">
       <rect id="rect30001194" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">WQH-4K</text>
-      <text id="txt30001194" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001194" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001189">
     <a xlink:href="http://evemaps.dotlan.net/system/R-K4QY" class="sys link-5-30001189" target="_top">
       <rect id="rect30001189" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">R-K4QY</text>
-      <text id="txt30001189" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001189" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001191">
@@ -721,7 +721,7 @@
     <rect id="ice30001191" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30001191" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">OGL8-Q</text>
-      <text id="txt30001191" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001191" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001208">
@@ -795,7 +795,7 @@
     <rect id="ice30001182" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30001182" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">MB-NKE</text>
-      <text id="txt30001182" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001182" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001210">
@@ -809,14 +809,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/JBY6-F" class="sys link-5-30001185" target="_top">
       <rect id="rect30001185" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">JBY6-F</text>
-      <text id="txt30001185" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001185" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001183">
     <a xlink:href="http://evemaps.dotlan.net/system/G-7WUF" class="sys link-5-30001183" target="_top">
       <rect id="rect30001183" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">G-7WUF</text>
-      <text id="txt30001183" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001183" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001181">
@@ -865,7 +865,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/6-MM99" class="sys link-5-30001184" target="_top">
       <rect id="rect30001184" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">6-MM99</text>
-      <text id="txt30001184" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001184" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001180">
@@ -886,14 +886,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/FZ-6A5" class="sys link-5-30001186" target="_top">
       <rect id="rect30001186" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">FZ-6A5</text>
-      <text id="txt30001186" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001186" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001187">
     <a xlink:href="http://evemaps.dotlan.net/system/RNF-YH" class="sys link-5-30001187" target="_top">
       <rect id="rect30001187" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #596147;" />
       <text x="28" y="14" class="ss" text-anchor="middle">RNF-YH</text>
-      <text id="txt30001187" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (4)</text>
+      <text id="txt30001187" x="28" y="21.7" class="st so" text-anchor="middle">CONDI (5)</text>
     </a>
   </symbol>
   <symbol id="def30001174">

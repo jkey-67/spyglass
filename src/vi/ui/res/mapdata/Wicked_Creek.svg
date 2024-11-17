@@ -143,21 +143,21 @@
     <a xlink:href="http://evemaps.dotlan.net/system/H6-EYX" class="sys link-5-30000574" target="_top">
       <rect id="rect30000574" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #53626D;" />
       <text x="28" y="14" class="ss" text-anchor="middle">H6-EYX</text>
-      <text id="txt30000574" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (1)</text>
+      <text id="txt30000574" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (2)</text>
     </a>
   </symbol>
   <symbol id="def30000576">
     <a xlink:href="http://evemaps.dotlan.net/system/4-EFLU" class="sys link-5-30000576" target="_top">
       <rect id="rect30000576" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #53626D;" />
       <text x="28" y="14" class="ss" text-anchor="middle">4-EFLU</text>
-      <text id="txt30000576" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (1)</text>
+      <text id="txt30000576" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (2)</text>
     </a>
   </symbol>
   <symbol id="def30000577">
     <a xlink:href="http://evemaps.dotlan.net/system/EIH-IU" class="sys link-5-30000577" target="_top">
       <rect id="rect30000577" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #53626D;" />
       <text x="28" y="14" class="ss" text-anchor="middle">EIH-IU</text>
-      <text id="txt30000577" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (1)</text>
+      <text id="txt30000577" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (2)</text>
     </a>
   </symbol>
   <symbol id="def30000568">
@@ -171,14 +171,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/1-7B6D" class="sys link-5-30000573" target="_top">
       <rect id="rect30000573" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #53626D;" />
       <text x="28" y="14" class="ss" text-anchor="middle">1-7B6D</text>
-      <text id="txt30000573" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (1)</text>
+      <text id="txt30000573" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (2)</text>
     </a>
   </symbol>
   <symbol id="def30000575">
     <a xlink:href="http://evemaps.dotlan.net/system/U-HVIX" class="sys link-5-30000575" target="_top">
       <rect id="rect30000575" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #53626D;" />
       <text x="28" y="14" class="ss" text-anchor="middle">U-HVIX</text>
-      <text id="txt30000575" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (1)</text>
+      <text id="txt30000575" x="28" y="21.7" class="st so" text-anchor="middle">SGGRN (2)</text>
     </a>
   </symbol>
   <symbol id="def30000583">
@@ -378,7 +378,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/V7G-RL" class="sys link-5-30000603" target="_top">
       <rect id="rect30000603" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #00460F;" />
       <text x="28" y="14" class="ss" text-anchor="middle">V7G-RL</text>
-      <text id="txt30000603" x="28" y="21.7" class="st so" text-anchor="middle">UNPRO (4)</text>
+      <text id="txt30000603" x="28" y="21.7" class="st so" text-anchor="middle">UNPRO (5)</text>
     </a>
   </symbol>
   <symbol id="def30000560">
@@ -456,16 +456,16 @@
   </symbol>
   <symbol id="def30000595">
     <a xlink:href="http://evemaps.dotlan.net/system/DUO-51" class="sys link-5-30000595" target="_top">
-      <rect id="rect30000595" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <rect id="rect30000595" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #392100;" />
       <text x="28" y="14" class="ss" text-anchor="middle">DUO-51</text>
-      <text id="txt30000595" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+      <text id="txt30000595" x="28" y="21.7" class="st so" text-anchor="middle">ROWLE (0)</text>
     </a>
   </symbol>
   <symbol id="def30000601">
     <a xlink:href="http://evemaps.dotlan.net/system/TZE-UB" class="sys link-5-30000601" target="_top">
       <rect id="rect30000601" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #00460F;" />
       <text x="28" y="14" class="ss" text-anchor="middle">TZE-UB</text>
-      <text id="txt30000601" x="28" y="21.7" class="st so" text-anchor="middle">UNPRO (1)</text>
+      <text id="txt30000601" x="28" y="21.7" class="st so" text-anchor="middle">UNPRO (2)</text>
     </a>
   </symbol>
   <symbol id="def30000604">
@@ -484,9 +484,9 @@
   </symbol>
   <symbol id="def30000597">
     <a xlink:href="http://evemaps.dotlan.net/system/Z-A8FS" class="sys link-5-30000597" target="_top">
-      <rect id="rect30000597" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <rect id="rect30000597" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #392100;" />
       <text x="28" y="14" class="ss" text-anchor="middle">Z-A8FS</text>
-      <text id="txt30000597" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+      <text id="txt30000597" x="28" y="21.7" class="st so" text-anchor="middle">ROWLE (0)</text>
     </a>
   </symbol>
   <symbol id="def30000547">
@@ -548,9 +548,9 @@
   </symbol>
   <symbol id="def30000596">
     <a xlink:href="http://evemaps.dotlan.net/system/07-SLO" class="sys link-5-30000596" target="_top">
-      <rect id="rect30000596" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #576047;" />
+      <rect id="rect30000596" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #392100;" />
       <text x="28" y="14" class="ss" text-anchor="middle">07-SLO</text>
-      <text id="txt30000596" x="28" y="21.7" class="st so" text-anchor="middle">TRI (4)</text>
+      <text id="txt30000596" x="28" y="21.7" class="st so" text-anchor="middle">ROWLE (0)</text>
     </a>
   </symbol>
   <symbol id="def30000536">
@@ -569,9 +569,9 @@
   </symbol>
   <symbol id="def30000532">
     <a xlink:href="http://evemaps.dotlan.net/system/W-QN5X" class="sys link-5-30000532" target="_top">
-      <rect id="rect30000532" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #111111;" />
+      <rect id="rect30000532" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D04;" />
       <text x="28" y="14" class="ss" text-anchor="middle">W-QN5X</text>
-      <text id="txt30000532" x="28" y="21.7" class="st" text-anchor="middle"> </text>
+      <text id="txt30000532" x="28" y="21.7" class="st so" text-anchor="middle">UAFLH (0)</text>
     </a>
   </symbol>
   <symbol id="def30000548">
@@ -606,14 +606,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/30-YOU" class="sys link-5-30000534" target="_top">
       <rect id="rect30000534" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
       <text x="28" y="14" class="ss" text-anchor="middle">30-YOU</text>
-      <text id="txt30000534" x="28" y="21.7" class="st so" text-anchor="middle">WOMP (3)</text>
+      <text id="txt30000534" x="28" y="21.7" class="st so" text-anchor="middle">WOMP (4)</text>
     </a>
   </symbol>
   <symbol id="def30000531">
     <a xlink:href="http://evemaps.dotlan.net/system/E-JCUS" class="sys link-5-30000531" target="_top">
       <rect id="rect30000531" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #576047;" />
       <text x="28" y="14" class="ss" text-anchor="middle">E-JCUS</text>
-      <text id="txt30000531" x="28" y="21.7" class="st so" text-anchor="middle">TRI (4)</text>
+      <text id="txt30000531" x="28" y="21.7" class="st so" text-anchor="middle">TRI (5)</text>
     </a>
   </symbol>
   <symbol id="def30000533">
@@ -635,14 +635,14 @@
     <a xlink:href="http://evemaps.dotlan.net/system/MKIG-5" class="sys link-5-30000529" target="_top">
       <rect id="rect30000529" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #1A533C;" />
       <text x="28" y="14" class="ss" text-anchor="middle">MKIG-5</text>
-      <text id="txt30000529" x="28" y="21.7" class="st so" text-anchor="middle">BIGAB (0)</text>
+      <text id="txt30000529" x="28" y="21.7" class="st so" text-anchor="middle">BIGAB (1)</text>
     </a>
   </symbol>
   <symbol id="def30000535">
     <a xlink:href="http://evemaps.dotlan.net/system/384-IN" class="sys link-5-30000535" target="_top">
       <rect id="rect30000535" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
       <text x="28" y="14" class="ss" text-anchor="middle">384-IN</text>
-      <text id="txt30000535" x="28" y="21.7" class="st so" text-anchor="middle">WOMP (3)</text>
+      <text id="txt30000535" x="28" y="21.7" class="st so" text-anchor="middle">WOMP (4)</text>
     </a>
   </symbol>
   <symbol id="def30000588">
@@ -691,7 +691,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/X-ARMF" class="sys link-5-30000541" target="_top">
       <rect id="rect30000541" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #233C61;" />
       <text x="28" y="14" class="ss" text-anchor="middle">X-ARMF</text>
-      <text id="txt30000541" x="28" y="21.7" class="st so" text-anchor="middle">WOMP (3)</text>
+      <text id="txt30000541" x="28" y="21.7" class="st so" text-anchor="middle">WOMP (4)</text>
     </a>
   </symbol>
   <symbol id="def30000591">
@@ -699,7 +699,7 @@
     <rect id="ice30000591" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30000591" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #576047;" />
       <text x="28" y="14" class="ss" text-anchor="middle">M-MBRT</text>
-      <text id="txt30000591" x="28" y="21.7" class="st so" text-anchor="middle">TRI (1)</text>
+      <text id="txt30000591" x="28" y="21.7" class="st so" text-anchor="middle">TRI (2)</text>
     </a>
   </symbol>
   <symbol id="def30000590">

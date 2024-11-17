@@ -223,7 +223,7 @@
   </symbol>
   <symbol id="def30003086">
     <a xlink:href="http://evemaps.dotlan.net/system/Sahtogas" class="sys link-5-30003086" target="_top">
-      <rect id="rect30003086" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
+      <rect id="rect30003086" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Sahtogas</text>
       <text id="txt30003086" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -259,7 +259,7 @@
   </symbol>
   <symbol id="def30003072">
     <a xlink:href="http://evemaps.dotlan.net/system/Iesa" class="sys link-5-30003072" target="_top">
-      <rect id="rect30003072" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
+      <rect id="rect30003072" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-60);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Iesa</text>
       <text id="txt30003072" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -281,7 +281,7 @@
   </symbol>
   <symbol id="def30003077">
     <a xlink:href="http://evemaps.dotlan.net/system/Uusanen" class="sys link-5-30003077" target="_top">
-      <rect id="rect30003077" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-60);" />
+      <rect id="rect30003077" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-80);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Uusanen</text>
       <text id="txt30003077" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>
@@ -295,9 +295,9 @@
   <symbol id="def30003091">
     <a xlink:href="http://evemaps.dotlan.net/system/Tannakan" class="sys link-5-30003091" target="_top">
     <rect id="ice30003091" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
-      <rect id="rect30003091" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: #6D6000;" />
+      <rect id="rect30003091" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Tannakan</text>
-      <text id="txt30003091" x="28" y="21.7" class="st" text-anchor="middle">Angel Cartel</text>
+      <text id="txt30003091" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -331,9 +331,9 @@
   </symbol>
   <symbol id="def30003071">
     <a xlink:href="http://evemaps.dotlan.net/system/Anka" class="sys link-5-30003071" target="_top">
-      <rect id="rect30003071" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-80);" />
+      <rect id="rect30003071" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Anka</text>
-      <text id="txt30003071" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
+      <text id="txt30003071" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -422,7 +422,7 @@
   </symbol>
   <symbol id="def30003069">
     <a xlink:href="http://evemaps.dotlan.net/system/Kamela" class="sys link-5-30003069" target="_top">
-      <rect id="rect30003069" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
+      <rect id="rect30003069" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-60);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Kamela</text>
       <text id="txt30003069" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -433,9 +433,9 @@
   </symbol>
   <symbol id="def30003063">
     <a xlink:href="http://evemaps.dotlan.net/system/Lamaa" class="sys link-5-30003063" target="_top">
-      <rect id="rect30003063" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-80);" />
+      <rect id="rect30003063" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Lamaa</text>
-      <text id="txt30003063" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
+      <text id="txt30003063" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -695,6 +695,7 @@
   <rect id="inc30003086" x="268.5" y="170.5" width="71" height="38" class="con" />
   <rect id="inc30003072" x="323.5" y="235.5" width="71" height="38" class="con" />
   <rect id="inc30003077" x="363.5" y="295.5" width="71" height="38" class="con" />
+  <rect id="inc30003091" x="378.5" y="170.5" width="71" height="38" class="con" />
   <rect id="inc30003071" x="428.5" y="245.5" width="71" height="38" class="con" />
   <rect id="inc30003070" x="463.5" y="315.5" width="71" height="38" class="con" />
   <rect id="inc30003069" x="723.5" y="410.5" width="71" height="38" class="con" />

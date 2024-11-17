@@ -194,7 +194,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/L-VXTK" class="sys link-5-30000891" target="_top">
       <rect id="rect30000891" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #5D2F60;" />
       <text x="28" y="14" class="ss" text-anchor="middle">L-VXTK</text>
-      <text id="txt30000891" x="28" y="21.7" class="st so" text-anchor="middle">FRT (4)</text>
+      <text id="txt30000891" x="28" y="21.7" class="st so" text-anchor="middle">FRT (5)</text>
     </a>
   </symbol>
   <symbol id="def30000887">
@@ -202,14 +202,14 @@
     <rect id="ice30000887" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30000887" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #5D2F60;" />
       <text x="28" y="14" class="ss" text-anchor="middle">GIH-ZG</text>
-      <text id="txt30000887" x="28" y="21.7" class="st so" text-anchor="middle">FRT (4)</text>
+      <text id="txt30000887" x="28" y="21.7" class="st so" text-anchor="middle">FRT (5)</text>
     </a>
   </symbol>
   <symbol id="def30000890">
     <a xlink:href="http://evemaps.dotlan.net/system/K-6SNI" class="sys link-5-30000890" target="_top">
       <rect id="rect30000890" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #5D2F60;" />
       <text x="28" y="14" class="ss" text-anchor="middle">K-6SNI</text>
-      <text id="txt30000890" x="28" y="21.7" class="st so" text-anchor="middle">FRT (1)</text>
+      <text id="txt30000890" x="28" y="21.7" class="st so" text-anchor="middle">FRT (2)</text>
     </a>
   </symbol>
   <symbol id="def30000879">
@@ -224,7 +224,7 @@
     <rect id="ice30000886" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30000886" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #5D2F60;" />
       <text x="28" y="14" class="ss" text-anchor="middle">S8-NSQ</text>
-      <text id="txt30000886" x="28" y="21.7" class="st so" text-anchor="middle">FRT (4)</text>
+      <text id="txt30000886" x="28" y="21.7" class="st so" text-anchor="middle">FRT (5)</text>
     </a>
   </symbol>
   <symbol id="def30000857">
@@ -259,7 +259,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/XD-TOV" class="sys link-5-30000889" target="_top">
       <rect id="rect30000889" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #5D2F60;" />
       <text x="28" y="14" class="ss" text-anchor="middle">XD-TOV</text>
-      <text id="txt30000889" x="28" y="21.7" class="st so" text-anchor="middle">FRT (4)</text>
+      <text id="txt30000889" x="28" y="21.7" class="st so" text-anchor="middle">FRT (5)</text>
     </a>
   </symbol>
   <symbol id="def30000881">
@@ -281,7 +281,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/V7-FB4" class="sys link-5-30000888" target="_top">
       <rect id="rect30000888" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #5D2F60;" />
       <text x="28" y="14" class="ss" text-anchor="middle">V7-FB4</text>
-      <text id="txt30000888" x="28" y="21.7" class="st so" text-anchor="middle">FRT (4)</text>
+      <text id="txt30000888" x="28" y="21.7" class="st so" text-anchor="middle">FRT (5)</text>
     </a>
   </symbol>
   <symbol id="def30000875">
@@ -916,15 +916,7 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-  <rect id="inc30000247" x="506.5" y="466.5" width="85" height="46" class="inc" />
-  <rect id="inc30000250" x="664.5" y="674.5" width="85" height="46" class="inc" />
-  <rect id="inc30000249" x="665.5" y="599.5" width="85" height="46" class="inc" />
-  <rect id="inc30000253" x="761.5" y="531.5" width="85" height="46" class="inc" />
-  <rect id="inc30000244" x="571.5" y="516.5" width="85" height="46" class="inc" />
-  <rect id="inc30000245" x="601.5" y="456.5" width="85" height="46" class="inc" />
-  <rect id="inc30000246" x="651.5" y="541.5" width="85" height="46" class="inc" />
-  <rect id="inc30000252" x="665.5" y="637.5" width="85" height="46" class="inc" />
-  <rect id="inc30000248" x="761.5" y="631.5" width="85" height="46" class="incs" />
+
 
 </g>
 
