@@ -8,13 +8,13 @@ EVE Spyglass is an intel visualisation and alarm system for [EVE Online](http://
 chat channels and presents the data on a [dotlan](http://evemaps.dotlan.net/map/Catch#npc24) generated map. The map is highlighted in real time as players 
 report intel in monitored chat channels.
 
-Spyglass 1.6 is written with Python 3.10, using PySide6 for the graphical interface and audio playback, BeautifulSoup4 
+Spyglass is written with Python 3.10, using PySide6 for the graphical interface and audio playback, BeautifulSoup4 
 for SVG parsing.
 
 ## Screenshot
 
 <p align="center">
-  <img align="middle" src="./img/2024-04-04 16-57-30.png">
+  <img align="middle" src="./img/2024-11-17_15-42-15.png">
 </p>
 
 ## Features
@@ -124,16 +124,21 @@ for SVG parsing.
 - display systems with ice belts listed in EVE/spyglass/icesystems.txt
 - enables the viewing of small medium and large structures listed in EVE/spyglass/structures.txt
 - fixing crash when jumping into *Unknown* systems 
+- now using Qt dock widgets instead of tab widgets
+- oauth2 registration change to 127.0.0.1
+- POIs can now be sorted via drag and drop
 
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 
 The following access rights will be use
- - esi-ui.write_waypoint.v1
+ - esi-location.read_location.v1  since in 1.7.2 
+ - esi-search.search_structures.v1 
  - esi-universe.read_structures.v1
- - esi-search.search_structures.v1
+ - esi-ui.write_waypoint.v1 
+ - esi-characters.read_standings.v1 
  - esi-location.read_online.v1
- - esi-location.read_location.v1
+ 
 
 ### API access enables
  - the right button context menu to set waypoints and destinations in game directly form inside EVE Syglass.
