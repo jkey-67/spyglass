@@ -561,7 +561,7 @@ def esiCharactersOnline(char_name: str) -> bool:
                 return False
         else:
             _logResponseError(response)
-            response.raise_for_status()
+            return False
     else:
         return False
 

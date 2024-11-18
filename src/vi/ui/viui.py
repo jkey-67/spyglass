@@ -173,7 +173,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.frameButton.setVisible(False)
         self.initialMapPosition = None
         self.invertWheel = False
-
+        self.setWindowFlags(self.windowFlags() | Qt.WindowCloseButtonHint| Qt.WindowSystemMenuHint)
         try:
             status = evegate.esiStatus()
             info = "Server ({server_version}) online {players} players started {start_time}.".format(**status)
@@ -252,6 +252,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wireUpDatabaseViews()
 
         self._update_splash_window_info("Start all worker threads")
+        self._recallCachedSettings()
         self._startThreads()
 
         self._update_splash_window_info("Apply theme.")
@@ -265,12 +266,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self._update_splash_window_info("EVE-Syp perform an initial scan of all intel files.")
         self.rescanIntel()
         self.tool_widget = None
-        self._recallCachedSettings()
+
         self._update_splash_window_info("EVE-Syp preparing the map view.")
         self.updateMapView()
         self._update_splash_window_info("Initialisation succeeded.")
 
     def checkForUpdate(self):
+        return
         update_avail = evegate.checkSpyglassVersionUpdate()
         if update_avail[0]:
             logging.info(update_avail[1])
@@ -419,7 +421,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _recallCachedSettings(self):
         try:
             self.cache.recallAndApplySettings(self, "settings")
-        except Exception as e:
+        except (Exception,) as e:
             logging.error(e)
 
     @Slot()
@@ -1353,7 +1355,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if value:
             self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         else:
-            self.setWindowFlags(self.windowFlags() & (~Qt.WindowStaysOnTopHint))
+            self.setWindowFlags((self.windowFlags() & (~Qt.WindowStaysOnTopHint))
+                                | Qt.WindowCloseButtonHint | Qt.WindowSystemMenuHint)
+
         if do_show:
             self.show()
 
@@ -1365,10 +1369,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if do_show:
             self.hide()
         if value:
-            self.setWindowFlags(Qt.FramelessWindowHint)
+            self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
             self.changeAlwaysOnTop(True)
         else:
-            self.setWindowFlags(self.windowFlags() & (~Qt.FramelessWindowHint))
+            self.setWindowFlags(self.windowFlags() & (~Qt.FramelessWindowHint)
+                                | Qt.WindowCloseButtonHint | Qt.WindowSystemMenuHint)
         self.ui.menubar.setVisible(not value)
         self.ui.frameButton.setVisible(value)
         self.ui.actionFramelessWindow.setChecked(value)
@@ -1871,7 +1876,6 @@ class MainWindow(QtWidgets.QMainWindow):
         info_dialog.ui.setupUi(info_dialog)
         version_text = info_dialog.ui.versionLable.text().replace("#ver#", vi.version.VERSION)
         info_dialog.ui.versionLable.setText(version_text)
-        # info_dialog.setWindowFlags(Qt.Popup or Qt.WindowTitleHint)
         info_dialog.show()
 
     def selectSoundFile(self, mask, dialog):
@@ -1918,8 +1922,6 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.soundAlarm_5.setText(SoundManager().soundFile("alarm_5"))
         dialog.ui.useSoundSystem.setDefaultAction(self.ui.actionActivateSound)
         dialog.ui.useSpokenNotifications.setDefaultAction(self.ui.actionUseSpokenNotifications)
-
-        # dialog.setWindowFlags(Qt.Popup)
 
         def defaultSoundSetup():
             self.changeUseSpokenNotifications(False)

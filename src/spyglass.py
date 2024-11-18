@@ -193,13 +193,14 @@ class Application(QApplication):
 
 if __name__ == "__main__":
     res = 0
+    logging.basicConfig()
     try:
         # os.environ["XDG_SESSION_TYPE"] = "wayland"
         # os.environ["QT_QPA_PLATFORM"] = "wayland"
         app = Application(sys.argv)
         res = app.exec()
         del app
-    except Exception as e:
+    except (Exception,) as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
 
         info = "Traceback\n"
@@ -208,7 +209,7 @@ if __name__ == "__main__":
             line = exc_tb.tb_lineno
             info = "{}   File \"{}\", line {}\n".format(info, filename, line)
             exc_tb = exc_tb.tb_next
-
+        logging.basicConfig()
         logging.critical("Spyglass terminated abnormal : %s\n%s. ", e.__str__(), info)
         logging.info("================================================================================================")
     sys.exit(res)

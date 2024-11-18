@@ -47,7 +47,6 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         self.ui.urlField.setText(url)
         self.ui.generateJumpBridgeProgress.hide()
         self.run_jb_generation = False
-        # self.setWindowFlags(Qt.Popup)
         self.fileDialog = QFileDialog(self)
 
     def done(self, arg__1: int) -> None:

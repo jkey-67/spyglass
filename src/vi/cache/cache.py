@@ -340,24 +340,23 @@ class Cache(object):
             self.con.execute(query, (name,))
             self.con.commit()
 
+    def _applyAttributeList(self, respond, attr):
+        if len(attr) == 1:
+            return getattr(respond, attr[0])
+        else:
+            for items in attr:
+                if isinstance(items, str):
+                    respond = getattr(respond, items)
+            return respond
+
     def recallAndApplySettings(self, responder, settings_identifier):
-
-        def applyAttributeList(respond, attr):
-            if len(attr) == 1:
-                return getattr(respond, attr[0])
-            else:
-                for items in attr:
-                    if isinstance(items, str):
-                        respond = getattr(respond, items)
-                return respond
-
-        version = self.getFromCache("version")
-        restore_gui = version == vi.version.VERSION
+        db_version = self.getFromCache("version")
+        restore_gui = db_version == vi.version.VERSION
         settings = self.getFromCache(settings_identifier)
         if settings:
             settings = eval(settings)
             for setting in settings:
-                obj = responder if not setting[0] else applyAttributeList(responder, setting[0].split('.'))
+                obj = responder if not setting[0] else _applyAttributeList(responder, setting[0].split('.'))
                 # logging.debug("{0} | {1} | {2}".format(str(obj), setting[1], setting[2]))
                 try:
                     if restore_gui and setting[1] == "restoreGeometry":
@@ -372,7 +371,7 @@ class Cache(object):
                     else:
                         getattr(obj, setting[1])(setting[2])
 
-                except Exception as e:
+                except (Exception,) as e:
                     logging.error("Recall application setting failed to set attribute {0} | {1} | {2} | error {3}"
                                   .format(str(obj), setting[1], setting[2], e))
 
