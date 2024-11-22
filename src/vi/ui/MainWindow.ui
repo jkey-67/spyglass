@@ -96,7 +96,7 @@
             <number>0</number>
            </property>
            <item row="0" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0">
+            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0">
              <property name="spacing">
               <number>2</number>
              </property>
@@ -249,6 +249,19 @@
                </property>
                <property name="placeholderText">
                 <string notr="true"/>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="autoCenterChar">
+               <property name="text">
+                <string notr="true"/>
+               </property>
+               <property name="shortcut">
+                <string notr="true"/>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -2095,8 +2108,19 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/Icons/res/auto_center_off.svg</normaloff>
+     <normalon>:/Icons/res/auto_center.svg</normalon>:/Icons/res/auto_center_off.svg</iconset>
+   </property>
    <property name="text">
-    <string>Auto  switch Region</string>
+    <string>Auto  follow character</string>
    </property>
   </action>
   <action name="actionWickedcreekScaldingpassRegion">
@@ -2143,7 +2167,8 @@
    </property>
    <property name="icon">
     <iconset resource="resource.qrc">
-     <normaloff>:/Icons/res/adm_vul.svg</normaloff>:/Icons/res/adm_vul.svg</iconset>
+     <normaloff>:/Icons/res/adm_vul_off.svg</normaloff>
+     <normalon>:/Icons/res/adm_vul.svg</normalon>:/Icons/res/adm_vul_off.svg</iconset>
    </property>
    <property name="text">
     <string>Show ADM on map</string>
@@ -2158,7 +2183,8 @@
    </property>
    <property name="icon">
     <iconset resource="resource.qrc">
-     <normaloff>:/Icons/res/statistic.svg</normaloff>:/Icons/res/statistic.svg</iconset>
+     <normaloff>:/Icons/res/statistic_off.svg</normaloff>
+     <normalon>:/Icons/res/statistic.svg</normalon>:/Icons/res/statistic_off.svg</iconset>
    </property>
    <property name="text">
     <string>Show system statistic on map.</string>
@@ -2173,7 +2199,8 @@
    </property>
    <property name="icon">
     <iconset resource="resource.qrc">
-     <normaloff>:/Icons/res/jumpbridge.svg</normaloff>:/Icons/res/jumpbridge.svg</iconset>
+     <normaloff>:/Icons/res/jumpbridge_off.svg</normaloff>
+     <normalon>:/Icons/res/jumpbridge.svg</normalon>:/Icons/res/jumpbridge_off.svg</iconset>
    </property>
    <property name="text">
     <string>Show jump bridge connections on map.</string>

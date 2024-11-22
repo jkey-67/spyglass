@@ -1,5 +1,10 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>res/adm_vul_off.svg</file>
+    <file>res/jumpbridge_off.svg</file>
+    <file>res/statistic_off.svg</file>
+    <file>res/auto_center_off.svg</file>
+    <file>res/auto_center.svg</file>
     <file>res/volume_off.svg</file>
     <file>res/speach_off.svg</file>
     <file>res/qmark.svg</file>
