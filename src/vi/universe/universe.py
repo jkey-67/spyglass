@@ -29,9 +29,9 @@ except (Exception,):
     pass
 
 try:
-    from .constellationnames import CONNSTELLATION_IDS_BY_NAME
+    from .constellationnames import CONSTELLATION_IDS_BY_NAME
 except (Exception,):
-    CONNSTELLATION_IDS_BY_NAME = {}
+    CONSTELLATION_IDS_BY_NAME = {}
     pass
 
 
@@ -84,9 +84,9 @@ class Universe(object):
         SYSTEM_IDS_BY_NAME = {}
         pass
     REGIONS = _loadJsonFile(os.path.join(curr_path, "everegions.json"))
-    # REGIONNOBJ = [Region(**region) for region in REGIONS]
+    REGION_ID_OBJ = {region["region_id"]: Region(**region) for region in REGIONS}
     CONSTELLATIONS = _loadJsonFile(os.path.join(curr_path, "eveconstellations.json"))
-    # CONSTELLATIONSONJ = [Constellation(**constellation) for constellation in CONSTELLATIONS]
+    CONSTELLATIONS_ID_OBJS = {constellation["constellation_id"]: Constellation(**constellation) for constellation in CONSTELLATIONS}
 
     try:
         for system in _loadJsonFile(os.path.join(curr_path, "evesystems.json")):
@@ -155,8 +155,8 @@ class Universe(object):
 
     @staticmethod
     def constellationIdByName(constellation_name: str):
-        return CONNSTELLATION_IDS_BY_NAME[constellation_name] \
-            if constellation_name in CONNSTELLATION_IDS_BY_NAME else None
+        return CONSTELLATION_IDS_BY_NAME[constellation_name] \
+            if constellation_name in CONSTELLATION_IDS_BY_NAME else None
 
     @staticmethod
     def shipNames():

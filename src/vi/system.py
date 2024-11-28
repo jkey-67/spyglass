@@ -116,12 +116,12 @@ class System(object):
         self.security_class = None
         self.security_status = None
         self.stargates = None
-        self.stations = None
+        self.stations = []
         self.structures = None
         self.ticker = "-?-"
         self.__dict__.update(kwargs)
         self.region_id = Universe.regionIDFromSystemID(self.system_id)
-
+        self.region_name = Universe.regionNameFromSystemID(self.system_id)
         self._system_messages = []
         self.jumpBridges = set()
         self.theraWormholes = set()
@@ -1203,8 +1203,8 @@ def _ApplyStructuresToSystem(data):
                     _applyStructuresToSystem(data, system_id, line)
 
 
-def _InitAllSystems():
-    res = dict()
+def _InitAllSystems() -> dict[int, System]:
+    res = dict[int, System]()
     for system_id, system_data in Universe.SYSTEMS.items():
         res[system_id] = System(**system_data)
 

@@ -340,7 +340,8 @@ class Cache(object):
             self.con.execute(query, (name,))
             self.con.commit()
 
-    def _applyAttributeList(self, respond, attr):
+    @staticmethod
+    def _applyAttributeList(respond, attr):
         if len(attr) == 1:
             return getattr(respond, attr[0])
         else:
@@ -356,7 +357,7 @@ class Cache(object):
         if settings:
             settings = eval(settings)
             for setting in settings:
-                obj = responder if not setting[0] else _applyAttributeList(responder, setting[0].split('.'))
+                obj = responder if not setting[0] else self._applyAttributeList(responder, setting[0].split('.'))
                 # logging.debug("{0} | {1} | {2}".format(str(obj), setting[1], setting[2]))
                 try:
                     if restore_gui and setting[1] == "restoreGeometry":

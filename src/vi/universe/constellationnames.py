@@ -1,5 +1,5 @@
 # this file is auto generated, do not edit.
-CONNSTELLATION_IDS_BY_NAME = {
+CONSTELLATION_IDS_BY_NAME = {
    u"Erada": 20000377,
    u"列娜": 20000333,
    u"5ZR-29": 20000082,

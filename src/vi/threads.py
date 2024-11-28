@@ -109,6 +109,7 @@ class STAT:
     OBSERVATIONS_RECORDS = "observations_records"
     RESULT = "result"
     INFORMATION = "information"
+    CHECK_FOR_UPDATE ="check-for-update"
 
 
 class RESULT:
@@ -129,7 +130,7 @@ class MapStatisticsThread(QThread):
         self.active = True
         self.thera_system_name = None
         self._fetchLocations = True
-        self.queue.put([STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS])
+        self.queue.put([STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS, STAT.CHECK_FOR_UPDATE])
 
     def requestSovereignty(self):
         self.queue.put([STAT.SOVEREIGNTY])
@@ -249,6 +250,17 @@ class MapStatisticsThread(QThread):
                             self.queue.put([STAT.THERA_WORMHOLES_VERSION])
                         tsk.remove(STAT.THERA_WORMHOLES_VERSION)
                         statistics_data[STAT.RESULT] = RESULT.OK
+                        self.statistic_data_update.emit(statistics_data)
+                        continue
+
+                    if STAT.CHECK_FOR_UPDATE in tsk:
+                        res = evegate.checkSpyglassVersionUpdate()
+                        if res:
+                            statistics_data[STAT.CHECK_FOR_UPDATE] = res
+                            statistics_data[STAT.RESULT] = RESULT.OK
+                        else:
+                            statistics_data[STAT.RESULT] = RESULT.ERROR
+                        tsk.remove(STAT.CHECK_FOR_UPDATE)
                         self.statistic_data_update.emit(statistics_data)
                         continue
 

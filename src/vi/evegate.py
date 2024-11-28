@@ -2107,7 +2107,6 @@ def getSpyglassUpdateLink(ver=VERSION):
     else:
         return None
 
-
 def convertRegionNameForDotlan(name: str) -> str:
     """
         Converts a (system)name to the format that dotlan uses
@@ -2130,6 +2129,27 @@ def convertRegionNameForDotlan(name: str) -> str:
                 next_upper = False
             converted.append(char)
     return u"".join(converted)
+
+
+def getRegionSvgFromDotlan(dark: bool = True) -> str:
+    """
+    Gets the svg region map from dotlan
+
+    Args:
+        dark(bool): if dark is true, the New_Eden.dark.svg image svg is loaded else wise the normal
+    Returns:
+        The loaded svg map as text.
+    """
+    if dark:
+        url = u"https://evemaps.dotlan.net/svg/New_Eden.dark.svg"
+    else:
+        url = u"https://evemaps.dotlan.net/svg/New_Eden.svg"
+    response = getSession().get(url)
+    if response.status_code == 200:
+        return response.text
+    else:
+        logging.info("Unable to get svg from dotlan : {}".format(url))
+        return '<?xml version="1.0"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg/>'
 
 
 def getSvgFromDotlan(region: str, dark: bool = True) -> str:
@@ -2204,7 +2224,7 @@ def generate_universe_constellation_names(use_outdated=True):
     print("Constellation generation done.")
     with open("universe/constellationnames.py.new", "w", encoding="utf-8") as out_file:
         out_file.write('# this file is auto generated, do not edit.\n')
-        out_file.write('CONNSTELLATION_IDS_BY_NAME = {\n')
+        out_file.write('CONSTELLATION_IDS_BY_NAME = {\n')
         data_out = set(constellation_id_by_name.items())
         last = len(data_out)
         for key, data in set(constellation_id_by_name.items()):

@@ -1,6 +1,6 @@
 from .universe import Universe
 from .npcnames import NPCNAMES
 from .shipnames import SHIPNAMES
-from .constellationnames import CONNSTELLATION_IDS_BY_NAME
+from .constellationnames import CONSTELLATION_IDS_BY_NAME
 from .regionnames import REGION_IDS_BY_NAME
 from .routeplanner import Route, RoutPlanner

@@ -92,5 +92,8 @@ class TestEvegate(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    if evegate.esiPing():
-        unittest.main()
+    try:
+        if evegate.esiPing():
+            unittest.main()
+    except (Exception,) as ex:
+        pass

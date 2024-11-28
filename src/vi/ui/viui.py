@@ -137,8 +137,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread = None  # map statistic thread
         self.zkillboard = None  # zKillBoard monitor
         self._setupThreads()
-
-        self.dotlan = self.setupRegionMap(self.cache.getFromCache("region_name"))
+        self.curr_region_name = self.cache.getFromCache("region_name")
+        self.dotlan = self.setupRegionMap(self.curr_region_name)
         self.mapTimer = QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
 
@@ -261,8 +261,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if initial_theme:
             self.changeTheme(initial_theme)
 
-        self._update_splash_window_info("Double check for updates on github...")
-        self.checkForUpdate()
         self._update_splash_window_info("EVE-Syp perform an initial scan of all intel files.")
         self.rescanIntel()
         self.tool_widget = None
@@ -271,9 +269,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.updateMapView()
         self._update_splash_window_info("Initialisation succeeded.")
 
-    def checkForUpdate(self):
-        return
-        update_avail = evegate.checkSpyglassVersionUpdate()
+    def checkForUpdate(self, update_avail):
         if update_avail[0]:
             logging.info(update_avail[1])
             self._update_splash_window_info("There is a updates available. {}".format(update_avail[1]))
@@ -466,10 +462,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if scrolled_active:
             self.mapTimer.stop()
         else:
-            curr_region_name = self.cache.getFromCache("region_name")
             curr_pos = self.ui.mapView.scrollPosition()
             curr_zoom = self.ui.mapView.zoomFactor()
-            self.region_queue.enqueue((curr_region_name, curr_pos, curr_zoom))
+            self.region_queue.enqueue((self.curr_region_name, curr_pos, curr_zoom))
             self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
 
     def _wireUpUIConnections(self):
@@ -480,6 +475,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.jumpbridgesButton.setDefaultAction(self.ui.actionShowJumpBridgeConnectionsOnMap)
         self.ui.statisticsButton.setDefaultAction(self.ui.actionShowSystemStatisticOnMap)
         self.ui.toolUseTheraRouting.setDefaultAction(self.ui.actionUserTheraRoutes)
+        self.ui.autoCenterChar.setDefaultAction(self.ui.actionAutoSwitchRegions)
 
         self.clipboard.dataChanged.connect(self.clipboardChanged)
         self.ui.actionAlwaysOnTop.triggered.connect(self.changeAlwaysOnTop)
@@ -1068,7 +1064,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if selected_system in self.systems_on_map.values():
             pt_system = self.ui.mapView.scrollPositionFromMapCoordinate(selected_system.mapCoordinates)
-            self.ui.mapView.setScrollPosition(pt_system)
+            self.ui.mapView.setScrollPosition(pt_system, animate=True)
             self.ui.mapView.update()
 
     @Slot()
@@ -1108,17 +1104,17 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns:
             None
         """
-        curr_region_name = self.cache.getFromCache("region_name")
-        if curr_region_name == region_name:
+        if self.curr_region_name == region_name:
             return
         if update_queue:
             curr_pos = self.ui.mapView.scrollPosition()
             curr_zoom = self.ui.mapView.zoomFactor()
-            self.region_queue.enqueue((curr_region_name, curr_pos, curr_zoom))
+            self.region_queue.enqueue((self.curr_region_name, curr_pos, curr_zoom))
 
-        self.cache.putIntoCache("region_name", region_name)
+        self.curr_region_name = region_name
         self.dotlan = self.setupRegionMap(region_name)
         self.updateMapView()
+        self.updateRegionMap()
         if update_queue:
             if system_id is not None:
                 self.focusMapOnSystem(system_id)
@@ -1275,7 +1271,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "setShowStatistic", self.showStatistic()),
                     (None, "changeTheme", self.cache.getFromCache("theme")),
                     (None, "changeIntelTime", Globals().intel_time),
-                    (None, "changeRegionByName", self.cache.getFromCache("region_name")))
+                    (None, "changeRegionByName", self.curr_region_name))
 
         self.cache.putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
         self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
@@ -1434,7 +1430,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             region_name = Universe.regionNameFromSystemID(system.system_id)
             self.ui.actionChange_Region_to.setText("Change region to {}".format(region_name))
-            self.ui.actionChange_Region_to.setEnabled(region_name != self.cache.getFromCache("region_name"))
+            self.ui.actionChange_Region_to.setEnabled(region_name != self.curr_region_name)
         else:
             self.ui.actionOpen_on_dotlan.setEnabled(False)
             self.ui.actionChange_Region_to.setEnabled(False)
@@ -1583,7 +1579,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setLocation(self, char_name, system_in, change_region: bool = False) -> None:
         """
-        Change the location of the char to the given system, if reqested the region may be changed.
+        Change the location of the char to the given system, if requested the region may be changed.
         The selected system will be center of the screen.
 
         Args:
@@ -1606,12 +1602,15 @@ class MainWindow(QtWidgets.QMainWindow):
             if change_region:
                 try:
                     selected_region_name = Universe.regionNameFromSystemID(system_id)
-                    concurrent_region_name = self.cache.getFromCache("region_name")
-                    if selected_region_name != concurrent_region_name:
+                    if selected_region_name != self.curr_region_name:
                         self.changeRegionByName(region_name=selected_region_name, system_id=system_id)
                 except (Exception,) as e:
                     logging.error(e)
                     pass
+
+    def updateRegionMap(self):
+        # self.ui.regionView.setContent(self.dotlan)
+        pass
 
     def updateMapView(self):
         try:
@@ -1631,7 +1630,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def setInitialMapPositionForRegion(self, region_name):
         try:
             if not region_name:
-                region_name = self.cache.getFromCache("region_name")
+                self.curr_region_name = self.cache.getFromCache("region_name")
             if region_name and region_name in self.mapPositionsDict:
                 xy = self.mapPositionsDict[region_name]
                 self.initialMapPosition = QPointF(xy[0], xy[1])
@@ -2036,6 +2035,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.setLocation(itm["name"], itm["system"]["name"], change_region=True)
                 self.focusMapOnSystem(itm["system"]["system_id"])
 
+        if STAT.CHECK_FOR_UPDATE in data:
+            self.checkForUpdate(data[STAT.CHECK_FOR_UPDATE])
+
     @Slot()
     def clearCacheFile(self):
         ret = QMessageBox.warning(
@@ -2067,26 +2069,6 @@ class MainWindow(QtWidgets.QMainWindow):
             elif message.canProcess():
                 self.addMessageToIntelChat(message)
                 self.addMessageToDatabase(message)
-                """
-                 For each system that was mentioned in the message, check for alarm distance to the current system
-                 and alarm if within alarm distance.
-
-                for system in message.affectedSystems:
-                    is_alarm = message.status == States.ALARM
-                    if is_alarm and message.user not in self.knownPlayerNames:
-                        alarm_distance = self.alarmDistance if is_alarm else 0
-                        for nSystem, data in system.getNeighbours(alarm_distance).items():
-                            if "distance" not in data:
-                                continue
-                            chars = nSystem.getLocatedCharacters()
-                            if len(chars) > 0:
-                                if len(self.monitoredPlayerNames.intersection(set(chars))) > 0:
-                                    self.trayIcon.showNotification(
-                                        message,
-                                        system.name,
-                                        ", ".join(chars),
-                                        data["distance"])
-                """
 
         for name, systems in locale_to_set.items():
             self._updateKnownPlayerAndMenu(name)

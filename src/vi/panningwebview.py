@@ -22,6 +22,7 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QResizeEvent, QWheelEvent, QMouseEvent, QTransform
 from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt, QEvent
+from PySide6.QtCore import QPropertyAnimation, Property
 
 
 class PanningWebView(QWidget):
@@ -49,6 +50,16 @@ class PanningWebView(QWidget):
         self.setMouseTracking(True)
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.animation = QPropertyAnimation(self, b"propScrollPos")
+
+    @Property(QPointF)
+    def propScrollPos(self):
+        return self.scrollPos
+
+    @propScrollPos.setter
+    def propScrollPos(self, val):
+        self.scrollPos = val
+        self.update()
 
     @property
     def imgSize(self) -> QSizeF:
@@ -94,7 +105,7 @@ class PanningWebView(QWidget):
             painter.setTransform(self.transform)
             self.content.renderLegend(painter)
             self.transform.reset()
-        except (Exception,):
+        except (Exception,) as ex:
             pass
 
     def setZoomFactor(self, zoom: float):
@@ -125,13 +136,21 @@ class PanningWebView(QWidget):
         return QPointF(pt_system.center().x() * self.zoom - view_center.width(),
                        pt_system.center().y() * self.zoom - view_center.height())
 
-    def setScrollPosition(self, pos: QPointF):
+    def setScrollPosition(self, pos: QPointF, animate=False):
         if not self.scrolling:
-            self._setScrollPosition(pos)
+            if animate:
+                self.animation.stop()
+                self.animation.setDuration(75)
+                self.animation.setStartValue(self.scrollPos)
+                self.animation.setEndValue(pos)
+                self.animation.start()
+            else:
+                self._setScrollPosition(pos)
 
     def _setScrollPosition(self, pos: QPointF):
         if self.scrollPos != pos:
             self.scrollPos = pos
+            self.update()
             self.webViewUpdateScrollbars.emit()
 
     def setZoomAndScrollPos(self, zoom, pos):
@@ -151,6 +170,7 @@ class PanningWebView(QWidget):
                 self.scrollPos = pos
                 changed = changed or True
         if changed:
+            self.update()
             self.webViewUpdateScrollbars.emit()
 
     def zoomIn(self, pos=None):
@@ -164,6 +184,7 @@ class PanningWebView(QWidget):
         self.setZoomFactor(self.zoom * (1.0+self.ZOOM_WHEEL))
         elem_delta = elem_ori-self.mapPosFromPos(pos)
         self.scrollPos = self.scrollPos+elem_delta*self.zoom
+        self.update()
 
     def zoomOut(self, pos=None):
         if pos is None:
@@ -173,6 +194,7 @@ class PanningWebView(QWidget):
         self.setZoomFactor(self.zoom*(1.0-self.ZOOM_WHEEL))
         elem_delta = elem_ori - self.mapPosFromPos(pos)
         self.scrollPos = self.scrollPos+elem_delta*self.zoom
+        self.update()
 
     def wheelEvent(self, event: QWheelEvent):
         if (self.wheel_dir * event.angleDelta().y()) < 0:

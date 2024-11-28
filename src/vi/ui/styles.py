@@ -25,8 +25,8 @@ from vi.resources import resourcePath, resourcePathExists
 
 
 class STYLE:
-    DARK = "dark"
-    LIGHT = "light"
+    DARK = "Dark"
+    LIGHT = "Light"
 
 
 class Styles:
