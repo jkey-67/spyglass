@@ -642,10 +642,13 @@
     <item>
      <widget class="QPushButton" name="updateAvail">
       <property name="toolTip">
-       <string>Download the bew Software from GitHub</string>
+       <string>Download the new version of the software from GitHub</string>
       </property>
       <property name="text">
        <string>PushButton</string>
+      </property>
+      <property name="shortcut">
+       <string notr="true"/>
       </property>
      </widget>
     </item>

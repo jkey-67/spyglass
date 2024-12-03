@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.0
+## Created by: Qt User Interface Compiler version 6.8.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -493,6 +493,9 @@ class Ui_MainWindow(object):
 
         self.updateAvail = QPushButton(self.centralwidget)
         self.updateAvail.setObjectName(u"updateAvail")
+#if QT_CONFIG(shortcut)
+        self.updateAvail.setShortcut(u"")
+#endif // QT_CONFIG(shortcut)
 
         self.verticalLayout_5.addWidget(self.updateAvail)
 
@@ -1242,7 +1245,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.adm_vul_Button.setText("")
 #if QT_CONFIG(tooltip)
-        self.updateAvail.setToolTip(QCoreApplication.translate("MainWindow", u"Download the bew Software from GitHub", None))
+        self.updateAvail.setToolTip(QCoreApplication.translate("MainWindow", u"Download the new version of the software from GitHub", None))
 #endif // QT_CONFIG(tooltip)
         self.updateAvail.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"EVE-Spyglass", None))

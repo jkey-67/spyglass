@@ -241,6 +241,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionOpacity_60.triggered.connect(lambda: self.changeWindowOpacity(0.6))
         self.ui.actionOpacity_40.triggered.connect(lambda: self.changeWindowOpacity(0.4))
         self.ui.actionOpacity_20.triggered.connect(lambda: self.changeWindowOpacity(0.2))
+        self.ui.updateAvail.hide()
         self._updateWindowOpacityActions(self.windowOpacity())
 
         self._update_splash_window_info("Setup UI")
@@ -272,7 +273,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def checkForUpdate(self, update_avail):
         if update_avail[0]:
             logging.info(update_avail[1])
-            self._update_splash_window_info("There is a updates available. {}".format(update_avail[1]))
             self.ui.updateAvail.show()
             self.ui.updateAvail.setText(update_avail[1])
 
@@ -283,7 +283,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.updateAvail.clicked.connect(openDownloadLink)
         else:
             logging.info(update_avail[1])
-            self._update_splash_window_info(update_avail[1])
             self.ui.updateAvail.hide()
 
     def showStatistic(self) -> bool:
@@ -1252,8 +1251,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "restoreState", str(self.saveState()), True),
                     ("ui.splitter", "restoreGeometry", str(self.ui.splitter.saveGeometry()), True),
                     ("ui.splitter", "restoreState", str(self.ui.splitter.saveState()), True),
-                    ("ui.mapView", "setZoomFactor", self.ui.mapView.zoomFactor()),
-                    # ("ui.qSidepannel", "restoreGeometry", str(self.ui.qSidepannel.saveGeometry()), True),
                     (None, "changeChatFontSize", ChatEntryWidget.TEXT_SIZE),
                     (None, "changeAlwaysOnTop", self.ui.actionAlwaysOnTop.isChecked()),
                     (None, "changeShowAvatars", self.showAvatar),
@@ -1485,6 +1482,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def clipboardChanged(self):
         """ the content of the clip board is used to set jump bridge and poi
         """
+        poi_changed = False
+        jb_changed = False
         clip_content = self.clipboard.text()
         if clip_content != self.oldClipboardContent:
             for full_line_content in clip_content.splitlines():
@@ -1492,7 +1491,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     cb_type, cb_data = evaluateClipboardData(line_content)
                     if cb_type == "poi":
                         if self.cache.putPOI(cb_data):
-                            self.poi_changed.emit()
+                            poi_changed = True
                     elif cb_type == "jumpbridge":
                         if self.cache.putJumpGate(
                                 src=cb_data["src"],
@@ -1501,10 +1500,14 @@ class MainWindow(QtWidgets.QMainWindow):
                                 dst_id=cb_data["id_dst"],
                                 json_src=cb_data["json_src"],
                                 json_dst=cb_data["json_dst"]):
-                            self.jbs_changed.emit()
+                            jb_changed = True
                     elif cb_type == "link":
                         QDesktopServices.openUrl(cb_data)
             self.oldClipboardContent = clip_content
+            if poi_changed:
+                self.poi_changed.emit()
+            if jb_changed:
+                self.jbs_changed.emit()
 
     def mapLinkClicked(self, url: QtCore.QUrl) -> None:
         """
