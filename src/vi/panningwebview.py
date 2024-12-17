@@ -44,12 +44,12 @@ class PanningWebView(QWidget):
         self.positionMousePress = None
         self.scrollMousePress = None
         self.handIsClosed = False
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.scrollPos = QPointF(0.0, 0.0)
-        self.setAttribute(Qt.WA_DeleteOnClose, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         self.setMouseTracking(True)
-        self.setAttribute(Qt.WA_NoSystemBackground, True)
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.animation = QPropertyAnimation(self, b"propScrollPos")
 
     @Property(QPointF)
@@ -61,7 +61,7 @@ class PanningWebView(QWidget):
         self.scrollPos = val
         self.update()
 
-    @property
+    @Property(QSizeF)
     def imgSize(self) -> QSizeF:
         if self.content:
             return self.content.svg_size
@@ -82,9 +82,11 @@ class PanningWebView(QWidget):
         """
         if self.scrolling:
             return False
-        self.content = content
-        self.webViewUpdateScrollbars.emit()
-        return True
+        if self.content != content:
+            self.content = content
+            self.webViewUpdateScrollbars.emit()
+        self.update()
+
 
     def resizeEvent(self, event: QResizeEvent):
         super().resizeEvent(event)
@@ -95,7 +97,7 @@ class PanningWebView(QWidget):
             return
         painter = QPainter(self)
         try:
-            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             self.transform.translate(-self.scrollPos.x(), -self.scrollPos.y())
             self.transform.scale(self.zoom, self.zoom)
             painter.setTransform(self.transform)
@@ -203,17 +205,17 @@ class PanningWebView(QWidget):
             self.zoomOut(event.position())
 
     def mousePressEvent(self, mouse_event: QMouseEvent):
-        if not self.pressed and not self.scrolling and mouse_event.modifiers() == Qt.NoModifier:
-            if mouse_event.buttons() == Qt.LeftButton:
+        if not self.pressed and not self.scrolling and mouse_event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            if mouse_event.buttons() == Qt.MouseButton.LeftButton:
                 self.pressed = True
                 self.scrolling = False
                 self.handIsClosed = False
-                QApplication.setOverrideCursor(Qt.OpenHandCursor)
+                QApplication.setOverrideCursor(Qt.CursorShape.OpenHandCursor)
                 self.scrollMousePress = self.scrollPosition()
                 self.positionMousePress = mouse_event.pos()
-            elif mouse_event.buttons() == Qt.ForwardButton:
+            elif mouse_event.buttons() == Qt.MouseButton.ForwardButton:
                 self.webViewNavigateForward.emit()
-            elif mouse_event.buttons() == Qt.BackButton:
+            elif mouse_event.buttons() == Qt.MouseButton.BackButton:
                 self.webViewNavigateBackward.emit()
 
     def mouseReleaseEvent(self, mouse_event: QMouseEvent):
@@ -235,7 +237,7 @@ class PanningWebView(QWidget):
                 QApplication.restoreOverrideCursor()
             return
 
-    def hoveCheck(self, global_pos: QPoint, map_pos: QPoint) -> bool:
+    def hoveCheck(self, global_pos: QPoint, map_pos: QPointF) -> bool:
         return False
 
     def mouseDoubleClickEvent(self, mouse_event: QMouseEvent):
@@ -255,7 +257,7 @@ class PanningWebView(QWidget):
             if not self.handIsClosed:
                 if QApplication.overrideCursor():
                     QApplication.restoreOverrideCursor()
-                QApplication.setOverrideCursor(Qt.OpenHandCursor)
+                QApplication.setOverrideCursor(Qt.CursorShape.OpenHandCursor)
                 self.handIsClosed = True
             if self.scrollMousePress is not None:
                 delta = mouse_event.pos() - self.positionMousePress
@@ -268,7 +270,7 @@ class PanningWebView(QWidget):
             self.hoveCheck(mouse_event.globalPos(), self.mapPosFromEvent(mouse_event))
 
     def event(self, event) -> bool:
-        if event.type() == QEvent.ToolTip:
+        if event.type() == QEvent.Type.ToolTip:
             event.ignore()
             return True
         return super(PanningWebView, self).event(event)

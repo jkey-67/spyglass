@@ -21,7 +21,7 @@
 # Little lib and tool to get the map and information from dotlan		  #
 ###########################################################################
 
-from PySide6.QtCore import QRectF, QSizeF, QPointF
+from PySide6.QtCore import QRectF, QSizeF
 from bs4 import BeautifulSoup
 from vi.system import System, ALL_SYSTEMS, Universe
 
@@ -76,17 +76,6 @@ def _extractSizeFromSoup(soup, scale=1.0):
         return QSizeF(float(box[2])*scale, float(box[3])*scale)
     else:
         return QSizeF(20*System.ELEMENT_WIDTH*scale, 20*System.ELEMENT_HEIGHT*scale)
-        for system_id, data in _extractPositionsFromSoup(soup).items():
-            pt = QRectF(
-                data[1] * scale, data[2] * scale,
-                System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT).center()
-            pos_x.append(float(pt.x()))
-            pos_y.append(float(pt.y()))
-        if len(pos_x):
-            return QSizeF(max(pos_x)-min(pos_x)+System.ELEMENT_WIDTH, max(pos_y)-min(pos_y)+System.ELEMENT_HEIGHT)
-        else:
-            return QSizeF(System.ELEMENT_WIDTH, System.ELEMENT_HEIGHT)
-
 
 def _extractSystemsFromSoup(soup, scale=1.0) -> dict[str, System]:
     """

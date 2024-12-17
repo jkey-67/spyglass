@@ -127,7 +127,7 @@ class JumpbridgeChooser(QtWidgets.QDialog):
 
                     gf.close()
                 logging.info("Export of all jumpbridge to file '{}' succeeded.".format(save_path))
-            except Exception as e:
+            except (Exception,) as e:
                 logging.error(e)
                 QMessageBox.critical(self, "Export  jump bridge data failed", "Error: {0}".format(str(e)))
 

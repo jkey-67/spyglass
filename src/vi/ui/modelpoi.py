@@ -37,21 +37,21 @@ class POITableModel(QSqlQueryModel):
         super(POITableModel, self).__init__(parent)
         self.cache = Cache()
 
-    def flags(self, index) -> Qt.ItemFlags:
+    def flags(self, index) -> Qt.ItemFlag:
         default_flags = super(POITableModel, self).flags(index)
         if index.isValid():
             if index.column() == 1:
-                return Qt.ItemIsDragEnabled | Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable | default_flags
+                return Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable | default_flags
             else:
-                return Qt.ItemIsDragEnabled | Qt.ItemIsSelectable | Qt.ItemIsEnabled | default_flags
+                return Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | default_flags
         else:
-            return Qt.ItemIsDropEnabled | default_flags
+            return Qt.ItemFlag.ItemIsDropEnabled | default_flags
 
-    def supportedDropActions(self):
-        return Qt.MoveAction | Qt.CopyAction
+    def supportedDropActions(self)->Qt.DropAction:
+        return Qt.DropAction.MoveAction | Qt.DropAction.CopyAction
 
     def dropMimeData(self, data: QtCore.QMimeData, action: Qt.DropAction, row: int, column: int, parent) -> bool:
-        if action == Qt.IgnoreAction:
+        if action == Qt.DropAction.IgnoreAction:
             return True
         if not data.hasFormat('text/plain'):
             return False
@@ -89,7 +89,7 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
         super(StyledItemDelegatePOI, self).__init__(parent)
         self.cache = Cache()
 
-    def paint(self, painter, option, index):
+    def paint(self, painter, option:QtWidgets.QStyleOptionViewItem, index):
         painter.save()
         if index.column() == 0:
             type_id = index.data()
@@ -115,13 +115,13 @@ class StyledItemDelegatePOI(QStyledItemDelegate):
         else:
             return super(StyledItemDelegatePOI, self).createEditor(parent, option, index)
 
-    def setEditorData(self, editor, index) -> None:
+    def setEditorData(self, editor:QtWidgets, index) -> None:
         if index.column() == 1:
             editor.setText(index.data())
         else:
             super(StyledItemDelegatePOI, self).setEditorData(editor, index)
 
-    def setModelData(self, editor, model, index) -> None:
+    def setModelData(self, editor:QtWidgets, model, index) -> None:
         data = self.cache.getPOIAtIndex(index.row())
         if data and editor.toPlainText() != index.data():
             self.cache.setPOIItemInfoText(data["destination_id"], editor.toPlainText())

@@ -1941,7 +1941,8 @@
    </property>
    <property name="icon">
     <iconset resource="resource.qrc">
-     <normaloff>:/Icons/res/avatar.svg</normaloff>:/Icons/res/avatar.svg</iconset>
+     <normaloff>:/Icons/res/avatar_off.svg</normaloff>
+     <normalon>:/Icons/res/avatar.svg</normalon>:/Icons/res/avatar_off.svg</iconset>
    </property>
    <property name="text">
     <string>Show Chat Avatars</string>

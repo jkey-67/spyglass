@@ -61,7 +61,7 @@ class Styles:
                 with open(resourcePath(os.path.join("vi", "ui", "res", "styles", "abyss.yaml"))) as dark:
                     Styles.darkCommons = yaml.full_load(dark)
 
-        except Exception as e:
+        except (Exception,) as e:
             logging.critical(e)
 
     @staticmethod

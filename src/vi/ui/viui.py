@@ -23,10 +23,10 @@ import datetime
 import time
 import requests
 import parse
+import logging
 
 from typing import Optional
 
-import logging
 from PySide6.QtGui import Qt
 from PySide6 import QtGui, QtCore, QtWidgets
 from PySide6.QtCore import QPoint, QPointF, QRectF, QSortFilterProxyModel, QTimer, Qt
@@ -143,8 +143,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapTimer.timeout.connect(self.updateMapView)
 
         self.completer_system_names = QtWidgets.QCompleter(Universe.systemNames())
-        self.completer_system_names.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer_system_names.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+        self.completer_system_names.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.completer_system_names.setCompletionMode(QtWidgets.QCompleter.CompletionMode.PopupCompletion)
         self.ui.systemNames.setCompleter(self.completer_system_names)
 
         self.ui.systemNames.inputRejected.connect(lambda: self.ui.systemNames.hide())
@@ -157,15 +157,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # add completer system names
         icon = QIcon()
-        icon.addPixmap(QtGui.QPixmap(u":/Icons/res/eve-sso-login-black-small.png"), QIcon.Normal, QIcon.Off)
-        icon.addPixmap(QtGui.QPixmap(u":/Icons/res/eve-sso-login-black-small.png"), QIcon.Normal, QIcon.On)
+        icon.addPixmap(QtGui.QPixmap(u":/Icons/res/eve-sso-login-black-small.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addPixmap(QtGui.QPixmap(u":/Icons/res/eve-sso-login-black-small.png"), QIcon.Mode.Normal, QIcon.State.On)
         self.ui.connectToEveOnline.setIcon(icon)
         self.ui.connectToEveOnline.setIconSize(QtCore.QSize(163, 38))
         self.ui.connectToEveOnline.setFlat(False)
 
         self.window_icon = QIcon(":/Icons/res/icon.ico")
         self.setWindowIcon(self.window_icon)
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.clipboard = QApplication.clipboard()
         self.alarmDistance = 0
@@ -173,7 +173,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.frameButton.setVisible(False)
         self.initialMapPosition = None
         self.invertWheel = False
-        self.setWindowFlags(self.windowFlags() | Qt.WindowCloseButtonHint| Qt.WindowSystemMenuHint)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowCloseButtonHint| Qt.WindowType.WindowSystemMenuHint)
         try:
             status = evegate.esiStatus()
             info = "Server ({server_version}) online {players} players started {start_time}.".format(**status)
@@ -416,8 +416,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def _recallCachedSettings(self):
         try:
             self.cache.recallAndApplySettings(self, "settings")
-        except (Exception,) as e:
-            logging.error(e)
+        except (Exception,) as ex:
+            logging.error(ex)
 
     @Slot()
     def addNewESICharacter(self):
@@ -542,7 +542,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if system.mapCoordinates.contains(pos):
                     if not QtWidgets.QToolTip.isVisible():
                         QtWidgets.QToolTip.showText(global_pos, system.getTooltipText(), self)
-                        QApplication.setOverrideCursor(Qt.PointingHandCursor)
+                        QApplication.setOverrideCursor(Qt.CursorShape.PointingHandCursor)
                     system_hovered = True
 
             if not system_hovered and QApplication.overrideCursor() and QtWidgets.QToolTip.isVisible():
@@ -675,22 +675,22 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.tableViewPOIs.resizeRowsToContents()
 
         self.ui.tableViewPOIs.setSelectionMode(QAbstractItemView.SelectionMode.ContiguousSelection)
-        self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.tableViewPOIs.setDragEnabled(True)
         self.ui.tableViewPOIs.setAcceptDrops(True)
         self.ui.tableViewPOIs.setDropIndicatorShown(True)
         self.ui.tableViewPOIs.setDragDropOverwriteMode(False)
         self.ui.tableViewPOIs.setDropIndicatorShown(True)
-        self.ui.tableViewPOIs.setDefaultDropAction(Qt.MoveAction)
+        self.ui.tableViewPOIs.setDefaultDropAction(Qt.DropAction.MoveAction)
         # callPOIUpdate()
         self.tableViewPOIsDelegate = StyledItemDelegatePOI(self)
         model.poi_order_changed.connect(callPOIUpdate)
         self.tableViewPOIsDelegate.poi_edit_changed.connect(callPOIUpdate)
         self.ui.tableViewPOIs.setModel(model)
-        self.ui.tableViewPOIs.setDragDropMode(QAbstractItemView.InternalMove)
+        self.ui.tableViewPOIs.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self.ui.tableViewPOIs.setItemDelegate(self.tableViewPOIsDelegate)
-        self.ui.tableViewPOIs.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.tableViewPOIs.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.ui.tableViewPOIs.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.tableViewPOIs.resizeColumnsToContents()
         self.ui.tableViewPOIs.resizeRowsToContents()
         self.poi_changed.connect(callPOIUpdate)
@@ -752,7 +752,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.region_changed_by_system_id.emit(system_id)
                     return
 
-        self.ui.tableViewPOIs.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tableViewPOIs.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.ui.tableViewPOIs.customContextMenuRequested.connect(showPOIContextMenu)
 
     @Slot(str)
@@ -785,8 +785,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _wireUpThera(self):
         str_list = QtWidgets.QCompleter(Universe.systemNames())
-        str_list.setCaseSensitivity(Qt.CaseInsensitive)
-        str_list.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+        str_list.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        str_list.setCompletionMode(QtWidgets.QCompleter.CompletionMode.PopupCompletion)
 
         model = TableModelThera()
         sort = QSortFilterProxyModel()
@@ -794,8 +794,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableViewThera.setModel(sort)
         self.ui.tableViewThera.horizontalHeader().setDragEnabled(True)
         self.ui.tableViewThera.horizontalHeader().setAcceptDrops(True)
-        self.ui.tableViewThera.horizontalHeader().setDragDropMode(QAbstractItemView.DragDrop)
-        self.ui.tableViewThera.horizontalHeader().setDefaultDropAction(Qt.MoveAction)
+        self.ui.tableViewThera.horizontalHeader().setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+        self.ui.tableViewThera.horizontalHeader().setDefaultDropAction(Qt.DropAction.MoveAction)
         self.ui.tableViewThera.horizontalHeader().setDragDropOverwriteMode(True)
         self.ui.tableViewThera.horizontalHeader().setDropIndicatorShown(True)
 
@@ -830,7 +830,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.region_changed_by_system_id.emit(Universe.systemIdByName(target_system_name))
                 return
 
-        self.ui.tableViewThera.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tableViewThera.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.ui.tableViewThera.customContextMenuRequested.connect(showTheraContextMenu)
 
     def _wireUpDatabaseViewsJB(self):
@@ -905,7 +905,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     if "dst" in item:
                         self.region_changed_by_system_id.emit(Universe.systemIdByName(item["dst"]))
                 return
-        self.ui.tableViewJBs.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tableViewJBs.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.ui.tableViewJBs.customContextMenuRequested.connect(showJBContextMenu)
 
     def _wireUpStorm(self):
@@ -916,8 +916,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableViewStorm.setModel(sort)
         self.ui.tableViewStorm.horizontalHeader().setDragEnabled(True)
         self.ui.tableViewStorm.horizontalHeader().setAcceptDrops(True)
-        self.ui.tableViewStorm.horizontalHeader().setDragDropMode(QAbstractItemView.DragDrop)
-        self.ui.tableViewStorm.horizontalHeader().setDefaultDropAction(Qt.MoveAction)
+        self.ui.tableViewStorm.horizontalHeader().setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+        self.ui.tableViewStorm.horizontalHeader().setDefaultDropAction(Qt.DropAction.MoveAction)
         self.ui.tableViewStorm.horizontalHeader().setDragDropOverwriteMode(True)
         self.ui.tableViewStorm.horizontalHeader().setDropIndicatorShown(True)
 
@@ -940,7 +940,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.region_changed_by_system_id.emit(Universe.systemIdByName(target_system_name))
                 return
 
-        self.ui.tableViewStorm.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tableViewStorm.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.ui.tableViewStorm.customContextMenuRequested.connect(showStormContextMenu)
 
     def _wireUpDatabaseCharacters(self):
@@ -967,13 +967,12 @@ class MainWindow(QtWidgets.QMainWindow):
         def callOnSelChanged(name):
             self.statisticsThread.fetchLocation(fetch=True)
             evegate.setEsiCharName(name)
-            # self.rescanIntel()
             self.players_changed.emit()
 
         self.ui.currentESICharacter.clear()
         self.ui.currentESICharacter.addItems(self.cache.getAPICharNames())
-        self.ui.currentESICharacter.setCurrentText(evegate.esiCharName())
         self.ui.currentESICharacter.currentTextChanged.connect(callOnSelChanged)
+        self.ui.currentESICharacter.setCurrentText(evegate.esiCharName())
 
         def callOnRemoveChar():
             ret = QMessageBox.warning(
@@ -981,8 +980,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 "Remove Character",
                 "Do you really want to remove the ESI registration for the character {}\n\n"
                 "The assess key will be removed from database.".format(evegate.esiCharName()),
-                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
-            if ret == QMessageBox.Yes:
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+            if ret == QMessageBox.StandardButton.Yes:
                 self.cache.removeFromCache("api_char_name")
                 self.cache.removeAPIKey(evegate.esiCharName())
                 self.ui.currentESICharacter.clear()
@@ -1042,7 +1041,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.apiThread.quit()
                 self.apiThread.wait()
             logging.info("Termination of application threads done.")
-        except Exception as ex:
+        except (Exception,) as ex:
             logging.critical(ex)
             pass
 
@@ -1226,8 +1225,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     if (delta.total_seconds() < 60 * Globals().intel_time) and (delta.total_seconds() > 0):
                         if room_name in self.room_names:
                             self.logFileChanged(file_path, rescan=True)
-        except Exception as e:
-            logging.error(e)
+        except (Exception,) as ex:
+            logging.error(ex)
 
         if hasattr(self, "filewatcherThread"):
             self.filewatcherThread.paused = False
@@ -1330,7 +1329,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self, "Sound disabled",
                 "The lib 'pyglet' which is used to play sounds cannot be found, ""so the soundsystem is disabled.\n"
                 "If you want sound, please install the 'pyglet' library. This warning will not be shown again.",
-                QMessageBox.Ok)
+                QMessageBox.StandardButton.Ok)
         else:
             if value is None:
                 value = self.ui.actionActivateSound.isChecked()
@@ -1346,10 +1345,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.hide()
         self.ui.actionAlwaysOnTop.setChecked(value)
         if value:
-            self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
         else:
-            self.setWindowFlags((self.windowFlags() & (~Qt.WindowStaysOnTopHint))
-                                | Qt.WindowCloseButtonHint | Qt.WindowSystemMenuHint)
+            self.setWindowFlags((self.windowFlags() & (~Qt.WindowType.WindowStaysOnTopHint))
+                                | Qt.WindowType.WindowCloseButtonHint | Qt.WindowType.WindowSystemMenuHint)
 
         if do_show:
             self.show()
@@ -1362,11 +1361,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if do_show:
             self.hide()
         if value:
-            self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
             self.changeAlwaysOnTop(True)
         else:
-            self.setWindowFlags(self.windowFlags() & (~Qt.FramelessWindowHint)
-                                | Qt.WindowCloseButtonHint | Qt.WindowSystemMenuHint)
+            self.setWindowFlags(self.windowFlags() & (~Qt.WindowType.FramelessWindowHint)
+                                | Qt.WindowType.WindowCloseButtonHint | Qt.WindowType.WindowSystemMenuHint)
         self.ui.menubar.setVisible(not value)
         self.ui.frameButton.setVisible(value)
         self.ui.actionFramelessWindow.setChecked(value)
@@ -1417,7 +1416,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionIntel_Time_30_min.setChecked(intel_time == 30)
         self.ui.actionIntel_Time_60_min.setChecked(intel_time == 60)
 
-    def _updateRegionActions(self, system: System):
+    def _updateRegionActions(self, system: Optional[System]):
         if system:
             self.ui.actionOpen_on_dotlan.setText("Show {} on dotlan".format(system.name))
             self.ui.actionOpen_on_dotlan.setEnabled(True)
@@ -1607,8 +1606,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     selected_region_name = Universe.regionNameFromSystemID(system_id)
                     if selected_region_name != self.curr_region_name:
                         self.changeRegionByName(region_name=selected_region_name, system_id=system_id)
-                except (Exception,) as e:
-                    logging.error(e)
+                except (Exception,) as ex:
+                    logging.error(ex)
                     pass
 
     def updateRegionMap(self):
@@ -1623,8 +1622,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
             else:
                 pass
-        except Exception as e:
-            logging.error("Error updateMapView failed: {0}".format(str(e)))
+        except (Exception,) as ex:
+            logging.error("Error updateMapView failed: {0}".format(str(ex)))
             pass
 
     def loadInitialMapPositions(self, new_dictionary):
@@ -1639,8 +1638,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.initialMapPosition = QPointF(xy[0], xy[1])
             else:
                 self.initialMapPosition = None
-        except Exception as e:
-            logging.error("Error setInitialMapPositionForRegion failed: {0}".format(str(e)))
+        except (Exception,) as ex:
+            logging.error("Error setInitialMapPositionForRegion failed: {0}".format(str(ex)))
             pass
 
     @Slot()
@@ -1648,13 +1647,12 @@ class MainWindow(QtWidgets.QMainWindow):
         fac = self.ui.mapView.zoomFactor()
         pos = self.ui.mapView.scrollPosition()
         size = self.ui.mapView.imgSize
-        self.ui.mapHorzScrollBar.setPageStep(size.width())
-        self.ui.mapVertScrollBar.setPageStep(size.height())
+        self.ui.mapHorzScrollBar.setPageStep(int(size.width()))
         self.ui.mapHorzScrollBar.setRange(int(min(pos.x(), 0)), int(size.width()*fac))
-        self.ui.mapVertScrollBar.setRange(int(min(pos.y(), 0)), int(size.height()*fac))
         self.ui.mapHorzScrollBar.setValue(int(pos.x()))
+        self.ui.mapVertScrollBar.setPageStep(int(size.height()))
+        self.ui.mapVertScrollBar.setRange(int(min(pos.y(), 0)), int(size.height()*fac))
         self.ui.mapVertScrollBar.setValue(int(pos.y()))
-        self.ui.mapView.update()
 
     def showChatroomChooser(self):
         chooser = ChatroomChooser(self)
@@ -1737,9 +1735,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.cache.putIntoCache("jumpbridge_url", url)
 
-        except Exception as e:
-            logging.error("Error setJumpbridges failed: {0}".format(str(e)))
-            QMessageBox.warning(self, "Loading jumpbridges failed!", "Error: {0}".format(str(e)), QMessageBox.Ok)
+        except (Exception,) as ex:
+            logging.error("Error setJumpbridges failed: {0}".format(str(ex)))
+            QMessageBox.warning(self, "Loading jumpbridges failed!", "Error: {0}".format(str(ex)),
+                                QMessageBox.StandardButton.Ok)
 
     def handleRegionMenuItemSelected(self, action=None):
         self.ui.actionCatchRegion.setChecked(False)
@@ -1775,21 +1774,33 @@ class MainWindow(QtWidgets.QMainWindow):
     def addMessageToDatabase(self, message: Message):
         if message and message.user:
             if message.roomName != CTX.ZKILLBOARD_ROOM_NAME:
-                data = evegate.esiCharactersPublicInfo(message.user)
-                if data:
-                    self.cache.putJsonToAvatar(
-                        player_name=message.user,
-                        json_txt=json.dumps(data),
-                        alliance_id=data["alliance_id"] if "alliance_id" in data.keys() else None,
-                        max_age=3600
-                    )
+                try:
+                    data = evegate.esiCharactersPublicInfo(message.user)
+                    if data:
+                        self.cache.putJsonToAvatar(
+                            player_name=message.user,
+                            json_txt=json.dumps(data),
+                            alliance_id=data["alliance_id"] if "alliance_id" in data.keys() else None,
+                            max_age=3600
+                        )
+                except (Exception,) as _:
+                    pass
 
-    def addMessageToIntelChat(self, message: Message):
+    def addMessageToIntelChat(self, message: Message, rescan=False):
+        """
+            Adds a message to the intelk chat, if rescan is True, no sounds will be played
+        Args:
+            message: 
+            rescan:
+
+        Returns:
+
+        """
         scroll_to_bottom = False
         if self.ui.chatListWidget.verticalScrollBar().value() == self.ui.chatListWidget.verticalScrollBar().maximum():
             scroll_to_bottom = True
 
-        if self.ui.actionUseSpokenNotifications.isChecked():
+        if self.ui.actionUseSpokenNotifications.isChecked() and not rescan:
             if message.roomName == CTX.ZKILLBOARD_ROOM_NAME:
                 message_text = self.formatZKillMessage(message.plainText)
             else:
@@ -1798,6 +1809,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 name="alarm_1",
                 abbreviated_message="Massage from {user},  {msg}, The status is now {stat}".format(
                     user=message.user, msg=message_text, stat=message.status))
+
+        if self.ui.actionActivateSound.isChecked() and not rescan:
+            alarm_snd = message.alarmRange()
+            if alarm_snd:
+                SoundManager().playSound( name=alarm_snd )
 
         chat_entry_widget = ChatEntryWidget(message)
         avatar_icon = None
@@ -1831,8 +1847,8 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             for system in ALL_SYSTEMS.values():
                 system.clearIntel()
-        except Exception as e:
-            logging.error(e)
+        except (Exception,) as ex:
+            logging.error(ex)
         self.chatparser.clearIntel()
         try:
             while self.ui.chatListWidget.count() > 0:
@@ -1840,8 +1856,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 entry = self.ui.chatListWidget.itemWidget(item)
                 self.chatEntries.remove(entry)
                 self.ui.chatListWidget.takeItem(0)
-        except Exception as e:
-            logging.error(e)
+        except (Exception,) as ex:
+            logging.error(ex)
 
     def pruneOutdatedMessages(self):
         """
@@ -1862,10 +1878,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     try:
                         for _, system in enumerate(message.affectedSystems):
                             system.pruneMessage(message)
-                    except Exception as e:
-                        logging.error(e)
-        except Exception as e:
-            logging.error(e)
+                    except (Exception,) as ex:
+                        logging.error(ex)
+        except (Exception,) as ex:
+            logging.error(ex)
 
     def changedRoomNames(self, names):
         self.cache.putIntoCache("room_names", u",".join(names), 60 * 60 * 24 * 365 * 5)
@@ -1947,16 +1963,6 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.defaultSounds.clicked.connect(defaultSoundSetup)
         dialog.ui.applySoundSetting.clicked.connect(dialog.accept)
         dialog.show()
-
-    def systemTrayActivated(self, reason):
-        if reason == QtWidgets.QSystemTrayIcon.Trigger:
-            if self.isMinimized():
-                self.showNormal()
-                self.activateWindow()
-            elif not self.isActiveWindow():
-                self.activateWindow()
-            else:
-                self.showMinimized()
 
     def updateAvatarOnChatEntry(self, entry, data):
         """
@@ -2049,8 +2055,8 @@ class MainWindow(QtWidgets.QMainWindow):
             "Do you really want to clear the Database.\n\n"
             "All icons an character public data, alliance and map data will be removed.\n"
             "Your characters ESI assess keys will not be removed from database.",
-            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
-        if ret == QMessageBox.Yes:
+            button0=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+        if ret == QMessageBox.StandardButton.Yes:
             self.cache.removeFromCache("api_char_name")
             self.cache.clearDataBase()
 
@@ -2070,7 +2076,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 locale_to_set[message.user] = message.affectedSystems
                 self.statisticsThread.fetchLocation(fetch=True)
             elif message.canProcess():
-                self.addMessageToIntelChat(message)
+                self.addMessageToIntelChat(message=message, rescan=rescan)
                 self.addMessageToDatabase(message)
 
         for name, systems in locale_to_set.items():

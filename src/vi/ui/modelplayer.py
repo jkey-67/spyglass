@@ -29,11 +29,11 @@ class TableModelPlayers(QSqlQueryModel):
     def __init__(self, parent=None):
         super(TableModelPlayers, self).__init__(parent)
 
-    def flags(self, index) -> Qt.ItemFlags:
+    def flags(self, index) -> Qt.ItemFlag:
         if index.column() == 1:
-            return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
 
 
 class StyledItemDelegatePlayers(QtWidgets.QStyledItemDelegate):
@@ -57,7 +57,7 @@ class StyledItemDelegatePlayers(QtWidgets.QStyledItemDelegate):
         else:
             return super(StyledItemDelegatePlayers, self).createEditor(parent, option, index)
 
-    def setEditorData(self, editor, index) -> None:
+    def setEditorData(self, editor:QtWidgets, index) -> None:
         if index.column() == 1:
             data = index.data()
             idx = editor.findText(data)
@@ -66,7 +66,7 @@ class StyledItemDelegatePlayers(QtWidgets.QStyledItemDelegate):
         else:
             super(StyledItemDelegatePlayers, self).setEditorData(editor, index)
 
-    def setModelData(self, editor, model, index) -> None:
+    def setModelData(self, editor:QtWidgets, model, index) -> None:
         if editor.currentText() != index.data():
             inx_data = editor.currentText()
             inx_name = model.index(index.row(), 0).data()

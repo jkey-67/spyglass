@@ -123,20 +123,7 @@ def returnStructureData(simple_text):
         if "type_id" in info.keys() and info["type_id"] == 35841:
             return ["jumpbridge", simple_text.named]
         elif "structure_id" in info.keys():
-            if True:
-                return ["poi", simple_text.named]
-            else:
-                station_info = evegate.esiUniverseStations(info["structure_id"])
-                if station_info:
-                    return ["poi", station_info]
-                if evegate.esiCharName():
-                    structure_info = evegate.esiUniverseStructure(
-                        esi_char_name=evegate.esiCharName(),
-                        structure_id=info["structure_id"])
-                    if structure_info:
-                        return ["poi", structure_info]
-                else:
-                    return ["poi", simple_text.named]
+            return ["poi", simple_text.named]
 
         if "name" in info.keys() and "sys" in info.keys():
             structure_search = evegate.esiSearch(

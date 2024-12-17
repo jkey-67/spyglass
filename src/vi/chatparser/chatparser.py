@@ -85,7 +85,7 @@ class ChatParser(object):
             with open(path, "r", encoding='utf-16-le') as f:
                 content = f.read()
             logging.debug("Add room " + roomname + " to list.")
-        except Exception as e:
+        except (Exception,) as e:
             self.ignoredPaths.append(path)
             logging.warning("Read a log file failed: File: {0} - problem: {1}".format(path, str(e)))
             return list()

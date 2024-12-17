@@ -115,7 +115,7 @@ class SoundManager(metaclass=Singleton):
                 self.speach_engine = Speaker()
             else:
                 self.speach_engine = None
-        except Exception as ex:
+        except (Exception,) as ex:
             self.speach_engine = None
             logging.error(ex)
         pygame.mixer.init()

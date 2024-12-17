@@ -16,13 +16,12 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-import datetime
+
 import logging
 import os
 import sys
 import stat
 import time
-from zoneinfo import ZoneInfo
 import threading
 
 from PySide6 import QtCore
@@ -91,7 +90,7 @@ class FileWatcher(QtCore.QThread):
                             logging.debug("Update file {}".format(path))
                             self.file_change.emit(path, False)
                         self.files[path] = path_stat.st_size
-            except Exception as e:
+            except (Exception,) as e:
                 logging.critical(e)
 
     def quit(self):
@@ -122,7 +121,7 @@ class FileWatcher(QtCore.QThread):
                     continue
                 self.addMonitorFile(full_path)
 
-            except Exception as e:
+            except (Exception,) as e:
                 logging.error(e)
 
     def addMonitorFile(self, filename):

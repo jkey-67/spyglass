@@ -26,7 +26,7 @@ import parse
 import threading
 
 from PySide6 import QtWidgets
-from PySide6.QtCore import QThread, QUrl, QFile, QIODevice
+from PySide6.QtCore import QThread, QUrl
 from PySide6.QtCore import Signal
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from packaging import version
@@ -262,7 +262,7 @@ def esiUniverseIds(names, use_outdated=False, use_cache=False) -> dict:
             else:
                 logging.error("ESI-Error %i : '%s' url: %s data=%s",
                               response.status_code, response.reason, response.url, post_data)
-    except Exception as e:
+    except (Exception,) as e:
         logging.error("Exception during namesToIds: %s", e)
     return data
 
@@ -320,7 +320,7 @@ def esiUniverseNames(ids: set, use_outdated=False):
                 cache.con.commit()
         if len(api_check_ids) > 1000:
             return esiUniverseNames(ids, use_outdated)
-    except Exception as e:
+    except (Exception,) as e:
         logging.error("Exception during idsToNames: %s", e)
     return data
 
@@ -447,7 +447,7 @@ def esiCharactersPortrait(char_name, image_size=64, use_cache=True):
         return cached_data
 
 
-def esiCharactersPublicInfo(char_name: str, use_cache: bool = True) -> object:
+def esiCharactersPublicInfo(char_name: str, use_cache: bool = True) -> dict:
     """Downloading the public player/character info
 
     Args:
@@ -491,7 +491,7 @@ def checkPlayerName(char_name):
             return EXISTS, res_id
         else:
             return NOT_EXISTS, res_id
-    except Exception as e:
+    except (Exception,) as e:
         logging.error("Exception on checkPlayerName: %s", e)
     return ERROR, res_id
 
@@ -675,7 +675,7 @@ def esiUniverseSystem_jumps(use_outdated=False, use_cache=True):
             cache.putIntoCache(cache_key, json.dumps(system_data), max_age=secondUntilExpire(response))
         else:
             system_data = json.loads(data_data)
-    except Exception as e:
+    except (Exception,) as e:
         logging.error("Exception during getSystemStatistics: : %s", e)
 
     for i, v in jump_data.items():
@@ -714,7 +714,7 @@ class MyApiServer(http.server.BaseHTTPRequestHandler):
             self.server.api_code = code[pos_code + 5:pos_state]
             self.server.api_state = code[pos_state+6:]
             self.server.server_close()
-        except Exception as e:
+        except(Exception,) as e:
             logging.error("Exception during MyApiServer: %s", e)
             self.server.api_code = None
 

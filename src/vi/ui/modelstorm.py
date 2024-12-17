@@ -21,8 +21,6 @@ from typing import Union, Any
 
 from PySide6.QtCore import QAbstractTableModel, Qt
 from PySide6.QtCore import QModelIndex, QPersistentModelIndex
-from vi.evegate import ESAPIListPublicObservationsRecords
-
 
 class TableModelStorm(QAbstractTableModel):
     def __init__(self, parent=None):
@@ -48,11 +46,11 @@ class TableModelStorm(QAbstractTableModel):
     def columnCount(self, parent: Union[QModelIndex, QPersistentModelIndex] = ...) -> int:
         return len(self.model_display_list)
 
-    def flags(self, index: Union[QModelIndex, QPersistentModelIndex]) -> Qt.ItemFlags:
+    def flags(self, index: Union[QModelIndex, QPersistentModelIndex]) -> Qt.ItemFlag:
         return Qt.ItemFlag.ItemIsEnabled
 
     def data(self, index: Union[QModelIndex, QPersistentModelIndex], role: int = ...) -> Any:
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             sel_item = self.model_data[index.row()]
             sel_item_dict = self.model_display_list[index.column()]
             sel_item_key = list(self.model_display_list[index.column()].keys())[0]
@@ -67,8 +65,8 @@ class TableModelStorm(QAbstractTableModel):
         return self.createIndex(row, column, None)
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...) -> Any:
-        if role != Qt.DisplayRole:
+        if role != Qt.ItemDataRole.DisplayRole:
             return None
-        if orientation == Qt.Horizontal:
+        if orientation == Qt.Orientation.Horizontal:
             return list(self.model_display_list[section].keys())[0]
         return None

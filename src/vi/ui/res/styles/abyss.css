@@ -383,6 +383,20 @@ QScrollBar::handle:vertical
     border-radius: 4px;
 }
 
+QScrollBar::handle:vertical:hover
+{
+    background-color: #51535a;
+    min-height: 5px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:horizontal:hover
+{
+    background-color: #51535a;
+    min-height: 5px;
+    border-radius: 4px;
+}
+
 QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical
 {
     border: none;
@@ -565,7 +579,7 @@ QPushButton:checked{
 
 QComboBox:hover, QPushButton:hover, QAbstractSpinBox:hover, QLineEdit:hover, QTextEdit:hover, QPlainTextEdit:hover, QAbstractView:hover, QTreeView:hover
 {
-    background-color: #404249;
+    background-color: #51535a;
     border: 1px solid #36373C;
     color: #eff0f1;
     border-radius: 5px;
@@ -1123,8 +1137,8 @@ QToolTip
     background: transparent;
     background-color: #31363b;
     border: 1px solid #404249;
-    border-radius: 10px;
-    padding: 5px;
+    border-radius: 15%;
+    padding: 5%;
     opacity: 200;
     color: #eff0f1;
 }

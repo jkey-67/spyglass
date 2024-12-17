@@ -78,7 +78,7 @@ class Cache(object):
         version = 0
         try:
             version = self.con.execute(query).fetchall()[0][0]
-        except Exception as e:
+        except (Exception,) as e:
             if isinstance(e, sqlite3.OperationalError) and "no such table: version" in str(e):
                 pass
             elif isinstance(e, IndexError):

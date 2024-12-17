@@ -69,11 +69,11 @@ class TableModelThera(QAbstractTableModel):
     def columnCount(self, parent: Union[QModelIndex, QPersistentModelIndex] = ...) -> int:
         return len(self.model_display_list)
 
-    def flags(self, index: Union[QModelIndex, QPersistentModelIndex]) -> Qt.ItemFlags:
+    def flags(self, index: Union[QModelIndex, QPersistentModelIndex]) -> Qt.ItemFlag:
         return Qt.ItemFlag.ItemIsEnabled
 
     def data(self, index: Union[QModelIndex, QPersistentModelIndex], role: int = ...) -> Any:
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             sel_item = self.thera_data[index.row()]
             sel_item_dict = self.model_display_list[index.column()]
             sel_item_key = list(self.model_display_list[index.column()].keys())[0]
@@ -82,7 +82,7 @@ class TableModelThera(QAbstractTableModel):
                     sel_item = sel_item[value_list_txt]
             return sel_item
 
-        elif role == Qt.ForegroundRole:
+        elif role == Qt.ItemDataRole.ForegroundRole:
             sel_item = self.thera_data[index.row()]
             if index.column() == 0:
                 if sel_item["remaining_hours"] > 2:
@@ -102,8 +102,8 @@ class TableModelThera(QAbstractTableModel):
         return self.createIndex(row, column, None)
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...) -> Any:
-        if role != Qt.DisplayRole:
+        if role != Qt.ItemDataRole.DisplayRole:
             return None
-        if orientation == Qt.Horizontal:
+        if orientation == Qt.Orientation.Horizontal:
             return list(self.model_display_list[section].keys())[0]
         return None

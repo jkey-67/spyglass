@@ -39,18 +39,18 @@ from vi.ui import Ui_MainWindow
 class ActionPackage(QObject):
     def __init__(self):
         QObject.__init__(self)
-        self.framelessCheck = QAction("Frameless Window", None, checkable=True)
-        self.setDestination = QAction("Set Destination", None, checkable=False)
-        self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
-        self.avoidSystem = QAction("Avoid System", None, checkable=False)
-        self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
-        self.clearAvoidList = QAction("Clear Avoid Systems", None, checkable=False)
-        self.clearAll = QAction("Clear all Waypoints", None, checkable=False)
-        self.openDotlan = QAction("Dotlan", None, checkable=False)
-        self.openZKillboard = QAction("zKillbard", None, checkable=False)
-        self.changeRegion = QAction("Change Region", None, checkable=False)
-        self.alarmCheck = QAction("Show alarm notifications", None, checkable=True)
-        self.quitAction = QAction("Quit", None)
+        self.framelessCheck = QAction(text="Frameless Window", parent=None, checkable=True)
+        self.setDestination = QAction(text="Set Destination", parent=None, checkable=False)
+        self.addWaypoint = QAction(text="Add Waypoint", parent=None, checkable=False)
+        self.avoidSystem = QAction(text="Avoid System", parent=None, checkable=False)
+        self.clearJumpGate = QAction(text="Remove Ansiblex Jump Gate", parent=None, checkable=False)
+        self.clearAvoidList = QAction(text="Clear Avoid Systems", parent=None, checkable=False)
+        self.clearAll = QAction(text="Clear all Waypoints", parent=None, checkable=False)
+        self.openDotlan = QAction(text="Dotlan", parent=None, checkable=False)
+        self.openZKillboard = QAction(text="zKillbard", parent=None, checkable=False)
+        self.changeRegion = QAction(text="Change Region", parent=None, checkable=False)
+        self.alarmCheck = QAction(text="Show alarm notifications", parent=None, checkable=True)
+        self.quitAction = QAction(text="Quit", parent=None)
 
         self.alarmDistance = list()
 
@@ -114,7 +114,7 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.currentUser = None
         self.currentSystem = None
         self.trayIcon = tray_icon
-        self.framelessCheck = QAction("Frameless Window", self, checkable=True)
+        self.framelessCheck = QAction("Frameless Window", None, checkable=True)
         self.setDestination = QAction("Set Destination", None, checkable=False)
         self.addWaypoint = QAction("Add Waypoint", None, checkable=False)
         self.avoidSystem = QAction("Avoid System", None, checkable=False)
@@ -124,7 +124,7 @@ class TrayContextMenu(QtWidgets.QMenu):
         self.openDotlan = QAction("Dotlan", None, checkable=False)
         self.openZKillboard = QAction("zKillbard", None, checkable=False)
         self.changeRegion = QAction("Change Region", None, checkable=False)
-        self.alarmCheck = QAction("Show alarm notifications", self, checkable=True)
+        self.alarmCheck = QAction("Show alarm notifications", None, checkable=True)
         self.quitAction = QAction("Quit", self)
 
         self.framelessCheck.triggered.connect(self.trayIcon.changeFrameless)

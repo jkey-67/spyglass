@@ -145,3 +145,15 @@ class Message(object):
     @property
     def simpleText(self):
         return lineToMessageText(self.plainText)
+
+    def alarmRange(self):
+        alarm_range = None
+        for message_system in self.affectedSystems:
+            if message_system.isMonitored and self.status == States.ALARM:
+                if alarm_range is None:
+                    alarm_range = message_system.monitoredRange
+                else:
+                    alarm_range = min(alarm_range, message_system.monitoredRange)
+        if alarm_range:
+            alarm_range = "alarm_{}".format(alarm_range)
+        return alarm_range

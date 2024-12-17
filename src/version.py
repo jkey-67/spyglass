@@ -30,12 +30,12 @@ StringFileInfo(
     u'040904B0',
     [StringStruct(u'CompanyName', u'Crypta Tech'),
     StringStruct(u'FileDescription', u'spyglass'),
-    StringStruct(u'FileVersion', u'1.7.2'),
+    StringStruct(u'FileVersion', u'1.7.3'),
     StringStruct(u'InternalName', u'Spyglass'),
     StringStruct(u'LegalCopyright', u'Copyright (c) Crypta Electrica'),
     StringStruct(u'OriginalFilename', u'spyglass.exe'),
     StringStruct(u'ProductName', u'Spyglass'),
-    StringStruct(u'ProductVersion', u'1.7.2')])
+    StringStruct(u'ProductVersion', u'1.7.3')])
   ]), 
 VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
   ]

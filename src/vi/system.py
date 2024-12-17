@@ -133,7 +133,7 @@ class System(object):
         self.rect = QRectF(0.0, 0.0, 64.0, 32.0)
         self.marker = 0.0
         self.wormhole_info = list()
-
+        self.alarm_distance = set()
         self.is_vulnerable_visible = True
         self.is_statistics_visible = True
         self.is_jumpbridges_visible = True
@@ -152,7 +152,7 @@ class System(object):
         self._isStaging = False
         self._hasIncursionBoss = False
         self._hasThera = False
-        self._isMonitored = 0
+        self._monitoredDistance = []
         self._hasKill = 0.0
         self._svg_text_string = "stats n/a"
         self._alarm_seconds = 0
@@ -167,6 +167,17 @@ class System(object):
 
         self.has_upwell_cyno_beacon = False
         self.has_upwell_cyno_jammer = False
+
+    @property
+    def isMonitored(self) -> bool:
+        return bool(self._monitoredDistance)
+
+    @property
+    def monitoredRange(self) -> int:
+        if self.isMonitored:
+            return min(self._monitoredDistance)
+        else:
+            return 10
 
     @property
     def center(self) -> QPointF:
@@ -224,13 +235,13 @@ class System(object):
                 else:
                     painter.setPen(QColor("#60c71585"))
                 painter.drawLine(QLineF(self.center, system.center))
-                painter.setPen(Qt.NoPen)
+                painter.setPen(Qt.PenStyle.NoPen)
 
     @staticmethod
     def renderLegend(painter: QPainter, region_name):
         painter.setFont(QFont("Arial", 15, italic=True))
         painter.setPen(QColor("#10c0c0c0"))
-        painter.drawText(QRectF(0.0, 0.0, 1024.0, 50.0), Qt.AlignLeft, region_name)
+        painter.drawText(QRectF(0.0, 0.0, 1024.0, 50.0), Qt.AlignmentFlag.AlignLeft, region_name)
         # System.testRender(painter)
 
     @staticmethod
@@ -281,7 +292,7 @@ class System(object):
         test._hasCampaigns = False
         test.has_ice_belt = False
         test._hasIncursion = False
-        test._isMonitored = 1
+        test._monitoredDistance = [1]
         test._structure_type = None
         test.stations = None
         test.structures = None
@@ -294,7 +305,7 @@ class System(object):
         test._hasCampaigns = False
         test.has_ice_belt = False
         test._hasIncursion = False
-        test._isMonitored = 0
+        test._monitoredDistance = []
         test._locatedCharacters = ["Test"]
         test.rect.moveTop(inx * 50.0)
         test.renderBackground(painter, region_id)
@@ -304,7 +315,7 @@ class System(object):
         test._hasCampaigns = False
         test.has_ice_belt = False
         test._hasIncursion = False
-        test._isMonitored = 0
+        test._monitoredDistance = []
         test._locatedCharacters = None
         test._hasKill = 1.0
         test.rect.moveTop(inx * 50.0)
@@ -315,7 +326,7 @@ class System(object):
         test._hasCampaigns = False
         test.has_ice_belt = False
         test._hasIncursion = False
-        test._isMonitored = 0
+        test._monitoredDistance = []
         test._locatedCharacters = None
         test._hasKill = 10.0
         test.rect.moveTop(inx * 50.0)
@@ -371,7 +382,7 @@ class System(object):
                 painter.translate(pos_b.x(), pos_b.y())
                 painter.rotate(+30)
                 painter.setFont(QFont("Arial", self.ELEMENT_HEIGHT / 8 * 1.5))
-                painter.drawText(QRectF(-30.0, -10.0, 60.0, 10.0), Qt.AlignCenter, system.name)
+                painter.drawText(QRectF(-30.0, -10.0, 60.0, 10.0), Qt.AlignmentFlag.AlignCenter, system.name)
                 painter.setTransform(old_translate)
 
     def renderJumpBridges(self, painter: QPainter, current_region_id, systems):
@@ -430,7 +441,7 @@ class System(object):
                 painter.translate(pos_b.x(), pos_b.y())
                 painter.rotate(+30)
                 painter.setFont(QFont("Arial", self.ELEMENT_HEIGHT / 8 * 1.5))
-                painter.drawText(QRectF(-30.0, -10.0, 60.0, 10.0), Qt.AlignCenter, system.name)
+                painter.drawText(QRectF(-30.0, -10.0, 60.0, 10.0), Qt.AlignmentFlag.AlignCenter, system.name)
                 painter.setTransform(old_translate)
 
     def renderBackground(self, painter: QPainter, current_region_id):
@@ -455,36 +466,40 @@ class System(object):
                 gradient.setColorAt(0.6, QColor("#00ff4500"))
             else:
                 gradient.setColorAt(0.6, QColor("#00ffd700"))
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             path = QPainterPath()
             path.addRoundedRect(rc_out_back, delta_h, delta_h)
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self._hasCampaigns:
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30ff0000"))
             gradient.setColorAt(0.6, QColor("#00ff0000"))
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             path = QPainterPath()
             path.addRoundedRect(rc_out_back, delta_h, delta_h)
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        if self._isMonitored > 0:
+        if self.isMonitored:
             rc_out_back_monitor = self.rect.__copy__().marginsAdded(QMargins(80, 80, 80, 80))
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH*1.25)
-            gradient.setColorAt(0.0, QColor("#80ffffff"))
-            gradient.setColorAt(0.6, QColor("#00ffffff"))
+            col_a = QColor("#80ffffff")
+            col_b = QColor("#00ffffff")
+            col_a.setAlphaF(0.5 - float( self.monitoredRange) / 12.0)
+            # col_b.setAlphaF(1.0 - self.monitoredRange / 10.0)
+            gradient.setColorAt(0.0, col_a)
+            gradient.setColorAt(0.6, col_b)
             painter.setPen(Qt.NoPen)
             path = QPainterPath()
             path.addRoundedRect(rc_out_back_monitor, delta_h, delta_h)
             painter.fillPath(path, QBrush(gradient))
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self._hasKill > 0.0:
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
@@ -499,7 +514,7 @@ class System(object):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
             self._hasKill = self._hasKill - 0.025
 
         if self.marking_color:
@@ -517,7 +532,7 @@ class System(object):
             path.lineTo(self.rect.center().x() - delta_w * factor_a, self.rect.center().y() + delta_h * factor_a_y)
             path.lineTo(self.rect.center().x() - delta_w * factor_b, self.rect.center().y() + delta_h * 0.0)
             painter.drawPath(path)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if bool(self._locatedCharacters):
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
@@ -529,7 +544,7 @@ class System(object):
             for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self.marker > datetime.datetime.now(datetime.UTC).timestamp():
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
@@ -544,7 +559,7 @@ class System(object):
             gradient.setCenter(rc_out_back.center().x(), rc_out_back.center().y())
             painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
         else:
             self.marker = 0.0
 
@@ -607,7 +622,7 @@ class System(object):
         path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() + box_border / 2.0)
         path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - box_border / 2.0)
         painter.drawPath(path)
-        painter.setBrush(Qt.NoBrush)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(path)
 
     def drawMediumStructure(self, painter: QPainter, current_region_id):
@@ -634,7 +649,7 @@ class System(object):
         path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - 0)
 
         painter.drawPath(path)
-        painter.setBrush(Qt.NoBrush)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(path)
 
     def drawSmallStructure(self, painter: QPainter, current_region_id):
@@ -657,7 +672,7 @@ class System(object):
         path.lineTo(rc_out.center().x() - box_border / 2.0, rc_out.center().y() - 0)
 
         painter.drawPath(path)
-        painter.setBrush(Qt.NoBrush)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(path)
 
     def renderSystemTexts(self, painter: QPainter, current_region_id):
@@ -693,7 +708,7 @@ class System(object):
                 ise_pen = QPen(QColor("#806495ED"))
                 ise_pen.setWidthF(2.0)
                 painter.setPen(ise_pen)
-                painter.setBrush(QBrush(Qt.NoBrush))
+                painter.setBrush(Qt.BrushStyle.NoBrush)
                 path = QPainterPath()
                 path.addRoundedRect(rc_out, 14, 14)
                 painter.drawPath(path)
@@ -706,7 +721,7 @@ class System(object):
             painter.setFont(QFont("Arial", delta_h*1.3))
             painter.setPen(QPen(QColor("#C0FF0000")))
             painter.drawText(rc_out, Qt.AlignCenter, self._svg_text_string)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self.is_vulnerable_visible:
             rc_out = self.rect.__copy__()
@@ -721,7 +736,7 @@ class System(object):
                 painter.drawText(rc_out, Qt.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
                 painter.drawText(rc_out, Qt.AlignRight, self._vulnerability_text)
                 # painter.drawText(rc_out, Qt.AlignCenter, self._vulnerability_text)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self.stations and self.structures is None:
             painter.setPen(self.structurePen())
@@ -733,7 +748,7 @@ class System(object):
             rc_out.setHeight(box_border)
             rc_out.translate(bounding_rect.width()-box_border/2.0, bounding_rect.height()/2.0 - box_border/2.0)
             painter.drawRect(rc_out)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self.structures:
             type_id = self.structure_type
@@ -778,22 +793,27 @@ class System(object):
         self.marker = datetime.datetime.now(datetime.UTC).timestamp() + sec
         self._is_dirty = True
 
+    def _addLocatedCharacter(self, distance:int):
+        self._monitoredDistance.append(distance)
+        self._is_dirty = True
+
+    def _removeLocatedCharacter(self, distance:int):
+        if distance in self._monitoredDistance:
+            self._monitoredDistance.remove(distance)
+        self._is_dirty = True
+
     def addLocatedCharacter(self, char_name, intel_range=None):
         if char_name not in self._locatedCharacters:
             self._locatedCharacters.append(char_name)
-            for sys in self.getNeighbours(intel_range):
-                sys._isMonitored = sys._isMonitored + 1
-            self._is_dirty = True
+            self._addLocatedCharacter(0)
+            self.getNeighbours(intel_range, System._addLocatedCharacter )
+
 
     def removeLocatedCharacter(self, char_name, intel_range):
         if char_name in self._locatedCharacters:
             self._locatedCharacters.remove(char_name)
-            for sys in self.getNeighbours(intel_range):
-                if sys._isMonitored > 0:
-                    sys._isMonitored = sys._isMonitored - 1
-            if self._isMonitored > 0:
-                self._isMonitored = self._isMonitored - 1
-            self._is_dirty = True
+            self._removeLocatedCharacter(0)
+            self.getNeighbours(intel_range, System._removeLocatedCharacter)
 
     def changeIntelRange(self, old_intel_range, new_intel_range):
         for char_name in self._locatedCharacters:
@@ -852,7 +872,7 @@ class System(object):
                 self._neighbours.add(destination_system)
         return self._neighbours
 
-    def getNeighbours(self, distance=1):
+    def getNeighbours(self, distance=1, fnc_distance=None):
         """
             Get all neighboured system with a distance of distance.
             example: sys1 <-> sys2 <-> sys3 <-> sys4 <-> sys5
@@ -863,7 +883,6 @@ class System(object):
             example:
             {sys3: {"distance"}: 0, sys2: {"distance"}: 1}
         """
-
         systems = {self: {"distance": 0}}
         current_distance = 0
         while current_distance < distance:
@@ -874,7 +893,10 @@ class System(object):
                     if neighbour not in systems:
                         new_systems.append(neighbour)
             for newSystem in new_systems:
+                if fnc_distance:
+                    fnc_distance(newSystem, current_distance)
                 systems[newSystem] = {"distance": current_distance}
+
         return systems
 
     def addKill(self):
