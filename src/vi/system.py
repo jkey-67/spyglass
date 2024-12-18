@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-
+import logging
 ###########################################################################
 # Little lib and tool to get the map and information from dotlan		  #
 ###########################################################################
@@ -1125,47 +1125,67 @@ def _InitAllSystemsA():
     return Universe.SYSTEMS
 
 
-def _ApplyColorToSystem(data):
-    def applyColorToSystem(system_id, tokens):
-        if tokens[1][0] == '#' and len(tokens[1]) == 9:
-            data[system_id].marking_color = QColor(tokens[1])
-        else:
-            data[system_id].marking_color = QColor(tokens[1])
-            data[system_id].marking_color.setAlphaF(0.3)
-        if len(tokens) > 2:
-            data[system_id].marking_scale = max(1.0, min(float(tokens[2]), 2.0))
-    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "backgrounds.txt")
+def _ApplyColorToSystem(data:dict[int, System]()):
+    """
+        Importing the SMT InfoObjects.txt file to add backgrounds to the systems
+    Args:
+        data: dict[systemId, System]()
 
+    Returns:
+
+    """
+    line_no = 0
+    offs_rgn_name = 1
+    offs_id = 2
+    offs_width = 3
+    offs_color = 4
+
+    def applyColorToSystem(systemid, tokens):
+        if tokens[offs_rgn_name][0] == '#' and len(tokens[offs_color]) == 9:
+            data[systemid].marking_color = QColor(tokens[offs_color])
+        else:
+            data[systemid].marking_color = QColor(tokens[offs_color])
+            data[systemid].marking_color.setAlphaF(0.3)
+        if len(tokens) > offs_color:
+            data[systemid].marking_scale = max(1.0, min(float(tokens[offs_width])/24.0, 2.0))
+
+    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "InfoObjects.txt")
     if os.path.exists(filename):
+        logging.info("Parse color backgrounds from {}".format(filename))
         with open(filename, "r", encoding="utf-8") as f:
-            content = f.read()
-            lines = content.split("\n")
-            for line in lines:
-                if len(line) == 0:
-                    continue
-                if line.startswith('#'):
-                    continue
-                line = line.split(',')
-                if len(line) < 2:
-                    continue
-                constellation_id = Universe.constellationIdByName(line[0])
-                region_id = Universe.regionIdByName(line[0])
-                if region_id:
-                    region = Universe.regionByID(region_id)
-                    for constellation_id in region["constellations"]:
+            current_line = ""
+            try:
+                content = f.read()
+                lines = content.split("\n")
+                for current_line in lines:
+                    line_no += 1
+                    if len(current_line) == 0:
+                        continue
+                    if current_line.startswith('#'):
+                        continue
+                    line_split = current_line.split(',')
+                    if len(line_split) <= offs_color:
+                        logging.error("Invalid line systax in file : {} line : {} '{}'".format(filename, line_no, current_line))
+                        continue
+                    constellation_id = Universe.constellationIdByName(line_split[offs_id])
+                    region_id = Universe.regionIdByName(line_split[offs_id])
+                    if region_id:
+                        region = Universe.regionByID(region_id)
+                        for constellation_id in region["constellations"]:
+                            constellation = Universe.constellationByID(constellation_id)
+                            for system_id in constellation["systems"]:
+                                applyColorToSystem(system_id, line_split)
+
+                    if constellation_id:
                         constellation = Universe.constellationByID(constellation_id)
                         for system_id in constellation["systems"]:
-                            applyColorToSystem(system_id, line)
+                            applyColorToSystem(system_id, line_split)
 
-                if constellation_id:
-                    constellation = Universe.constellationByID(constellation_id)
-                    for system_id in constellation["systems"]:
-                        applyColorToSystem(system_id, line)
-
-                system_id = Universe.systemIdByName(line[0])
-                if system_id:
-                    applyColorToSystem(system_id, line)
-
+                    system_id = Universe.systemIdByName(line_split[offs_id])
+                    if system_id:
+                        applyColorToSystem(system_id, line_split)
+            except (Exception,)as _:
+                logging.error("Invalid line systax in file : {} line : {} '{}'".format(filename, line_no, current_line))
 
 def _ApplyIceToSystem(data):
     def applyIceToSystem(system_id, tokens):
