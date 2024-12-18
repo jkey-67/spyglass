@@ -1691,7 +1691,9 @@ def esiUniverseAllCategories(use_outdated=False, use_cache=True):
 
 
     Args:
+        use_cache:
         use_outdated:
+        use_cache:
 
     Returns:
 
@@ -1718,9 +1720,12 @@ def esiUniverseCategories(categorie_id: int, use_outdated=False, use_cache=True)
 
 
     Args:
+        use_cache:
         categorie_id:
 
         use_outdated:
+
+        use_cache:
 
     Returns:
 

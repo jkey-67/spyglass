@@ -65,7 +65,7 @@ class Application(QApplication):
             font.setPixelSize(60)
             font.setBold(True)
             painter.save()
-            painter.setPen(Qt.red)
+            painter.setPen(Qt.GlobalColor.red)
             painter.setFont(font)
             painter.rotate(30.0)
             painter.drawText(200, 0, "Snapshot Version")
@@ -79,7 +79,7 @@ class Application(QApplication):
         def change_splash_text(txt):
             # logging.info(txt)
             if self.splash and len(txt):
-                self.splash.showMessage("   {}".format(txt), Qt.AlignLeft, QtGui.QColor(0x808000))
+                self.splash.showMessage("   {}".format(txt), Qt.AlignmentFlag.AlignLeft, QtGui.QColor(0x808000))
 
         chat_log_directory = ""
         if len(sys.argv) > 1:
@@ -117,7 +117,7 @@ class Application(QApplication):
         if not os.path.exists(chat_log_directory):
             # None of the paths for logs exist, bailing out
             QMessageBox.critical(None, "No path to Logs", "Unable to find the log files at:\n\n" + chat_log_directory +
-                                 "\n\nThe Spyglass Application will be terminated.", QMessageBox.Close)
+                                 "\n\nThe Spyglass Application will be terminated.", QMessageBox.StandardButton.Close)
             sys.exit(1)
 
         change_splash_text("setting local directory for cache and logging")

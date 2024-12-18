@@ -283,6 +283,7 @@ class Cache(object):
             json_txt: text of json description
             player_id: id of player
             alliance_id: alliance id of player
+            max_age: default two weeks
 
         """
         with Cache.SQLITE_WRITE_LOCK:

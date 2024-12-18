@@ -1,11 +1,6 @@
 import unittest
 import os
-import json
-import uuid
-
 from vi.cache import Cache
-from vi.universe import Universe
-from vi.redoundoqueue import RedoUndoQueue
 from vi import evegate
 
 

@@ -77,14 +77,14 @@ class ChatParser(object):
             return None
 
     def _fetchLinesFromFile(self, path):
-        filename = os.path.basename(path)
-        roomname = self.roomNameFromFileName(filename)
-        if roomname is None:
+        file_name = os.path.basename(path)
+        room_name = self.roomNameFromFileName(file_name)
+        if room_name is None:
             return list()
         try:
             with open(path, "r", encoding='utf-16-le') as f:
                 content = f.read()
-            logging.debug("Add room " + roomname + " to list.")
+            logging.debug("Add room " + room_name + " to list.")
         except (Exception,) as e:
             self.ignoredPaths.append(path)
             logging.warning("Read a log file failed: File: {0} - problem: {1}".format(path, str(e)))

@@ -381,7 +381,7 @@ class System(object):
                 old_translate = painter.transform().__copy__()
                 painter.translate(pos_b.x(), pos_b.y())
                 painter.rotate(+30)
-                painter.setFont(QFont("Arial", self.ELEMENT_HEIGHT / 8 * 1.5))
+                painter.setFont(QFont("Arial", int(self.ELEMENT_HEIGHT / 8 * 1.5)))
                 painter.drawText(QRectF(-30.0, -10.0, 60.0, 10.0), Qt.AlignmentFlag.AlignCenter, system.name)
                 painter.setTransform(old_translate)
 
@@ -440,7 +440,7 @@ class System(object):
                 old_translate = painter.transform().__copy__()
                 painter.translate(pos_b.x(), pos_b.y())
                 painter.rotate(+30)
-                painter.setFont(QFont("Arial", self.ELEMENT_HEIGHT / 8 * 1.5))
+                painter.setFont(QFont("Arial", int(self.ELEMENT_HEIGHT / 8 * 1.5)))
                 painter.drawText(QRectF(-30.0, -10.0, 60.0, 10.0), Qt.AlignmentFlag.AlignCenter, system.name)
                 painter.setTransform(old_translate)
 
@@ -495,7 +495,7 @@ class System(object):
             # col_b.setAlphaF(1.0 - self.monitoredRange / 10.0)
             gradient.setColorAt(0.0, col_a)
             gradient.setColorAt(0.6, col_b)
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             path = QPainterPath()
             path.addRoundedRect(rc_out_back_monitor, delta_h, delta_h)
             painter.fillPath(path, QBrush(gradient))
@@ -507,7 +507,7 @@ class System(object):
             col_red.setAlphaF(max(min(self._hasKill/20., 1.), 0.001))
             gradient.setColorAt(0.0, col_red)
             gradient.setColorAt(0.6, QColor("#00FF4500"))
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             path = QPainterPath()
             path.addRoundedRect(rc_out_back, delta_h, delta_h)
             for i in range(int(-delta_w), int(delta_w), 1):
@@ -519,7 +519,7 @@ class System(object):
 
         if self.marking_color:
             path = QPainterPath()
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QBrush(self.marking_color))
             scale = self.marking_scale
             factor_a = 0.8 * scale
@@ -538,7 +538,7 @@ class System(object):
             gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
             gradient.setColorAt(0.0, QColor("#30800080"))
             gradient.setColorAt(0.6, QColor("#00800080"))
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             path = QPainterPath()
             path.addRoundedRect(rc_out_back, delta_h, delta_h)
             for i in range(int(-delta_w), int(delta_w), 5):
@@ -553,7 +553,7 @@ class System(object):
 
             gradient.setColorAt(0.0, marker_color)
             gradient.setColorAt(0.6, QColor("#006495ed"))
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             path = QPainterPath()
             path.addEllipse(rc_out_back)
             gradient.setCenter(rc_out_back.center().x(), rc_out_back.center().y())
@@ -699,8 +699,8 @@ class System(object):
             painter.setPen(QPen(QColor("#FFc0c0c0")))
             painter.drawRect(rc_out)
         painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
-        painter.setFont(QFont("Arial", delta_h*1.8))
-        painter.drawText(rc_out, Qt.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
+        painter.setFont(QFont("Arial", int(delta_h*1.8)))
+        painter.drawText(rc_out, Qt.AlignmentFlag.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
 
         if self.has_ice_belt:
             if self.region_id == current_region_id:
@@ -718,9 +718,9 @@ class System(object):
             rc_out.translate(0.0, rc_out.height())
             rc_out.setHeight(delta_h*2)
 
-            painter.setFont(QFont("Arial", delta_h*1.3))
+            painter.setFont(QFont("Arial", int(delta_h*1.3)))
             painter.setPen(QPen(QColor("#C0FF0000")))
-            painter.drawText(rc_out, Qt.AlignCenter, self._svg_text_string)
+            painter.drawText(rc_out, Qt.AlignmentFlag.AlignCenter, self._svg_text_string)
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self.is_vulnerable_visible:
@@ -728,13 +728,13 @@ class System(object):
             rc_out.translate(0.0, -delta_h*2)
             rc_out.setHeight(delta_h*2)
 
-            painter.setFont(QFont("Arial", delta_h*1.3))
+            painter.setFont(QFont("Arial", int(delta_h*1.3)))
             painter.setPen(QPen(QColor("#C0FF8000")))
             if self._vulnerability_text is None:
-                painter.drawText(rc_out, Qt.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
+                painter.drawText(rc_out, Qt.AlignmentFlag.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
             else:
-                painter.drawText(rc_out, Qt.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
-                painter.drawText(rc_out, Qt.AlignRight, self._vulnerability_text)
+                painter.drawText(rc_out, Qt.AlignmentFlag.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
+                painter.drawText(rc_out, Qt.AlignmentFlag.AlignRight, self._vulnerability_text)
                 # painter.drawText(rc_out, Qt.AlignCenter, self._vulnerability_text)
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
@@ -845,9 +845,9 @@ class System(object):
         r = self.backgroundAlpha
         col_a = QColor(self.backgroundColor)
         col_b = QColor(self.backgroundColorNext) if self.backgroundColorNext != "#BACKGD" else System.UNKNOWN_COLOR
-        brush_color = QColor(255*(col_b.redF() * (1 - r) + col_a.redF() * r),
-                             255*(col_b.greenF() * (1 - r)+col_a.greenF() * r),
-                             255*(col_b.blueF() * (1 - r) + col_a.blueF() * r))
+        brush_color = QColor(int(255.0*(col_b.redF() * (1.0 - r) + col_a.redF() * r)),
+                             int(255.0*(col_b.greenF() * (1.0 - r) + col_a.greenF() * r)),
+                             int(255.0*(col_b.blueF() * (1.0 - r) + col_a.blueF() * r)))
 
         return QBrush(brush_color)
 

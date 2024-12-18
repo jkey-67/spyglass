@@ -392,7 +392,7 @@ def main():
         return
 
     if True:
-        id = Universe.regionIdByName("VR-01")
+        region_id = Universe.regionIdByName("VR-01")
         for region in [
                 # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Zarzakh"))),
                 Universe.regionByID(Universe.regionIdByName("Perrigen Falls")),
