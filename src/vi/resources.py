@@ -21,28 +21,51 @@ import os
 import sys
 import logging
 
-
-def resourcePath(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller
+class BasePath:
     """
-    if getattr(sys, 'frozen', False):
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    else:
-        base_path = os.path.abspath(".")
-    base_path = os.path.join(base_path, relative_path)
+        Base path for the resource access
+
+        see: https://pyinstaller.org/en/stable/runtime-information.html
+    """
+    base_path = None
+    def __init__(self):
+        self.base_path = None
+
+    @property
+    def path(self)->str:
+        if self.base_path is None:
+            if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                self.base_path = getattr(sys, '_MEIPASS', os.getcwd())
+                logging.info("Running in a PyInstaller bundle.")
+            else:
+                self.base_path = os.getcwd()
+        return self.base_path
+
+sys_base_Path = BasePath()
+
+def resourcePath(relative_path)->str:
+    """
+        Get absolute path to resource, works for dev and for PyInstaller
+    Args:
+        relative_path:
+
+    Returns:
+        str: full path
+    """
+    base_path = os.path.join(sys_base_Path.path, relative_path)
     if not os.path.exists(base_path):
         logging.info("Resource path not exists: {}.".format(base_path))
     return base_path
 
 
-def resourcePathExists(relative_path):
-    """ Checks if the absolute path to resource, works for dev and for PyInstaller
+def resourcePathExists(relative_path)->bool:
     """
-    if getattr(sys, 'frozen', False):
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    else:
-        base_path = os.path.abspath(".")
-    base_path = os.path.join(base_path, relative_path)
+        Checks if the absolute path to resource, works for dev and for PyInstaller
+    Args:
+        relative_path:
+
+    Returns:
+        bool: True if the file exists else False
+    """
+    base_path = os.path.join(sys_base_Path.path, relative_path)
     return os.path.exists(base_path)

@@ -69,7 +69,7 @@ from PySide6.QtSql import QSqlQueryModel
 
 from vi.ui import Ui_MainWindow, Ui_EVESpyInfo, Ui_SoundSetup
 
-from vi.chatparser.message import Message, CTX
+from vi.chatparser.message import Message, CTX, formatZKillMessage
 
 from vi.zkillboard import ZKillMonitor
 
@@ -1752,25 +1752,6 @@ class MainWindow(QtWidgets.QMainWindow):
             selected_region_name = str(action.property("regionName"))
             self.changeRegionByName(region_name=selected_region_name)
 
-    @staticmethod
-    def formatZKillMessage(message):
-        soup = dotlan.BeautifulSoup(message, "lxml-xml")
-        [s.extract() for s in soup(['href', 'br'])]
-        res = soup.getText()
-        http_start = res.find("http")
-        if http_start != -1:
-            http_end = res.find(" ", http_start)
-            substr = res[http_start:http_end]
-            res = res.replace(substr, "")
-        corp_start = res.find("<")
-        if corp_start != -1:
-            corp_end = res.find(" ", corp_start)
-            substr = res[corp_start:corp_end]
-            res = res.replace(substr, "")
-        res = res.replace("(", "from ")
-        res = res.replace(")", ", ")
-        return res
-
     def addMessageToDatabase(self, message: Message):
         if message and message.user:
             if message.roomName != CTX.ZKILLBOARD_ROOM_NAME:
@@ -1802,12 +1783,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.ui.actionUseSpokenNotifications.isChecked() and not rescan:
             if message.roomName == CTX.ZKILLBOARD_ROOM_NAME:
-                message_text = self.formatZKillMessage(message.plainText)
+                message_text = formatZKillMessage(message.plainText)
             else:
                 message_text = message.plainText
             SoundManager().playSound(
                 name="alarm_1",
-                abbreviated_message="Massage from {user},  {msg}, The status is now {stat}".format(
+                abbreviated_message="Massage from {user}. {msg}. The status of the system is now set to {stat}.".format(
                     user=message.user, msg=message_text, stat=message.status))
 
         if self.ui.actionActivateSound.isChecked() and not rescan:

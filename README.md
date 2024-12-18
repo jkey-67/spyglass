@@ -128,6 +128,13 @@ for SVG parsing.
 - oauth2 registration change to 127.0.0.1
 - POIs can now be sorted via drag and drop
 
+## 1.7.3
+- add exception handling to the parsers of the external files
+- using SMTs InfoObjects.txt file format for background colors
+- bugfix, alarm distance plays sounds again
+- alarm distance background now fades away by distance
+- reduce of cache writings 
+
 ## Features with API registration
 EVE Spyglass is using the v2/oauth/authorize and v2/oauth/token for authentication.[SSO](https://developers.eveonline.com/blog/article/sso-endpoint-deprecations-2)
 

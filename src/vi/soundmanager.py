@@ -32,6 +32,7 @@ from vi.cache.cache import Cache
 
 try:
     from PySide6.QtTextToSpeech import QTextToSpeech
+    from PySide6.QtCore import QLocale
     QT_TEXT_TO_SPEECH_ENABLED = True
 except (Exception,):
     QT_TEXT_TO_SPEECH_ENABLE = False
@@ -113,6 +114,9 @@ class SoundManager(metaclass=Singleton):
                         break
             elif ESPEAKNG_ENABLED:
                 self.speach_engine = Speaker()
+            elif QT_TEXT_TO_SPEECH_ENABLED:
+                self.speach_engine = QTextToSpeech()
+                self.speach_engine.setLocale(QLocale('en-US'))
             else:
                 self.speach_engine = None
         except (Exception,) as ex:
@@ -183,7 +187,9 @@ class SoundManager(metaclass=Singleton):
     def platformSupportsSpeech(self):
         self.useSpokenNotifications = False
         if self.speach_engine:
-            if isinstance(self.speach_engine, pyttsx3.engine.Engine):
+            if isinstance(self.speach_engine, QTextToSpeech):
+                self.useSpokenNotifications = True
+            elif isinstance(self.speach_engine, pyttsx3.engine.Engine):
                 self.useSpokenNotifications = True
             elif isinstance(self.speach_engine, Speaker):
                 self.speach_engine.voice = 'en'
@@ -205,7 +211,9 @@ class SoundManager(metaclass=Singleton):
     def playSound(self, name="alarm", message="", abbreviated_message=""):
         if self.soundAvailable and self.soundActive:
             if self.useSpokenNotifications and abbreviated_message != "":
-                if isinstance(self.speach_engine, pyttsx3.engine.Engine):
+                if isinstance(self.speach_engine, QTextToSpeech):
+                    self.speach_engine.say(abbreviated_message)
+                elif isinstance(self.speach_engine, pyttsx3.engine.Engine):
                     SayThread.soundVolume = self.soundVolume / 100.0
                     SayThread(args=abbreviated_message)
 

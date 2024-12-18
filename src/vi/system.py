@@ -510,7 +510,7 @@ class System(object):
             painter.setPen(Qt.PenStyle.NoPen)
             path = QPainterPath()
             path.addRoundedRect(rc_out_back, delta_h, delta_h)
-            for i in range(int(-delta_w), int(delta_w), 1):
+            for i in range(int(-delta_w), int(delta_w), 5):
                 gradient.setCenter(rc_out_back.center().x()+i, rc_out_back.center().y())
                 painter.fillPath(path, QBrush(gradient))
             painter.drawPath(path)

@@ -40,7 +40,6 @@ class RedoUndoQueue:
                 return res
             else:
                 return self.q[0]
-            return res
         else:
             return None
 

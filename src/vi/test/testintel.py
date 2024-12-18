@@ -1,6 +1,6 @@
 import unittest
 from vi.chatparser import parser_functions
-from vi.chatparser.message import Message
+from vi.chatparser.message import Message, formatZKillMessage
 from bs4 import BeautifulSoup
 from vi.states import States
 from vi.dotlan import Map
@@ -163,20 +163,9 @@ class TestIntel(unittest.TestCase):
         self.assertEqual(res, "jumpbridge", "Structure should be jumpbridge")
 
     def test_removeXmlData(self):
-        soup = BeautifulSoup('<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>', 'lxml-xml')
-        [s.extract() for s in soup(['href', 'br'])]
-        res = soup.getText()
-        http_start = res.find("http")
-        if http_start != -1:
-            http_end = res.find(" ", http_start)
-            substr = res[http_start:http_end]
-            res = res.replace(substr, "")
-        corp_start = res.find("<")
-        if corp_start != -1:
-            corp_end = res.find(" ", corp_start)
-            substr = res[corp_start:corp_end]
-            res = res.replace(substr, "")
-        res = res.replace("(", "from ")
-        res = res.replace(")", ", ")
-
+        res = formatZKillMessage('<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/123332493/">https://zkillboard.com/kill/123332493/</a><br/> <a  style="color:#d0d0d0;font-weight:medium" href="link/https://zkillboard.com/character/2120227048/">Khorum MkII</a> &lt;REKTD&gt;( <a  style="color:#d0d0d0;font-weight:medium" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a>) lost their <a  style="color:#d95911;font-weight:medium" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a> in  AD144 .<a style="color:#d0d0d0;font-weight:medium"><br/>Total Value : 320,866,530.18 ISK</a>')
+        res = formatZKillMessage('<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>')
+        self.assertEqual(res, "System Nani, Aatoh Maken, from Pandemic Horde, lost a Capsule")
+        res = formatZKillMessage(
+            '<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>')
         print(res)

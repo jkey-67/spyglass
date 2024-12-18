@@ -21,7 +21,7 @@ import logging
 from vi.states import States
 from .ctx import CTX
 from .line_parser import lineToDatetime, lineToMessageText, lineToUserName
-
+from bs4 import BeautifulSoup
 
 class Message(object):
     """
@@ -157,3 +157,23 @@ class Message(object):
         if alarm_range:
             alarm_range = "alarm_{}".format(alarm_range)
         return alarm_range
+
+
+def formatZKillMessage(message:str)->str:
+    soup = BeautifulSoup("<killmail>{}</killmail>".format(message), "lxml-xml")
+    # [s.extract() for s in soup(['href', 'br'])]
+    [s.extract() for s in soup(['href'])]
+    res = soup.getText()
+    http_start = res.find("http")
+    if http_start != -1:
+        http_end = res.find(" ", http_start)
+        substr = res[http_start:http_end]
+        res = res.replace(substr, "")
+    res = res.replace("  ", ",")
+    corp_start = res.find("<")
+    if corp_start != -1:
+        corp_end = res.find(" ", corp_start)
+        substr = res[corp_start:corp_end]
+        res = res.replace(substr, ", from alliance")
+    res = res.replace(")", ",")
+    return res

@@ -58,3 +58,6 @@ class States(Enum):
     REQUEST = 'request'
     LOCATION = 'location'
     SOUND_TEST = 'sound-test'
+
+    def __str__(self):
+        return self.value
