@@ -1196,20 +1196,25 @@ def _ApplyIceToSystem(data):
 
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
-            content = f.read()
-            lines = content.split("\n")
-            for line in lines:
-                if len(line) == 0:
-                    continue
-                if line.startswith('#'):
-                    continue
-                line = line.split(',')
-                if len(line) == 0:
-                    continue
-                system_id = Universe.systemIdByName(line[0])
-                if system_id:
-                    applyIceToSystem(system_id, line)
-
+            line_no = 0
+            current_line = ""
+            try:
+                content = f.read()
+                lines = content.split("\n")
+                for current_line in lines:
+                    line_no += 1
+                    if len(current_line) == 0:
+                        continue
+                    if current_line.startswith('#'):
+                        continue
+                    line = current_line.split(',')
+                    if len(line) == 0:
+                        continue
+                    system_id = Universe.systemIdByName(line[0])
+                    if system_id:
+                        applyIceToSystem(system_id, line)
+            except (Exception,) as _:
+                logging.error("Invalid line systax in file : {} line : {} '{}'".format(filename, line_no, current_line))
 
 def _applyStructuresToSystem(data, system_id_app, tokens):
     if len(tokens) > 2:
@@ -1230,20 +1235,22 @@ def _ApplyStructuresToSystem(data):
 
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
-            content = f.read()
-            lines = content.split("\n")
-            for line in lines:
-                if len(line) == 0:
-                    continue
-                if line.startswith('#'):
-                    continue
-                line = line.split(',')
-                if len(line) < 2:
-                    continue
-                system_id = Universe.systemIdByName(line[2])
-                if system_id:
-                    _applyStructuresToSystem(data, system_id, line)
-
+            try:
+                content = f.read()
+                lines = content.split("\n")
+                for line in lines:
+                    if len(line) == 0:
+                        continue
+                    if line.startswith('#'):
+                        continue
+                    line = line.split(',')
+                    if len(line) < 2:
+                        continue
+                    system_id = Universe.systemIdByName(line[2])
+                    if system_id:
+                        _applyStructuresToSystem(data, system_id, line)
+            except (Exception,)as _:
+                pass
 
 def _InitAllSystems() -> dict[int, System]:
     res = dict[int, System]()
