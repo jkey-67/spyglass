@@ -380,7 +380,7 @@ def esiImageEvetechNet(character_id: int, req_type, image_size=64):
     avatar = None
     if character_id:
         url = "https://images.evetech.net/{type}/{id}/{info}?tenant=tranquility&size={size}".format(
-            id=character_id, size=image_size, type=req_type[0], info=req_type[1])
+            id=character_id, size=image_size, type=req_type.value[0], info=req_type.value[1])
         response = getSession().get(url)
         if response.status_code == 200:
             return response.content
