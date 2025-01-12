@@ -1940,12 +1940,15 @@ def ESAPIHealth():
     Returns:
         Dict
     """
-    req = "https://api.eve-scout.com/v2/health"
-    response = getSession().get(req, timeout=1)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        _logResponseError(response)
+    try:
+        req = "https://api.eve-scout.com/v2/health"
+        response = getSession().get(req, timeout=1)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            _logResponseError(response)
+            return dict()
+    except (Exception,) as ex:
         return dict()
 
 

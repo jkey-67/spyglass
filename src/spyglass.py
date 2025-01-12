@@ -199,7 +199,6 @@ if __name__ == "__main__":
         # os.environ["QT_QPA_PLATFORM"] = "wayland"
         app = Application(sys.argv)
         res = app.exec()
-        del app
     except (Exception,) as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
 

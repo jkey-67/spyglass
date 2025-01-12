@@ -257,11 +257,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._startThreads()
 
         self._update_splash_window_info("Apply theme.")
-
-        initial_theme = self.cache.getFromCache("theme")
-        if initial_theme:
-            self.changeTheme(initial_theme)
-
         self._update_splash_window_info("EVE-Syp perform an initial scan of all intel files.")
         self.rescanIntel()
         self.tool_widget = None
@@ -1003,7 +998,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filewatcherThread.file_change.connect(self.logFileChanged)
 
         self.statisticsThread = MapStatisticsThread()
-        self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap)
+        self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap, Qt.ConnectionType.QueuedConnection)
 
         self.zkillboard = ZKillMonitor(parent=self)
         self.zkillboard.report_system_kill.connect(self.updateKillboard)
@@ -1308,15 +1303,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if type(th) is str:
             if th is not None:
                 for action in self.themeGroup.actions():
-                    if action.theme == th:
-                        action.setChecked(True)
+                    if hasattr(action, "theme"):
+                        action.setChecked(action.theme == th)
+
         action = self.themeGroup.checkedAction()
         styles = Styles()
-        styles.setStyle(action.theme)
+        if hasattr(action,"theme"):
+            styles.setStyle(action.theme)
         theme = styles.getStyle()
         self.dotlan.updateStyle()
         self.setStyleSheet(theme)
-        logging.info("Chane to GUI theme: {}".format(action.theme))
         self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
 
     def changeSound(self, value=None, disable=False):
