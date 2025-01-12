@@ -376,7 +376,7 @@
     <rect id="ice30002894" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30002894" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6000;" />
       <text x="28" y="14" class="ss" text-anchor="middle">R8S-1K</text>
-      <text id="txt30002894" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (1)</text>
+      <text id="txt30002894" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (4)</text>
     </a>
   </symbol>
   <symbol id="def30002925">
@@ -398,7 +398,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/T-945F" class="sys link-5-30002890" target="_top">
       <rect id="rect30002890" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6000;" />
       <text x="28" y="14" class="ss" text-anchor="middle">T-945F</text>
-      <text id="txt30002890" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (1)</text>
+      <text id="txt30002890" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (4)</text>
     </a>
   </symbol>
   <symbol id="def30002891">
@@ -406,14 +406,14 @@
     <rect id="ice30002891" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30002891" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6000;" />
       <text x="28" y="14" class="ss" text-anchor="middle">FO8M-2</text>
-      <text id="txt30002891" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (1)</text>
+      <text id="txt30002891" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (4)</text>
     </a>
   </symbol>
   <symbol id="def30002893">
     <a xlink:href="http://evemaps.dotlan.net/system/QPO-WI" class="sys link-5-30002893" target="_top">
       <rect id="rect30002893" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6000;" />
       <text x="28" y="14" class="ss" text-anchor="middle">QPO-WI</text>
-      <text id="txt30002893" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (1)</text>
+      <text id="txt30002893" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (4)</text>
     </a>
   </symbol>
   <symbol id="def30002921">
@@ -448,7 +448,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/4U90-Z" class="sys link-5-30002889" target="_top">
       <rect id="rect30002889" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6000;" />
       <text x="28" y="14" class="ss" text-anchor="middle">4U90-Z</text>
-      <text id="txt30002889" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (1)</text>
+      <text id="txt30002889" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (4)</text>
     </a>
   </symbol>
   <symbol id="def30002895">
@@ -462,7 +462,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/AD-CBT" class="sys link-5-30002892" target="_top">
       <rect id="rect30002892" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6000;" />
       <text x="28" y="14" class="ss" text-anchor="middle">AD-CBT</text>
-      <text id="txt30002892" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (1)</text>
+      <text id="txt30002892" x="28" y="21.7" class="st so" text-anchor="middle">SB-SQ (4)</text>
     </a>
   </symbol>
   <symbol id="def30002913">

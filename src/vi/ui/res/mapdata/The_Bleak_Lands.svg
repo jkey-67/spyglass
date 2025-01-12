@@ -127,15 +127,15 @@
 <defs>
   <symbol id="def30003090">
     <a xlink:href="http://evemaps.dotlan.net/system/Saidusairos" class="sys link-5-30003090" target="_top">
-      <rect id="rect30003090" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-60);" />
+      <rect id="rect30003090" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Saidusairos</text>
-      <text id="txt30003090" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
+      <text id="txt30003090" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>
   </symbol>
   <symbol id="def30003087">
     <a xlink:href="http://evemaps.dotlan.net/system/Haras" class="sys link-5-30003087" target="_top">
     <rect id="ice30003087" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
-      <rect id="rect30003087" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
+      <rect id="rect30003087" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Haras</text>
       <text id="txt30003087" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -155,9 +155,9 @@
   </symbol>
   <symbol id="def30003089">
     <a xlink:href="http://evemaps.dotlan.net/system/Kurniainen" class="sys link-5-30003089" target="_top">
-      <rect id="rect30003089" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
+      <rect id="rect30003089" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-100);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Kurniainen</text>
-      <text id="txt30003089" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
+      <text id="txt30003089" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -200,7 +200,7 @@
   </symbol>
   <symbol id="def30003088">
     <a xlink:href="http://evemaps.dotlan.net/system/Oyonata" class="sys link-5-30003088" target="_top">
-      <rect id="rect30003088" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-60);" />
+      <rect id="rect30003088" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-80);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Oyonata</text>
       <text id="txt30003088" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -281,7 +281,7 @@
   </symbol>
   <symbol id="def30003077">
     <a xlink:href="http://evemaps.dotlan.net/system/Uusanen" class="sys link-5-30003077" target="_top">
-      <rect id="rect30003077" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-80);" />
+      <rect id="rect30003077" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-100);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Uusanen</text>
       <text id="txt30003077" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
     </a>
@@ -295,9 +295,9 @@
   <symbol id="def30003091">
     <a xlink:href="http://evemaps.dotlan.net/system/Tannakan" class="sys link-5-30003091" target="_top">
     <rect id="ice30003091" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
-      <rect id="rect30003091" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-20);" />
+      <rect id="rect30003091" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Tannakan</text>
-      <text id="txt30003091" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
+      <text id="txt30003091" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -331,9 +331,9 @@
   </symbol>
   <symbol id="def30003071">
     <a xlink:href="http://evemaps.dotlan.net/system/Anka" class="sys link-5-30003071" target="_top">
-      <rect id="rect30003071" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-0);" />
+      <rect id="rect30003071" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-60);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Anka</text>
-      <text id="txt30003071" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
+      <text id="txt30003071" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -422,7 +422,7 @@
   </symbol>
   <symbol id="def30003069">
     <a xlink:href="http://evemaps.dotlan.net/system/Kamela" class="sys link-5-30003069" target="_top">
-      <rect id="rect30003069" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-60);" />
+      <rect id="rect30003069" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Kamela</text>
       <text id="txt30003069" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -433,9 +433,9 @@
   </symbol>
   <symbol id="def30003063">
     <a xlink:href="http://evemaps.dotlan.net/system/Lamaa" class="sys link-5-30003063" target="_top">
-      <rect id="rect30003063" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-20);" />
+      <rect id="rect30003063" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Lamaa</text>
-      <text id="txt30003063" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
+      <text id="txt30003063" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -463,9 +463,9 @@
   </symbol>
   <symbol id="def30003068">
     <a xlink:href="http://evemaps.dotlan.net/system/Kourmonen" class="sys link-5-30003068" target="_top">
-      <rect id="rect30003068" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500002-20);" />
+      <rect id="rect30003068" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Kourmonen</text>
-      <text id="txt30003068" x="28" y="21.7" class="st" text-anchor="middle">Minmatar</text>
+      <text id="txt30003068" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
     <rect x="49.6" y="9.5" height="11" width="11" class="o" />
     <polygon points="49.6,9.5 60.6,9.5 55.1,15 49.6,9.5" class="v1" />
@@ -489,7 +489,7 @@
   </symbol>
   <symbol id="def30003067">
     <a xlink:href="http://evemaps.dotlan.net/system/Huola" class="sys link-5-30003067" target="_top">
-      <rect id="rect30003067" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-40);" />
+      <rect id="rect30003067" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500003-0);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Huola</text>
       <text id="txt30003067" x="28" y="21.7" class="st" text-anchor="middle">Amarr</text>
     </a>
@@ -613,27 +613,6 @@
     </a>
   </symbol>
 
-  <linearGradient id="fw500003-0"><stop offset="3%" stop-color="#5B1A00"/><stop offset="4%" stop-color="#8F3496"/><stop offset="6%" stop-color="#8F3496"/><stop offset="7%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-5"><stop offset="7.5%" stop-color="#5B1A00"/><stop offset="8.5%" stop-color="#8F3496"/><stop offset="10.5%" stop-color="#8F3496"/><stop offset="11.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-10"><stop offset="12%" stop-color="#5B1A00"/><stop offset="13%" stop-color="#8F3496"/><stop offset="15%" stop-color="#8F3496"/><stop offset="16%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-15"><stop offset="16.5%" stop-color="#5B1A00"/><stop offset="17.5%" stop-color="#8F3496"/><stop offset="19.5%" stop-color="#8F3496"/><stop offset="20.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-20"><stop offset="21%" stop-color="#5B1A00"/><stop offset="22%" stop-color="#8F3496"/><stop offset="24%" stop-color="#8F3496"/><stop offset="25%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-25"><stop offset="25.5%" stop-color="#5B1A00"/><stop offset="26.5%" stop-color="#8F3496"/><stop offset="28.5%" stop-color="#8F3496"/><stop offset="29.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-30"><stop offset="30%" stop-color="#5B1A00"/><stop offset="31%" stop-color="#8F3496"/><stop offset="33%" stop-color="#8F3496"/><stop offset="34%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-35"><stop offset="34.5%" stop-color="#5B1A00"/><stop offset="35.5%" stop-color="#8F3496"/><stop offset="37.5%" stop-color="#8F3496"/><stop offset="38.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-40"><stop offset="39%" stop-color="#5B1A00"/><stop offset="40%" stop-color="#8F3496"/><stop offset="42%" stop-color="#8F3496"/><stop offset="43%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-45"><stop offset="43.5%" stop-color="#5B1A00"/><stop offset="44.5%" stop-color="#8F3496"/><stop offset="46.5%" stop-color="#8F3496"/><stop offset="47.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-50"><stop offset="48%" stop-color="#5B1A00"/><stop offset="49%" stop-color="#8F3496"/><stop offset="51%" stop-color="#8F3496"/><stop offset="52%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-55"><stop offset="52.5%" stop-color="#5B1A00"/><stop offset="53.5%" stop-color="#8F3496"/><stop offset="55.5%" stop-color="#8F3496"/><stop offset="56.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-60"><stop offset="57%" stop-color="#5B1A00"/><stop offset="58%" stop-color="#8F3496"/><stop offset="60%" stop-color="#8F3496"/><stop offset="61%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-65"><stop offset="61.5%" stop-color="#5B1A00"/><stop offset="62.5%" stop-color="#8F3496"/><stop offset="64.5%" stop-color="#8F3496"/><stop offset="65.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-70"><stop offset="66%" stop-color="#5B1A00"/><stop offset="67%" stop-color="#8F3496"/><stop offset="69%" stop-color="#8F3496"/><stop offset="70%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-75"><stop offset="70.5%" stop-color="#5B1A00"/><stop offset="71.5%" stop-color="#8F3496"/><stop offset="73.5%" stop-color="#8F3496"/><stop offset="74.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-80"><stop offset="75%" stop-color="#5B1A00"/><stop offset="76%" stop-color="#8F3496"/><stop offset="78%" stop-color="#8F3496"/><stop offset="79%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-85"><stop offset="79.5%" stop-color="#5B1A00"/><stop offset="80.5%" stop-color="#8F3496"/><stop offset="82.5%" stop-color="#8F3496"/><stop offset="83.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-90"><stop offset="84%" stop-color="#5B1A00"/><stop offset="85%" stop-color="#8F3496"/><stop offset="87%" stop-color="#8F3496"/><stop offset="88%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-95"><stop offset="88.5%" stop-color="#5B1A00"/><stop offset="89.5%" stop-color="#8F3496"/><stop offset="91.5%" stop-color="#8F3496"/><stop offset="92.5%" stop-color="#6D6000"/></linearGradient>
-  <linearGradient id="fw500003-100"><stop offset="93%" stop-color="#5B1A00"/><stop offset="94%" stop-color="#8F3496"/><stop offset="96%" stop-color="#8F3496"/><stop offset="97%" stop-color="#6D6000"/></linearGradient>
   <linearGradient id="fw500002-0"><stop offset="3%" stop-color="#6D6000"/><stop offset="4%" stop-color="#8F3496"/><stop offset="6%" stop-color="#8F3496"/><stop offset="7%" stop-color="#5B1A00"/></linearGradient>
   <linearGradient id="fw500002-5"><stop offset="7.5%" stop-color="#6D6000"/><stop offset="8.5%" stop-color="#8F3496"/><stop offset="10.5%" stop-color="#8F3496"/><stop offset="11.5%" stop-color="#5B1A00"/></linearGradient>
   <linearGradient id="fw500002-10"><stop offset="12%" stop-color="#6D6000"/><stop offset="13%" stop-color="#8F3496"/><stop offset="15%" stop-color="#8F3496"/><stop offset="16%" stop-color="#5B1A00"/></linearGradient>
@@ -655,6 +634,27 @@
   <linearGradient id="fw500002-90"><stop offset="84%" stop-color="#6D6000"/><stop offset="85%" stop-color="#8F3496"/><stop offset="87%" stop-color="#8F3496"/><stop offset="88%" stop-color="#5B1A00"/></linearGradient>
   <linearGradient id="fw500002-95"><stop offset="88.5%" stop-color="#6D6000"/><stop offset="89.5%" stop-color="#8F3496"/><stop offset="91.5%" stop-color="#8F3496"/><stop offset="92.5%" stop-color="#5B1A00"/></linearGradient>
   <linearGradient id="fw500002-100"><stop offset="93%" stop-color="#6D6000"/><stop offset="94%" stop-color="#8F3496"/><stop offset="96%" stop-color="#8F3496"/><stop offset="97%" stop-color="#5B1A00"/></linearGradient>
+  <linearGradient id="fw500003-0"><stop offset="3%" stop-color="#5B1A00"/><stop offset="4%" stop-color="#8F3496"/><stop offset="6%" stop-color="#8F3496"/><stop offset="7%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-5"><stop offset="7.5%" stop-color="#5B1A00"/><stop offset="8.5%" stop-color="#8F3496"/><stop offset="10.5%" stop-color="#8F3496"/><stop offset="11.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-10"><stop offset="12%" stop-color="#5B1A00"/><stop offset="13%" stop-color="#8F3496"/><stop offset="15%" stop-color="#8F3496"/><stop offset="16%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-15"><stop offset="16.5%" stop-color="#5B1A00"/><stop offset="17.5%" stop-color="#8F3496"/><stop offset="19.5%" stop-color="#8F3496"/><stop offset="20.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-20"><stop offset="21%" stop-color="#5B1A00"/><stop offset="22%" stop-color="#8F3496"/><stop offset="24%" stop-color="#8F3496"/><stop offset="25%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-25"><stop offset="25.5%" stop-color="#5B1A00"/><stop offset="26.5%" stop-color="#8F3496"/><stop offset="28.5%" stop-color="#8F3496"/><stop offset="29.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-30"><stop offset="30%" stop-color="#5B1A00"/><stop offset="31%" stop-color="#8F3496"/><stop offset="33%" stop-color="#8F3496"/><stop offset="34%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-35"><stop offset="34.5%" stop-color="#5B1A00"/><stop offset="35.5%" stop-color="#8F3496"/><stop offset="37.5%" stop-color="#8F3496"/><stop offset="38.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-40"><stop offset="39%" stop-color="#5B1A00"/><stop offset="40%" stop-color="#8F3496"/><stop offset="42%" stop-color="#8F3496"/><stop offset="43%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-45"><stop offset="43.5%" stop-color="#5B1A00"/><stop offset="44.5%" stop-color="#8F3496"/><stop offset="46.5%" stop-color="#8F3496"/><stop offset="47.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-50"><stop offset="48%" stop-color="#5B1A00"/><stop offset="49%" stop-color="#8F3496"/><stop offset="51%" stop-color="#8F3496"/><stop offset="52%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-55"><stop offset="52.5%" stop-color="#5B1A00"/><stop offset="53.5%" stop-color="#8F3496"/><stop offset="55.5%" stop-color="#8F3496"/><stop offset="56.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-60"><stop offset="57%" stop-color="#5B1A00"/><stop offset="58%" stop-color="#8F3496"/><stop offset="60%" stop-color="#8F3496"/><stop offset="61%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-65"><stop offset="61.5%" stop-color="#5B1A00"/><stop offset="62.5%" stop-color="#8F3496"/><stop offset="64.5%" stop-color="#8F3496"/><stop offset="65.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-70"><stop offset="66%" stop-color="#5B1A00"/><stop offset="67%" stop-color="#8F3496"/><stop offset="69%" stop-color="#8F3496"/><stop offset="70%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-75"><stop offset="70.5%" stop-color="#5B1A00"/><stop offset="71.5%" stop-color="#8F3496"/><stop offset="73.5%" stop-color="#8F3496"/><stop offset="74.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-80"><stop offset="75%" stop-color="#5B1A00"/><stop offset="76%" stop-color="#8F3496"/><stop offset="78%" stop-color="#8F3496"/><stop offset="79%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-85"><stop offset="79.5%" stop-color="#5B1A00"/><stop offset="80.5%" stop-color="#8F3496"/><stop offset="82.5%" stop-color="#8F3496"/><stop offset="83.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-90"><stop offset="84%" stop-color="#5B1A00"/><stop offset="85%" stop-color="#8F3496"/><stop offset="87%" stop-color="#8F3496"/><stop offset="88%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-95"><stop offset="88.5%" stop-color="#5B1A00"/><stop offset="89.5%" stop-color="#8F3496"/><stop offset="91.5%" stop-color="#8F3496"/><stop offset="92.5%" stop-color="#6D6000"/></linearGradient>
+  <linearGradient id="fw500003-100"><stop offset="93%" stop-color="#5B1A00"/><stop offset="94%" stop-color="#8F3496"/><stop offset="96%" stop-color="#8F3496"/><stop offset="97%" stop-color="#6D6000"/></linearGradient>
   <symbol id="defCampaign" width="85" height="46">
     <rect x="0" y="0" width="85" height="46" class="cam" />
   </symbol>
