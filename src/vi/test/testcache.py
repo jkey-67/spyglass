@@ -303,13 +303,28 @@ class TestCache(unittest.TestCase):
                     f.write(svg)
 
     def test_generateNPCNames(self):
-        factions = dict()
-        with open(os.path.join(self.curr_path, "blal.py"), "w") as f:
-            f.write("NPCNAMES = {")
-            for faction in evegate.esiGetFactions():
-                factions.update({faction["faction_id"]: {"name": faction["name"]}})
-                f.write('{} : "{}",\n'.format(faction["faction_id"], faction["name"]))
+        name = FileName(self.curr_path, "npcnames.py")
+        name.prepare()
+        factions = list()
+        for faction in evegate.esiGetFactions():
+            factions.append(faction)
+        for tok in ["State","Republic","Empire","Federation","Assembly","Mandate","Pirates","Covenant","Collective","Cartel"]:
+            for faction in factions:
+                faction["name"] = faction["name"].replace(tok,"").rstrip()
+        def sort_data(elem):
+            return elem["faction_id"]
+        factions.sort(key=sort_data)
+        with open(name.temp_name, "w") as f:
+            f.write("NPCNAMES = {\n")
+            len_data = len(factions)
+            for faction in factions:
+                if len_data >0:
+                    len_data -= 1
+                    f.write('     {}: "{}",\n'.format( faction["faction_id"], faction["name"]))
+                else:
+                    f.write('     {}: "{}"\n'.format( faction["faction_id"], faction["name"]))
             f.write("}\n")
+        # name.update()
 
     def test_KnownPlayerNames(self):
         self.cache_used.removeAPIKey("Mr A")
