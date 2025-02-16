@@ -31,6 +31,8 @@ class FileName:
     def __str__(self):
         return self.temp_name
 
+    def appendText(self,file,text):
+        pass
 
 class TestCache(unittest.TestCase):
     use_outdated_cache = True
@@ -104,10 +106,12 @@ class TestCache(unittest.TestCase):
         self.use_outdated_cache = True
 
     def test_generateShipnames(self):
+        name = FileName(self.curr_path, "shipnames.py")
+        name.prepare()
         res = evegate.esiUniverseCategories(6, use_outdated=self.use_outdated_cache)
-        with open(os.path.join(self.curr_path, "shipnames.py"), "w") as ships_file:
+        with open(name.temp_name, "w") as ships_file:
             ships_file.write("# generated, do not modify\n")
-            ships_file.write("SHIPNAMES = (")
+            ships_file.write("SHIPNAMES = {")
             max_len = 80
             eol_txt = "\n        "
             ships_file.write(eol_txt)
@@ -119,7 +123,7 @@ class TestCache(unittest.TestCase):
                 for res_type in res["types"]:
                     res = evegate.esiUniverseTypes(res_type, use_outdated=self.use_outdated_cache)
                     self.assertIsNotNone(res, "esiUniverseTypes should never return None")
-                    ship_text = u'{{"id": {}, "name": "{}"}}'.format(res["type_id"], res["name"].upper())
+                    ship_text = u' {}: u"{}"'.format(res["type_id"], res["name"])
                     curr_len = curr_len + len(ship_text)
                     if curr_len > max_len:
                         first_entry = True
@@ -133,7 +137,27 @@ class TestCache(unittest.TestCase):
                         ships_file.write(", ")
                         ships_file.write(ship_text)
 
-            ships_file.write(")\n")
+            ships_file.write("}\n\n")
+            ship_names = dict()
+            cat_res = evegate.esiUniverseCategories(6, use_outdated=self.use_outdated_cache)
+            for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
+                for itm in cat_res["groups"]:
+                    grp_res = evegate.esiUniverseGroups(itm, use_outdated=self.use_outdated_cache,lang=lang)
+                    for res_type in grp_res["types"]:
+                        type_res = evegate.esiUniverseTypes(res_type, use_outdated=self.use_outdated_cache,lang=lang)
+                        ship_names[type_res["name"].upper()] = type_res["type_id"]
+
+            ships_file.write("ID_BY_SHIPNAMES = {{{}".format(eol_txt))
+            cnt  = len(ship_names)
+            for item_id,item in ship_names.items():
+                cnt -= 1
+                if cnt>0:
+                    ships_file.write(u'u"{}": {},{}'.format(item_id,item,eol_txt))
+                else:
+                    ships_file.write(u'u"{}": {} '.format(item_id,item))
+
+            ships_file.write("}\n")
+        name.update()
 
     @staticmethod
     def writeList(file, alist):

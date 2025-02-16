@@ -180,7 +180,7 @@ class ZKillMonitor(QObject):
             ticker=alliance_ticker,
             player=CTX.FORMAT_PLAYER_NAME.format(kill_victim_character, character_id),
             alliance=CTX.FORMAT_ALLIANCE_NAME.format(kill_victim_alliance, alliance_id),
-            ship=CTX.FORMAT_SHIP.format(kill_victim_ship_type),
+            ship=CTX.FORMAT_SHIP.format(kill_victim_ship_type,kill_victim_ship_type),
             link=CTX.FORMAT_URL.format(kill_url),
             value=CTX.FORMAT_VALUE.format(total_value)
         )

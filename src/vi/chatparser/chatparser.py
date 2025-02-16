@@ -155,11 +155,10 @@ class ChatParser(object):
         # May happen if someone plays > 1 account
         if message in self.knownMessages:
             message.status = States.IGNORE
-            logging.debug("Ignore {} Room:{}".format(line, room_name))
             return None
-        # Parse new message only  if needed
-        parseMessageForMap(systems_on_map, message)
-        self.knownMessages.append(message)
+        else:
+            parseMessageForMap(systems_on_map, message)
+            self.knownMessages.append(message)
         return message
 
     def clearIntel(self):
@@ -174,9 +173,6 @@ class ChatParser(object):
         messages = []
         if path in self.ignoredPaths:
             return []
-
-        if rescan:
-            self.knownMessages.clear()
 
         file_name = os.path.basename(path)
         room_name = self.roomNameFromFileName(file_name)
@@ -212,6 +208,6 @@ class ChatParser(object):
                 else:
                     if room_name in self.rooms:
                         message = self._lineToMessage(line, room_name, systems_on_map)
-                        if message:
+                        if message and message.canProcess():
                             messages.append(message)
         return messages

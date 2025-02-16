@@ -1774,23 +1774,24 @@ def esiUniverseAllGroups(categorie_id: int, use_outdated=False, use_cache=True):
             response.raise_for_status()
 
 
-def esiUniverseGroups(group_id: int, use_outdated=False, use_cache=True):
+def esiUniverseGroups(group_id: int, use_outdated=False, use_cache=True, lang="en"):
     """
     Get information of an item category
     Args:
         group_id:
         use_outdated:
         use_cache:
+        lang:
     Returns:
 
     """
-    cache_key = "universe_group_{}".format(group_id)
+    cache_key = "universe_group_{}_{}".format(group_id,lang)
     cache = Cache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
     else:
-        url = "https://esi.evetech.net/latest/universe/groups/{}/?datasource=tranquility&language=en".format(group_id)
+        url = "https://esi.evetech.net/latest/universe/groups/{}/?datasource=tranquility&language={}".format(group_id,lang)
         response = getSession().get(url=url)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
@@ -1829,7 +1830,7 @@ def esiUniverseAllTypes(types_id: int, use_outdated=False, use_cache=True):
             response.raise_for_status()
 
 
-def esiUniverseTypes(types_id: int, use_outdated=False, use_cache=True):
+def esiUniverseTypes(types_id: int, use_outdated=False, use_cache=True, lang="en"):
     """
     Get information of an item category
 
@@ -1842,13 +1843,13 @@ def esiUniverseTypes(types_id: int, use_outdated=False, use_cache=True):
     Returns:
 
     """
-    cache_key = "universe_types_{}".format(types_id)
+    cache_key = "universe_types_{}_{}".format(types_id,lang)
     cache = Cache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
     else:
-        url = "https://esi.evetech.net/latest/universe/types/{}/?datasource=tranquility&language=en".format(types_id)
+        url = "https://esi.evetech.net/latest/universe/types/{}/?datasource=tranquility&language={}".format(types_id,lang)
         response = getSession().get(url=url)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))

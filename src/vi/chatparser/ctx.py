@@ -21,13 +21,13 @@
 class CTX:
     EVE_SYSTEM = (u"EVE-System", u"EVE System", u"Système EVE", u"Система EVE", u'EVE システム', u'EVE系统',
                   u'EVE星系', u'이브 시스템', u'Sistema EVE')
-    CHARS_TO_IGNORE = (u"*", u"?", u",", u"!", u".", "^")
-    WORDS_TO_IGNORE = (u"IN", u"IS", u"AS", u"AT", u"NV", "ESS", u"GATE", u"HOSTILE")
+    CHARS_TO_IGNORE = ( u"*", u".", u"/", u"(", u")")
+    WORDS_TO_IGNORE = ( u" IN", u"IN", u" NV", u" ESS", u" GATE", u" HOSTILE")
     FORMAT_URL = u"""<a style="color:#28a5ed;font-weight:medium" href="link/{0}">{0}</a>"""
     FORMAT_SHIP \
-        = u"""<a  style="color:#d95911;font-weight:medium" href="link/https://wiki.eveuniversity.org/{0}">{0}</a>"""
+        = u"""<a  style="color:#d95911;font-weight:medium" href="link/https://wiki.eveuniversity.org/{1}">{0}</a>"""
     FORMAT_PLAYER_NAME \
-        = u""" <a  style="color:#d0d0d0;font-weight:medium" href="link/https://zkillboard.com/character/{1}/">{0}</a>"""
+        = u""" <a  style="color:#d08801;font-weight:medium" href="link/https://zkillboard.com/character/{1}/">{0}</a>"""
     FORMAT_ALLIANCE_NAME \
         = u""" <a  style="color:#d0d0d0;font-weight:medium" href="link/https://zkillboard.com/alliance/{1}/">{0}</a>"""
     FORMAT_SYSTEM = u"""<a style="color:#888880;font-weight:medium" href="mark_system/{0}">{1}</a>"""

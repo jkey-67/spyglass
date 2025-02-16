@@ -92,19 +92,19 @@ class Message(object):
         Returns: bool
             True if the message can be processed
         """
-        return self.status != States.IGNORE and self.user not in CTX.EVE_SYSTEM
+        return self.status != States.UNKNOWN and self.status != States.IGNORE and self.user not in CTX.EVE_SYSTEM
 
-    def __key(self):
+    def __key__(self):
         return self.timestamp, self.roomName, self.user
 
     def __eq__(self, other):
-        return self.__key() == other.__key()
+        return self.__key__() == other.__key__()
 
     def __hash__(self):
-        return hash(self.__key())        
+        return hash(self.__key__())
 
-    def __del__(self):
-        logging.debug("delete message {}".format(self.__key()))
+    # def __del__(self):
+    #     logging.debug("delete message {}".format(self.__key__()))
 
     @property
     def status(self) -> States:

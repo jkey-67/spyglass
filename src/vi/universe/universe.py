@@ -19,7 +19,7 @@
 
 import json
 import os
-from .shipnames import SHIPNAMES
+from .shipnames import SHIPNAMES, ID_BY_SHIPNAMES
 from .npcnames import NPCNAMES
 
 try:
@@ -97,7 +97,8 @@ class Universe(object):
         pass
 
     STARGATES = _loadJsonFile(os.path.join(curr_path, "evestargates.json"))
-    SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]
+    # SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]
+    SHIP_NAMES = list(ID_BY_SHIPNAMES.keys())
     SHIP_NAMES.sort(key=lambda name: -len(name))
     NPC_FACTION_NAMES = NPCNAMES
     LOCATED_CHARS = set()
