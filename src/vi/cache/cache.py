@@ -398,7 +398,7 @@ class Cache(object):
             query = "UPDATE jumpbridge SET modified = ? WHERE (src IS ? AND dst IS ?) OR (dst IS ? and src IS ?)"
             if self.con.execute(query, (time.time(), src, dst, src, dst)).rowcount == 1:
                 self.con.commit()
-                return False
+                return True
             query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ? or src LIKE ? or dst LIKE ?"
             self.con.execute(query, (src, src, dst, dst))
             query = "INSERT INTO jumpbridge (src, dst, used, id_src, id_dst, json_src, json_dst, modified, maxage) "\

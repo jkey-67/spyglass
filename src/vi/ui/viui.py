@@ -802,6 +802,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.lineEditThera.setText(system_name)
 
         self.ui.lineEditThera.editingFinished.connect(self.theraSystemChanged)
+        self.current_system_changed.connect(self.ui.lineEditThera.setText)
 
         def showTheraContextMenu(pos):
             menu_inx = self.ui.tableViewThera.model().mapToSource(self.ui.tableViewThera.indexAt(pos))
@@ -1480,7 +1481,7 @@ class MainWindow(QtWidgets.QMainWindow):
         poi_changed = False
         jb_changed = False
         clip_content = self.clipboard.text()
-        if clip_content != self.oldClipboardContent:
+        if clip_content != self.oldClipboardContent and clip_content != "":
             for full_line_content in clip_content.splitlines():
                 for line_content in tokenize_eve_formatted_text(full_line_content):
                     cb_type, cb_data = evaluateClipboardData(line_content)
@@ -1592,7 +1593,8 @@ class MainWindow(QtWidgets.QMainWindow):
         system_name = system_in if type(system_in) is str else Universe.systemNameById(system_in)
 
         self.updateCharLocationOnMap(system_id, char_name, self.alarmDistance)
-
+        self.current_system_changed.emit(system_name)
+        self.theraSystemChanged()
         if system_name in self.systems_on_map:
             if change_region:
                 self.focusMapOnSystem(system_id)
