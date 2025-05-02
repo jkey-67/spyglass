@@ -24,18 +24,25 @@ import os.path
 import time
 import parse
 import threading
+import logging
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import QThread, QUrl
 from PySide6.QtCore import Signal
-from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtQml import QQmlModuleImportSpecialVersions
+
+try:
+    from PySide6.QtWebEngineWidgets import QWebEngineView
+except (Exception,) as e:
+    logging.error("Unable to load QtWebEngineWidgets : {}".format(e))
+    from PySide6.QtWidgets import QWidget as QWebEngineView
+
 from packaging import version
 
 import queue
 import requests
 from requests.sessions import Session
 from threading import local
-import logging
 import urllib.parse
 import http.server
 import webbrowser
