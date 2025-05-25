@@ -10,7 +10,7 @@ from vi import evegate
 
 class FileName:
     def __init__(self, curr_path, file_name):
-        self.temp_name = os.path.join(curr_path, str(uuid.uuid4()))
+        self.temp_name = os.path.join(curr_path, "{}-{}".format(str(uuid.uuid4()),file_name))
         self.file_name = os.path.join(curr_path, file_name)
 
     def __del__(self):

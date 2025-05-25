@@ -386,7 +386,7 @@ def esiImageEvetechNet(character_id: int, req_type, image_size=64):
 
     avatar = None
     if character_id:
-        url = "https://images.evetech.net/{type}/{id}/{info}?tenant=tranquility&size={size}".format(
+        url = "https://images.evetech.net/{type}/{id}/{info}/?tenant=tranquility&size={size}".format(
             id=character_id, size=image_size, type=req_type.value[0], info=req_type.value[1])
         response = getSession().get(url)
         if response.status_code == 200:
@@ -790,11 +790,11 @@ class APIServerThread(QThread):
 
         if self.browser and parent:
             self.browser.destroyed.connect(self.quit)
-            self.browser.load(QUrl("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params)))
+            self.browser.load(QUrl("https://login.eveonline.com/v2/oauth/authorize/?{}".format(string_params)))
             self.browser.resize(600, 800)
             self.browser.show()
         else:
-            webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize?{}".format(string_params))
+            webbrowser.open_new("https://login.eveonline.com/v2/oauth/authorize/?{}".format(string_params))
 
         logging.info("Awaiting registration during the next 120 seconds to be completed.")
         while self.isRunning():
@@ -1626,7 +1626,7 @@ def esiUniverseRegions(region_id: int, use_outdated=False, use_cache=True, lang=
     if cached_id:
         return json.loads(cached_id)
     else:
-        url = "https://esi.evetech.net/latest/universe/regions/{}?datasource=tranquility&language={}".format(region_id, lang)
+        url = "https://esi.evetech.net/latest/universe/regions/{}/?datasource=tranquility&language={}".format(region_id, lang)
         response = getSession().get(url=url)
         if response.status_code == 200:
             cache.putIntoCache(cache_key, value=response.text, max_age=secondUntilExpire(response))
@@ -1806,6 +1806,7 @@ def esiUniverseGroups(group_id: int, use_outdated=False, use_cache=True, lang="e
         else:
             _logResponseError(response)
             response.raise_for_status()
+            return None
 
 
 def esiUniverseAllTypes(types_id: int, use_outdated=False, use_cache=True):
@@ -1846,11 +1847,11 @@ def esiUniverseTypes(types_id: int, use_outdated=False, use_cache=True, lang="en
         types_id:
         use_outdated:
         use_cache:
-
+        lang:
     Returns:
 
     """
-    cache_key = "universe_types_{}_{}".format(types_id,lang)
+    cache_key = "universe_types_{}_{}".format(types_id, lang)
     cache = Cache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
@@ -1864,7 +1865,7 @@ def esiUniverseTypes(types_id: int, use_outdated=False, use_cache=True, lang="en
         else:
             _logResponseError(response)
             response.raise_for_status()
-
+            return None
 
 def esiCharactersStanding(char_name: str, use_outdated=False, use_cache=True):
     """
@@ -2058,7 +2059,7 @@ def ESAPIListSystems(query: str, limit=None, space="k-space"):
     Returns:
         list of dicts
     """
-    req = "https://api.eve-scout.com/v2/public/systems?query={}&space={}".format(query, space)
+    req = "https://api.eve-scout.com/v2/public/systems/?query={}&space={}".format(query, space)
     if limit:
         req = req + "&limit={}".format(limit)
     response = getSession().get(req)
@@ -2081,7 +2082,7 @@ def ESAPIRouteToHighSec(system_name: str):
     Returns:
 
     """
-    req = "https://api.eve-scout.com/v2/public/routes/highsec?from={}".format(system_name)
+    req = "https://api.eve-scout.com/v2/public/routes/highsec/?from={}".format(system_name)
     response = getSession().get(req)
     if response.status_code == 200:
         return response.json()
@@ -2385,7 +2386,7 @@ def esiStatusJson():
     Returns:
         dict() : holding the data
     """
-    req = "https://esi.evetech.net/status.json?version=latest"
+    req = "https://esi.evetech.net/status.json/?version=latest"
     response = getSession().get(req)
     if response.status_code != 200:
         return dict()
