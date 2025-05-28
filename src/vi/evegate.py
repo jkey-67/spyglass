@@ -95,6 +95,10 @@ def getSession() -> Session:
              })
     return thread_local.session
 
+def getCache() -> Cache:
+    if not hasattr(thread_local, 'cache'):
+        thread_local.cache = Cache()
+    return thread_local.cache
 
 def _logResponseError(response):
     logging.error('ESI-Error {}, Info "{}", url "{}", response text: "{}"'.format(
@@ -114,7 +118,7 @@ def setEsiCharName(name):
         str: Name of the current char from cache as string, or None
     """
     if name and name != "":
-        Cache().putIntoCache("api_char_name", name)
+        getCache().putIntoCache("api_char_name", name)
 
 
 def esiCharName() -> Optional[str]:
@@ -126,15 +130,15 @@ def esiCharName() -> Optional[str]:
     Returns:
         str: Name of the current char from cache as string, or None
     """
-    res_name = Cache().getFromCache("api_char_name", True)
-    if res_name is None or res_name == "" or res_name not in Cache().getAPICharNames():
-        res_name = Cache().getAPICharNames()
+    res_name = getCache().getFromCache("api_char_name", True)
+    if res_name is None or res_name == "" or res_name not in getCache().getAPICharNames():
+        res_name = getCache().getAPICharNames()
         if res_name and len(res_name):
             setEsiCharName(res_name[0])
-            Cache().putIntoCache("api_char_name", res_name[0])
+            getCache().putIntoCache("api_char_name", res_name[0])
             return res_name[0]
         else:
-            Cache().removeFromCache("api_char_name")
+            getCache().removeFromCache("api_char_name")
             return None
     else:
         return res_name
@@ -175,6 +179,7 @@ def esiStatus() -> dict:
     else:
         _logResponseError(response)
         response.raise_for_status()
+        return {}
 
 
 def esiCharNameToId(char_name: str, use_outdated=False, use_cache=True) -> Optional[int]:
@@ -188,7 +193,7 @@ def esiCharNameToId(char_name: str, use_outdated=False, use_cache=True) -> Optio
         int:id of the character name or None
     """
     cache_key = "_".join(("name", "id", char_name))
-    cache = Cache()
+    cache = getCache()
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data:
         return cache_data
@@ -226,7 +231,7 @@ def esiUniverseIds(names, use_outdated=False, use_cache=False) -> dict:
         return {}
     data = {}
     api_check_names = set()
-    cache = Cache()
+    cache = getCache()
     for name in names:
         cache_key = "_".join(("ids", "dicts", name))
         cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
@@ -253,7 +258,7 @@ def esiUniverseIds(names, use_outdated=False, use_cache=False) -> dict:
             response = getSession().post(post_url, data=post_data)
             if response.status_code == 200:
                 content = response.json()
-                with Cache() as cache:
+                with getCache() as cache:
                     for key, items in content.items():
                         for item in items:
                             cache_data = dict()
@@ -274,7 +279,7 @@ def esiUniverseIds(names, use_outdated=False, use_cache=False) -> dict:
     return data
 
 
-def esiUniverseNames(ids: set, use_outdated=False):
+def esiUniverseNames(ids: set, use_outdated=False)->dict:
     """ Returns the names for a list of ids
 
         Args:
@@ -288,7 +293,7 @@ def esiUniverseNames(ids: set, use_outdated=False):
     if len(ids) == 0:
         return data
     api_check_ids = list()
-    cache = Cache()
+    cache = getCache()
 
     # something already in the cache?
     for checked_id in ids:
@@ -318,7 +323,7 @@ def esiUniverseNames(ids: set, use_outdated=False):
             for elem in content:
                 data[elem["id"]] = elem["name"]
             # and writing into cache
-            with Cache() as cache:
+            with getCache() as cache:
                 for checked_id in api_check_ids:
                     cache_key = u"_".join(("name", "id", str(checked_id)))
                     if checked_id in data.keys():
@@ -332,7 +337,7 @@ def esiUniverseNames(ids: set, use_outdated=False):
     return data
 
 
-def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en", use_cache=True):
+def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en", use_cache=True)->dict:
     """ Returns the names for a list of ids
 
         Args:
@@ -344,7 +349,7 @@ def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en", use_cac
         Returns:
               dict:dict  key = id, value = name
     """
-    cache = Cache()
+    cache = getCache()
 
     # something already in the cache?
     cache_key = u"_".join(("attribute", "id", str(attribute_id), lang))
@@ -359,6 +364,7 @@ def esiDogmaAttributes(attribute_id: int, use_outdated=False, lang="en", use_cac
         else:
             _logResponseError(response)
             response.raise_for_status()
+            return None
 
 
 class EvetechImage(Enum):
@@ -372,28 +378,27 @@ class EvetechImage(Enum):
     corporations = ["corporations", "logo"]
 
 
-def esiImageEvetechNet(character_id: int, req_type, image_size=64):
+def esiImageEvetechNet(character_id: int, req_type, image_size=64)->Optional[bytearray]:
     """Downloading the avatar for a player/character
        - https://docs.esi.evetech.net/docs/image_server.html
     Args:
-        int id:ident to fined
-        evetech_image type:type of image
+        character_id:ident to fined
+        req_type:type of image
         image_size: size of the image, 32, 64, 128, 256, 512, and 1024.
 
     Returns:
         bytearray: None if something gone wrong, else the png
     """
-
-    avatar = None
     if character_id:
         url = "https://images.evetech.net/{type}/{id}/{info}/?tenant=tranquility&size={size}".format(
             id=character_id, size=image_size, type=req_type.value[0], info=req_type.value[1])
         response = getSession().get(url)
         if response.status_code == 200:
-            return response.content
+            return bytearray(response.content)
         else:
             _logResponseError(response)
             response.raise_for_status()
+            return None
 
 
 def getTypesIcon(type_id: int, size_image=64) -> Optional[bytearray]:
@@ -407,7 +412,7 @@ def getTypesIcon(type_id: int, size_image=64) -> Optional[bytearray]:
         bytearray: png image as bytearray
 
     """
-    used_cache = Cache()
+    used_cache = getCache()
     img = used_cache.getImageFromIconCache(type_id)
     if img is None:
         url = "https://images.evetech.net/types/{id}/icon".format(id=type_id, size=size_image)
@@ -434,7 +439,7 @@ def esiCharactersPortrait(char_name, image_size=64, use_cache=True):
     Returns:
         bytearray: None if something gone wrong, else the png
     """
-    cache = Cache()
+    cache = getCache()
     cached_data = cache.getImageFromAvatar(char_name) if use_cache else None
     if cached_data is None:
         avatar = None
@@ -463,7 +468,7 @@ def esiCharactersPublicInfo(char_name: str, use_cache: bool = True) -> dict:
     Returns:
         dict: Dict holding the public data of the char, or None
     """
-    cache = Cache()
+    cache = getCache()
     cache_key = u"_".join(("public_info_", char_name))
     cached_data = cache.getFromCache(cache_key) if use_cache else None
     if cached_data is None:
@@ -476,6 +481,7 @@ def esiCharactersPublicInfo(char_name: str, use_cache: bool = True) -> dict:
         else:
             _logResponseError(response)
             response.raise_for_status()
+            return None
     else:
         return json.loads(cached_data)
 
@@ -503,9 +509,9 @@ def checkPlayerName(char_name):
     return ERROR, res_id
 
 
-def esiCharacters(char_id, use_outdated=False, use_cache=True):
+def esiCharacters(char_id, use_outdated=False, use_cache=True)->json:
     cache_key = u"_".join(("playerinfo_id_", str(char_id)))
-    used_cache = Cache()
+    used_cache = getCache()
     cache_data = used_cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data is not None:
         return json.loads(cache_data)
@@ -518,7 +524,7 @@ def esiCharacters(char_id, use_outdated=False, use_cache=True):
         else:
             _logResponseError(response)
             response.raise_for_status()
-
+            return None
 
 def esiCheckCharacterToken(char_name: str) -> bool:
     return checkTokenTimeLine(getTokenOfChar(char_name)) is not None
@@ -531,7 +537,7 @@ def esiGetCharsOnlineStatus() -> list:
         List: [{"name": str,"online": bool, "system": str}]
     """
     result = list()
-    for char in Cache().getAPICharNames():
+    for char in getCache().getAPICharNames():
         online = esiCharactersOnline(char)
         system = esiUniverseSystems(esiCharactersLocation(char))
         api_char = {
@@ -609,7 +615,7 @@ def esiCharactersCorporationHistory(char_id, use_outdated=True, use_cache=True):
         @param use_cache
     """
     cache_key = u"_".join(("corp_history_id_", str(char_id)))
-    cache = Cache()
+    cache = getCache()
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data is not None:
         return json.loads(cache_data)
@@ -624,6 +630,7 @@ def esiCharactersCorporationHistory(char_id, use_outdated=True, use_cache=True):
         else:
             _logResponseError(response)
             response.raise_for_status()
+            return None
 
 
 def getCurrentCorpForCharId(char_id, use_outdated=True) -> Optional[int]:
@@ -644,7 +651,7 @@ def esiUniverseSystem_jumps(use_outdated=False, use_cache=True):
     """
     data = {}
     system_data = {}
-    cache = Cache()
+    cache = getCache()
     # first the data for the jumps
     cache_key = "jumpstatistic"
     jump_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
@@ -943,7 +950,7 @@ def getTokenOfChar(char_name) -> Optional[ApiKey]:
     """
     if char_name is None:
         return None
-    char_data = Cache().getAPIKey(char_name)
+    char_data = getCache().getAPIKey(char_name)
     if char_data:
         return ApiKey(json.loads(char_data))
     else:
@@ -976,7 +983,7 @@ def refreshToken(params: Optional[ApiKey]) -> Optional[ApiKey]:
         ref_token = response.json()
         params.update(ref_token)
 
-        cache = Cache()
+        cache = getCache()
         cache_api_key = cache.getAPIKey(params.CharacterName)
         if cache_api_key is None:
             return params
@@ -1033,6 +1040,7 @@ def sendTokenRequest(form_values, add_headers=None):
     else:
         _logResponseError(response)
         response.raise_for_status()
+        return None
 
 
 def esiAutopilotWaypoint(char_name: str, system_id: int, beginning=True, clear_all=True):
@@ -1050,6 +1058,7 @@ def esiAutopilotWaypoint(char_name: str, system_id: int, beginning=True, clear_a
         if response.status_code != 204:
             _logResponseError(response)
             response.raise_for_status()
+            return False
         else:
             return True
     else:
@@ -1073,12 +1082,13 @@ def getRouteFromEveOnline(jumpgates, src, dst):
     else:
         _logResponseError(response)
         response.raise_for_status()
+        return {}
 
 
 def esiIncursions(use_outdated=False, use_cache=True):
     """builds a list of incursion dicts cached 300 s
     """
-    cache = Cache()
+    cache = getCache()
     cache_key = "incursions"
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data:
@@ -1107,7 +1117,7 @@ def getIncursionSystemsIds(use_outdated=False, use_cache=True):
 def esiSovereigntyCampaigns(use_outdated=False, use_cache=True):
     """builds a list of reinforced campaigns for IHUB  and TCU dicts cached 60 s
     """
-    cache = Cache()
+    cache = getCache()
     cache_key = "sovereignty_campaigns"
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data:
@@ -1133,7 +1143,7 @@ def esiSovereigntyStructures(use_outdated=False, use_cache=True):
     Returns:
 
     """
-    cache = Cache()
+    cache = getCache()
     cache_key = "sovereignty_structures"
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data:
@@ -1159,7 +1169,7 @@ def esiSovereigntyMap(use_outdated=False, use_cache=True):
     Returns:
 
     """
-    cache = Cache()
+    cache = getCache()
     cache_key = "sovereignty_map"
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data is not None:
@@ -1219,7 +1229,7 @@ def esiUniverseStructure(esi_char_name: str, structure_id: int, use_outdated=Fal
         logging.error("esiUniverseStructure needs the eve-online api account.")
         return res_value
     cache_key = "_".join(("structure", "id", str(structure_id)))
-    cache = Cache()
+    cache = getCache()
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data is not None:
         res_value = json.loads(cache_data)
@@ -1249,7 +1259,7 @@ def esiCorporationsStructures(esi_char_name: str, corporations_id: int, use_outd
         logging.error("esiUniverseStructure needs the eve-online api account.")
         return res_value
     cache_key = "_".join(("corporations", "structures", "id", str(corporations_id)))
-    cache = Cache()
+    cache = getCache()
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data is not None:
         res_value = json.loads(cache_data)
@@ -1272,7 +1282,7 @@ def esiLatestSovereigntyMap(use_outdated=False, use_cache=True):
     """builds a list of reinforced campaigns for hubs and tcus dicts cached 60s
        https://esi.evetech.net/ui/?version=latest#/Sovereignty/get_sovereignty_map
     """
-    cache = Cache()
+    cache = getCache()
     cache_key = "sovereignty"
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data is not None:
@@ -1300,7 +1310,7 @@ def getPlayerSovereignty(use_outdated=False, use_cache=True, show_npc=True, call
         return seq_in
 
     cache_key = "player_sovereignty"
-    cache = Cache()
+    cache = getCache()
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data is not None:
         return json.loads(cache_data)
@@ -1522,7 +1532,7 @@ def esiUniverseStargates(stargate_id, use_outdated=False, use_cache=True):
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "systems", str(stargate_id)))
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
@@ -1542,7 +1552,7 @@ def esiUniverseStations(station_id, use_outdated=False, use_cache=True) -> Optio
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "stations", str(station_id)))
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
@@ -1562,7 +1572,7 @@ def esiUniverseSystems(system_id, use_outdated=False, lang="en", use_cache=True)
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "systems", str(system_id), lang))
-    cache = Cache()
+    cache = getCache()
     cached_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_data:
         return json.loads(cached_data)
@@ -1584,7 +1594,7 @@ def esiUniverseAllSystems(use_outdated=False, use_cache=True):
     """gets the solar system info from system id
     """
     cache_key = "_".join(("universe", "all", "systems"))
-    cache = Cache()
+    cache = getCache()
     cached_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_data:
         return json.loads(cached_data)
@@ -1603,7 +1613,7 @@ def esiAlliances(alliance_id, use_outdated=True, use_cache=True):
     """gets the alliance from the alliance id
     """
     cache_key = "_".join(("alliance", str(alliance_id)))
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
@@ -1621,7 +1631,7 @@ def esiAlliances(alliance_id, use_outdated=True, use_cache=True):
 
 def esiUniverseRegions(region_id: int, use_outdated=False, use_cache=True, lang="en"):
     cache_key = "_".join(("universe", "regions", str(region_id), lang))
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
@@ -1642,7 +1652,7 @@ def esiUniverseGetAllRegions(use_outdated=False, use_cache=True) -> Optional[set
     Returns:
              list : list of the ids of all regions
     """
-    cache = Cache()
+    cache = getCache()
     all_systems = cache.getFromCache("universe_all_regions", use_outdated) if use_cache else None
     if all_systems is not None:
         return json.loads(all_systems)
@@ -1659,7 +1669,7 @@ def esiUniverseGetAllRegions(use_outdated=False, use_cache=True) -> Optional[set
 
 def esiUniverseConstellations(constellation_id: int, use_outdated=False, use_cache=True, lang="en"):
     cache_key = "_".join(("universe", "constellations", str(constellation_id), lang))
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
@@ -1677,7 +1687,7 @@ def esiUniverseConstellations(constellation_id: int, use_outdated=False, use_cac
 
 def esiUniverseAllConstellations(use_outdated=False, use_cache=True):
     cache_key = "universe_all_constellations"
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id:
         return json.loads(cached_id)
@@ -1706,7 +1716,7 @@ def esiUniverseAllCategories(use_outdated=False, use_cache=True):
 
     """
     cache_key = "universe_all_categories"
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
@@ -1738,7 +1748,7 @@ def esiUniverseCategories(categorie_id: int, use_outdated=False, use_cache=True)
 
     """
     cache_key = "universe_categories_{}".format(categorie_id)
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
@@ -1766,7 +1776,7 @@ def esiUniverseAllGroups(categorie_id: int, use_outdated=False, use_cache=True):
 
     """
     cache_key = "universe_groups"
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
@@ -1779,7 +1789,7 @@ def esiUniverseAllGroups(categorie_id: int, use_outdated=False, use_cache=True):
         else:
             _logResponseError(response)
             response.raise_for_status()
-
+            return dict()
 
 def esiUniverseGroups(group_id: int, use_outdated=False, use_cache=True, lang="en"):
     """
@@ -1793,7 +1803,7 @@ def esiUniverseGroups(group_id: int, use_outdated=False, use_cache=True, lang="e
 
     """
     cache_key = "universe_group_{}_{}".format(group_id,lang)
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
@@ -1823,7 +1833,7 @@ def esiUniverseAllTypes(types_id: int, use_outdated=False, use_cache=True):
 
     """
     cache_key = "universe_types"
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
@@ -1836,6 +1846,7 @@ def esiUniverseAllTypes(types_id: int, use_outdated=False, use_cache=True):
         else:
             _logResponseError(response)
             response.raise_for_status()
+            return None
 
 
 def esiUniverseTypes(types_id: int, use_outdated=False, use_cache=True, lang="en"):
@@ -1852,7 +1863,7 @@ def esiUniverseTypes(types_id: int, use_outdated=False, use_cache=True, lang="en
 
     """
     cache_key = "universe_types_{}_{}".format(types_id, lang)
-    cache = Cache()
+    cache = getCache()
     cached_id = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_id is not None:
         return json.loads(cached_id)
@@ -1881,7 +1892,7 @@ def esiCharactersStanding(char_name: str, use_outdated=False, use_cache=True):
         list:
     """
     cache_key = "characters_{}_standings".format(char_name)
-    cache = Cache()
+    cache = getCache()
     cached_standing = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cached_standing is not None:
         return json.loads(cached_standing)
@@ -1918,7 +1929,7 @@ def applyRouteToEveOnline(name_char, jump_list):
 def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
     """check GitHub for a new latest release
     """
-    checked = Cache().getFromCache("version_check")
+    checked = getCache().getFromCache("version_check")
     if force_check or checked is None:
         url = "https://api.github.com/repos/jkey-67/spyglass/releases"
         response = getSession().get(url=url)
@@ -1969,7 +1980,7 @@ def ESAPIListPublicObservationsRecords(use_cache=True):
     Returns:
         list of dicts
     """
-    used_cache = Cache()
+    used_cache = getCache()
     cache_key = "Eve_Scout_Observations_Records"
     observations_records = used_cache.getFromCache(cache_key) if use_cache else None
     if observations_records is None:
@@ -2004,7 +2015,7 @@ def ESAPIListPublicSignatures(use_cache=True):
     Returns:
         list of dicts
     """
-    used_cache = Cache()
+    used_cache = getCache()
     cache_key = "Eve_Scout_Public_Signatures"
     list_public_signatures = used_cache.getFromCache(cache_key) if use_cache else None
     if list_public_signatures is None:
@@ -2030,7 +2041,7 @@ def ESAPIListWormholeTypes(use_cache=True):
     Returns:
         list of dicts
     """
-    used_cache = Cache()
+    used_cache = getCache()
     cache_key = "Eve_List_Wormhole_Types"
     list_wormhole_types = used_cache.getFromCache(cache_key) if use_cache else None
     if list_wormhole_types is None:

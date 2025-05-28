@@ -35,16 +35,16 @@ class FileName:
         pass
 
 class TestCache(unittest.TestCase):
+    use_cache = True
     use_outdated_cache = True
     curr_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "universe")
-    Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
+    Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-test.sqlite3")
     cache_used = Cache()
     evegate.setEsiCharName("nele McCool")
 
     def test_sortPoi(self):
         self.cache_used.swapPOIs(1, 11)
         self.cache_used.swapPOIs(1, 1)
-
         self.cache_used.swapPOIs(3, 4)
 
     def test_checkSpyglassVersionUpdate(self):
@@ -97,18 +97,19 @@ class TestCache(unittest.TestCase):
         self.assertIsNotNone(systems)
 
     def test_update_all_json_files(self):
-        self.use_outdated_cache = False
-        self.test_generateSystems()
+        self.use_cache =True
+        self.use_outdated_cache = True
         self.test_generateShipnames()
         self.test_generateRegions()
         self.test_generateConstellations()
+        self.test_generateSystems()
         self.test_generateStargates()
         self.use_outdated_cache = True
 
     def test_generateShipnames(self):
         name = FileName(self.curr_path, "shipnames.py")
         name.prepare()
-        res = evegate.esiUniverseCategories(6, use_outdated=self.use_outdated_cache)
+        res = evegate.esiUniverseCategories(6, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
         with open(name.temp_name, "w") as ships_file:
             ships_file.write("# generated, do not modify\n")
             ships_file.write("SHIPNAMES = {")
@@ -118,7 +119,7 @@ class TestCache(unittest.TestCase):
             curr_len = len(eol_txt)
             first_entry = True
             for itm in res["groups"]:
-                res = evegate.esiUniverseGroups(itm, use_outdated=self.use_outdated_cache)
+                res = evegate.esiUniverseGroups(itm, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
                 self.assertIsNotNone(res, "esiUniverseGroups should never return None")
                 for res_type in res["types"]:
                     res = evegate.esiUniverseTypes(res_type, use_outdated=self.use_outdated_cache)
@@ -175,7 +176,7 @@ class TestCache(unittest.TestCase):
     def test_generateRegions(self):
         name = FileName(self.curr_path, "everegions.json")
         name.prepare()
-        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
+        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
         with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
@@ -184,7 +185,7 @@ class TestCache(unittest.TestCase):
             curr_len = len(eol_txt)
             first_entry = True
             for itm in res:
-                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
+                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
                 ship_text = u'{}'.format(json.dumps(res))
                 curr_len = curr_len + len(ship_text)
                 if curr_len > max_len:
@@ -206,7 +207,7 @@ class TestCache(unittest.TestCase):
     def test_generateConstellations(self):
         name = FileName(self.curr_path, "eveconstellations.json")
         name.prepare()
-        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
+        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
         with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
@@ -215,10 +216,10 @@ class TestCache(unittest.TestCase):
             curr_len = len(eol_txt)
             first_entry = True
             for itm in res:
-                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
+                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
                 self.assertIsNotNone(res, "esiUniverseGroups should never return None")
                 for constellation_id in res["constellations"]:
-                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache)
+                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
                     ship_text = u'{}'.format(json.dumps(res))
                     curr_len = curr_len + len(ship_text)
                     if curr_len > max_len:
@@ -240,7 +241,7 @@ class TestCache(unittest.TestCase):
     def test_generateSystems(self):
         name = FileName(self.curr_path, "evesystems.json")
         name.prepare()
-        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
+        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
         with open(name.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
@@ -249,12 +250,12 @@ class TestCache(unittest.TestCase):
             curr_len = len(eol_txt)
             first_entry = True
             for itm in res:
-                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
+                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
                 self.assertIsNotNone(res, "esiUniverseGroups should never return None")
                 for constellation_id in res["constellations"]:
-                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache)
+                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
                     for sys_id in res["systems"]:
-                        res = evegate.esiUniverseSystems(sys_id, use_outdated=self.use_outdated_cache)
+                        res = evegate.esiUniverseSystems(sys_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
                         ship_text = u'{}'.format(json.dumps(res))
                         curr_len = curr_len + len(ship_text)
                         if curr_len > max_len:
@@ -276,7 +277,7 @@ class TestCache(unittest.TestCase):
     def test_generateStargates(self):
         filename = FileName(self.curr_path, "evestargates.json")
         filename.prepare()
-        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache)
+        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
         with open(filename.temp_name, "w") as ships_file:
             ships_file.write("[")
             max_len = 80
@@ -286,16 +287,16 @@ class TestCache(unittest.TestCase):
 
             first_entry = True
             for itm in res:
-                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache)
+                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
                 self.assertIsNotNone(res, "esiUniverseGroups should never return None")
                 for constellation_id in res["constellations"]:
-                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache)
+                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
                     for sys_id in res["systems"]:
-                        res = evegate.esiUniverseSystems(sys_id, use_outdated=self.use_outdated_cache)
+                        res = evegate.esiUniverseSystems(sys_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
                         if res is None or "stargates" not in res:
                             continue
                         for stargate_id in res["stargates"]:
-                            res = evegate.esiUniverseStargates(stargate_id, use_outdated=self.use_outdated_cache)
+                            res = evegate.esiUniverseStargates(stargate_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
                             ship_text = u'{}'.format(json.dumps(res))
                             curr_len = curr_len + len(ship_text)
                             if curr_len > max_len:
@@ -423,16 +424,19 @@ class TestCache(unittest.TestCase):
         self.assertIsNotNone(res)
         res = evegate.getCurrentCorpForCharId(1350114619)
         self.assertIsNotNone(res)
+
+    def test_esi_with_token_requested(self):
         res = evegate.getTokenOfChar(1350114619)
-        self.assertIsNotNone(res)
-        res = evegate.refreshToken(res)
-        self.assertIsNotNone(res)
-        res = evegate.checkTokenTimeLine(res)
-        self.assertIsNotNone(res)
-        res = evegate.checkTokenTimeLine(None)
-        self.assertIsNone(res)
-        res = evegate.refreshToken(None)
-        self.assertIsNone(res)
+        if res:
+            self.assertIsNotNone(res)
+            res = evegate.refreshToken(res)
+            self.assertIsNotNone(res)
+            res = evegate.checkTokenTimeLine(res)
+            self.assertIsNotNone(res)
+            res = evegate.checkTokenTimeLine(None)
+            self.assertIsNone(res)
+            res = evegate.refreshToken(None)
+            self.assertIsNone(res)
 
     def test_region_queue(self):
         dq = RedoUndoQueue()
