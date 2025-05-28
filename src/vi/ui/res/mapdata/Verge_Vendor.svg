@@ -471,14 +471,14 @@
   </symbol>
   <symbol id="def30005299">
     <a xlink:href="http://evemaps.dotlan.net/system/Muetralle" class="sys link-5-30005299" target="_top">
-      <rect id="rect30005299" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-0);" />
+      <rect id="rect30005299" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-40);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Muetralle</text>
       <text id="txt30005299" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
   </symbol>
   <symbol id="def30005296">
     <a xlink:href="http://evemaps.dotlan.net/system/Melmaniel" class="sys link-5-30005296" target="_top">
-      <rect id="rect30005296" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: #214600;" />
+      <rect id="rect30005296" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Melmaniel</text>
       <text id="txt30005296" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
@@ -489,7 +489,7 @@
   </symbol>
   <symbol id="def30005321">
     <a xlink:href="http://evemaps.dotlan.net/system/Jovainnon" class="sys link-5-30005321" target="_top">
-      <rect id="rect30005321" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: #214600;" />
+      <rect id="rect30005321" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-20);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Jovainnon</text>
       <text id="txt30005321" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
@@ -531,7 +531,7 @@
   </symbol>
   <symbol id="def30005295">
     <a xlink:href="http://evemaps.dotlan.net/system/Murethand" class="sys link-5-30005295" target="_top">
-      <rect id="rect30005295" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: #214600;" />
+      <rect id="rect30005295" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="sl" style="fill: url(#fw500004-60);" />
       <text x="28" y="14" class="ss" text-anchor="middle">Murethand</text>
       <text id="txt30005295" x="28" y="21.7" class="st" text-anchor="middle">Gallente</text>
     </a>
@@ -949,12 +949,16 @@
 <g id="glow">
 
   <rect id="inc30005299" x="503.5" y="90.5" width="71" height="38" class="con" />
+  <rect id="inc30005296" x="508.5" y="200.5" width="71" height="38" class="con" />
+  <rect id="inc30005321" x="523.5" y="40.5" width="71" height="38" class="con" />
   <rect id="inc30005298" x="528.5" y="140.5" width="71" height="38" class="con" />
+  <rect id="inc30005295" x="583.5" y="195.5" width="71" height="38" class="con" />
   <rect id="inc30003795" x="-6.5" y="170.5" width="71" height="38" class="con" />
   <rect id="inc30003797" x="58.5" y="150.5" width="71" height="38" class="con" />
   <rect id="inc30003792" x="108.5" y="185.5" width="71" height="38" class="con" />
   <rect id="inc30003788" x="308.5" y="220.5" width="71" height="38" class="con" />
   <rect id="inc30003787" x="341.5" y="182.5" width="71" height="38" class="con" />
+  <rect id="inc30004999" x="563.5" y="-4.5" width="71" height="38" class="con" />
   <rect id="inc30004982" x="613.5" y="240.5" width="71" height="38" class="con" />
   <rect id="inc30002812" x="753.5" y="515.5" width="71" height="38" class="con" />
 </g>

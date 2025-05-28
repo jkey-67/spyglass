@@ -535,7 +535,7 @@
     <rect id="ice30001964" x="1" y="0.5" rx="14" ry="13" width="56" height="28" class="i" />
       <rect id="rect30001964" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #356000;" />
       <text x="28" y="14" class="ss" text-anchor="middle">O-BY0Y</text>
-      <text id="txt30001964" x="28" y="21.7" class="st so" text-anchor="middle">FRT (4)</text>
+      <text id="txt30001964" x="28" y="21.7" class="st so" text-anchor="middle">FRT (5)</text>
     </a>
   </symbol>
   <symbol id="def30001986">
@@ -571,7 +571,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/EC-P8R" class="sys link-5-30001984" target="_top">
       <rect id="rect30001984" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D39;" />
       <text x="28" y="14" class="ss" text-anchor="middle">EC-P8R</text>
-      <text id="txt30001984" x="28" y="21.7" class="st so" text-anchor="middle">.RU (4)</text>
+      <text id="txt30001984" x="28" y="21.7" class="st so" text-anchor="middle">.RU (5)</text>
     </a>
   </symbol>
   <symbol id="def30002005">
@@ -626,7 +626,7 @@
     <a xlink:href="http://evemaps.dotlan.net/system/U-INPD" class="sys link-5-30001997" target="_top">
       <rect id="rect30001997" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #53626D;" />
       <text x="28" y="14" class="ss" text-anchor="middle">U-INPD</text>
-      <text id="txt30001997" x="28" y="21.7" class="st so" text-anchor="middle">ADIEU (4)</text>
+      <text id="txt30001997" x="28" y="21.7" class="st so" text-anchor="middle">ADIEU (5)</text>
     </a>
   </symbol>
   <symbol id="def30001968">
@@ -652,9 +652,9 @@
   </symbol>
   <symbol id="def30002002">
     <a xlink:href="http://evemaps.dotlan.net/system/R-2R0G" class="sys link-5-30002002" target="_top">
-      <rect id="rect30002002" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D39;" />
+      <rect id="rect30002002" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #605D54;" />
       <text x="28" y="14" class="ss" text-anchor="middle">R-2R0G</text>
-      <text id="txt30002002" x="28" y="21.7" class="st so" text-anchor="middle">.RU (5)</text>
+      <text id="txt30002002" x="28" y="21.7" class="st so" text-anchor="middle">DECOY (2)</text>
     </a>
   </symbol>
   <symbol id="def30001969">
@@ -681,16 +681,16 @@
   </symbol>
   <symbol id="def30002000">
     <a xlink:href="http://evemaps.dotlan.net/system/M-YCD4" class="sys link-5-30002000" target="_top">
-      <rect id="rect30002000" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D39;" />
+      <rect id="rect30002000" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #605D54;" />
       <text x="28" y="14" class="ss" text-anchor="middle">M-YCD4</text>
-      <text id="txt30002000" x="28" y="21.7" class="st so" text-anchor="middle">.RU (5)</text>
+      <text id="txt30002000" x="28" y="21.7" class="st so" text-anchor="middle">DECOY (2)</text>
     </a>
   </symbol>
   <symbol id="def30001993">
     <a xlink:href="http://evemaps.dotlan.net/system/A8I-C5" class="sys link-5-30001993" target="_top">
       <rect id="rect30001993" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #53626D;" />
       <text x="28" y="14" class="ss" text-anchor="middle">A8I-C5</text>
-      <text id="txt30001993" x="28" y="21.7" class="st so" text-anchor="middle">ADIEU (4)</text>
+      <text id="txt30001993" x="28" y="21.7" class="st so" text-anchor="middle">ADIEU (5)</text>
     </a>
   </symbol>
   <symbol id="def30001970">
@@ -702,9 +702,9 @@
   </symbol>
   <symbol id="def30002001">
     <a xlink:href="http://evemaps.dotlan.net/system/Q-5211" class="sys link-5-30002001" target="_top">
-      <rect id="rect30002001" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D39;" />
+      <rect id="rect30002001" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #605D54;" />
       <text x="28" y="14" class="ss" text-anchor="middle">Q-5211</text>
-      <text id="txt30002001" x="28" y="21.7" class="st so" text-anchor="middle">.RU (5)</text>
+      <text id="txt30002001" x="28" y="21.7" class="st so" text-anchor="middle">DECOY (2)</text>
     </a>
   </symbol>
   <symbol id="def30001974">
@@ -730,9 +730,9 @@
   </symbol>
   <symbol id="def30001999">
     <a xlink:href="http://evemaps.dotlan.net/system/XQ-PXU" class="sys link-5-30001999" target="_top">
-      <rect id="rect30001999" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D39;" />
+      <rect id="rect30001999" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #605D54;" />
       <text x="28" y="14" class="ss" text-anchor="middle">XQ-PXU</text>
-      <text id="txt30001999" x="28" y="21.7" class="st so" text-anchor="middle">.RU (5)</text>
+      <text id="txt30001999" x="28" y="21.7" class="st so" text-anchor="middle">DECOY (2)</text>
     </a>
   </symbol>
   <symbol id="def30001992">
@@ -744,16 +744,16 @@
   </symbol>
   <symbol id="def30001998">
     <a xlink:href="http://evemaps.dotlan.net/system/WW-KGD" class="sys link-5-30001998" target="_top">
-      <rect id="rect30001998" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D39;" />
+      <rect id="rect30001998" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #605D54;" />
       <text x="28" y="14" class="ss" text-anchor="middle">WW-KGD</text>
-      <text id="txt30001998" x="28" y="21.7" class="st so" text-anchor="middle">.RU (5)</text>
+      <text id="txt30001998" x="28" y="21.7" class="st so" text-anchor="middle">DECOY (2)</text>
     </a>
   </symbol>
   <symbol id="def30002003">
     <a xlink:href="http://evemaps.dotlan.net/system/CR-AQH" class="sys link-5-30002003" target="_top">
-      <rect id="rect30002003" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #6D6D39;" />
+      <rect id="rect30002003" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #605D54;" />
       <text x="28" y="14" class="ss" text-anchor="middle">CR-AQH</text>
-      <text id="txt30002003" x="28" y="21.7" class="st so" text-anchor="middle">.RU (5)</text>
+      <text id="txt30002003" x="28" y="21.7" class="st so" text-anchor="middle">DECOY (2)</text>
     </a>
   </symbol>
   <symbol id="def30001995">

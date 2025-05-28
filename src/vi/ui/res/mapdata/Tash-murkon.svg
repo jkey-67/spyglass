@@ -1413,14 +1413,7 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-  <rect id="inc30001713" x="-13.5" y="406.5" width="85" height="46" class="incs" />
-  <rect id="inc30001714" x="-13.5" y="486.5" width="85" height="46" class="inc" />
-  <rect id="inc30001712" x="16.5" y="446.5" width="85" height="46" class="inc" />
-  <rect id="inc30001715" x="26.5" y="356.5" width="85" height="46" class="inc" />
-  <rect id="inc30001711" x="51.5" y="406.5" width="85" height="46" class="inc" />
-  <rect id="inc30001710" x="51.5" y="486.5" width="85" height="46" class="inc" />
-  <rect id="inc30001708" x="121.5" y="406.5" width="85" height="46" class="inc" />
-  <rect id="inc30001709" x="121.5" y="486.5" width="85" height="46" class="inc" />
+
 
 </g>
 
