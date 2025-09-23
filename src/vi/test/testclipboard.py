@@ -6,7 +6,8 @@ import random
 
 class TestClipBoardParsers(unittest.TestCase):
     def test_evaluateClipboardJumpbridgeData(self):
-        items = ['<a href="showinfo:35841//1037567076715">8CN-CH » OX-S7P - Speedway</a> in 8CN-CH',
+        items = ['<a href="showinfo:35841//1037567076715">8CN-CH » OX-S7P - Speedway</a>',
+                 '<a href="showinfo:35841//1037567076715">8CN-CH » OX-S7P - Speedway</a> in 8CN-CH',
                  'DUO-51 » L-FM3P',
                  'OX-S7P » 8CN-CH',
                  'OX-S7P » 8CN-CH - Speedway 2',

@@ -1296,7 +1296,13 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-
+  <rect id="inc30000112" x="716.5" y="121.5" width="85" height="46" class="inc" />
+  <rect id="inc30000114" x="731.5" y="41.5" width="85" height="46" class="inc" />
+  <rect id="inc30000113" x="736.5" y="86.5" width="85" height="46" class="inc" />
+  <rect id="inc30000116" x="806.5" y="21.5" width="85" height="46" class="inc" />
+  <rect id="inc30000117" x="811.5" y="101.5" width="85" height="46" class="inc" />
+  <rect id="inc30000118" x="811.5" y="136.5" width="85" height="46" class="inc" />
+  <rect id="inc30000115" x="826.5" y="61.5" width="85" height="46" class="incs" />
 
 </g>
 

@@ -98,7 +98,7 @@ class TestCache(unittest.TestCase):
 
     def test_update_all_json_files(self):
         self.use_cache =True
-        self.use_outdated_cache = True
+        self.use_outdated_cache = False
         self.test_generateShipnames()
         self.test_generateRegions()
         self.test_generateConstellations()

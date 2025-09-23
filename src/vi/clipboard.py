@@ -59,6 +59,10 @@ def evaluateClipboardJumpbridgeData(content):
     if jump_bridge_text and len(jump_bridge_text.named) == 4:
         return returnJumpbridge(jump_bridge_text)
 
+    jump_bridge_text = parse('<a href="showinfo:35841//{structure_id}">{src} » {dst} - {name}</a>{}', content)
+    if jump_bridge_text and len(jump_bridge_text.named) == 4:
+        return returnJumpbridge(jump_bridge_text)
+
     jump_bridge_text = parse("{src} » {dst} - {name}\n{}", content)
     if jump_bridge_text and len(jump_bridge_text.named) == 3:
         return returnJumpbridge(jump_bridge_text)

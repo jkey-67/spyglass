@@ -177,9 +177,9 @@
   </symbol>
   <symbol id="def30004457">
     <a xlink:href="http://evemaps.dotlan.net/system/VVO-R6" class="sys link-5-30004457" target="_top">
-      <rect id="rect30004457" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #214600;" />
+      <rect id="rect30004457" x="4" y="3.5" rx="11" ry="11" width="50" height="22"  class="s" style="fill: #634300;" />
       <text x="28" y="14" class="ss" text-anchor="middle">VVO-R6</text>
-      <text id="txt30004457" x="28" y="21.7" class="st so" text-anchor="middle">FNT (5)</text>
+      <text id="txt30004457" x="28" y="21.7" class="st so" text-anchor="middle">SHADO (4)</text>
     </a>
   </symbol>
   <symbol id="def30004452">
@@ -836,12 +836,7 @@
 <text x="10" y="20" id="debug"  style="fill: #888888;"> </text>
 
 <g id="glow">
-  <rect id="inc30004468" x="596.5" y="461.5" width="85" height="46" class="inc" />
-  <rect id="inc30004469" x="606.5" y="506.5" width="85" height="46" class="inc" />
-  <rect id="inc30004467" x="636.5" y="426.5" width="85" height="46" class="inc" />
-  <rect id="inc30004470" x="646.5" y="551.5" width="85" height="46" class="incs" />
-  <rect id="inc30004465" x="696.5" y="406.5" width="85" height="46" class="inc" />
-  <rect id="inc30004466" x="766.5" y="466.5" width="85" height="46" class="inc" />
+
 
 </g>
 
