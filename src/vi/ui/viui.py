@@ -107,7 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             cached_room_name = ChatroomChooser.DEFAULT_ROOM_MANES
             cache.putIntoCache("room_names", u",".join(cached_room_name), 60 * 60 * 24 * 365 * 5)
-        return cached_room_name
+        return set(cached_room_name)
 
     def __init__(self, pat_to_logfile, update_splash=None):
         QtWidgets.QMainWindow.__init__(self)
@@ -129,7 +129,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._update_splash_window_info("Update chat parser")
         self.chatparser = ChatParser(self.pathToLogs, self.room_names)
-
+        self.room_names = self.chatparser.rooms
         self._update_splash_window_info("Setup worker threads")
         self.apiThread = None   # thread used for api registration
         self.avatarFindThread = None  # avatar find thread
@@ -1006,7 +1006,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zkillboard.status_kill_mail.connect(lambda online: self.ui.m_qLedZKillboarOnline.setPixmap(
                     QPixmap(u":/Icons/res/online.svg" if online else QPixmap(u":/Icons/res/offline.svg"))))
 
-        #  self.filewatcherThread.addMonitorFile(zkillMonitor.MONITORING_PATH)
+
         logging.info("Set up threads and their connections done.")
 
     def _startThreads(self):

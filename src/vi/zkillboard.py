@@ -3,22 +3,25 @@ import logging
 import os.path
 import datetime
 
+import PySide6.QtNetwork
 from PySide6.QtCore import QUrl, QObject, QTimer
-from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtCore import Signal
-
+from PySide6.QtNetwork import QNetworkRequest
+from PySide6.QtNetwork import QNetworkReply
+from PySide6.QtNetwork import QNetworkAccessManager
 from .evegate import esiUniverseNames, esiAlliances
 from .universe import Universe
 from .cache import Cache
 from .chatparser.ctx import CTX
+import uuid
 
 UTF16_BOM = u'\uFEFF\n'
 
 
 class ZKillMonitor(QObject):
     """
-        Converts the websocket stream to a compatible logfile, the file encoding is "utf-16-le"
-        see: https://github.com/zKillboard/zKillboard/wiki
+        Converts the zKillboard/RedisQ responses to a compatible logfile, the file encoding is "utf-16-le"
+        see: https://github.com/zKillboard/RedisQ
     """
     status_kill_mail = Signal(bool)
     report_system_kill = Signal(int)
@@ -26,54 +29,63 @@ class ZKillMonitor(QObject):
     LOG_VICTIM = True
     LOG_ATTACKERS = False
 
-    def __init__(self, parent=None, address='wss://zkillboard.com/websocket/'):
+    def __init__(self, parent=None):
         QObject.__init__(self)
         self._writeHeader()
-        self.address = address
-        self.webSocket = QWebSocket(parent=parent)
-        self.webSocket.ignoreSslErrors()
-        self.webSocket.error.connect(self.onError)
-        self.webSocket.errorOccurred.connect(self.onError)
-        self.webSocket.connected.connect(self.onConnected)
-        self.webSocket.disconnected.connect(self.onClosed)
-        self.webSocket.textMessageReceived.connect(self.onNewTextMessage)
-        self.reconnectTimer = QTimer(parent=parent)
-        self.reconnectTimer.setInterval(10000)
-        self.reconnectTimer.setSingleShot(True)
-        self.reconnectTimer.timeout.connect(self.startConnectFromTimer)
-        self.reconnectTimer.start()
+        self.zkillredisqStreamID = Cache().getFromCache("zkillredisq.stream.id")
+        if self.zkillredisqStreamID is None:
+            self.zkillredisqStreamID = "spyglass-{}".format(uuid.uuid4())
+            Cache().putIntoCache("zkillredisq.stream.id", self.zkillredisqStreamID)
+        self.netManager = QNetworkAccessManager()
+        self.netManager.finished.connect(self.responseReady)
+        self.req = QNetworkRequest()
+        self.req.setUrl("https://zkillredisq.stream/listen.php?ttw=10&queueID={}".format(self.zkillredisqStreamID))
+        self.reply = None
 
-    def startConnectFromTimer(self):
-        self.status_kill_mail.emit(False)
-        logging.info("Websocket reconnecting to url {}".format(self.address))
-        self.webSocket.open(QUrl(self.address))
+    def responseReady(self, reply:QNetworkReply):
+        """
+            handler executed for each reply
+        Args:
+            reply:
+
+        Returns:
+
+        """
+        try:
+            if reply.error() == PySide6.QtNetwork.QNetworkReply.NetworkError.NoError:
+                log = self.onNewTextMessage(json.loads(reply.readAll().data()))
+                self.status_kill_mail.emit( True )
+                if log:
+                    logging.info("new zKillboard message {}".format(reply.url().toString()))
+            else:
+                logging.error("{} for {}".format(reply.errorString(), reply.url()))
+                self.status_kill_mail.emit(False)
+        except (Exception,)as ex:
+            logging.error("Error : {} during the handling of an zKillboard message {}".format(ex, reply.url().toString()))
+            self.status_kill_mail.emit(False)
+
+        if self.reply:
+            self.reply.deleteLater()
+            self.reply = self.netManager.get(self.req)
 
     def startConnect(self):
+        """
+            start the communication to zkillboard
+        Returns:
+
+        """
+        logging.info("zKillboard message processing started.")
         self.status_kill_mail.emit(False)
-        return
+        self.reply = self.netManager.get(self.req)
 
     def startDisconnect(self):
-        logging.info("Websocket disconnecting from url {}".format(self.address))
-        if self.reconnectTimer.isActive():
-            self.reconnectTimer.stop()
-        self.webSocket.close()
+        """
+            terminates the communication to zkillboard
+        Returns:
 
-    def onError(self):
-        self.status_kill_mail.emit(False)
-        logging.error("Websocket  error {} url: {}".format(self.webSocket.errorString(), self.address))
-
-    def onConnected(self):
-        self.status_kill_mail.emit(True)
-        logging.info("Websocket connected to url {} {} {}".format(
-            self.address, self.webSocket.version(), self.webSocket.subprotocol()))
-        self.webSocket.sendTextMessage('{"action":"sub","channel":"killstream"}')
-        if self.reconnectTimer.isActive():
-            self.reconnectTimer.stop()
-
-    def onClosed(self):
-        self.status_kill_mail.emit(False)
-        logging.info("Websocket closed from url {}".format(self.address))
-        self.reconnectTimer.start()
+        """
+        logging.info("zKillboard message processing terminated.")
+        self.reply = None
 
     @staticmethod
     def _writeUTF16BOM(fp, txt):
@@ -96,25 +108,31 @@ class ZKillMonitor(QObject):
                 ZKillMonitor._writeUTF16BOM(fp, u"\n")
                 ZKillMonitor._writeUTF16BOM(fp, u"\n")
 
-    def onNewTextMessage(self, text):
+    def onNewTextMessage(self,data:dict)->bool:
         """
             callback for a new message
         Args:
-            text: text received via websocket
+            data: dictionary received via get
         Returns:
-            None
+            bool True if a new message was handled
         """
-        kill_data = json.loads(text)
-        self.report_system_kill.emit(kill_data["solar_system_id"])
-        self.logKillMail(kill_data)
-        if self.logKillAsIntel(kill_data):
-            kill_string = self.getIntelString(kill_data)
-            self._writeHeader()
-            with open(ZKillMonitor.MONITORING_PATH, "at", encoding='utf-16-le') as fp:
-                ZKillMonitor._writeUTF16BOM(fp, kill_string)
+        if data:
+            package  = data["package"] if "package" in data.keys() else None
+            killmail = package["killmail"] if  package and "killmail" in  package.keys() else None
+            if killmail :
+                if "solar_system_id" in killmail.keys():
+                    self.report_system_kill.emit(killmail["solar_system_id"])
+                self.logKillMail(killmail)
+                if self.logKillAsIntel(killmail):
+                    kill_string = self.getIntelString(package)
+                    self._writeHeader()
+                    with open(ZKillMonitor.MONITORING_PATH, "at", encoding='utf-16-le') as fp:
+                        ZKillMonitor._writeUTF16BOM(fp, kill_string)
+                    return True
+        return False
 
     @staticmethod
-    def logKillMail(kill_data):
+    def logKillMail(kill_data:dict):
         kill_time = datetime.datetime.strptime(kill_data["killmail_time"], "%Y-%m-%dT%H:%M:%SZ").replace(
             tzinfo=datetime.timezone.utc)
         Cache().putKillmailtoCache(
@@ -126,7 +144,7 @@ class ZKillMonitor(QObject):
         )
 
     @staticmethod
-    def getIntelString(kill_data) -> str:
+    def getIntelString(package_data:dict) -> str:
         """
             gets the log text from teh json kill
 
@@ -136,10 +154,12 @@ class ZKillMonitor(QObject):
         Returns:
             log formatted text related to the kill dict
         """
-        victim = kill_data["victim"]
-        zk_time = kill_data["killmail_time"]
-        system_id = kill_data["solar_system_id"]
-        kill_url = kill_data["zkb"]["url"]
+        kill_data = package_data["killmail"]
+        victim = kill_data["victim"] if "victim" in kill_data.keys() else ""
+        zk_time = kill_data["killmail_time"] if "killmail_time" in kill_data.keys() else ""
+        system_id = kill_data["solar_system_id"] if "solar_system_id" in kill_data.keys() else ""
+        zkb_data = kill_data["zkb"] if "zkb" in kill_data.keys() else ""
+        kill_url = "https://zkillboard.com/kill/{}".format( package_data["killID"] if "killID" in package_data.keys() else "" )
 
         """
           Date encoding like
@@ -154,7 +174,7 @@ class ZKillMonitor(QObject):
         ship_type_id = victim["ship_type_id"] if "ship_type_id" in victim.keys() else 0
         alliance_id = victim["alliance_id"] if "alliance_id" in victim.keys() else 0
         total_value = "<br/>Total Value : {:,} ISK".format(
-            kill_data["zkb"]["totalValue"]) if "totalValue" in kill_data["zkb"].keys() else ""
+            zkb_data["totalValue"]) if zkb_data and "totalValue" in zkb_data.keys() else ""
 
         if alliance_id:
             user_data = esiUniverseNames({character_id, system_id, ship_type_id, alliance_id})
@@ -186,9 +206,9 @@ class ZKillMonitor(QObject):
         )
 
     @staticmethod
-    def updateKillDatabase(kill_data):
-        victim = kill_data["victim"]
-        alliance_id = victim["alliance_id"] if "alliance_id" in victim.keys() else 0
+    def updateKillDatabase(kill_data:dict):
+        victim = kill_data["victim"] if "victim" in kill_data.keys() else None
+        alliance_id = victim["alliance_id"] if victim and "alliance_id" in victim.keys() else 0
         return alliance_id in Cache().getAllianceBlue()
 
     @staticmethod
@@ -203,7 +223,7 @@ class ZKillMonitor(QObject):
         """
         blue_alliances = Cache().getAllianceBlue()
         if ZKillMonitor.LOG_VICTIM:
-            victim = kill_data["victim"]
+            victim = kill_data["victim"] if "victim" in kill_data.keys() else None
             if "character_id" in victim.keys():
                 if "alliance_id" in victim.keys():
                     alliance_id = victim["alliance_id"]

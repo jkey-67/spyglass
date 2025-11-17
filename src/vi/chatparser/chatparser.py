@@ -44,7 +44,7 @@ class ChatParser(object):
         """ path = the path with the logs
             rooms = the rooms to parse"""
         self.path = path  # the path with the chatlog
-        self.rooms = rooms  # the rooms to watch (excl. local)
+        self.rooms = set(rooms)  # the rooms to watch (excl. local)
         self.fileData = {}  # information about the files in the directory
         self.knownMessages = []  # message we already analyzed
         self.locations = {}  # information about the location of a char
@@ -129,7 +129,8 @@ class ChatParser(object):
                         self.fileData[path]["channel_id"] = channel_id
                         self.fileData[path]["lines"] = 1
                         break
-
+            else:
+                self.rooms.add(roomname)
         if "lines" in self.fileData[path].keys():
             prev_lines = self.fileData[path]["lines"]
         else:

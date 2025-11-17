@@ -1192,7 +1192,7 @@ def _ApplyIceToSystem(data):
         if len(tokens):
             data[system_id].has_ice_belt = True
 
-    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "icesystems.txt")
+    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "IceSystems.txt")
 
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
@@ -1231,7 +1231,7 @@ def _applyStructuresToSystem(data, system_id_app, tokens):
 
 def _ApplyStructuresToSystem(data):
 
-    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "structures.txt")
+    filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "Structures.txt")
 
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
