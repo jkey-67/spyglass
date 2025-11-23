@@ -1410,7 +1410,7 @@ def esiSearch(esi_char_name: str, search_text, search_category: Category, search
     url = "https://esi.evetech.net/v3/characters/{character_id}/search/?datasource=tranquility"\
           "&categories={cat}&strict={sstr}&search={sys}&token={tok}".format(
             character_id=token.CharacterID, tok=token.access_token,
-            sys=search_text, cat=search_category, sstr=search_strict)
+            sys=search_text, cat=search_category.value, sstr=search_strict)
     response = getSession().get(url=url)
     if response.status_code == 200:
         return response.json()

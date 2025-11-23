@@ -21,7 +21,8 @@ import os
 
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox, QFileDialog
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QUrl
+from PySide6.QtGui import QDesktopServices
 from vi.ui import Ui_JumpbridgeChooser
 from vi import evegate
 from vi.cache import Cache
@@ -71,11 +72,17 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         return self.run_jb_generation
 
     def generateJumpBridge(self):
-        self.run_jb_generation = True
-        self.ui.generateJumpBridgeProgress.show()
-        evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
-        self.ui.generateJumpBridgeProgress.hide()
-        self.run_jb_generation = False
+        try:
+            self.run_jb_generation = True
+            self.ui.generateJumpBridgeProgress.show()
+            evegate.getAllJumpGates(evegate.esiCharName(), callback=self.processUpdate)
+        except (Exception,) as e:
+            logging.error(e)
+        finally:
+            self.ui.generateJumpBridgeProgress.hide()
+            self.run_jb_generation = False
+
+
 
     def signalURLChange(self):
         url = str(self.ui.urlField.text())
@@ -101,11 +108,16 @@ class JumpbridgeChooser(QtWidgets.QDialog):
         gates = gates + Cache().con.execute(query, ()).fetchall()
 
         def rgn_name_of_system(system_name):
-            return Universe.regionNameFromSystemID(Universe.systemIdByName(system_name[1]))
-        gates.sort(key=rgn_name_of_system)
+            if len(system_name)>1:
+                system_id = Universe.systemIdByName(system_name[1])
+                if system_id is not None:
+                    return Universe.regionNameFromSystemID(system_id)
+            return ""
+
         if gates is not None:
+            gates.sort(key=rgn_name_of_system)
             try:
-                with open(save_path, "w") as gf:
+                with open(save_path, "w", encoding="utf-8") as gf:
                     region_name = None
                     for gate in gates:
 
@@ -120,13 +132,14 @@ class JumpbridgeChooser(QtWidgets.QDialog):
                             return structure_id
 
                         region_name_curr = rgn_name_of_system(gate)
-                        if region_name is not region_name_curr:
+                        if region_name != region_name_curr:
                             region_name = region_name_curr
                             gf.write("\n\n# {}\n\n".format(region_name_curr))
                         gf.write("{} {} --> {}".format(get_structure_id(gate[0]), gate[1], gate[2]) + "\n")
 
                     gf.close()
                 logging.info("Export of all jumpbridge to file '{}' succeeded.".format(save_path))
+                self.showFileInBrowser(save_path)
             except (Exception,) as e:
                 logging.error(e)
                 QMessageBox.critical(self, "Export  jump bridge data failed", "Error: {0}".format(str(e)))
@@ -141,3 +154,9 @@ class JumpbridgeChooser(QtWidgets.QDialog):
     def removeAllJumpbridges(self):
         self.delete_jumpbridge.emit()
         QtWidgets.QApplication.processEvents()
+
+    def showFileInBrowser(self, file_path: str):
+        directory = os.path.dirname(file_path)
+        if not os.path.isdir(directory):
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(directory))

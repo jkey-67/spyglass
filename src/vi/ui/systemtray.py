@@ -70,7 +70,8 @@ class ActionPackage(QObject):
     def updateActionPackage(self, sys_name=None, rgn_name=None):
         self.currentSystem = sys_name
         if sys_name:
-            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
+            if self.gameMenu:
+                self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
             self.setDestination.setEnabled(True)
             self.addWaypoint.setEnabled(True)
             self.openDotlan.setEnabled(True)
@@ -79,7 +80,8 @@ class ActionPackage(QObject):
             self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
             self.currentSystem = sys_name
         else:
-            self.gameMenu.setTitle("EVE-Online")
+            if self.gameMenu:
+                self.gameMenu.setTitle("EVE-Online")
             self.setDestination.setEnabled(False)
             self.addWaypoint.setEnabled(False)
             self.openDotlan.setEnabled(False)
@@ -166,7 +168,8 @@ class TrayContextMenu(QtWidgets.QMenu):
     def updateMenu(self, sys_name=None, rgn_name=None):
         self.currentSystem = sys_name
         if sys_name:
-            self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
+            if self.gameMenu:
+                self.gameMenu.setTitle("EVE-Online {}".format(sys_name.name))
             self.setDestination.setEnabled(True)
             self.addWaypoint.setEnabled(True)
             self.openDotlan.setEnabled(True)
@@ -175,7 +178,8 @@ class TrayContextMenu(QtWidgets.QMenu):
             self.clearJumpGate.setEnabled(Cache().hasJumpGate(sys_name.name))
             self.currentSystem = sys_name
         else:
-            self.gameMenu.setTitle("EVE-Online")
+            if self.gameMenu:
+                self.gameMenu.setTitle("EVE-Online")
             self.setDestination.setEnabled(False)
             self.addWaypoint.setEnabled(False)
             self.openDotlan.setEnabled(False)
