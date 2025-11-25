@@ -1266,6 +1266,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     (None, "changeRegionByName", self.curr_region_name))
 
         self.cache.putIntoCache("version", str(vi.version.VERSION), 60 * 60 * 24 * 30)
+        # Persist monitored chatrooms so they survive restarts.
+        self.cache.putIntoCache("room_names", u",".join(self.chatparser.rooms), 60 * 60 * 24 * 365 * 5)
         self.cache.putIntoCache("settings", str(settings), 60 * 60 * 24 * 30)
         self._terminateThreads()
         event.accept()
@@ -1654,6 +1656,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showChatroomChooser(self):
         chooser = ChatroomChooser(self)
+        chooser.DEFAULT_ROOM_MANES = self.chatparser.rooms
         chooser.rooms_changed.connect(self.changedRoomNames)
         chooser.show()
 

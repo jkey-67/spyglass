@@ -180,6 +180,7 @@ class ChatParser(object):
         if path not in self.fileData or rescan:
             # seems eve created a new file. New Files have 12 lines header
             self.fileData[path] = {"lines": 13}
+            self.rooms.add(room_name)
 
         if path in self.ignoredPaths:
             return []

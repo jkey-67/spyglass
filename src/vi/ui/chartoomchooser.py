@@ -17,6 +17,8 @@
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
 
+"""Dialog for selecting which in-game chatrooms Spyglass should monitor."""
+
 from vi.cache import Cache
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal
@@ -24,10 +26,21 @@ from vi.ui import Ui_ChatroomsChooser
 
 
 class ChatroomChooser(QtWidgets.QDialog):
+    """Modal dialog that lets the user edit the monitored chatrooms.
+
+    Attributes:
+        rooms_changed: Signal emitted with the updated list of room names when
+            the dialog is accepted.
+    """
     rooms_changed = Signal(list)
     DEFAULT_ROOM_MANES = [u"Bean-Intel", u"zKillboard", u"INTEL DRONE'S"]
 
     def __init__(self, parent):
+        """Initialize the dialog and populate the room list.
+
+        Args:
+            parent: Parent widget owning the dialog.
+        """
         QtWidgets.QDialog.__init__(self, parent)
         self.ui = Ui_ChatroomsChooser()
         self.ui.setupUi(self)
@@ -39,10 +52,12 @@ class ChatroomChooser(QtWidgets.QDialog):
         self.ui.roomnamesField.setPlainText(room_names)
 
     def saveClicked(self):
+        """Persist the edited room list and emit the change signal."""
         text = str(self.ui.roomnamesField.toPlainText())
         rooms = [str(name.strip()) for name in text.split(",")]
         self.accept()
         self.rooms_changed.emit(rooms)
 
     def setDefaults(self):
+        """Reset the room list to the built-in defaults."""
         self.ui.roomnamesField.setPlainText(u','.join(ChatroomChooser.DEFAULT_ROOM_MANES))

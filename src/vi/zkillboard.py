@@ -1,3 +1,10 @@
+"""Integration helpers for consuming the zKillboard RedisQ feed.
+
+This module polls RedisQ, converts killmails into Spyglass' UTF-16 encoded
+log format, caches the raw payloads for later lookup, and emits Qt signals so
+the UI can react to kill events in real time.
+"""
+
 import json
 import logging
 import os.path
@@ -19,9 +26,16 @@ UTF16_BOM = u'\uFEFF\n'
 
 
 class ZKillMonitor(QObject):
-    """
-        Converts the zKillboard/RedisQ responses to a compatible logfile, the file encoding is "utf-16-le"
-        see: https://github.com/zKillboard/RedisQ
+    """Subscribe to the zKillboard RedisQ stream and surface kills to Spyglass.
+
+    The monitor uses HTTP long-polling to receive messages, writes formatted
+    kill intel to ``zkillMonitor.log`` in UTF-16 LE, and caches the raw
+    killmail JSON for other components.
+
+    Attributes:
+        status_kill_mail: Emits True when a killmail is processed, False on
+            failures.
+        report_system_kill: Emits a solar system ID for every killmail.
     """
     status_kill_mail = Signal(bool)
     report_system_kill = Signal(int)
@@ -43,13 +57,17 @@ class ZKillMonitor(QObject):
         self.reply = None
 
     def responseReady(self, reply:QNetworkReply):
-        """
-            handler executed for each reply
+        """Handle one RedisQ HTTP reply.
+
         Args:
-            reply:
+            reply: Network reply returned by the long-poll request.
 
         Returns:
+            None.
 
+        Side Effects:
+            Emits ``status_kill_mail`` when a killmail is parsed and schedules
+            the next request.
         """
         try:
             if reply.error() == PySide6.QtNetwork.QNetworkReply.NetworkError.NoError:
@@ -69,30 +87,33 @@ class ZKillMonitor(QObject):
             self.reply = self.netManager.get(self.req)
 
     def startConnect(self):
-        """
-            start the communication to zkillboard
-        Returns:
-
-        """
+        """Start polling zKillboard via RedisQ."""
         logging.info("zKillboard message processing started.")
         self.status_kill_mail.emit(False)
         self.reply = self.netManager.get(self.req)
 
     def startDisconnect(self):
-        """
-            terminates the communication to zkillboard
-        Returns:
-
-        """
+        """Stop polling zKillboard."""
         logging.info("zKillboard message processing terminated.")
         self.reply = None
 
     @staticmethod
     def _writeUTF16BOM(fp, txt):
+        """Write text prefixed with the UTF-16 BOM expected by the log file.
+
+        Args:
+            fp: Opened file pointer with UTF-16 encoding.
+            txt: Text to write.
+        """
         fp.write(UTF16_BOM + txt)
 
     @staticmethod
     def _writeHeader():
+        """Create the zKillboard log with the expected header if it is missing.
+
+        Returns:
+            None.
+        """
         if not os.path.exists(ZKillMonitor.MONITORING_PATH):
             with open(ZKillMonitor.MONITORING_PATH, "wt", encoding="utf-16-le") as fp:
                 ZKillMonitor._writeUTF16BOM(fp, u'\n')
@@ -109,12 +130,14 @@ class ZKillMonitor(QObject):
                 ZKillMonitor._writeUTF16BOM(fp, u"\n")
 
     def onNewTextMessage(self,data:dict)->bool:
-        """
-            callback for a new message
+        """Process one RedisQ message payload.
+
         Args:
-            data: dictionary received via get
+            data: JSON-decoded dictionary returned by RedisQ.
+
         Returns:
-            bool True if a new message was handled
+            bool: True if a killmail was parsed and written; False when the
+            payload was empty or discarded.
         """
         if data:
             package  = data["package"] if "package" in data.keys() else None
@@ -133,6 +156,11 @@ class ZKillMonitor(QObject):
 
     @staticmethod
     def logKillMail(kill_data:dict):
+        """Persist raw killmail JSON and metadata to the cache.
+
+        Args:
+            kill_data: Killmail dictionary from the RedisQ package.
+        """
         kill_time = datetime.datetime.strptime(kill_data["killmail_time"], "%Y-%m-%dT%H:%M:%SZ").replace(
             tzinfo=datetime.timezone.utc)
         Cache().putKillmailtoCache(
@@ -145,20 +173,20 @@ class ZKillMonitor(QObject):
 
     @staticmethod
     def getIntelString(package_data:dict) -> str:
-        """
-            gets the log text from teh json kill
+        """Format a killmail package into the UTF-16 log string.
 
         Args:
-            kill_data: dict of kill
+            package_data: Full RedisQ package including ``killmail`` and
+                ``killID`` fields.
 
         Returns:
-            log formatted text related to the kill dict
+            str: Intel line ready to be written to the zKillboard log.
         """
-        kill_data = package_data["killmail"]
-        victim = kill_data["victim"] if "victim" in kill_data.keys() else ""
+        kill_data = package_data["killmail"] if "killmail" in package_data.keys() else dict()
+        victim = kill_data["victim"] if "victim" in kill_data.keys() else dict()
         zk_time = kill_data["killmail_time"] if "killmail_time" in kill_data.keys() else ""
-        system_id = kill_data["solar_system_id"] if "solar_system_id" in kill_data.keys() else ""
-        zkb_data = kill_data["zkb"] if "zkb" in kill_data.keys() else ""
+        system_id = kill_data["solar_system_id"] if "solar_system_id" in kill_data.keys() else dict()
+        zkb_data = package_data["zkb"] if "zkb" in package_data.keys() else dict()
         kill_url = "https://zkillboard.com/kill/{}".format( package_data["killID"] if "killID" in package_data.keys() else "" )
 
         """
@@ -173,8 +201,7 @@ class ZKillMonitor(QObject):
         character_id = victim["character_id"] if "character_id" in victim.keys() else 0
         ship_type_id = victim["ship_type_id"] if "ship_type_id" in victim.keys() else 0
         alliance_id = victim["alliance_id"] if "alliance_id" in victim.keys() else 0
-        total_value = "<br/>Total Value : {:,} ISK".format(
-            zkb_data["totalValue"]) if zkb_data and "totalValue" in zkb_data.keys() else ""
+        total_value = "<br/>Total Value : {:,} ISK".format( zkb_data["totalValue"]) if "totalValue" in zkb_data.keys() else ""
 
         if alliance_id:
             user_data = esiUniverseNames({character_id, system_id, ship_type_id, alliance_id})
@@ -207,19 +234,32 @@ class ZKillMonitor(QObject):
 
     @staticmethod
     def updateKillDatabase(kill_data:dict):
+        """Check if the victim belongs to a blue alliance.
+
+        Args:
+            kill_data: Killmail dictionary to evaluate.
+
+        Returns:
+            bool: True when the victim alliance is blue.
+        """
         victim = kill_data["victim"] if "victim" in kill_data.keys() else None
         alliance_id = victim["alliance_id"] if victim and "alliance_id" in victim.keys() else 0
         return alliance_id in Cache().getAllianceBlue()
 
     @staticmethod
     def logKillAsIntel(kill_data) -> bool:
-        """
-        evaluates the kill to get a decision if the related message should be logged or not
+        """Decide whether the kill should be recorded as intel.
+
         Args:
-            kill_data: kill to be analyzed
+            kill_data: Killmail dictionary to evaluate.
 
         Returns:
-            True if to be logged else False
+            bool: True when the kill should be logged as intel.
+
+        Notes:
+            The decision is controlled by the ``LOG_VICTIM`` and
+            ``LOG_ATTACKERS`` flags and checks alliance IDs against the cached
+            blue list.
         """
         blue_alliances = Cache().getAllianceBlue()
         if ZKillMonitor.LOG_VICTIM:
