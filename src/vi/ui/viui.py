@@ -115,6 +115,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._update_splash_window_info("Init GUI application")
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self._setupPoiNotificationDock()
         self.setWindowTitle(
             "EVE-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
         self.cache = Cache()
@@ -123,6 +124,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mapPositionsDict = {}
         self.mapStatisticCache = {}
         self.oldClipboardContent = ""
+        self.pending_poi_notifications = set()
         self.autoChangeRegion = False
         self.room_names = self._initialChatRoomsFromCache(self.cache)
         self.currentSystem = None
@@ -141,6 +143,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dotlan = self.setupRegionMap(self.curr_region_name)
         self.mapTimer = QTimer(self)
         self.mapTimer.timeout.connect(self.updateMapView)
+        self.eve_time_timer = QTimer(self)
+        self.eve_time_timer.setInterval(1000)
+        self.eve_time_timer.timeout.connect(self._updateEveTimeLabel)
 
         self.completer_system_names = QtWidgets.QCompleter(Universe.systemNames())
         self.completer_system_names.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -247,6 +252,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._update_splash_window_info("Setup UI")
         self._wireUpUIConnections()
         self._update_splash_window_info("Recall cached settings")
+
+        self._updateEveTimeLabel()
+        self.eve_time_timer.start()
 
         self._startStatisticTimer()
         self._update_splash_window_info("Fetch data from eve-scout.com")
@@ -1408,6 +1416,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionOpacity_20.setChecked(opacity == 0.2)
         pass
 
+    def _updateEveTimeLabel(self):
+        """Refresh the always-visible EVE time display."""
+        try:
+            eve_now = currentEveTime()
+            self.ui.m_qEveTime.setText(f"EVE Time: {eve_now:%H:%M} (UTC)")
+        except Exception:
+            logging.exception("Failed to update EVE time label.")
+
     def _updateIntelActions(self, intel_time):
         self.ui.actionIntel_Time_5_min.setChecked(intel_time == 5)
         self.ui.actionIntel_Time_10_min.setChecked(intel_time == 10)
@@ -1477,10 +1493,87 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setShowStatistic(val)
         self.dotlan.changeStatisticsVisibility(val)
 
+    def _setupPoiNotificationDock(self):
+        """Create a dock to show pending POI add confirmations."""
+        self.poiNotificationDock = QtWidgets.QDockWidget(self)
+        self.poiNotificationDock.setObjectName("dockWidgetNotifications")
+        self.poiNotificationDock.setWindowTitle("Notifications")
+        self.poiNotificationDock.setFeatures(QtWidgets.QDockWidget.DockWidgetClosable |
+                                             QtWidgets.QDockWidget.DockWidgetMovable)
+        self.poiNotificationDock.setMinimumWidth(240)
+        dock_content = QtWidgets.QWidget()
+        self.poiNotificationLayout = QtWidgets.QVBoxLayout(dock_content)
+        self.poiNotificationLayout.setContentsMargins(8, 8, 8, 8)
+        self.poiNotificationLayout.setSpacing(6)
+        self.poiNotificationPlaceholder = QtWidgets.QLabel("No pending notifications")
+        self.poiNotificationPlaceholder.setObjectName("poiNotificationPlaceholder")
+        self.poiNotificationLayout.addWidget(self.poiNotificationPlaceholder)
+        self.poiNotificationLayout.addStretch()
+        self.poiNotificationDock.setWidget(dock_content)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.poiNotificationDock)
+
+    def _ensurePoiNotificationDockVisible(self):
+        """Ensure the POI notification dock is visible when a prompt is queued."""
+        if self.poiNotificationDock.isFloating():
+            self.poiNotificationDock.raise_()
+            self.poiNotificationDock.activateWindow()
+        self.poiNotificationDock.show()
+        if self.dockWidgetArea(self.poiNotificationDock) == QtCore.Qt.NoDockWidgetArea:
+            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.poiNotificationDock)
+
+    def _removePoiNotificationWidget(self, widget, notification_key):
+        """Remove a single notification widget and refresh placeholder state."""
+        self.pending_poi_notifications.discard(notification_key)
+        self.poiNotificationLayout.removeWidget(widget)
+        widget.deleteLater()
+        if len(self.pending_poi_notifications) == 0 and self.poiNotificationLayout.indexOf(self.poiNotificationPlaceholder) == -1:
+            self.poiNotificationLayout.insertWidget(0, self.poiNotificationPlaceholder)
+            self.poiNotificationDock.hide()
+
+    def _enqueuePoiNotification(self, cb_data):
+        """Queue a POI add confirmation in the notification dock."""
+        if not isinstance(cb_data, dict):
+            return
+        poi_name = cb_data.get("name", "POI")
+        system_id = cb_data.get("system_id") or cb_data.get("solar_system_id")
+        system_name = Universe.systemNameById(system_id) if system_id else ""
+        notification_key = (poi_name, system_id)
+        if notification_key in self.pending_poi_notifications:
+            return
+        self.pending_poi_notifications.add(notification_key)
+        if self.poiNotificationPlaceholder is not None:
+            self.poiNotificationLayout.removeWidget(self.poiNotificationPlaceholder)
+        self._ensurePoiNotificationDockVisible()
+
+        container = QtWidgets.QFrame()
+        container.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        layout = QtWidgets.QVBoxLayout(container)
+        label_text = "Add POI \"{}\"{}".format(
+            poi_name,
+            " in {}".format(system_name) if system_name else "")
+        label = QtWidgets.QLabel(label_text)
+        buttons_layout = QtWidgets.QHBoxLayout()
+        accept_btn = QtWidgets.QPushButton("Yes")
+        reject_btn = QtWidgets.QPushButton("No")
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(accept_btn)
+        buttons_layout.addWidget(reject_btn)
+        layout.addWidget(label)
+        layout.addLayout(buttons_layout)
+
+        accept_btn.clicked.connect(lambda: self._acceptPoiNotification(container, notification_key, cb_data))
+        reject_btn.clicked.connect(lambda: self._removePoiNotificationWidget(container, notification_key))
+        self.poiNotificationLayout.insertWidget(self.poiNotificationLayout.count() - 1, container)
+
+    def _acceptPoiNotification(self, container, notification_key, cb_data):
+        """Persist POI from notification and clean up."""
+        if self.cache.putPOI(cb_data):
+            self.poi_changed.emit()
+        self._removePoiNotificationWidget(container, notification_key)
+
     def clipboardChanged(self):
         """ the content of the clip board is used to set jump bridge and poi
         """
-        poi_changed = False
         jb_changed = False
         clip_content = self.clipboard.text()
         if clip_content != self.oldClipboardContent and clip_content != "":
@@ -1488,8 +1581,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 for line_content in tokenize_eve_formatted_text(full_line_content):
                     cb_type, cb_data = evaluateClipboardData(line_content)
                     if cb_type == "poi":
-                        if self.cache.putPOI(cb_data):
-                            poi_changed = True
+                        self._enqueuePoiNotification(cb_data)
                     elif cb_type == "jumpbridge":
                         if self.cache.putJumpGate(
                                 src=cb_data["src"],
@@ -1502,8 +1594,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     elif cb_type == "link":
                         QDesktopServices.openUrl(cb_data)
             self.oldClipboardContent = clip_content
-            if poi_changed:
-                self.poi_changed.emit()
             if jb_changed:
                 self.jbs_changed.emit()
 

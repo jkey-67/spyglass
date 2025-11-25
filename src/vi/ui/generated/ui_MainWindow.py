@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.0
+## Created by: Qt User Interface Compiler version 6.10.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -842,6 +842,20 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_13.addLayout(self.horizontalLayout_6)
 
+        self.horizontalLayout_eveTime = QHBoxLayout()
+        self.horizontalLayout_eveTime.setObjectName(u"horizontalLayout_eveTime")
+        self.horizontalSpacer_eveTime = QSpacerItem(24, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_eveTime.addItem(self.horizontalSpacer_eveTime)
+
+        self.m_qEveTime = QLabel(self.dockWidgetContents_4)
+        self.m_qEveTime.setObjectName(u"m_qEveTime")
+
+        self.horizontalLayout_eveTime.addWidget(self.m_qEveTime)
+
+
+        self.verticalLayout_13.addLayout(self.horizontalLayout_eveTime)
+
         self.tableChars = QTableView(self.dockWidgetContents_4)
         self.tableChars.setObjectName(u"tableChars")
         self.tableChars.setEditTriggers(QAbstractItemView.EditTrigger.CurrentChanged|QAbstractItemView.EditTrigger.DoubleClicked|QAbstractItemView.EditTrigger.SelectedClicked)
@@ -1301,6 +1315,7 @@ class Ui_MainWindow(object):
         self.m_qZKillboard.setText(QCoreApplication.translate("MainWindow", u"Connection to zKillboard ", None))
         self.m_qLedOnline.setText("")
         self.m_qPlayerOnline.setText(QCoreApplication.translate("MainWindow", u"(0) Players", None))
+        self.m_qEveTime.setText(QCoreApplication.translate("MainWindow", u"EVE Time: --:-- (UTC)", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Clear cache file", None))
 #if QT_CONFIG(tooltip)
         self.clearCache.setToolTip(QCoreApplication.translate("MainWindow", u"Clears the cache file, removes non essential items only.", None))
