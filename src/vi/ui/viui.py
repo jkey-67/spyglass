@@ -25,6 +25,7 @@ import requests
 import parse
 import logging
 
+from bs4 import BeautifulSoup
 from typing import Optional
 
 from PySide6.QtGui import Qt
@@ -271,7 +272,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._update_splash_window_info("EVE-Syp preparing the map view.")
         self.updateMapView()
-        self._update_splash_window_info("Initialisation succeeded.")
+
+        self.updateJumpbridgeDataFromCachedURL()
+
+        self._update_splash_window_info("Application startup succeeded.")
+
 
     def checkForUpdate(self, update_avail):
         if update_avail[0]:
@@ -845,7 +850,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.dotlan.setJumpbridges(self.cache.getJumpGates())
             model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', " 
                            "datetime(modified,'unixepoch','localtime') as 'last update', "
-                           "( case used when 2 then 'okay' else 'probably okay' END ) 'Paired' FROM jumpbridge")
+                           "( case used when 2 then 'API fetched' else 'User input' END ) 'Source' FROM jumpbridge")
         self.callOnJbUpdate = callOnUpdate
         callOnUpdate()
         self.jbs_changed.connect(callOnUpdate)
@@ -1753,6 +1758,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def callOnJbUpdate(self):
         return
 
+    def updateJumpbridgeDataFromCachedURL(self):
+        url = self.cache.getFromCache("jumpbridge_url")
+        if url:
+            self._update_splash_window_info("Fetching jumpbridge data from {}".format(url))
+            self.updateJumpbridgesFromFile(url)
+
     @Slot()
     def showJumpbridgeChooser(self):
         url = self.cache.getFromCache("jumpbridge_url")
@@ -1770,14 +1781,66 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cache.clearJumpGate(None)
         self.jbs_changed.emit()
 
+    @staticmethod
+    def fetchDotlanJumpBridges(url: str )->set:
+        """
+        Fetch jump bridge pairs (from, to) from a DOTLAN bridges page.
+        Args:
+            url: doltlan url
+
+        Returns:
+            set(str): src_system --> dst_system
+        """
+        res = set()
+        resp = requests.get(url, timeout=15)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        # The bridge list lives in the inner table; first two columns are from/to systems.
+        data = soup.select("tr")
+        # data = soup.select("table table tr")
+        for row in data[1:]:
+            cells = row.find_all("td")
+            if len(cells) < 2:
+                continue
+            if row.has_attr("id"):
+                gate_id = row["id"].split("-")[2]
+                sys_from = cells[0].get_text(strip=True)
+                sys_to = cells[4].get_text(strip=True)
+                if gate_id and sys_from and sys_to:
+                    res.add("{} --> {}".format( sys_from, sys_to) )
+        return res
+
+    @staticmethod
+    def fetchTextFile(url: str)->set:
+        """
+        Fetch jump bridge pairs (from, to) from a DOTLAN bridges page.
+        Args:
+            url: url pointing to a remote hosted text file
+
+        Returns:
+            set(str): src_system --> dst_system
+        """
+        res = set()
+        resp = requests.get(url)
+        for line in resp.iter_lines(decode_unicode=True):
+            parts = line.strip().split()
+            if len(parts) > 2:
+                res.add(parts)
+        return res
+
     def updateJumpbridgesFromFile(self, url):
         """ Updates the jumpbridge cache from url or local a local file, following
             the file format as described:
 
             src » dst [id_src id_dst json_src_struct json_dst_struct]
+            src » dst info
+            id src --> dst
+            src <-> dst
+            src --> dst
 
         Args:
-            url: url or path
+            url: url or path to fetch
 
         Returns:
 
@@ -1785,22 +1848,21 @@ class MainWindow(QtWidgets.QMainWindow):
         if url is None:
             url = ""
         try:
-            data = []
+            data = set()
             if url != "":
                 if url.startswith("http://") or url.startswith("https://"):
-                    resp = requests.get(url)
-                    for line in resp.iter_lines(decode_unicode=True):
-                        parts = line.strip().split()
-                        if len(parts) > 2:
-                            data.append(parts)
+                    if url.lower().find("evemaps.dotlan.net/bridges")!=-1:
+                        data = self.fetchDotlanJumpBridges(url)
+                    else:
+                        data = self.fetchTextFile(url)
                 elif os.path.exists(url):
                     with open(url, 'r') as f:
-                        content = f.readlines()
+                        data = set( f.readlines() )
 
-                self.cache.clearJumpGate(None)
-                self.jbs_changed.emit()
+                #self.cache.clearJumpGate(None)
+                #self.jbs_changed.emit()
 
-                for line in content:
+                for line in data:
                     jump_bridge_text = parse.parse("{src} » {dst}", line)
                     if jump_bridge_text:
                         self.cache.putJumpGate(src=jump_bridge_text.named["src"], dst=jump_bridge_text.named["dst"])

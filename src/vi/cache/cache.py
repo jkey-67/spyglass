@@ -396,15 +396,21 @@ class Cache(object):
         """
         with Cache.SQLITE_WRITE_LOCK:
             query = "UPDATE jumpbridge SET modified = ? WHERE (src IS ? AND dst IS ?) OR (dst IS ? and src IS ?)"
-            if self.con.execute(query, (time.time(), src, dst, src, dst)).rowcount == 1:
-                self.con.commit()
-                return True
+            res = self.con.execute(query, (time.time(), src, dst, src, dst)).rowcount
+            if res == 1:
+                query = "UPDATE jumpbridge SET id_src = ?, json_src = ? WHERE (src IS ?)"
+                res = self.con.execute(query, (src_id, json.dumps(json_src), src)).rowcount
+                if res == 1:
+                    query = "UPDATE jumpbridge SET id_dst = ?, json_dst = ? WHERE (dst IS ?)"
+                    if self.con.execute(query, (dst_id, json.dumps(json_dst), dst)).rowcount == 1:
+                        self.con.commit()
+                    return True
             query = "DELETE FROM jumpbridge WHERE src LIKE ? or dst LIKE ? or src LIKE ? or dst LIKE ?"
-            self.con.execute(query, (src, src, dst, dst))
+            res = self.con.execute(query, (src, src, dst, dst)).rowcount
             query = "INSERT INTO jumpbridge (src, dst, used, id_src, id_dst, json_src, json_dst, modified, maxage) "\
                     "VALUES (?, ?, ?, ?, ?, ?, ? , ?, ?)"
-            self.con.execute(query, (src, dst, used, src_id, dst_id,
-                                     json.dumps(json_src), json.dumps(json_dst), time.time(), max_age))
+            res = self.con.execute(query, (src, dst, used, src_id, dst_id,
+                                     json.dumps(json_src), json.dumps(json_dst), time.time(), max_age)).rowcount
             self.con.commit()
             return True
 

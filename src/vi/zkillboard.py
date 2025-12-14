@@ -11,6 +11,7 @@ import os.path
 import datetime
 
 import PySide6.QtNetwork
+import requests
 from PySide6.QtCore import QUrl, QObject, QTimer
 from PySide6.QtCore import Signal
 from PySide6.QtNetwork import QNetworkRequest
@@ -142,7 +143,13 @@ class ZKillMonitor(QObject):
         if data:
             package  = data["package"] if "package" in data.keys() else None
             killmail = package["killmail"] if  package and "killmail" in  package.keys() else None
-            if killmail :
+            zkb = package["zkb"] if package and "zkb" in package.keys() else None
+            if zkb and not killmail and "href" in zkb.keys():
+                resp = requests.get(zkb["href"])
+                if resp.status_code == 200:
+                    killmail = resp.json()
+                    package["killmail"] = killmail
+            if killmail:
                 if "solar_system_id" in killmail.keys():
                     self.report_system_kill.emit(killmail["solar_system_id"])
                 self.logKillMail(killmail)
@@ -247,7 +254,7 @@ class ZKillMonitor(QObject):
         return alliance_id in Cache().getAllianceBlue()
 
     @staticmethod
-    def logKillAsIntel(kill_data) -> bool:
+    def logKillAsIntel(kill_data:dict) -> bool:
         """Decide whether the kill should be recorded as intel.
 
         Args:
