@@ -22,8 +22,10 @@ from __future__ import print_function
 
 import os
 import sys
-
+import jsonlines
+import math
 import networkx as nx
+from vi.dotlan import _extractPositionsFromSoup
 from bs4 import BeautifulSoup
 from vi import evegate
 from vi.universe import Universe
@@ -60,6 +62,43 @@ def is_different_constellation(src, dst):
 
 
 missing_sys = list()
+
+
+def _spread_positions(positions, min_dist, iterations=80):
+    if len(positions) < 2:
+        return positions
+    min_dist_sq = min_dist * min_dist
+    keys = list(positions.keys())
+    for _ in range(iterations):
+        moved = False
+        for i in range(len(keys)):
+            xi, yi = positions[keys[i]]
+            for j in range(i + 1, len(keys)):
+                xj, yj = positions[keys[j]]
+                dx = xi - xj
+                dy = yi - yj
+                dist_sq = dx * dx + dy * dy
+                if dist_sq == 0:
+                    jitter = min_dist * 0.5
+                    positions[keys[i]] = (xi + jitter, yi)
+                    positions[keys[j]] = (xj - jitter, yj)
+                    moved = True
+                    continue
+                if dist_sq < min_dist_sq:
+                    dist = math.sqrt(dist_sq)
+                    push = (min_dist - dist) / dist * 0.5
+                    nx = dx * push
+                    ny = dy * push
+                    xi += nx
+                    yi += ny
+                    xj -= nx
+                    yj -= ny
+                    positions[keys[i]] = (xi, yi)
+                    positions[keys[j]] = (xj, yj)
+                    moved = True
+        if not moved:
+            break
+    return positions
 
 
 def addJumpsToSvgFile(system, jumps, svg_template):
@@ -213,6 +252,175 @@ def systemsInSameRegion(id_src, id_dst) -> bool:
     return Universe.constellationByID(Universe.systemById(id_src)["constellation_id"])["region_id"] ==\
         Universe.constellationByID(Universe.systemById(id_dst)["constellation_id"])["region_id"]
 
+def createJsonFile(region_ids, seed=0, k=0.11):
+    """
+        https://developers.eveonline.com/docs/guides/map-data/#2d-schematic-map
+    Args:
+        region_ids:
+        seed:
+        k:
+
+    Returns:
+
+    """
+    svg_file = evegate.getSvgFromDotlan(Universe.regionByID(region_ids[0])["name"])
+    svg_content = BeautifulSoup(svg_file, "lxml-xml")
+    elems = _extractPositionsFromSoup(svg_content)
+    svg_template = dict()
+    affected_systems = set()
+    for region_id in region_ids:
+        region_used = RegionObject(**Universe.regionByID(region_id))
+        for const_id in region_used.constellations:
+            constellation_used = Universe.constellationByID(const_id)
+            for system_id in constellation_used["systems"]:
+                affected_systems.add(system_id)
+                for stargate_system in Universe.stargatesBySystemID(system_id):
+                    affected_systems.add(stargate_system["destination"]["system_id"])
+    g = nx.Graph()
+    initialpos = dict()
+    for system_id in affected_systems:
+        system = Universe.systemById(system_id)
+        constellation_used = Universe.constellationByID(system["constellation_id"])
+        region_selected =Universe.regionByID( Universe.regionIDFromSystemID(system_id) )
+        x_cur = region_selected["position"]["x"] + constellation_used["position"]["x"] + system["position"]["x"]
+        y_cur = region_selected["position"]["z"] + constellation_used["position"]["z"] + system["position"]["y"]
+        x_cur = system["position"]["x"]
+        y_cur = system["position"]["y"]
+
+        subset = system["constellation_id"] if 'constellation_id' in system else -1
+        g.add_node(system_id, subset=subset)
+        initialpos.update({system_id: (x_cur, -y_cur)})
+
+    for _,itm in Universe.STARGATES.items():
+        if itm["system_id"] in affected_systems and itm["destination"]["system_id"] in affected_systems:
+            id_src = int(itm["system_id"])
+            id_dst = int(itm["destination"]["system_id"])
+            if systemsInSameConstellation(id_src, id_dst):
+                g.add_edge(id_src, id_dst, type="Gate", weight=5)
+            elif systemsInSameRegion(id_src, id_dst):
+                g.add_edge(id_src, id_dst, type="Gate", weight=4)
+            else:
+                g.add_edge(id_src, id_dst, type="Gate", weight=3)
+
+    graph_positions = initialpos
+    #graph_positions = nx.spring_layout(g, k=k, seed=seed, pos=initialpos, weight='weight')
+    #graph_positions = nx.kamada_kawai_layout(g,pos=initialpos)
+    #graph_positions = nx.spring_layout(g, k=0.15, seed=61245)
+    #graph_positions = nx.spring_layout(g, k=0.2, weight='weight', seed=61245)
+    #graph_positions = nx.kamada_kawai_layout(g, weight='weight')
+
+    x_min = None
+    x_max = None
+    y_min = None
+    y_max = None
+
+    for system_id in affected_systems:
+        x_cur = graph_positions[system_id][0]
+        y_cur = graph_positions[system_id][1]
+
+        if x_min is None:
+            x_min = x_cur
+            x_max = x_cur
+        elif x_cur < x_min:
+            x_min = x_cur
+        elif x_cur > x_max:
+            x_max = x_cur
+
+        if y_min is None:
+            y_min = y_cur
+            y_max = y_cur
+        elif y_cur < y_min:
+            y_min = y_cur
+        elif y_cur > y_max:
+            y_max = y_cur
+
+    width = max(1, x_max - x_min)
+    height = max(1, y_max - y_min)
+
+    for system_id in affected_systems:
+        graph_positions.update(
+            {system_id: (graph_positions[system_id][0] - x_min, graph_positions[system_id][1] - y_min)})
+    fac = 3
+    svg_w = 1024*fac
+    svg_h = 768*fac
+
+    for system_id in affected_systems:
+        system = Universe.systemById(system_id)
+        name = system["name"]
+        x = float( graph_positions[system_id][0] *(svg_w-62.5))/width
+        y = float(graph_positions[system_id][1] *(svg_h-30))/height
+        svg_template[system_id] = (name,x,y)
+    return svg_template
+
+def createJsonFileFromDotlan(region_ids, seed=0, k=0.11):
+    """
+        https://developers.eveonline.com/docs/guides/map-data/#2d-schematic-map
+    Args:
+        region_ids:
+        seed:
+        k:
+
+    Returns:
+
+    """
+    svg_template = dict()
+    region_download_name=evegate.convertRegionNameForDotlan(Universe.regionByID(region_ids[0])["name"])
+    svg_file = evegate.getSvgFromDotlan(region_download_name)
+    svg_content = BeautifulSoup(svg_file, "lxml-xml")
+
+    graph_positions = dict()
+    systems_on_map = _extractPositionsFromSoup(svg_content)
+    affected_systems = set(systems_on_map.keys())
+
+    for key,system in systems_on_map.items():
+        graph_positions.update({key: (system[1], system[2])})
+
+    x_min = None
+    x_max = None
+    y_min = None
+    y_max = None
+
+    for system_id in affected_systems:
+        x_cur = graph_positions[system_id][0]
+        y_cur = graph_positions[system_id][1]
+
+        if x_min is None:
+            x_min = x_cur
+            x_max = x_cur
+        elif x_cur < x_min:
+            x_min = x_cur
+        elif x_cur > x_max:
+            x_max = x_cur
+
+        if y_min is None:
+            y_min = y_cur
+            y_max = y_cur
+        elif y_cur < y_min:
+            y_min = y_cur
+        elif y_cur > y_max:
+            y_max = y_cur
+
+
+    if x_max:
+        width = max(1, x_max - x_min)
+        height = max(1, y_max - y_min)
+
+        for system_id in affected_systems:
+            graph_positions.update(
+                {system_id: (graph_positions[system_id][0] - x_min, graph_positions[system_id][1] - y_min)})
+        fac = 1
+        svg_w = 1024*fac
+        svg_h = 768*fac
+
+        for system_id in affected_systems:
+            system = Universe.systemById(system_id)
+            name = system["name"]
+            x = float( graph_positions[system_id][0] *(svg_w-62.5))/width
+            y = float(graph_positions[system_id][1] *(svg_h-30))/height
+            svg_template[system_id] = (name,x,y)
+        return svg_template
+    else:
+        return {}
 
 def createSvgFile(region_ids, seed=0, k=0.11):
     map_template = os.path.join(
@@ -237,7 +445,6 @@ def createSvgFile(region_ids, seed=0, k=0.11):
 
     g = nx.DiGraph()
     initialpos = dict()
-    fixed_pos = list()
     for system_id in affected_systems:
         system = Universe.systemById(system_id)
         constellation_used = Universe.constellationByID(system["constellation_id"])
@@ -251,10 +458,8 @@ def createSvgFile(region_ids, seed=0, k=0.11):
         g.add_node(system_id, subset=subset)
 
         initialpos.update({system_id: (x_cur, y_cur)})
-        if region_id not in region_ids:
-            fixed_pos.append(system_id)
 
-    for itm in Universe.STARGATES:
+    for _,itm in Universe.STARGATES.items():
         if itm["system_id"] in affected_systems and itm["destination"]["system_id"] in affected_systems:
 
             id_src = int(itm["system_id"])
@@ -269,7 +474,7 @@ def createSvgFile(region_ids, seed=0, k=0.11):
 
     graph_positions = initialpos
     # graph_positions = nx.spring_layout(g, k=k, seed=seed)
-    # graph_positions = nx.kamada_kawai_layout(g)
+    graph_positions = nx.kamada_kawai_layout(graph_positions)
     # graph_positions = nx.spring_layout(g, k=0.15, seed=61245)
     # graph_positions = nx.spring_layout(g, k=0.2, weight='weight', seed=61245)
     # graph_positions = nx.kamada_kawai_layout(g, weight='weight')
@@ -304,7 +509,7 @@ def createSvgFile(region_ids, seed=0, k=0.11):
     for system_id in affected_systems:
         graph_positions.update(
             {system_id: (graph_positions[system_id][0] - x_min, graph_positions[system_id][1] - y_min)})
-
+    #def _extractPositionsFromSoup(soup) -> dict[int, (str, float, float)]:
     for system_id in affected_systems:
         system = Universe.systemById(system_id)
         constellation_used = Universe.constellationByID(system["constellation_id"])
@@ -392,86 +597,21 @@ def main():
         return
 
     if True:
-        region_id = Universe.regionIdByName("VR-01")
-        for region in [
-                # Universe.regionByID(Universe.regionIDFromSystemID(Universe.systemIdByName("Zarzakh"))),
-                Universe.regionByID(Universe.regionIdByName("Perrigen Falls")),
-                # Universe.regionByID(Universe.regionIdByName("VR-01")),
-                # Universe.regionByID(Universe.regionIdByName("VR-02")),
-                # Universe.regionByID(Universe.regionIdByName("VR-03")),
-                # Universe.regionByID(Universe.regionIdByName("A-R00001")),
-                # Universe.regionByID(Universe.regionIdByName("A-R00002")),
-                # Universe.regionByID(Universe.regionIdByName("A-R00003")),
-                # Universe.regionByID(Universe.regionIdByName("B-R00004")),
-                # Universe.regionByID(Universe.regionIdByName("B-R00005")),
-                # Universe.regionByID(Universe.regionIdByName("B-R00006")),
-                # Universe.regionByID(Universe.regionIdByName("B-R00007")),
-                # Universe.regionByID(Universe.regionIdByName("B-R00008")),
-                # Universe.regionByID(Universe.regionIdByName("C-R00009")),
-                # Universe.regionByID(Universe.regionIdByName("C-R00010")),
-                # Universe.regionByID(Universe.regionIdByName("C-R00011")),
-                # Universe.regionByID(Universe.regionIdByName("C-R00012")),
-                # Universe.regionByID(Universe.regionIdByName("C-R00013")),
-                # Universe.regionByID(Universe.regionIdByName("C-R00014")),
-                # Universe.regionByID(Universe.regionIdByName("C-R00015")),
-                # Universe.regionByID(Universe.regionIdByName("D-R00016")),
-                # Universe.regionByID(Universe.regionIdByName("D-R00017")),
-                # Universe.regionByID(Universe.regionIdByName("D-R00018")),
-                # Universe.regionByID(Universe.regionIdByName("D-R00019")),
-                # Universe.regionByID(Universe.regionIdByName("D-R00020")),
-                # Universe.regionByID(Universe.regionIdByName("D-R00021")),
-                # Universe.regionByID(Universe.regionIdByName("D-R00022")),
-                # Universe.regionByID(Universe.regionIdByName("D-R00023")),
-                # Universe.regionByID(Universe.regionIdByName("E-R00024")),
-                # Universe.regionByID(Universe.regionIdByName("E-R00025")),
-                # Universe.regionByID(Universe.regionIdByName("E-R00026")),
-                # Universe.regionByID(Universe.regionIdByName("E-R00027")),
-                # Universe.regionByID(Universe.regionIdByName("E-R00028")),
-                # Universe.regionByID(Universe.regionIdByName("E-R00029")),
-                # Universe.regionByID(Universe.regionIdByName("F-R00030")),
-                # Universe.regionByID(Universe.regionIdByName("G-R00031")),
-                # Universe.regionByID(Universe.regionIdByName("H-R00032")),
-                # Universe.regionByID(Universe.regionIdByName("K-R00033")),
-                # Universe.regionByID(Universe.regionIdByName("ADR01")),
-                # Universe.regionByID(Universe.regionIdByName("ADR02")),
-                # Universe.regionByID(Universe.regionIdByName("ADR03")),
-                # Universe.regionByID(Universe.regionIdByName("ADR04")),
-                # Universe.regionByID(Universe.regionIdByName("ADR05")),
-                # Universe.regionByID(Universe.regionIdByName("VR-01")),
-                # Universe.regionByID(Universe.regionIdByName("VR-02")),
-                # Universe.regionByID(Universe.regionIdByName("VR-03")),
-                # Universe.regionByID(Universe.regionIdByName("VR-04")),
-                # Universe.regionByID(Universe.regionIdByName("VR-05")),
+        all_rgns = []
+        for key, _ in Universe.REGIONS.items():
+            all_rgns.append(key)
 
-        ]:  # Universe.REGIONS:
+        # all_regions = createJsonFile(all_rgns, k=0.11, seed=7107)
+        for key,region in Universe.REGIONS.items():
             region_name = region["name"]
             region_id = region["region_id"]
-            new_svg = createSvgFile(list({region_id}), k=0.11, seed=7107)
-            result = new_svg.encode("utf-8")
-            fname = "{}.svg".format(evegate.convertRegionNameForDotlan(region_name))
-            with open(os.path.join(base_path, fname), "wb") as svgFile:
-                svgFile.write(result)
-                svgFile.close()
-        return
-        # system_id = Universe.systemIdByName("Jita" )
-        # system_id = Universe.systemIdByName("Zarzakh")
-        system_id = Universe.systemIdByName("Z-ENUD")
-        system_id = Universe.systemIdByName('1M7-RK')
-        rgn_name = Universe.regionNameFromSystemID(Universe.systemIdByName("Zarzakh"))
-        rgn_id = Universe.regionIDFromSystemID(system_id)
-        catch_id = Universe.regionIDFromSystemID(30001168)
-        new_svg = createSvgFile(list({rgn_id, catch_id}))
-        result = new_svg.prettify().encode("utf-8")
-        fname = "{}.svg".format(evegate.convertRegionNameForDotlan(rgn_name))
-        with open(os.path.join(base_path, fname), "wb") as svgFile:
-            svgFile.write(result)
-            svgFile.close()
-        return
-        new_svg = updateSvgFile(os.path.join(base_path, fname))
-        result = new_svg.prettify().encode("utf-8")
-        with open(os.path.join(base_path, fname), "wb") as svgFile:
-            svgFile.write(result)
-            svgFile.close()
+            new_svg = createJsonFileFromDotlan([region_id], k=0.11, seed=7107)
+            #new_svg = createJsonFile([region_id], k=0.11, seed=7107)
+            with jsonlines.open("../vi/ui/res/mapdata/generated/{}.jsonl".format(evegate.convertRegionNameForDotlan(region_name)), mode='w') as writer:
+                writer.write_all(new_svg.items())
+
+            with jsonlines.open("../vi/ui/res/mapdata/generated/{}.jsonl".format(evegate.convertRegionNameForDotlan(region_name)), mode='r') as reader:
+                new_svg_in = dict(reader)
 
 
 def errout(*objs):

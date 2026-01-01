@@ -58,7 +58,7 @@ def _extractPositionsFromSoup(soup) -> dict[int, (str, float, float)]:
     return systems_map_new
 
 
-def _extractSizeFromSoup(soup, scale=1.0):
+def _extractSizeFromSoup(soup, scale=1.0)->QSizeF:
     """
     Setups width and height from the svg viewbox as x y w h
     Args:
@@ -76,6 +76,59 @@ def _extractSizeFromSoup(soup, scale=1.0):
         return QSizeF(float(box[2])*scale, float(box[3])*scale)
     else:
         return QSizeF(20*System.ELEMENT_WIDTH*scale, 20*System.ELEMENT_HEIGHT*scale)
+
+def _extractSizeFromJson(data, scale=1.0)->QSizeF:
+    """
+    Setups width and height from the svg viewbox as x y w h
+    Args:
+        soup:
+
+    Returns:
+        None
+    """
+    if len(data):
+        min_x = 0
+        min_y = 0
+        max_x = None
+        max_y = None
+        for system_id, data in data.items():
+            min_x = min(min_x, data[1] * scale) if min_x else data[1] * scale
+            min_y = min(min_y, data[2] * scale) if min_y else data[2] * scale
+            max_x = max(max_x, data[1] * scale) if max_x else data[1] * scale
+            max_y = max(max_y, data[2] * scale) if max_y else data[2] * scale
+        return QSizeF(max_x-min_x,max_y-min_y)
+    else:
+        return QSizeF()
+
+def _extractSystemsFromDict(data, scale=1.0) -> dict[str, System]:
+    """
+    Extracts all systems from the svg
+
+    Remark:
+        Depending on the current scaling the svg will be scanned for system ids
+
+    Args:
+        soup(BeautifulSoup):
+            BeautifulSoup holding the svg as html page
+        scale(float):
+            Scaling factor for the distance in between the systems base on 1027x768 DotLan SVG Maps, the default is 1.2
+
+    Returns:
+        dict[str,System]:Dictionary hold all systems from the map (str,System)
+
+    """
+    # default size of the systems to calculate the center point
+    systems = {}
+    for system_id, data in data.items():
+        new_system = ALL_SYSTEMS[int(system_id)]
+        new_system.applySVG(
+            map_coordinates=QRectF(
+                data[1] * scale,
+                data[2] * scale,
+                System.ELEMENT_WIDTH,
+                System.ELEMENT_HEIGHT))
+        systems[new_system.name] = new_system
+    return systems
 
 def _extractSystemsFromSoup(soup, scale=1.0) -> dict[str, System]:
     """
@@ -138,7 +191,8 @@ class Map(object):
 
     def __init__(self,
                  region_name,
-                 svg_file,
+                 svg_file=None,
+                 json_file=None,
                  set_jump_maps_visible=False,
                  set_statistic_visible=False,
                  set_adm_visible=False,
@@ -151,9 +205,13 @@ class Map(object):
         self._set_vulnerable_visible = set_adm_visible
 
         # Create soup from the svg
-        svg_content = BeautifulSoup(svg_file, "lxml-xml")
-        self.svg_size = _extractSizeFromSoup(svg_content, scale=self.default_scale)
-        self.systems = _extractSystemsFromSoup(svg_content, scale=self.default_scale)
+        if svg_file:
+            svg_content = BeautifulSoup(svg_file, "lxml-xml")
+            self.svg_size = _extractSizeFromSoup(svg_content, scale=self.default_scale)
+            self.systems = _extractSystemsFromSoup(svg_content, scale=self.default_scale)
+        elif json_file:
+            self.svg_size = _extractSizeFromJson(json_file, scale=self.default_scale)
+            self.systems = _extractSystemsFromDict(json_file, scale=self.default_scale)
 
         self.systemsById = {}
         self.systemsByName = {}

@@ -9,12 +9,13 @@ def Init_Universe_Graph():
     g = nx.Graph()
     for key, itm in Universe.SYSTEMS.items():
         g.add_node(key, system=itm)
-
-    for itm in Universe.STARGATES:
-        id_src = int(itm["system_id"])
-        id_dst = int(itm["destination"]["system_id"])
-        g.add_edge(id_src, id_dst, type="Gate")
-
+    try:
+        for _,itm in Universe.STARGATES.items():
+            id_src = int(itm["system_id"])
+            id_dst = int(itm["destination"]["system_id"])
+            g.add_edge(id_src, id_dst, type="Gate")
+    except (Exception,) as ex:
+        g = nx.Graph()
     return g
 
 

@@ -19,7 +19,6 @@
 
 import time
 import logging
-import queue
 import os
 from PySide6.QtCore import QThread, QObject, QTimer, Qt
 from PySide6.QtCore import Signal, Slot

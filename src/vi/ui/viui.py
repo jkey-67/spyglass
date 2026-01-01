@@ -18,6 +18,7 @@
 ###########################################################################
 
 import json
+import jsonlines
 import os
 import datetime
 import time
@@ -30,7 +31,7 @@ from typing import Optional
 
 from PySide6.QtGui import Qt
 from PySide6 import QtGui, QtCore, QtWidgets
-from PySide6.QtCore import QPoint, QPointF, QRectF, QSortFilterProxyModel, QTimer, Qt
+from PySide6.QtCore import QPoint, QPointF, QRectF, QSortFilterProxyModel, QTimer, Qt, QSignalBlocker
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QIcon, QPixmap, QDesktopServices
@@ -445,7 +446,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def regionNameChanged(self, new_region_name):
         if hasattr(self, "statisticsThread"):
             self.statisticsThread.fetchLocation(fetch=False)
-        if new_region_name in [region["name"] for region in Universe.REGIONS]:
+        if new_region_name in [region["name"] for _,region in Universe.REGIONS.items()]:
             self.changeRegionByName(region_name=new_region_name)
 
     @Slot(float)
@@ -507,13 +508,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionJumpbridgeData.triggered.connect(self.showJumpbridgeChooser)
         self.ui.actionRescanIntelNow.triggered.connect(self.rescanIntel)
         self.ui.actionClear_Intel_Chat.triggered.connect(self.clearIntelChat)
-        self.ui.mapView.webViewUpdateScrollbars.connect(self.fixupScrollBars)
+        #self.ui.mapView.webViewUpdateScrollbars.connect(self.fixupScrollBars)
         self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
-        self.ui.regionNameField.addItems(sorted([region["name"] for region in Universe.REGIONS]))
+        self.ui.regionNameField.addItems(sorted([region["name"] for _,region in Universe.REGIONS.items()]))
 
         self.ui.mapView.webViewIsScrolling.connect(self.mapviewIsScrolling)
-        self.ui.mapHorzScrollBar.valueChanged.connect(self.updateX)
-        self.ui.mapVertScrollBar.valueChanged.connect(self.updateY)
+        #self.ui.mapHorzScrollBar.valueChanged.connect(self.updateX)
+        #self.ui.mapVertScrollBar.valueChanged.connect(self.updateY)
 
         self.ui.actionOpen_on_dotlan.triggered.connect(lambda: QDesktopServices.openUrl(
             "https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name)))
@@ -1188,6 +1189,26 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             return svg
 
+    @staticmethod
+    def loadJsonMapFile(cache, region_name) -> Optional[dict]:
+        """
+            Reads the regions svg content in order res/mapdata folder, filesystem, cache or dotlan
+        Args:
+            cache:
+            region_name:
+
+        Returns:
+
+        """
+        try:
+            res_file_name = os.path.join("vi", "ui", "res", "mapdata","generated",
+                                         "{0}.jsonl".format(evegate.convertRegionNameForDotlan(region_name)))
+            with jsonlines.open( res_file_name, mode='r') as reader:
+                res = dict(reader)
+            return res
+        except:
+            return None
+
     def setupRegionMap(self, region_name):
         """
             Prepares a new dotlan object for the selected region
@@ -1199,13 +1220,19 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if not region_name:
             region_name = "Providence"
-        svg = self.loadSVGMapFile(self.cache, region_name)
-        if svg is None:
+        svg_dotlan_map = None
+        json_generated_map = None
+        if True:
+            json_generated_map = self.loadJsonMapFile(self.cache, region_name)
+        else:
+            svg_dotlan_map = self.loadSVGMapFile(self.cache, region_name)
+        if svg_dotlan_map is None and json_generated_map is None:
             return None
 
         region_map = dotlan.Map(
             region_name=region_name,
-            svg_file=svg,
+            svg_file=svg_dotlan_map,
+            json_file=json_generated_map,
             set_jump_maps_visible=self.showJumpbridge(),
             set_statistic_visible=self.showStatistic(),
             set_adm_visible=self.showADMOnMap(),
@@ -1739,15 +1766,28 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot()
     def fixupScrollBars(self):
+        block_h_sb = QSignalBlocker(self.ui.mapHorzScrollBar)
+        block_v_sb = QSignalBlocker(self.ui.mapVertScrollBar)
         fac = self.ui.mapView.zoomFactor()
         pos = self.ui.mapView.scrollPosition()
         size = self.ui.mapView.imgSize
-        self.ui.mapHorzScrollBar.setPageStep(int(size.width()))
-        self.ui.mapHorzScrollBar.setRange(int(min(pos.x(), 0)), int(size.width()*fac))
-        self.ui.mapHorzScrollBar.setValue(int(pos.x()))
-        self.ui.mapVertScrollBar.setPageStep(int(size.height()))
-        self.ui.mapVertScrollBar.setRange(int(min(pos.y(), 0)), int(size.height()*fac))
-        self.ui.mapVertScrollBar.setValue(int(pos.y()))
+        viewport = self.ui.mapView.size()
+        max_x = max(0, int(size.width() * fac - viewport.width()))
+        max_y = max(0, int(size.height() * fac - viewport.height()))
+        value_x = max(0, min(int(pos.x()), max_x))
+        value_y = max(0, min(int(pos.y()), max_y))
+        try:
+            if pos != QPointF(value_x, value_y) and not self.ui.mapView.scrolling:
+                self.ui.mapView.setScrollPosition(QPointF(value_x, value_y))
+            self.ui.mapHorzScrollBar.setPageStep(int(viewport.width()))
+            self.ui.mapHorzScrollBar.setRange(0, max_x)
+            self.ui.mapHorzScrollBar.setValue(value_x)
+            self.ui.mapVertScrollBar.setPageStep(int(viewport.height()))
+            self.ui.mapVertScrollBar.setRange(0, max_y)
+            self.ui.mapVertScrollBar.setValue(value_y)
+        finally:
+            del block_h_sb
+            del block_v_sb
 
     def showChatroomChooser(self):
         chooser = ChatroomChooser(self)
@@ -2175,8 +2215,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     char_data_online.append(itm)
 
             for itm in char_data_online:
+                curr_system = itm["system"]
                 self.setLocation(itm["name"], itm["system"]["name"], change_region=True)
-                self.focusMapOnSystem(itm["system"]["system_id"])
+                if  "system_id" in itm["system"].keys():
+                    self.focusMapOnSystem(itm["system"]["system_id"])
+                else:
+                    self.focusMapOnSystem(itm["system"]["system_id"])
 
         if STAT.CHECK_FOR_UPDATE in data:
             self.checkForUpdate(data[STAT.CHECK_FOR_UPDATE])

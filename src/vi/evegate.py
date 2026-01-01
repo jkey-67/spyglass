@@ -1925,6 +1925,13 @@ def applyRouteToEveOnline(name_char, jump_list):
         else:
             esiAutopilotWaypoint(name_char, id_system, beginning=False, clear_all=False)
 
+def getStaticDataVersion()->Optional[int]:
+    response = requests.get("https://developers.eveonline.com/static-data/tranquility/latest.jsonl")
+    if response.status_code != 200:
+        return None
+    else:
+        return response.json()["buildNumber"]
+
 
 def checkSpyglassVersionUpdate(current_version=VERSION, force_check=False):
     """check GitHub for a new latest release
@@ -2235,38 +2242,6 @@ def dumpSpyglassDownloadStats():
         response.raise_for_status()
 
 
-def generate_universe_constellation_names(use_outdated=True):
-    esiUniverseAllSystems()
-    print("Constellation generation started ...")
-    constellation_id_by_name = dict()
-    data = esiUniverseAllConstellations()
-    count = len(data)
-    pos = 1
-    for constellation_id in esiUniverseAllConstellations():
-        print("Constellation id {} {}/{} {:.1f}%".format(constellation_id, pos, count, (pos / count * 100)))
-        for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
-            res = esiUniverseConstellations(constellation_id, lang=lang, use_outdated=use_outdated)
-            constellation_id_by_name[res["name"]] = res["constellation_id"]
-        pos += 1
-
-    print("Constellation generation done.")
-    with open("universe/constellationnames.py.new", "w", encoding="utf-8") as out_file:
-        out_file.write('# this file is auto generated, do not edit.\n')
-        out_file.write('CONSTELLATION_IDS_BY_NAME = {\n')
-        data_out = set(constellation_id_by_name.items())
-        last = len(data_out)
-        for key, data in set(constellation_id_by_name.items()):
-            if last == 1:
-                out_file.write('   u"{}": {}\n'.format(key, data))
-            else:
-                out_file.write('   u"{}": {},\n'.format(key, data))
-            last -= 1
-        out_file.write('}\n')
-
-    if os.path.exists("universe/constellationnames.py.new"):
-        if os.path.exists("universe/constellationnames.py"):
-            os.remove("universe/constellationnames.py")
-        os.renames("universe/constellationnames.py.new", "universe/constellationnames.py")
 
 
 def is_null_sec_system_name(name: str):
@@ -2336,44 +2311,6 @@ def generate_universe_system_names(use_outdated=True):
         if os.path.exists("universe/systemnames.json"):
             os.remove("universe/systemnames.json")
         os.renames("universe/systemnames.json.new", "universe/systemnames.json")
-
-
-def generate_universe_region_names(use_outdated=True):
-    print("Region generation started ...")
-    pos = 1
-    regions = esiUniverseNames(esiUniverseGetAllRegions(), use_outdated=use_outdated)
-    count = len(regions)
-    region_id_by_name = dict()
-    for region_id in regions:
-        print("Region id {} {}/{} {:.1f}%".format(region_id, pos, count, (pos / count * 100)))
-        for lang in ("en", "en-us", "de", "fr", "ja", "ru", "ko", "es", "zh"):
-            res = esiUniverseRegions(region_id, lang=lang, use_outdated=use_outdated)
-            if res and "name" in res and "region_id" in res:
-                region_id_by_name[res["name"]] = res["region_id"]
-            else:
-                continue
-        pos += 1
-
-    with open("universe/regionnames.py.new", "w", encoding="UTF-8") as out_file:
-        out_file.write('# this file is auto generated, do not edit.\n')
-        out_file.write('REGION_IDS_BY_NAME = {\n')
-        rgn_out = set(region_id_by_name.items())
-        last = len(rgn_out)
-        for key, data in rgn_out:
-            if last == 1:
-                out_file.write('   "{}": {}\n'.format(key, data))
-            else:
-                out_file.write('   "{}": {},\n'.format(key, data))
-            last -= 1
-        out_file.flush()
-
-        out_file.write('}\n')
-        print("Region generation done.")
-
-    if os.path.exists("universe/regionnames.py.new"):
-        if os.path.exists("universe/regionnames.py"):
-            os.remove("universe/regionnames.py")
-        os.renames("universe/regionnames.py.new","universe/regionnames.py")
 
 
 def esiPing() -> bool:

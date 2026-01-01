@@ -2,11 +2,11 @@ import unittest
 import os
 import json
 import uuid
+import jsonlines
 from vi.cache import Cache
 from vi.universe import Universe
 from vi.redoundoqueue import RedoUndoQueue
 from vi import evegate
-
 
 class FileName:
     def __init__(self, curr_path, file_name):
@@ -41,7 +41,10 @@ class TestCache(unittest.TestCase):
     Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-test.sqlite3")
     cache_used = Cache()
     evegate.setEsiCharName("nele McCool")
+    STATIC_DATA_FOLDER = "../sde/eve-online-static-data-latest-jsonl"
+    STATIC_DATA_INFO = "# This file was automatically generated, please do not edit it.\n"
 
+    # https://developers.eveonline.com/static-data/eve-online-static-data-latest-jsonl.zip
     def test_sortPoi(self):
         self.cache_used.swapPOIs(1, 11)
         self.cache_used.swapPOIs(1, 1)
@@ -96,69 +99,69 @@ class TestCache(unittest.TestCase):
             systems = [sys["system_id"] for sys in res if sys["constellation_id"] == 20000107]
         self.assertIsNotNone(systems)
 
-    def test_update_all_json_files(self):
-        self.use_cache =True
-        self.use_outdated_cache = False
-        self.test_generateShipnames()
-        self.test_generateRegions()
-        self.test_generateConstellations()
-        self.test_generateSystems()
-        self.test_generateStargates()
-        self.use_outdated_cache = True
+    def test_generateShipnamesJsonl(self):
+        groups_category_id_6 = dict()
+        with jsonlines.open("{path}/groups.jsonl".format(path=self.STATIC_DATA_FOLDER), mode='r') as reader:
+            for obj in reader:
+                if obj["categoryID"] == 6:
+                    elem = dict()
+                    elem["categoryID"] = obj["categoryID"]
+                    elem["name"] = obj["name"]
+                    groups_category_id_6[obj["_key"]] = elem
 
-    def test_generateShipnames(self):
-        name = FileName(self.curr_path, "shipnames.py")
-        name.prepare()
-        res = evegate.esiUniverseCategories(6, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
-        with open(name.temp_name, "w") as ships_file:
-            ships_file.write("# generated, do not modify\n")
-            ships_file.write("SHIPNAMES = {")
+        ship_types = dict()
+        with jsonlines.open("{path}/types.jsonl".format(path=self.STATIC_DATA_FOLDER), mode='r') as reader:
+            for obj in reader:
+                if obj["groupID"] in groups_category_id_6.keys():
+                    elem = dict()
+                    for key in ["groupID", "name"]:
+                        if key in obj.keys():
+                            elem[key] = obj[key]
+                    ship_types[obj["_key"]] = elem
+
+        file_name = FileName(self.curr_path, "shipnames.py")
+        file_name.prepare()
+        with open(file_name.temp_name, "w") as writer:
+            writer.write(self.STATIC_DATA_INFO)
+            writer.write("SHIPNAMES = {")
             max_len = 80
             eol_txt = "\n        "
-            ships_file.write(eol_txt)
+            writer.write(eol_txt)
             curr_len = len(eol_txt)
             first_entry = True
-            for itm in res["groups"]:
-                res = evegate.esiUniverseGroups(itm, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
-                self.assertIsNotNone(res, "esiUniverseGroups should never return None")
-                for res_type in res["types"]:
-                    res = evegate.esiUniverseTypes(res_type, use_outdated=self.use_outdated_cache)
-                    self.assertIsNotNone(res, "esiUniverseTypes should never return None")
-                    ship_text = u' {}: u"{}"'.format(res["type_id"], res["name"])
-                    curr_len = curr_len + len(ship_text)
-                    if curr_len > max_len:
-                        first_entry = True
-                        ships_file.write(",")
-                        ships_file.write(eol_txt)
-                        curr_len = len(eol_txt) + 1
-                    if first_entry:
-                        first_entry = False
-                        ships_file.write(ship_text)
-                    else:
-                        ships_file.write(", ")
-                        ships_file.write(ship_text)
+            for key,itm in ship_types.items():
+                ship_text = u' {}: u"{}"'.format(key, itm["name"]["en"])
+                curr_len = curr_len + len(ship_text)
+                if curr_len > max_len:
+                    first_entry = True
+                    writer.write(",")
+                    writer.write(eol_txt)
+                    curr_len = len(eol_txt) + 1
+                if first_entry:
+                    first_entry = False
+                    writer.write(ship_text)
+                else:
+                    writer.write(", ")
+                    writer.write(ship_text)
 
-            ships_file.write("}\n\n")
+            writer.write("}\n\n")
             ship_names = dict()
             cat_res = evegate.esiUniverseCategories(6, use_outdated=self.use_outdated_cache)
-            for lang in ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es"):
-                for itm in cat_res["groups"]:
-                    grp_res = evegate.esiUniverseGroups(itm, use_outdated=self.use_outdated_cache,lang=lang)
-                    for res_type in grp_res["types"]:
-                        type_res = evegate.esiUniverseTypes(res_type, use_outdated=self.use_outdated_cache,lang=lang)
-                        ship_names[type_res["name"].upper()] = type_res["type_id"]
+            for key, itm in ship_types.items():
+                for lang, name in itm["name"].items():
+                    ship_names[name.upper()] = key
 
-            ships_file.write("ID_BY_SHIPNAMES = {{{}".format(eol_txt))
+            writer.write("ID_BY_SHIPNAMES = {{{}".format(eol_txt))
             cnt  = len(ship_names)
-            for item_id,item in ship_names.items():
+            for item_name,item_id in ship_names.items():
                 cnt -= 1
                 if cnt>0:
-                    ships_file.write(u'u"{}": {},{}'.format(item_id,item,eol_txt))
+                    writer.write(u'u"{}": {},{}'.format(item_name,item_id,eol_txt))
                 else:
-                    ships_file.write(u'u"{}": {} '.format(item_id,item))
+                    writer.write(u'u"{}": {} '.format(item_name,item_id))
 
-            ships_file.write("}\n")
-        name.update()
+            writer.write("}\n")
+        file_name.update()
 
     @staticmethod
     def writeList(file, alist):
@@ -173,147 +176,214 @@ class TestCache(unittest.TestCase):
             size -= 1
         file.write("]\n")
 
-    def test_generateRegions(self):
-        name = FileName(self.curr_path, "everegions.json")
+    def test_generateAllJsonl(self):
+        self.assertTrue( os.path.exists(self.STATIC_DATA_FOLDER) )
+        self.assertTrue( os.path.exists(self.STATIC_DATA_FOLDER) )
+        self.test_generateSEDpy()
+        self.test_generateShipnamesJsonl()
+        self.test_generateRegionsJsonl()
+        self.test_generateConstellationsJson()
+        self.test_generateSystemsJson()
+        self.test_generateStargatesJson()
+        self.test_generateNPCNamesJson()
+
+    def test_generateRegionsJsonl(self):
+        name = FileName(self.curr_path, "everegions.jsonl")
         name.prepare()
-        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
-        with open(name.temp_name, "w") as ships_file:
-            ships_file.write("[")
-            max_len = 80
-            eol_txt = "\n        "
-            ships_file.write(eol_txt)
-            curr_len = len(eol_txt)
-            first_entry = True
-            for itm in res:
-                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
-                ship_text = u'{}'.format(json.dumps(res))
-                curr_len = curr_len + len(ship_text)
-                if curr_len > max_len:
-                    if not first_entry:
-                        first_entry = True
-                        ships_file.write(",")
-                        ships_file.write(eol_txt)
-                        curr_len = len(eol_txt) + 1
-                if first_entry:
-                    first_entry = False
-                    ships_file.write(ship_text)
+        all_regions = dict()
+        region_id_by_name = dict()
+        with jsonlines.open("{path}/mapRegions.jsonl".format(path=self.STATIC_DATA_FOLDER), mode='r') as reader:
+            for obj in reader:
+                self.assertIn("constellationIDs", obj.keys())
+                self.assertIn("name", obj.keys())
+                self.assertIn("en", obj["name"].keys())
+                self.assertIn("position", obj.keys())
+                elem = dict()
+                elem["constellations"] = obj["constellationIDs"]
+                elem["name"] = obj["name"]["en"]
+                elem["names"] = obj["name"]
+                elem["position"] = obj["position"]
+                elem["region_id"] = obj["_key"]
+                all_regions[int(obj["_key"])] = elem
+
+                for _,rgn_name in obj["name"].items():
+                    region_id_by_name[rgn_name] = obj["_key"]
+
+        with jsonlines.open(name.temp_name, mode= 'w') as writer:
+            writer.write_all(all_regions.items())
+        name.update()
+
+        regionnames_py = FileName(self.curr_path, "regionnames.py")
+        regionnames_py.prepare()
+        with open(regionnames_py.temp_name, "w", encoding="UTF-8") as writer:
+            writer.write(self.STATIC_DATA_INFO)
+            writer.write('REGION_IDS_BY_NAME = {\n')
+            last = len(region_id_by_name)
+            for key, data in region_id_by_name.items():
+                if last == 1:
+                    writer.write('   "{}": {}\n'.format(key, data))
                 else:
-                    ships_file.write(", ")
-                    ships_file.write(ship_text)
+                    writer.write('   "{}": {},\n'.format(key, data))
+                last -= 1
+            writer.flush()
 
-            ships_file.write("]\n")
-        name.update()
+            writer.write('}\n')
+        regionnames_py.update()
 
-    def test_generateConstellations(self):
-        name = FileName(self.curr_path, "eveconstellations.json")
+    def test_generateConstellationsJson(self):
+        name = FileName(self.curr_path, "eveconstellations.jsonl")
         name.prepare()
-        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
-        with open(name.temp_name, "w") as ships_file:
-            ships_file.write("[")
-            max_len = 80
-            eol_txt = "\n        "
-            ships_file.write(eol_txt)
-            curr_len = len(eol_txt)
-            first_entry = True
-            for itm in res:
-                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
-                self.assertIsNotNone(res, "esiUniverseGroups should never return None")
-                for constellation_id in res["constellations"]:
-                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
-                    ship_text = u'{}'.format(json.dumps(res))
-                    curr_len = curr_len + len(ship_text)
-                    if curr_len > max_len:
-                        if not first_entry:
-                            first_entry = True
-                            ships_file.write(",")
-                            ships_file.write(eol_txt)
-                            curr_len = len(eol_txt) + 1
-                    if first_entry:
-                        first_entry = False
-                        ships_file.write(ship_text)
-                    else:
-                        ships_file.write(", ")
-                        ships_file.write(ship_text)
+        all_constellations = dict()
+        all_constellations_names = dict()
+        with jsonlines.open("{path}/mapConstellations.jsonl".format(path=self.STATIC_DATA_FOLDER), mode='r') as reader:
+            for obj in reader:
+                self.assertIn("solarSystemIDs", obj.keys())
+                self.assertIn("name", obj.keys())
+                self.assertIn("en", obj["name"].keys())
+                self.assertIn("position", obj.keys())
+                self.assertIn("regionID", obj.keys())
+                elem = dict()
+                elem["constellation_id"] = obj["_key"]
+                elem["names"] = obj["name"]
+                elem["name"] = obj["name"]["en"]
+                elem["position"] = obj["position"]
+                elem["region_id"] = obj["regionID"]
+                elem["systems"] = obj["solarSystemIDs"]
+                all_constellations[obj["_key"]] = elem
+                for key,const_name in obj["name"].items():
+                    all_constellations_names[const_name] = obj["_key"]
 
-            ships_file.write("]\n")
+        with jsonlines.open(name.temp_name, mode= 'w') as writer:
+            writer.write_all(all_constellations.items())
         name.update()
+        conste_name = FileName(self.curr_path, "constellationnames.py")
+        conste_name.prepare()
+        with open(conste_name.temp_name, "w", encoding="utf-8") as writer:
+            writer.write(self.STATIC_DATA_INFO)
+            writer.write('CONSTELLATION_IDS_BY_NAME = {\n')
+            data_out = set(all_constellations_names.items())
+            last = len(data_out)
+            for key, data in set(all_constellations_names.items()):
+                if last == 1:
+                    writer.write('   u"{}": {}\n'.format(key, data))
+                else:
+                    writer.write('   u"{}": {},\n'.format(key, data))
+                last -= 1
+            writer.write('}\n')
+        conste_name.update()
 
-    def test_generateSystems(self):
-        name = FileName(self.curr_path, "evesystems.json")
-        name.prepare()
-        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
-        with open(name.temp_name, "w") as ships_file:
-            ships_file.write("[")
-            max_len = 80
-            eol_txt = "\n        "
-            ships_file.write(eol_txt)
-            curr_len = len(eol_txt)
-            first_entry = True
-            for itm in res:
-                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
-                self.assertIsNotNone(res, "esiUniverseGroups should never return None")
-                for constellation_id in res["constellations"]:
-                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
-                    for sys_id in res["systems"]:
-                        res = evegate.esiUniverseSystems(sys_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
-                        ship_text = u'{}'.format(json.dumps(res))
-                        curr_len = curr_len + len(ship_text)
-                        if curr_len > max_len:
-                            if not first_entry:
-                                first_entry = True
-                                ships_file.write(",")
-                                ships_file.write(eol_txt)
-                                curr_len = len(eol_txt) + 1
-                        if first_entry:
-                            first_entry = False
-                            ships_file.write(ship_text)
-                        else:
-                            ships_file.write(", ")
-                            ships_file.write(ship_text)
+    def test_generateSystemsJson(self):
+        systems_file_name = FileName(self.curr_path, "evesystems.jsonl")
+        systems_file_name.prepare()
+        systems_name_file_name = FileName(self.curr_path, "systemnames.jsonl")
+        systems_name_file_name.prepare()
+        all_systems = dict()
+        all_systems_name = dict()
+        with jsonlines.open("{path}/mapSolarSystems.jsonl".format(path=self.STATIC_DATA_FOLDER), mode='r') as reader:
+            for obj in reader:
+                self.assertIn("_key", obj.keys())
+                self.assertIn("constellationID",obj.keys())
+                self.assertIn("name", obj.keys())
+                self.assertIn("en", obj["name"].keys())
+                self.assertIn("position", obj.keys())
+                self.assertIn("regionID", obj.keys())
+                elem = dict()
+                elem["constellation_id"] = obj["constellationID"]
+                elem["names"] = obj["name"]
+                elem["name"] = obj["name"]["en"]
+                elem["planets"] = obj["planetIDs"] if "planetIDs" in obj.keys() else list()
+                if "position2D" in obj.keys():
+                    elem["position"] = obj["position2D"]
+                else:
+                    elem["position"] = { "x": obj["position"]["x"],"y": -obj["position"]["z"]}
+                elem["security_class"] = obj["securityClass"] if "securityClass" in obj.keys() else ""
+                if "securityStatus" in obj.keys():
+                    elem["security_status"] = obj["securityStatus"]
+                if "starID" in obj.keys():
+                    elem["star_ID"] = obj["starID"]
+                elem["stargates"] = obj["stargateIDs"] if "stargateIDs" in obj.keys() else list()
+                elem["system_id"] = obj["_key"]
+                elem["region_id"] = obj["regionID"]
+                all_systems[obj["_key"]] = elem
+                for key,name in obj["name"].items():
+                    all_systems_name[name] = obj["_key"]
 
-            ships_file.write("]\n")
-        name.update()
+        with jsonlines.open(systems_file_name.temp_name, mode= 'w') as writer:
+            writer.write_all(all_systems.items())
 
-    def test_generateStargates(self):
-        filename = FileName(self.curr_path, "evestargates.json")
+        with jsonlines.open(systems_name_file_name.temp_name, mode= 'w') as writer:
+            writer.write_all(all_systems_name.items())
+
+        systems_file_name.update()
+        systems_name_file_name.update()
+
+    def test_generateStargatesJson(self):
+        filename = FileName(self.curr_path, "evestargates.jsonl")
         filename.prepare()
-        res = evegate.esiUniverseGetAllRegions(use_outdated=self.use_outdated_cache, use_cache=self.use_cache)
-        with open(filename.temp_name, "w") as ships_file:
-            ships_file.write("[")
-            max_len = 80
-            eol_txt = "\n        "
-            ships_file.write(eol_txt)
-            curr_len = len(eol_txt)
 
-            first_entry = True
-            for itm in res:
-                res = evegate.esiUniverseRegions(itm, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
-                self.assertIsNotNone(res, "esiUniverseGroups should never return None")
-                for constellation_id in res["constellations"]:
-                    res = evegate.esiUniverseConstellations(constellation_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
-                    for sys_id in res["systems"]:
-                        res = evegate.esiUniverseSystems(sys_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
-                        if res is None or "stargates" not in res:
-                            continue
-                        for stargate_id in res["stargates"]:
-                            res = evegate.esiUniverseStargates(stargate_id, use_outdated=self.use_outdated_cache,use_cache=self.use_cache)
-                            ship_text = u'{}'.format(json.dumps(res))
-                            curr_len = curr_len + len(ship_text)
-                            if curr_len > max_len:
-                                if not first_entry:
-                                    first_entry = True
-                                    ships_file.write(",")
-                                    ships_file.write(eol_txt)
-                                    curr_len = len(eol_txt) + 1
-                            if first_entry:
-                                first_entry = False
-                                ships_file.write(ship_text)
-                            else:
-                                ships_file.write(", ")
-                                ships_file.write(ship_text)
+        all_stargates = dict()
+        with jsonlines.open("{path}/mapStargates.jsonl".format(path=self.STATIC_DATA_FOLDER), mode='r') as reader:
+            for obj in reader:
+                self.assertIn("destination", obj.keys())
+                self.assertIn("stargateID", obj["destination"].keys())
+                self.assertIn("position", obj.keys())
+                self.assertIn("solarSystemID", obj.keys())
+                elem = dict()
+                elem["destination"] = {"system_id": obj["destination"]["solarSystemID"],"stargate_id": obj["destination"]["stargateID"]}
+                elem["position"] = obj["position"]
+                elem["system_id"] = obj["solarSystemID"]
+                all_stargates[obj["_key"]] = elem
 
-            ships_file.write("]\n")
+        with jsonlines.open(filename.temp_name, mode= 'w') as writer:
+            writer.write_all(all_stargates.items())
         filename.update()
+
+    def test_generateNPCNamesJson(self):
+        name = FileName(self.curr_path, "npcnames.py")
+        name.prepare()
+        factions = dict()
+        with jsonlines.open("{path}/factions.jsonl".format(path=self.STATIC_DATA_FOLDER), mode='r') as reader:
+            for obj in reader:
+                self.assertIn("name", obj.keys())
+                self.assertIn("en", obj["name"].keys())
+                factions[obj["_key"]] = obj["name"]["en"]
+
+        for tok in ["State","Republic","Empire","Federation","Assembly","Mandate","Pirates","Covenant","Collective","Cartel","Kingdom","Circle","Command","of Conscious Thought"]:
+            for key, faction in factions.items():
+                factions[key] = faction.replace(tok,"").strip()
+        factions[500009] = 'Syndicate'
+        factions[500016] = 'SOE'
+        factions[500028] = 'AIR'
+        with open(name.temp_name, "w") as writer:
+            writer.write(self.STATIC_DATA_INFO)
+            writer.write("NPCNAMES = {\n")
+            cnt = len(factions)
+            for key, faction in factions.items():
+                if cnt > 1:
+                    writer.write("    {}:\"{}\",\n".format(key,faction))
+                else:
+                    writer.write("    {}:\"{}\"".format(key, faction))
+                cnt = cnt-1
+            writer.write("}\n")
+        name.update()
+
+    def test_generateSEDpy(self):
+        name = FileName(self.curr_path, "sde.py")
+        name.prepare()
+        factions = dict()
+        with jsonlines.open("{path}/_sde.jsonl".format(path=self.STATIC_DATA_FOLDER), mode='r') as reader:
+            for obj in reader:
+                sde = dict(reader)
+                buildNumber_client = obj["buildNumber"]
+                buildNumber_server = evegate.getStaticDataVersion()
+                self.STATIC_DATA_INFO = "# This file was automatically generated with eve-online-static-data-{}-jsonl, please do not modify the file.\n".format(buildNumber_client)
+                self.assertEqual(buildNumber_client,buildNumber_server,"The static data version {}did not match the server version {}.".format(buildNumber_client,buildNumber_server))
+                with open(name.temp_name, "w") as writer:
+                    writer.write(self.STATIC_DATA_INFO)
+                    writer.write("SDE_VERSION = {}\n".format(obj["buildNumber"]))
+                    writer.write("SDE_DATE = '{}'\n".format(obj["releaseDate"]))
+                name.update()
+                return buildNumber_server
 
     def test_GetDotlanFiles(self):
         for region in Universe.REGIONS:
@@ -326,30 +396,6 @@ class TestCache(unittest.TestCase):
             if svg.find("region not found") == -1:
                 with open(filename, "w") as f:
                     f.write(svg)
-
-    def test_generateNPCNames(self):
-        name = FileName(self.curr_path, "npcnames.py")
-        name.prepare()
-        factions = list()
-        for faction in evegate.esiGetFactions():
-            factions.append(faction)
-        for tok in ["State","Republic","Empire","Federation","Assembly","Mandate","Pirates","Covenant","Collective","Cartel"]:
-            for faction in factions:
-                faction["name"] = faction["name"].replace(tok,"").rstrip()
-        def sort_data(elem):
-            return elem["faction_id"]
-        factions.sort(key=sort_data)
-        with open(name.temp_name, "w") as f:
-            f.write("NPCNAMES = {\n")
-            len_data = len(factions)
-            for faction in factions:
-                if len_data >0:
-                    len_data -= 1
-                    f.write('     {}: "{}",\n'.format( faction["faction_id"], faction["name"]))
-                else:
-                    f.write('     {}: "{}"\n'.format( faction["faction_id"], faction["name"]))
-            f.write("}\n")
-        # name.update()
 
     def test_KnownPlayerNames(self):
         self.cache_used.removeAPIKey("Mr A")
