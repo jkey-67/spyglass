@@ -81,9 +81,6 @@ class ZKillMonitor(QObject):
             the next request.
         """
 
-        if self.reply:
-            self.reply.deleteLater()
-            self.reply = self.netManager.get(self.req)
 
         try:
             if reply.error() == PySide6.QtNetwork.QNetworkReply.NetworkError.NoError:
@@ -97,6 +94,9 @@ class ZKillMonitor(QObject):
             logging.error("Error : {} during the handling of an zKillboard message {}".format(ex, reply.url().toString()))
             self.status_kill_mail.emit(False)
 
+        if self.reply:
+            self.reply.deleteLater()
+            self.reply = self.netManager.get(self.req)
 
     def startConnect(self):
         """Start polling zKillboard via RedisQ.

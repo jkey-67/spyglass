@@ -25,13 +25,14 @@ import math
 import json
 import os
 import datetime
+from typing import Optional
 
-from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF
+from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF, QSizeF
 from PySide6.QtGui import QPainter, QFont, QPen, QBrush, QColor, QRadialGradient, QPainterPath
 from vi.states import States
 from vi.cache import Cache
 from vi.ui.styles import Styles, TextInverter
-from vi.universe import Universe
+from vi.universe import Universe, Position
 from vi.globals import Globals
 
 
@@ -108,35 +109,40 @@ class System(object):
     ELEMENT_HEIGHT = 30
 
     def __init__(self, **kwargs):
-        self.name = None
-        self.system_id = None
-        self.constellation_id = None
-        self.planets = None
-        self.position = None
-        self.security_class = None
-        self.security_status = None
-        self.stargates = None
-        self.stations = []
-        self.structures = None
-        self.ticker = "-?-"
-        self.__dict__.update(kwargs)
-        self.region_id = Universe.regionIDFromSystemID(self.system_id)
-        self.region_name = Universe.regionNameFromSystemID(self.system_id)
+        self.constellation_id = kwargs["constellation_id"]
+        self.names:dict = kwargs["names"]
+        self.name:str = kwargs["name"]
+        self.planets:list[int] = kwargs["planets"]
+        self.position:Position = Position(**kwargs["position"])
+        self.security_class:str = kwargs["security_class"]
+        self.security_status:float = kwargs["security_status"]
+        self.star_id: Optional[int] = kwargs["star_ID"] if "star_ID" in kwargs else None
+        self.stargates:list[int] = kwargs["stargates"]
+        self.system_id:int = kwargs["system_id"]
+        self.stations:list[int] = []
+        self.structures:list[dict] = []
+        self.ticker:str = "-?-"
+        #self.__dict__.update(kwargs)
+        self.region_id:int = Universe.regionIDFromSystemID(self.system_id)
+        self.region_name:str = Universe.regionNameFromSystemID(self.system_id)
         self._system_messages = []
-        self.jumpBridges = set()
-        self.theraWormholes = set()
-        self.backgroundAlpha = 1.0
+        self.jumpBridges:set = set()
+        self.theraWormholes:set = set()
+        self.backgroundAlpha:float = 1.0
         self.backgroundColor = self.UNKNOWN_COLOR
         self.backgroundColorNext = self.UNKNOWN_COLOR
         self.statusTextColor = "#FFFFFF"
-
-        self.rect = QRectF(0.0, 0.0, 64.0, 32.0)
         self.marker = 0.0
         self.wormhole_info = list()
         self.alarm_distance = set()
+        self.rect = QRectF(0,0,System.ELEMENT_WIDTH,System.ELEMENT_HEIGHT)
+        self.is_ice_belts_visible = True
+        self.is_structure_visible = True
         self.is_vulnerable_visible = True
         self.is_statistics_visible = True
         self.is_jumpbridges_visible = True
+        self.is_system_text_visible = True
+        self.render_out_of_region = True
 
         self._is_dirty = True
         self._status = None
@@ -167,6 +173,13 @@ class System(object):
 
         self.has_upwell_cyno_beacon = False
         self.has_upwell_cyno_jammer = False
+
+    @property
+    def out_rect(self)->QRectF:
+        if self.is_system_text_visible:
+            return self.rect.__copy__()
+        else:
+            return QRectF(self.rect.center()-QPointF(6,6), self.rect.center()+QPointF(6,6))
 
     @property
     def isMonitored(self) -> bool:
@@ -239,18 +252,17 @@ class System(object):
 
     @staticmethod
     def renderLegend(painter: QPainter, region_name):
-        painter.setFont(QFont("Arial", 15, italic=True))
+        painter.setFont(QFont("Arial", 30, italic=True))
         painter.setPen(QColor("#10c0c0c0"))
         painter.drawText(QRectF(0.0, 0.0, 1024.0, 50.0), Qt.AlignmentFlag.AlignLeft, region_name)
-        # System.testRender(painter)
+        #System.testRender(painter)
 
     @staticmethod
     def testRender(painter: QPainter):
         system_id = Universe.systemIdByName("Umokka")
         region_id = Universe.regionIDFromSystemID(system_id)
         inx = 1
-        sys = {"name": "Umokka", "system_id": system_id, "security_status": 0.8, "security_class": "T9"}
-        test = System(**sys)
+        test = System(** Universe.systemById(system_id))
         test._first_line = "XXXX"
         test.stations = [123]
         test._structure_type = None
@@ -454,12 +466,18 @@ class System(object):
         Returns:
 
         """
-        rc_out_back = self.rect.__copy__().marginsAdded(QMargins(20, 20, 20, 20))
+        rc_out_back = self.out_rect.__copy__().marginsAdded(QMargins(20, 20, 20, 20))
+
+        if self.is_system_text_visible:
+            delta_w = self.ELEMENT_WIDTH / 2
+            gradient_w = self.ELEMENT_WIDTH
+        else:
+            delta_w = self.ELEMENT_WIDTH / 4
+            gradient_w = self.ELEMENT_WIDTH/2
         delta_h = self.ELEMENT_HEIGHT / 2
-        delta_w = self.ELEMENT_WIDTH / 2
 
         if self._hasIncursion:
-            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
+            gradient = QRadialGradient(self.rect.center(), gradient_w)
             gradient.setColorAt(0.0, QColor("#30ffd700"))
             if self._hasIncursionBoss:
                 gradient.setColorAt(0.5, QColor("#10ff4500"))
@@ -475,7 +493,7 @@ class System(object):
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self._hasCampaigns:
-            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
+            gradient = QRadialGradient(self.rect.center(), gradient_w)
             gradient.setColorAt(0.0, QColor("#30ff0000"))
             gradient.setColorAt(0.6, QColor("#00ff0000"))
             painter.setPen(Qt.PenStyle.NoPen)
@@ -487,8 +505,8 @@ class System(object):
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self.isMonitored:
-            rc_out_back_monitor = self.rect.__copy__().marginsAdded(QMargins(80, 80, 80, 80))
-            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH*1.25)
+            rc_out_back_monitor = self.out_rect.__copy__().marginsAdded(QMargins(80, 80, 80, 80))
+            gradient = QRadialGradient(self.rect.center(), gradient_w*1.25)
             col_a = QColor("#80ffffff")
             col_b = QColor("#00ffffff")
             col_a.setAlphaF(0.5 - float( self.monitoredRange) / 12.0)
@@ -502,7 +520,7 @@ class System(object):
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self._hasKill > 0.0:
-            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
+            gradient = QRadialGradient(self.rect.center(), gradient_w)
             col_red = QColor("#FF4500")
             col_red.setAlphaF(max(min(self._hasKill/20., 1.), 0.001))
             gradient.setColorAt(0.0, col_red)
@@ -535,7 +553,7 @@ class System(object):
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if bool(self._locatedCharacters):
-            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
+            gradient = QRadialGradient(self.rect.center(), gradient_w)
             gradient.setColorAt(0.0, QColor("#30800080"))
             gradient.setColorAt(0.6, QColor("#00800080"))
             painter.setPen(Qt.PenStyle.NoPen)
@@ -547,7 +565,7 @@ class System(object):
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self.marker > datetime.datetime.now(datetime.UTC).timestamp():
-            gradient = QRadialGradient(self.rect.center(), self.ELEMENT_WIDTH)
+            gradient = QRadialGradient(self.rect.center(), gradient_w)
             marker_color = QColor("#6495ed")
             marker_color.setAlphaF((self.marker-datetime.datetime.now(datetime.UTC).timestamp())/10.0)
 
@@ -564,10 +582,10 @@ class System(object):
             self.marker = 0.0
 
     def boundingRect(self, current_region_id) -> QRectF:
-        if self.region_id == current_region_id:
-            return self.rect.__copy__().marginsAdded(QMargins(-2, -2, -2, -2))
+        if self.renderAsOutOfRegion(current_region_id):
+            return self.out_rect.__copy__().marginsAdded(QMargins(-6, -2, -6, -2))
         else:
-            return self.rect.__copy__().marginsAdded(QMargins(-6, -2, -6, -2))
+            return self.out_rect.__copy__().marginsAdded(QMargins(-2, -2, -2, -2))
 
     @property
     def structure_type(self):
@@ -675,6 +693,30 @@ class System(object):
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(path)
 
+    def renderAsOutOfRegion(self, current_region_id:int)->bool:
+        return self.is_system_text_visible and ( self.render_out_of_region and self.region_id != current_region_id )
+
+    def renderStructures(self, painter: QPainter, current_region_id: int):
+        if self.stations and self.structures is None:
+            painter.setPen(self.structurePen())
+            painter.setBrush(QBrush(QColor(System.UNKNOWN_COLOR)))
+            bounding_rect = self.boundingRect(current_region_id)
+            rc_out = self.boundingRect(current_region_id)
+            box_border = 8.0
+            rc_out.setWidth(box_border)
+            rc_out.setHeight(box_border)
+            rc_out.translate(bounding_rect.width()-box_border/2.0, bounding_rect.height()/2.0 - box_border/2.0)
+            painter.drawRect(rc_out)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+        if self.structures:
+            type_id = self.structure_type
+            if type_id == 3:
+                self.drawLargeStructure(painter, current_region_id)
+            elif type_id == 2:
+                self.drawMediumStructure(painter, current_region_id)
+            else:
+                self.drawSmallStructure(painter, current_region_id)
+
     def renderSystemTexts(self, painter: QPainter, current_region_id):
         """
         Renders the system to a painter and resets the dirty flag
@@ -686,35 +728,38 @@ class System(object):
 
         """
         delta_h = self.ELEMENT_HEIGHT / 8
-        delta_w = self.ELEMENT_WIDTH / 8
         rc_out = self.boundingRect(current_region_id)
         painter.setBrush(self.getBackgroundBrush())
-        if self.region_id == current_region_id:
+        if self.renderAsOutOfRegion(current_region_id):
+            painter.setPen(QPen(QColor("#FFc0c0c0")))
+            painter.drawRect(rc_out)
+        else:
             painter.setPen(QPen(QColor("#FFc0c0c0")))
             path = QPainterPath()
             path.addRoundedRect(rc_out, 12, 12)
             painter.fillPath(path, QBrush(System.UNKNOWN_COLOR))
             painter.drawPath(path)
-        else:
-            painter.setPen(QPen(QColor("#FFc0c0c0")))
-            painter.drawRect(rc_out)
-        painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
-        painter.setFont(QFont("Arial", int(delta_h*1.8)))
-        painter.drawText(rc_out, Qt.AlignmentFlag.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
 
-        if self.has_ice_belt:
-            if self.region_id == current_region_id:
-                rc_out = self.rect.__copy__()
-                ise_pen = QPen(QColor("#806495ED"))
-                ise_pen.setWidthF(2.0)
-                painter.setPen(ise_pen)
-                painter.setBrush(Qt.BrushStyle.NoBrush)
-                path = QPainterPath()
-                path.addRoundedRect(rc_out, 14, 14)
-                painter.drawPath(path)
+        if self.is_system_text_visible:
+            painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
+            painter.setFont(QFont("Arial", int(delta_h*1.8)))
+            painter.drawText(rc_out, Qt.AlignmentFlag.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
+
+        if self.has_ice_belt and self.is_ice_belts_visible:
+            ice_rc_out = self.boundingRect(current_region_id).marginsAdded(QMargins(2,2,2,2))
+            ice_pen = QPen(QColor("#806495ED"))
+            ice_pen.setWidthF(2.0)
+            painter.setPen(ice_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            path = QPainterPath()
+            if self.renderAsOutOfRegion(current_region_id):
+                path.addRoundedRect(ice_rc_out, 0,0)
+            else:
+                path.addRoundedRect(ice_rc_out, 14, 14)
+            painter.drawPath(path)
 
         if self.is_statistics_visible:
-            rc_out = self.rect.__copy__()
+            rc_out = self.out_rect
             rc_out.translate(0.0, rc_out.height())
             rc_out.setHeight(delta_h*2)
 
@@ -724,7 +769,7 @@ class System(object):
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
         if self.is_vulnerable_visible:
-            rc_out = self.rect.__copy__()
+            rc_out = self.out_rect
             rc_out.translate(0.0, -delta_h*2)
             rc_out.setHeight(delta_h*2)
 
@@ -738,26 +783,8 @@ class System(object):
                 # painter.drawText(rc_out, Qt.AlignCenter, self._vulnerability_text)
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        if self.stations and self.structures is None:
-            painter.setPen(self.structurePen())
-            painter.setBrush(QBrush(QColor(System.UNKNOWN_COLOR)))
-            bounding_rect = self.boundingRect(current_region_id)
-            rc_out = self.boundingRect(current_region_id)
-            box_border = 8.0
-            rc_out.setWidth(box_border)
-            rc_out.setHeight(box_border)
-            rc_out.translate(bounding_rect.width()-box_border/2.0, bounding_rect.height()/2.0 - box_border/2.0)
-            painter.drawRect(rc_out)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-
-        if self.structures:
-            type_id = self.structure_type
-            if type_id == 3:
-                self.drawLargeStructure(painter, current_region_id)
-            elif type_id == 2:
-                self.drawMediumStructure(painter, current_region_id)
-            else:
-                self.drawSmallStructure(painter, current_region_id)
+        if self.is_structure_visible:
+            self.renderStructures(painter,current_region_id)
 
         self._is_dirty = False
 
@@ -867,7 +894,7 @@ class System(object):
         if self._neighbours is None:
             self._neighbours = set()
             for gate in Universe.stargatesBySystemID(self.system_id):
-                destination_id = gate["destination"]["system_id"]
+                destination_id = gate.destination.system_id
                 destination_system = ALL_SYSTEMS[destination_id]
                 self._neighbours.add(destination_system)
         return self._neighbours
@@ -1171,14 +1198,14 @@ def _ApplyColorToSystem(data:dict[int, System]()):
                     region_id = Universe.regionIdByName(line_split[offs_id])
                     if region_id:
                         region = Universe.regionByID(region_id)
-                        for constellation_id in region["constellations"]:
+                        for constellation_id in region.constellations:
                             constellation = Universe.constellationByID(constellation_id)
-                            for system_id in constellation["systems"]:
+                            for system_id in constellation.systems:
                                 applyColorToSystem(system_id, line_split)
 
                     if constellation_id:
                         constellation = Universe.constellationByID(constellation_id)
-                        for system_id in constellation["systems"]:
+                        for system_id in constellation.systems:
                             applyColorToSystem(system_id, line_split)
 
                     system_id = Universe.systemIdByName(line_split[offs_id])

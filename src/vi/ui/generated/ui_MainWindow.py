@@ -237,6 +237,9 @@ class Ui_MainWindow(object):
         self.actionOpacity_20 = QAction(MainWindow)
         self.actionOpacity_20.setObjectName(u"actionOpacity_20")
         self.actionOpacity_20.setCheckable(True)
+        self.actionClear_Jump_Gates = QAction(MainWindow)
+        self.actionClear_Jump_Gates.setObjectName(u"actionClear_Jump_Gates")
+        self.actionClear_Jump_Gates.setMenuRole(QAction.MenuRole.NoRole)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout_5 = QVBoxLayout(self.centralwidget)
@@ -844,17 +847,36 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_eveTime = QHBoxLayout()
         self.horizontalLayout_eveTime.setObjectName(u"horizontalLayout_eveTime")
+        self.m_qLedSDE = QLabel(self.dockWidgetContents_4)
+        self.m_qLedSDE.setObjectName(u"m_qLedSDE")
+        self.m_qLedSDE.setEnabled(True)
+        self.m_qLedSDE.setMaximumSize(QSize(24, 24))
+        self.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+        self.m_qLedSDE.setScaledContents(True)
+
+        self.horizontalLayout_eveTime.addWidget(self.m_qLedSDE)
+
+        self.m_qSdeVersion = QLabel(self.dockWidgetContents_4)
+        self.m_qSdeVersion.setObjectName(u"m_qSdeVersion")
+
+        self.horizontalLayout_eveTime.addWidget(self.m_qSdeVersion)
+
+
+        self.verticalLayout_13.addLayout(self.horizontalLayout_eveTime)
+
+        self.horizontalLayout_9 = QHBoxLayout()
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
         self.horizontalSpacer_eveTime = QSpacerItem(24, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
 
-        self.horizontalLayout_eveTime.addItem(self.horizontalSpacer_eveTime)
+        self.horizontalLayout_9.addItem(self.horizontalSpacer_eveTime)
 
         self.m_qEveTime = QLabel(self.dockWidgetContents_4)
         self.m_qEveTime.setObjectName(u"m_qEveTime")
 
-        self.horizontalLayout_eveTime.addWidget(self.m_qEveTime)
+        self.horizontalLayout_9.addWidget(self.m_qEveTime)
 
 
-        self.verticalLayout_13.addLayout(self.horizontalLayout_eveTime)
+        self.verticalLayout_13.addLayout(self.horizontalLayout_9)
 
         self.tableChars = QTableView(self.dockWidgetContents_4)
         self.tableChars.setObjectName(u"tableChars")
@@ -1016,6 +1038,10 @@ class Ui_MainWindow(object):
         self.label_2.setBuddy(self.regionNameField)
         self.apiCharLabel.setBuddy(self.currentESICharacter)
         self.timeInfo.setBuddy(self.chatListWidget)
+        self.m_qEveScout.setBuddy(self.m_qEveScout)
+        self.m_qZKillboard.setBuddy(self.m_qZKillboard)
+        self.m_qLedOnline.setBuddy(self.m_qLedOnline)
+        self.m_qLedSDE.setBuddy(self.m_qLedOnline)
 #endif // QT_CONFIG(shortcut)
         QWidget.setTabOrder(self.systemNames, self.regionNameField)
         QWidget.setTabOrder(self.regionNameField, self.currentESICharacter)
@@ -1221,6 +1247,7 @@ class Ui_MainWindow(object):
         self.actionOpacity_60.setText(QCoreApplication.translate("MainWindow", u"Opacity 60%", None))
         self.actionOpacity_40.setText(QCoreApplication.translate("MainWindow", u"Opacity 40%", None))
         self.actionOpacity_20.setText(QCoreApplication.translate("MainWindow", u"Opacity 20%", None))
+        self.actionClear_Jump_Gates.setText(QCoreApplication.translate("MainWindow", u"Remove Ansiblex Jump Gate", None))
 #if QT_CONFIG(tooltip)
         self.frameButton.setToolTip(QCoreApplication.translate("MainWindow", u"Restore WIndow Frame.", None))
 #endif // QT_CONFIG(tooltip)
@@ -1315,6 +1342,8 @@ class Ui_MainWindow(object):
         self.m_qZKillboard.setText(QCoreApplication.translate("MainWindow", u"Connection to zKillboard ", None))
         self.m_qLedOnline.setText("")
         self.m_qPlayerOnline.setText(QCoreApplication.translate("MainWindow", u"(0) Players", None))
+        self.m_qLedSDE.setText("")
+        self.m_qSdeVersion.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.m_qEveTime.setText(QCoreApplication.translate("MainWindow", u"EVE Time: --:-- (UTC)", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Clear cache file", None))
 #if QT_CONFIG(tooltip)

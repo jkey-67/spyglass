@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>res/error.svg</file>
     <file>res/adm_vul_off.svg</file>
     <file>res/jumpbridge_off.svg</file>
     <file>res/statistic_off.svg</file>

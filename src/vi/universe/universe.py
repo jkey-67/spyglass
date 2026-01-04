@@ -18,8 +18,6 @@
 ###########################################################################
 
 import json
-from logging import exception
-
 import jsonlines
 from typing import Optional
 import os
@@ -27,7 +25,7 @@ from .shipnames import SHIPNAMES, ID_BY_SHIPNAMES
 from .npcnames import NPCNAMES
 
 try:
-    from .regionnames import REGION_IDS_BY_NAME
+    from .regionnames import REGION_IDS_BY_NAME, REGION_NAME_BY_ID
 except (Exception,):
     REGION_IDS_BY_NAME = {}
     pass
@@ -47,10 +45,11 @@ def _loadJsonFile(name, **kw):
 
 class Region(object):
     def __init__(self, **kwargs):
-        self.constellations = list()
-        self.description = str()
-        self.name = str()
-        self.region_id = int()
+        self.constellations = kwargs["constellations"]
+        self.name = kwargs["name"]
+        self.names = kwargs["names"]
+        self.region_id = kwargs["region_id"]
+        self.position = Position(**{"position": kwargs["position"]})
         self.__dict__.update(**kwargs)
 
 
@@ -66,16 +65,30 @@ class Constellation(object):
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
         self.region_id = int()
-        self.systems = list()
+        self.systems = kwargs["systems"]
+        self.names = kwargs["names"]
         self.name = kwargs["name"]
         self.constellation_id = kwargs["constellation_id"]
         self.position = Position(**{"position": kwargs["position"]})
 
+class Destination(object):
+    def __init__(self, **kwargs):
+        self.system_id = kwargs["system_id"]
+        self.stargate_id = kwargs["stargate_id"]
+
+class Stargate(object):
+    def __init__(self,stargate_id:int, **kwargs):
+        self.__dict__.update(**kwargs)
+        self.stargate_id = stargate_id
+        self.system_id = kwargs["system_id"]
+        self.destination = Destination(**kwargs["destination"])
+        self.position = Position(**{"position": kwargs["position"]})
 
 class Universe(object):
     curr_path = os.path.dirname(__file__)
     SYSTEMS = dict()
     STARGATES = dict()
+    STARGATES_ID_OBJ = dict()
     SYSTEM_NAMES = list()
     UPPER_SYSTEM_NAMES = list()
     SYSTEM_IDS_BY_NAME = dict()
@@ -94,10 +107,10 @@ class Universe(object):
     try:
         with jsonlines.open(os.path.join(curr_path, "everegions.jsonl"), mode='r') as reader:
             REGIONS = dict(reader)
-        REGION_ID_OBJ = {key: Region(**region) for key,region in REGIONS.items()}
+        REGIONS_ID_OBJ = {key: Region(**region) for key,region in REGIONS.items()}
     except (Exception,):
         REGIONS = dict()
-        REGION_ID_OBJ = dict()
+        REGIONS_ID_OBJ = dict()
 
     try:
         with jsonlines.open(os.path.join(curr_path, "eveconstellations.jsonl"), mode='r') as reader:
@@ -119,9 +132,12 @@ class Universe(object):
         UPPER_SYSTEM_NAMES = list()
     try:
         with jsonlines.open(os.path.join(curr_path, "evestargates.jsonl"), mode='r') as reader:
-            STARGATES = dict(reader)
+            for key,stargate in reader:
+                STARGATES[key] = stargate
+                STARGATES_ID_OBJ[key] = Stargate(key,**stargate)
     except (Exception,):
         STARGATES = dict()
+        STARGATES_ID_OBJ = dict()
 
     # SHIP_NAMES = [sys["name"] for sys in SHIPNAMES]
     SHIP_NAMES = list(ID_BY_SHIPNAMES.keys())
@@ -133,13 +149,12 @@ class Universe(object):
         return
 
     @staticmethod
-    def monitoredSystems(system_id, intel_range=3):
-        mon_systems = {system_id:  {"dist": 0}} if system_id in Universe.SYSTEMS else None
+    def monitoredSystems(system_id:int, intel_range=3):
+        mon_systems = {system_id:  {"dist": 0}} if system_id in Universe.SYSTEMS.keys() else None
         if mon_systems is not None:
             for distance in range(0, intel_range):
-                for i in [{sys["destination"]["system_id"]: {"dist": distance + 1}} for sys in Universe.STARGATES if
-                          sys["system_id"] in mon_systems.keys()]:
-                    for key in list(i.keys()):
+                for i in [{stargate.destination.system_id: {"dist": distance + 1}} for stargate in Universe.STARGATES_ID_OBJ.values() if stargate.system_id in mon_systems.keys()]:
+                    for key in i.keys():
                         if key not in mon_systems.keys():
                             mon_systems.update(i)
         return mon_systems
@@ -181,6 +196,10 @@ class Universe(object):
         return REGION_IDS_BY_NAME[region_name] if region_name in REGION_IDS_BY_NAME else None
 
     @staticmethod
+    def regionNameById(region_id: int)->Optional[str]:
+        return REGION_NAME_BY_ID[region_id] if region_id in REGION_NAME_BY_ID else None
+
+    @staticmethod
     def constellationIdByName(constellation_name: str)->Optional[int]:
         return CONSTELLATION_IDS_BY_NAME[constellation_name] \
             if constellation_name in CONSTELLATION_IDS_BY_NAME else None
@@ -190,26 +209,26 @@ class Universe(object):
         return Universe.SHIP_NAMES
 
     @staticmethod
-    def regionByID(region_id:int)->Optional[dict]:
+    def regionByID(region_id:int)->Optional[Region]:
         if region_id in Universe.REGIONS:
-            return Universe.REGIONS[region_id]
-        return Universe.REGIONS[region_id] if region_id in Universe.REGIONS else None
+            return Universe.REGIONS_ID_OBJ[region_id]
+        return Universe.REGIONS_ID_OBJ[region_id] if region_id in Universe.REGIONS else None
 
     @staticmethod
     def constellationByID(const_id:int)->Optional[Constellation]:
-        return Universe.CONSTELLATIONS[const_id] if const_id in Universe.CONSTELLATIONS.keys() else None
+        return Universe.CONSTELLATIONS_ID_OBJS[const_id] if const_id in Universe.CONSTELLATIONS_ID_OBJS.keys() else None
 
     @staticmethod
-    def stargatesBySystemID(system_id:int)->list[int]:
+    def stargatesBySystemID(system_id:int)->list[Stargate]:
         res = list()
-        for _,stargate in Universe.STARGATES.items():
-            if stargate["system_id"] == system_id:
+        for _,stargate in Universe.STARGATES_ID_OBJ.items():
+            if stargate.system_id  == system_id:
                 res.append(stargate)
         return res
 
     @staticmethod
-    def stargateByID(stargate_id):
-        return next((stargate for stargate in Universe.STARGATES if stargate["stargate_id"] == stargate_id), None)
+    def stargateByID(stargate_id)->Optional[Stargate]:
+        return Universe.STARGATES_ID_OBJ[stargate_id] if stargate_id in Universe.STARGATES_ID_OBJ else None
 
     @staticmethod
     def regionIDFromSystemID(system_id:int)->Optional[int]:
@@ -225,3 +244,11 @@ class Universe(object):
             return  Universe.REGIONS[region_id]["name"] if region_id in Universe.REGIONS.keys() else None
         else:
             return None
+
+    @staticmethod
+    def regionsFromRectangle(left:float,top:float,right:float,bottom:float)->list[int]:
+        res = list()
+        for key,rgn in Universe.REGIONS.items():
+            if rgn["x"] > left and rgn["y"]> top and rgn["x"] < right and rgn["y"]< bottom:
+                res.append(key)
+        return res

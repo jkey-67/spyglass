@@ -16,12 +16,13 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
+from typing import Optional
 
 ###########################################################################
 # Little lib and tool to get the map and information from dotlan		  #
 ###########################################################################
 
-from PySide6.QtCore import QRectF, QSizeF
+from PySide6.QtCore import QRectF, QSizeF, QPointF
 from bs4 import BeautifulSoup
 from vi.system import System, ALL_SYSTEMS, Universe
 
@@ -77,28 +78,28 @@ def _extractSizeFromSoup(soup, scale=1.0)->QSizeF:
     else:
         return QSizeF(20*System.ELEMENT_WIDTH*scale, 20*System.ELEMENT_HEIGHT*scale)
 
-def _extractSizeFromJson(data, scale=1.0)->QSizeF:
+def _extractRectFromJson(data, scale=1.0)->QRectF:
     """
     Setups width and height from the svg viewbox as x y w h
     Args:
-        soup:
+        data:
 
     Returns:
-        None
+        QSizeF
     """
     if len(data):
-        min_x = 0
-        min_y = 0
+        min_x = None
+        min_y = None
         max_x = None
         max_y = None
         for system_id, data in data.items():
-            min_x = min(min_x, data[1] * scale) if min_x else data[1] * scale
-            min_y = min(min_y, data[2] * scale) if min_y else data[2] * scale
-            max_x = max(max_x, data[1] * scale) if max_x else data[1] * scale
-            max_y = max(max_y, data[2] * scale) if max_y else data[2] * scale
-        return QSizeF(max_x-min_x,max_y-min_y)
+            min_x = min(min_x, data[1] * scale) if min_x is not None else data[1] * scale
+            min_y = min(min_y, data[2] * scale) if min_y is not None else data[2] * scale
+            max_x = max(max_x, data[1] * scale) if max_x is not None else data[1] * scale
+            max_y = max(max_y, data[2] * scale) if max_y is not None else data[2] * scale
+        return QRectF( QPointF(min_x,min_y),QPointF(max_x,max_y))
     else:
-        return QSizeF()
+        return QRectF( )
 
 def _extractSystemsFromDict(data, scale=1.0) -> dict[str, System]:
     """
@@ -108,8 +109,8 @@ def _extractSystemsFromDict(data, scale=1.0) -> dict[str, System]:
         Depending on the current scaling the svg will be scanned for system ids
 
     Args:
-        soup(BeautifulSoup):
-            BeautifulSoup holding the svg as html page
+        data({int,(str,float,float)}):
+            dict holding name,x,y key is id
         scale(float):
             Scaling factor for the distance in between the systems base on 1027x768 DotLan SVG Maps, the default is 1.2
 
@@ -120,14 +121,15 @@ def _extractSystemsFromDict(data, scale=1.0) -> dict[str, System]:
     # default size of the systems to calculate the center point
     systems = {}
     for system_id, data in data.items():
-        new_system = ALL_SYSTEMS[int(system_id)]
-        new_system.applySVG(
-            map_coordinates=QRectF(
-                data[1] * scale,
-                data[2] * scale,
-                System.ELEMENT_WIDTH,
-                System.ELEMENT_HEIGHT))
-        systems[new_system.name] = new_system
+        if system_id in ALL_SYSTEMS.keys():
+            new_system = ALL_SYSTEMS[system_id]
+            new_system.applySVG(
+                map_coordinates=QRectF(
+                    data[1] * scale,
+                    data[2] * scale,
+                    System.ELEMENT_WIDTH,
+                    System.ELEMENT_HEIGHT))
+            systems[new_system.name] = new_system
     return systems
 
 def _extractSystemsFromSoup(soup, scale=1.0) -> dict[str, System]:
@@ -164,7 +166,7 @@ def _extractSystemsFromSoup(soup, scale=1.0) -> dict[str, System]:
 class Map(object):
     """
         The map transfers the system related information from a dotlan svg to
-        the internal System representation and setup a cache for the given region.
+        the internal System representation and setups a cache for the given region.
     """
     default_scale = 1.3
 
@@ -190,27 +192,28 @@ class Map(object):
                                  has_boss=has_boss)
 
     def __init__(self,
-                 region_name,
-                 svg_file=None,
-                 json_file=None,
-                 set_jump_maps_visible=False,
-                 set_statistic_visible=False,
-                 set_adm_visible=False,
-                 set_jump_bridges=None):
+                 region_name:int|str,
+                 json_file:dict|None=None,
+                 set_jump_maps_visible:bool=False,
+                 set_statistic_visible:bool=False,
+                 set_adm_visible:bool=False,
+                 set_jump_bridges:dict|None=None):
 
-        self.region_name = region_name
-        self.region_id = Universe.regionIdByName(region_name)
+        if type(region_name) is int:
+            self.region_name = Universe.regionByID(region_name).name
+            self.region_id = region_name
+            Universe.regionIdByName(region_name)
+        elif type(region_name) is str:
+            self.region_name = region_name
+            self.region_id = Universe.regionIdByName(region_name)
+
         self._jumpMapsVisible = set_jump_maps_visible
         self._statisticsVisible = set_statistic_visible
         self._set_vulnerable_visible = set_adm_visible
 
         # Create soup from the svg
-        if svg_file:
-            svg_content = BeautifulSoup(svg_file, "lxml-xml")
-            self.svg_size = _extractSizeFromSoup(svg_content, scale=self.default_scale)
-            self.systems = _extractSystemsFromSoup(svg_content, scale=self.default_scale)
-        elif json_file:
-            self.svg_size = _extractSizeFromJson(json_file, scale=self.default_scale)
+        if json_file is not None:
+            self.map_rect = _extractRectFromJson(json_file, scale=self.default_scale)
             self.systems = _extractSystemsFromDict(json_file, scale=self.default_scale)
 
         self.systemsById = {}
@@ -222,7 +225,7 @@ class Map(object):
         self.jumpBridges = []
         self.marker = 0.0
 
-        if set_jump_bridges:
+        if set_jump_bridges is not None:
             self.setJumpbridges(set_jump_bridges)
 
         self._updateJumpbridgesVisibility()
@@ -259,16 +262,18 @@ class Map(object):
     def renderLegend(self, painter):
         System.renderLegend(painter, self.region_name)
 
-    def renderMap(self, painter):
+    def renderMap(self, painter,zoom=1.0):
         for system in self.systems.values():
+            system.is_ice_belts_visible = zoom > 0.7
+            system.is_structure_visible = zoom > 0.6
+            system.is_system_text_visible = zoom > 0.5
             system.updateSystemBackgroundColors()
-            system.renderBackground(painter, self.region_id)
-
-        for system in self.systems.values():
             system.renderConnections(painter, self.region_id, self.systems)
             system.renderJumpBridges(painter, self.region_id, self.systems)
             system.renderWormHoles(painter, self.region_id, self.systems)
+            system.renderBackground(painter, self.region_id)
 
+        #if zoom > 0.4:
         for system in self.systems.values():
             system.renderSystemTexts(painter, self.region_id)
 

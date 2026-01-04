@@ -38,7 +38,7 @@ from PySide6.QtGui import QIcon, QPixmap, QDesktopServices
 from PySide6.QtWidgets import (QMessageBox, QFileDialog, QApplication, QAbstractItemView)
 
 import vi.version
-from vi.universe import Universe
+from vi.universe import Universe, SDE_VERSION, SDE_DATE
 from vi.system import System
 from vi import evegate
 from vi import dotlan, filewatcher
@@ -117,6 +117,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._update_splash_window_info("Init GUI application")
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.sdeVersionUpdate(None)
         self._setupPoiNotificationDock()
         self.setWindowTitle(
             "EVE-Spy " + vi.version.VERSION + "{dev}".format(dev="-SNAPSHOT" if vi.version.SNAPSHOT else ""))
@@ -294,6 +295,17 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.info(update_avail[1])
             self.ui.updateAvail.hide()
 
+    def sdeVersionUpdate(self,current_sde_version:Optional[int]):
+        if current_sde_version is None:
+            self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
+            self.ui.m_qSdeVersion.setText("Static Data Export version (...) pending")
+        elif SDE_VERSION == current_sde_version:
+            self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+            self.ui.m_qSdeVersion.setText("Static Data Export version ({})".format(SDE_VERSION))
+        else:
+            self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/error.svg"))
+            self.ui.m_qSdeVersion.setText("Static Data Export version ({}/{}) outdated".format(SDE_VERSION, current_sde_version))
+
     def showStatistic(self) -> bool:
         return self.ui.actionShowSystemStatisticOnMap.isChecked()
 
@@ -451,7 +463,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot(float)
     def updateX(self, x: float):
-        pos = self.ui.mapView.scrollPosition()
+        pos = self.ui.mapView.propScrollPos
         if pos.x != x:
             pos.setX(x)
             self.ui.mapView.setScrollPosition(pos)
@@ -459,7 +471,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot(float)
     def updateY(self, y: float):
-        pos = self.ui.mapView.scrollPosition()
+        pos = self.ui.mapView.propScrollPos
         if pos.y != y:
             pos.setY(y)
             self.ui.mapView.setScrollPosition(pos)
@@ -470,8 +482,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if scrolled_active:
             self.mapTimer.stop()
         else:
-            curr_pos = self.ui.mapView.scrollPosition()
-            curr_zoom = self.ui.mapView.zoomFactor()
+            curr_pos = self.ui.mapView.propScrollPos
+            curr_zoom = self.ui.mapView.zoomFactor
             self.region_queue.enqueue((self.curr_region_name, curr_pos, curr_zoom))
             self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
 
@@ -1115,8 +1127,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.curr_region_name == region_name:
             return
         if update_queue:
-            curr_pos = self.ui.mapView.scrollPosition()
-            curr_zoom = self.ui.mapView.zoomFactor()
+            curr_pos = self.ui.mapView.propScrollPos
+            curr_zoom = self.ui.mapView.zoomFactor
             self.region_queue.enqueue((self.curr_region_name, curr_pos, curr_zoom))
 
         self.curr_region_name = region_name
@@ -1128,7 +1140,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.focusMapOnSystem(system_id)
             else:
                 pt_system = self.ui.mapView.scrollPositionFromMapCoordinate(
-                    QRectF(QPointF(0.0, 0.0), self.ui.mapView.imgSize))
+                    self.ui.mapView.imgRect)
                 self.ui.mapView.setScrollPosition(pt_system)
                 self.ui.mapView.update()
         self.rescanIntel()
@@ -1201,15 +1213,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
         try:
-            res_file_name = os.path.join("vi", "ui", "res", "mapdata","generated",
-                                         "{0}.jsonl".format(evegate.convertRegionNameForDotlan(region_name)))
-            with jsonlines.open( res_file_name, mode='r') as reader:
-                res = dict(reader)
-            return res
-        except:
-            return None
+            dotlan_file_name = evegate.convertRegionNameForDotlan(region_name)
+            res_file_name = os.path.join("vi", "ui", "res", "mapdata",
+                                         "{}.jsonl".format(dotlan_file_name))
+            user_file_name = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "mapdata",
+                                     "{}.jsonl".format(dotlan_file_name))
+            if os.path.exists(user_file_name):
+                with jsonlines.open( user_file_name, mode='r') as reader:
+                    res = dict(reader)
+                return res
+            elif os.path.exists(res_file_name):
+                with jsonlines.open( res_file_name, mode='r') as reader:
+                    res = dict(reader)
+                return res
+            else:
+                return {}
+        except(Exception,):
+            return {}
 
-    def setupRegionMap(self, region_name):
+    def setupRegionMap(self, region_name)->Optional[dotlan.Map]:
         """
             Prepares a new dotlan object for the selected region
         Args:
@@ -1220,18 +1242,13 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if not region_name:
             region_name = "Providence"
-        svg_dotlan_map = None
-        json_generated_map = None
-        if True:
-            json_generated_map = self.loadJsonMapFile(self.cache, region_name)
-        else:
-            svg_dotlan_map = self.loadSVGMapFile(self.cache, region_name)
-        if svg_dotlan_map is None and json_generated_map is None:
+        json_generated_map = self.loadJsonMapFile(self.cache, region_name)
+        if json_generated_map is None:
+            logging.critical("There is no valid source file to generate the map for the region {}.".format(region_name))
             return None
 
         region_map = dotlan.Map(
             region_name=region_name,
-            svg_file=svg_dotlan_map,
             json_file=json_generated_map,
             set_jump_maps_visible=self.showJumpbridge(),
             set_statistic_visible=self.showStatistic(),
@@ -1474,10 +1491,14 @@ class MainWindow(QtWidgets.QMainWindow):
             region_name = Universe.regionNameFromSystemID(system.system_id)
             self.ui.actionChange_Region_to.setText("Change region to {}".format(region_name))
             self.ui.actionChange_Region_to.setEnabled(region_name != self.curr_region_name)
+            self.ui.actionClear_Jump_Gates.setEnabled(True)
+            self.ui.actionClear_Jump_Gates.setProperty("System",system)
         else:
             self.ui.actionOpen_on_dotlan.setEnabled(False)
             self.ui.actionChange_Region_to.setEnabled(False)
             self.ui.actionOpen_on_zKillboard.setEnabled(False)
+            self.ui.actionClear_Jump_Gates.setEnabled(False)
+            self.ui.actionClear_Jump_Gates.setProperty("System",None)
         self.currentSystem = system
 
     def _updateAlarmDistanceActions(self, distance):
@@ -1768,9 +1789,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def fixupScrollBars(self):
         block_h_sb = QSignalBlocker(self.ui.mapHorzScrollBar)
         block_v_sb = QSignalBlocker(self.ui.mapVertScrollBar)
-        fac = self.ui.mapView.zoomFactor()
-        pos = self.ui.mapView.scrollPosition()
-        size = self.ui.mapView.imgSize
+        fac = self.ui.mapView.zoomFactor
+        pos = self.ui.mapView.propScrollPos
+        size = self.ui.mapView.imgRect
         viewport = self.ui.mapView.size()
         max_x = max(0, int(size.width() * fac - viewport.width()))
         max_y = max(0, int(size.height() * fac - viewport.height()))
@@ -1778,7 +1799,7 @@ class MainWindow(QtWidgets.QMainWindow):
         value_y = max(0, min(int(pos.y()), max_y))
         try:
             if pos != QPointF(value_x, value_y) and not self.ui.mapView.scrolling:
-                self.ui.mapView.setScrollPosition(QPointF(value_x, value_y))
+                self.ui.mapView.setScrollPosition( QPointF(value_x, value_y) )
             self.ui.mapHorzScrollBar.setPageStep(int(viewport.width()))
             self.ui.mapHorzScrollBar.setRange(0, max_x)
             self.ui.mapHorzScrollBar.setValue(value_x)
@@ -2170,7 +2191,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
             self.ui.m_qPlayerOnline.setText("Players ({players}) Server version ({server_version})".format(
                 **server_status))
-
+        if STAT.CHECK_SDE_VERSION in data.keys():
+            self.sdeVersionUpdate( data[STAT.CHECK_SDE_VERSION])
         if STAT.THERA_WORMHOLES_VERSION in data.keys():
             thera_wormhole_version = data[STAT.THERA_WORMHOLES_VERSION]
             self.ui.m_qEveScoutVersion.setText(thera_wormhole_version["api_version"])
@@ -2233,7 +2255,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "Do you really want to clear the Database.\n\n"
             "All icons an character public data, alliance and map data will be removed.\n"
             "Your characters ESI assess keys will not be removed from database.",
-            button0=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+            buttons =QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
         if ret == QMessageBox.StandardButton.Yes:
             self.cache.removeFromCache("api_char_name")
             self.cache.clearDataBase()
@@ -2285,7 +2307,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if selected_system:
             if self.handleDestinationActions(res, destination={"system_id": selected_system.system_id}):
                 return
-            elif res == map_ctx_menu.clearJumpGate:
-                self.cache.clearJumpGate(selected_system.name)
-                self.jbs_changed.emit()
+            elif res == self.ui.actionClear_Jump_Gates:
+                prop = self.ui.actionClear_Jump_Gates.property("System")
+                if prop:
+                    self.cache.clearJumpGate(prop.name)
+                    self.ui.actionClear_Jump_Gates.setProperty("System",None)
+                    self.jbs_changed.emit()
                 return

@@ -98,6 +98,7 @@ class STAT:
     RESULT = "result"
     INFORMATION = "information"
     CHECK_FOR_UPDATE ="check-for-update"
+    CHECK_SDE_VERSION="sde_version-check"
 
 
 class RESULT:
@@ -119,7 +120,7 @@ class MapStatisticsThread(QThread):
         self.thera_system_name = None
         self._fetchLocations = True
         self.stat_query.connect(self.process_stat, Qt.ConnectionType.QueuedConnection)
-        self.stat_query.emit([STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS, STAT.CHECK_FOR_UPDATE])
+        self.stat_query.emit([STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS, STAT.CHECK_FOR_UPDATE,STAT.CHECK_SDE_VERSION])
         self.moveToThread(self)
 
     @Slot(list)
@@ -129,7 +130,7 @@ class MapStatisticsThread(QThread):
         else:
             logging.debug("MapStatisticsThread current task is : {} isCurr:{} isMain:{}".format(str(query), self.isCurrentThread(),self.isMainThread()))
         while self.active and query and len(query):
-            statistics_data = dict({STAT.RESULT: "pending"})
+            statistics_data = {STAT.RESULT: "pending"}
             try:
                 if STAT.SERVER_STATUS in query:
                     if evegate.esiPing():
@@ -147,6 +148,18 @@ class MapStatisticsThread(QThread):
                         self.server_status = False
                         QTimer(self).singleShot(5000, self, self.requestStatistics)
                         query.remove(STAT.SERVER_STATUS)
+                    continue
+
+                if STAT.CHECK_SDE_VERSION in query:
+                    sde_version = evegate.getStaticDataVersion()
+                    if sde_version:
+                        statistics_data[STAT.CHECK_SDE_VERSION] = sde_version
+                        statistics_data[STAT.RESULT] = RESULT.OK
+                        query.remove(STAT.CHECK_SDE_VERSION)
+                        self.statistic_data_update.emit(statistics_data)
+                    else:
+                        query.remove(STAT.CHECK_SDE_VERSION)
+                        QTimer(self).singleShot(5000, self, self.requestSDEStatus)
                     continue
 
                 if STAT.SOVEREIGNTY in query:
@@ -260,6 +273,11 @@ class MapStatisticsThread(QThread):
                 self.stat_query.emit([STAT.STATISTICS, STAT.INCURSIONS, STAT.CAMPAIGNS, STAT.STATISTICS, STAT.STRUCTURES])
             else:
                 self.stat_query.emit([STAT.SERVER_STATUS])
+
+    @Slot()
+    def requestSDEStatus(self):
+        if self.active:
+            self.stat_query.emit([STAT.CHECK_SDE_VERSION])
 
     @Slot()
     def requestLocations(self):

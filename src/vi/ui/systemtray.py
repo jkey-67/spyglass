@@ -205,7 +205,6 @@ class MapContextMenu(QtWidgets.QMenu):
 
     def __init__(self, parent: Ui_MainWindow):
         QtWidgets.QMenu.__init__(self)
-        self.clearJumpGate = QAction("Remove Ansiblex Jump Gate", None, checkable=False)
         self.addSeparator()
         self.gameMenu = PlayerContextMenu(Cache().getAPICharNames())
         self.addMenu(self.gameMenu)
@@ -226,7 +225,7 @@ class MapContextMenu(QtWidgets.QMenu):
 
         self.addMenu(distance_menu)
         self.addSeparator()
-        self.addAction(self.clearJumpGate)
+        self.addAction(parent.actionClear_Jump_Gates)
         self.addSeparator()
         self.addAction(parent.actionQuitAppl)
 
@@ -268,6 +267,7 @@ class POIContextMenu(QtWidgets.QMenu):
             self.selectRegion = QAction("Show System {} on map".format(system_name))
         else:
             self.selectRegion = QAction("Show System on map")
+            self.selectRegion.setEnabled(False)
         self.addAction(self.selectRegion)
         self.addSeparator()
         self.addAction(self.delete)

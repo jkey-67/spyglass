@@ -1918,7 +1918,7 @@ def hasAnsiblex(sys) -> bool:
 def applyRouteToEveOnline(name_char, jump_list):
     if name_char is None:
         logging.error("applyRouteToEveOnline needs the eve-online api account.")
-        return None
+        return
     for id_system in jump_list:
         if hasAnsiblex(id_system):
             pass

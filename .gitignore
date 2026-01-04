@@ -12,6 +12,7 @@ src/dist/*
 src/.idea/*
 venv/
 dist/
+sde/
 workspace.xml
 cache.sqlit3
 cache-2.sqlite3

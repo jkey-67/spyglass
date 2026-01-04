@@ -1,4 +1,4 @@
-# This file was automatically generated with eve-online-static-data-3142455-jsonl, please do not modify the file.
+# This file was automatically generated with eve-online-static-data-3159816-jsonl, please do not modify the file.
 SHIPNAMES = {
          582: u"Bantam",  583: u"Condor",  584: u"Griffin",  585: u"Slasher",
          586: u"Probe",  587: u"Rifter",  588: u"Reaper",  589: u"Executioner",  590: u"Inquisitor",

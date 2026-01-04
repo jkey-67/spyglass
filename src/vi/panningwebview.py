@@ -16,17 +16,18 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
+import logging
+
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
-
 from PySide6.QtGui import QPainter, QResizeEvent, QWheelEvent, QMouseEvent, QTransform
 from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt, QEvent
 from PySide6.QtCore import QPropertyAnimation, Property
-
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
 class PanningWebView(QWidget):
-    ZOOM_WHEEL = float(0.4)
+    ZOOM_WHEEL = float(0.3)
     webViewIsScrolling = Signal(bool)
     webViewUpdateScrollbars = Signal()
     webViewNavigateForward = Signal()
@@ -71,16 +72,16 @@ class PanningWebView(QWidget):
             self.webViewUpdateScrollbars.emit()
 
     @Property(QSizeF)
-    def imgSize(self) -> QSizeF:
+    def imgRect(self) -> QRectF:
         """Return the content size for layout calculations.
 
         Returns:
             QSizeF: Size of the map content.
         """
         if self.content:
-            return self.content.svg_size
+            return self.content.map_rect
         else:
-            return QSizeF(1024.0, 768.0)
+            return QRectF()
 
     def setContent(self, content)->None:
         """Set the content provider for rendering.
@@ -124,30 +125,14 @@ class PanningWebView(QWidget):
                 self.transform.translate(-self.propScrollPos.x(), -self.propScrollPos.y())
                 self.transform.scale(self.zoom, self.zoom)
                 painter.setTransform(self.transform)
-                self.content.renderMap(painter)
+                self.content.renderMap(painter,self.zoom)
                 self.transform.reset()
-                self.transform.scale(2.0, 2.0)
                 painter.setTransform(self.transform)
                 self.content.renderLegend(painter)
-                self.transform.reset()
-        except (Exception,) as ex:
+        finally:
             self.transform.reset()
-            pass
 
-    def setZoomFactor(self, zoom: float)->None:
-        """Set the zoom factor with clamping.
-
-        Args:
-            zoom (float): Requested zoom factor.
-        """
-        if zoom > 8.0:
-            zoom = 8.0
-        elif zoom < 0.125:
-            zoom = 0.125
-        if self.zoom != zoom:
-            self.zoom = zoom
-            self.webViewUpdateScrollbars.emit()
-
+    @Property(float)
     def zoomFactor(self)->float:
         """Return the current zoom factor.
 
@@ -156,13 +141,20 @@ class PanningWebView(QWidget):
         """
         return self.zoom
 
-    def scrollPosition(self)->QPointF:
-        """Return the current scroll position.
+    @zoomFactor.setter
+    def zoomFactor(self, zoom: float)->None:
+        """Set the zoom factor with clamping.
 
-        Returns:
-            QPointF: Current scroll position.
+        Args:
+            zoom (float): Requested zoom factor.
         """
-        return self.propScrollPos
+        if zoom > 6.0:
+            zoom = 6.0
+        elif zoom < 0.025:
+            zoom = 0.025
+        if self.zoom != zoom:
+            self.zoom = zoom
+            self.webViewUpdateScrollbars.emit()
 
     def scrollPositionFromMapCoordinate(self, pt_system: QRectF)->QPointF:
         """Calculate the scroll position for centering a map rectangle.
@@ -211,9 +203,9 @@ class PanningWebView(QWidget):
             if self.zoom != zoom:
                 self.zoom = zoom
 
-        if pos and self.scrollPosition != pos:
-            if self.scrollPosition != pos:
-                self.scrollPosition = pos
+        if pos and self.propScrollPos != pos:
+            if self.propScrollPos != pos:
+                self.propScrollPos = pos
 
     def zoomIn(self, pos=None)->None:
         """Zoom in around a widget position.
@@ -228,7 +220,7 @@ class PanningWebView(QWidget):
             pos = QPointF(self.size().width()/2.0, self.size().height()/2.0)
 
         elem_ori = self.mapPosFromPos(pos)
-        self.setZoomFactor(self.zoom * (1.0+self.ZOOM_WHEEL))
+        self.zoomFactor =  self.zoomFactor * (1.0+self.ZOOM_WHEEL)
         elem_delta = elem_ori-self.mapPosFromPos(pos)
         self.propScrollPos = self.propScrollPos+elem_delta*self.zoom
 
@@ -242,7 +234,7 @@ class PanningWebView(QWidget):
             pos = QPointF(self.size().width()/2.0, self.size().height()/2.0)
 
         elem_ori = self.mapPosFromPos(pos)
-        self.setZoomFactor(self.zoom*(1.0-self.ZOOM_WHEEL))
+        self.zoomFactor = self.zoom*(1.0-self.ZOOM_WHEEL)
         elem_delta = elem_ori - self.mapPosFromPos(pos)
         self.propScrollPos = self.propScrollPos+elem_delta*self.zoom
 
@@ -269,7 +261,7 @@ class PanningWebView(QWidget):
                 self.scrolling = False
                 self.handIsClosed = False
                 QApplication.setOverrideCursor(Qt.CursorShape.OpenHandCursor)
-                self.scrollMousePress = self.scrollPosition()
+                self.scrollMousePress = self.propScrollPos
                 self.positionMousePress = mouse_event.pos()
             elif mouse_event.buttons() == Qt.MouseButton.ForwardButton:
                 self.webViewNavigateForward.emit()
@@ -365,7 +357,7 @@ class PanningWebView(QWidget):
                     QApplication.restoreOverrideCursor()
                 QApplication.setOverrideCursor(Qt.CursorShape.OpenHandCursor)
                 self.handIsClosed = True
-            if self.scrollMousePress is not None:
+            if self.scrollMousePress is not None and self.positionMousePress is not None:
                 delta = mouse_event.pos() - self.positionMousePress
                 self.propScrollPos = self.scrollMousePress - delta
         elif self.pressed:
