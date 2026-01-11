@@ -74,14 +74,19 @@ def createJsonFile(region_ids:list[int]):
             constellation_used = Universe.constellationByID(const_id)
             for system_id in constellation_used.systems:
                 affected_systems.add(system_id)
-                for stargate_system in Universe.stargatesBySystemID(system_id):
-                    affected_systems.add(stargate_system.destination.system_id)
-                    for stargate_system_b in Universe.stargatesBySystemID(stargate_system.destination.system_id):
-                        affected_systems.add(stargate_system_b.destination.system_id)
-                        for stargate_system_c in Universe.stargatesBySystemID(stargate_system_b.destination.system_id):
-                            affected_systems.add(stargate_system_c.destination.system_id)
-                            for stargate_system_d in Universe.stargatesBySystemID(stargate_system_c.destination.system_id):
-                                affected_systems.add(stargate_system_d.destination.system_id)
+                for stargate_system_0 in Universe.stargatesBySystemID(system_id):
+                    affected_systems.add(stargate_system_0.destination.system_id)
+                    for stargate_system_1 in Universe.stargatesBySystemID(stargate_system_0.destination.system_id):
+                        affected_systems.add(stargate_system_1.destination.system_id)
+                        continue
+                        for stargate_system_2 in Universe.stargatesBySystemID(stargate_system_1.destination.system_id):
+                            affected_systems.add(stargate_system_2.destination.system_id)
+                            continue
+                            for stargate_system_3 in Universe.stargatesBySystemID(stargate_system_2.destination.system_id):
+                                affected_systems.add(stargate_system_3.destination.system_id)
+                                for stargate_system_4 in Universe.stargatesBySystemID(stargate_system_3.destination.system_id):
+                                    affected_systems.add(stargate_system_4.destination.system_id)
+                                    continue
 
     graph_positions = dict()
 
@@ -98,43 +103,35 @@ def main():
     base_path = os.path.join(
         os.path.expanduser("~"), "projects", "spyglass", "src", "vi", "ui", "res", "mapdata" )
 
-    if CREATE_DOT_FILE:  # create a dot file
-        result = svgFileToDot(os.path.join(base_path, "New_Combined-step_6.svg"))
-        with open(os.path.join(base_path, "Denci_Tactical.dot"), "wb") as svgFile:
-            svgFile.write(result.encode("utf-8"))
-            svgFile.close()
-        return
+    new_eden = []
+    jove = []
+    for key, _ in Universe.REGIONS.items():
+        if key <= 10_999_999:
+            new_eden.append(key)
+        else:
+            jove.append(key)
 
-    if True:
-        new_eden = []
-        jove = []
-        for key, _ in Universe.REGIONS.items():
-            if key <= 10_999_999:
-                new_eden.append(key)
-            else:
-                jove.append(key)
+    new_eden_regions = createJsonFile(new_eden)
+    with jsonlines.open(
+            "../vi/ui/res/mapdata/{}.jsonl".format("New_Eden"),
+            mode='w') as writer:
+        writer.write_all(new_eden_regions.items())
 
-        new_eden_regions = createJsonFile(new_eden)
-        with jsonlines.open(
-                "../vi/ui/res/mapdata/{}.jsonl".format("New_Eden"),
-                mode='w') as writer:
-            writer.write_all(new_eden_regions.items())
+    jove_regions = createJsonFile(jove)
+    with jsonlines.open(
+            "../vi/ui/res/mapdata/{}.jsonl".format("Jove"),
+            mode='w') as writer:
+        writer.write_all(jove_regions.items())
 
-        jove_regions = createJsonFile(jove)
-        with jsonlines.open(
-                "../vi/ui/res/mapdata/{}.jsonl".format("Jove"),
-                mode='w') as writer:
-            writer.write_all(jove_regions.items())
+    for key,region in Universe.REGIONS.items():
+        region_name = region["name"]
+        region_id = region["region_id"]
+        new_svg = createJsonFile([region_id])
+        with jsonlines.open("../vi/ui/res/mapdata/{}.jsonl".format(evegate.convertRegionNameForDotlan(region_name)), mode='w') as writer:
+            writer.write_all(new_svg.items())
 
-        for key,region in Universe.REGIONS.items():
-            region_name = region["name"]
-            region_id = region["region_id"]
-            new_svg = createJsonFile([region_id])
-            with jsonlines.open("../vi/ui/res/mapdata/{}.jsonl".format(evegate.convertRegionNameForDotlan(region_name)), mode='w') as writer:
-                writer.write_all(new_svg.items())
-
-            with jsonlines.open("../vi/ui/res/mapdata/{}.jsonl".format(evegate.convertRegionNameForDotlan(region_name)), mode='r') as reader:
-                new_svg_in = dict(reader)
+        with jsonlines.open("../vi/ui/res/mapdata/{}.jsonl".format(evegate.convertRegionNameForDotlan(region_name)), mode='r') as reader:
+            new_svg_in = dict(reader)
 
 
 def errout(*objs):

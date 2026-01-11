@@ -174,20 +174,18 @@ class System(object):
         self.has_upwell_cyno_beacon = False
         self.has_upwell_cyno_jammer = False
 
-    @property
     def out_rect(self)->QRectF:
         if self.is_system_text_visible:
             return self.rect.__copy__()
         else:
             return QRectF(self.rect.center()-QPointF(6,6), self.rect.center()+QPointF(6,6))
 
-    @property
     def isMonitored(self) -> bool:
         return bool(self._monitoredDistance)
 
     @property
     def monitoredRange(self) -> int:
-        if self.isMonitored:
+        if self.isMonitored():
             return min(self._monitoredDistance)
         else:
             return 10
@@ -466,7 +464,7 @@ class System(object):
         Returns:
 
         """
-        rc_out_back = self.out_rect.__copy__().marginsAdded(QMargins(20, 20, 20, 20))
+        rc_out_back = self.out_rect().marginsAdded(QMargins(20, 20, 20, 20))
 
         if self.is_system_text_visible:
             delta_w = self.ELEMENT_WIDTH / 2
@@ -504,8 +502,8 @@ class System(object):
                 painter.fillPath(path, QBrush(gradient))
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        if self.isMonitored:
-            rc_out_back_monitor = self.out_rect.__copy__().marginsAdded(QMargins(80, 80, 80, 80))
+        if self.isMonitored():
+            rc_out_back_monitor = self.out_rect().marginsAdded(QMargins(80, 80, 80, 80))
             gradient = QRadialGradient(self.rect.center(), gradient_w*1.25)
             col_a = QColor("#80ffffff")
             col_b = QColor("#00ffffff")
@@ -583,9 +581,9 @@ class System(object):
 
     def boundingRect(self, current_region_id) -> QRectF:
         if self.renderAsOutOfRegion(current_region_id):
-            return self.out_rect.__copy__().marginsAdded(QMargins(-6, -2, -6, -2))
+            return self.out_rect().marginsAdded(QMargins(-6, -2, -6, -2))
         else:
-            return self.out_rect.__copy__().marginsAdded(QMargins(-2, -2, -2, -2))
+            return self.out_rect().marginsAdded(QMargins(-2, -2, -2, -2))
 
     @property
     def structure_type(self):
@@ -727,66 +725,70 @@ class System(object):
         Returns:
 
         """
-        delta_h = self.ELEMENT_HEIGHT / 8
-        rc_out = self.boundingRect(current_region_id)
-        painter.setBrush(self.getBackgroundBrush())
-        if self.renderAsOutOfRegion(current_region_id):
-            painter.setPen(QPen(QColor("#FFc0c0c0")))
-            painter.drawRect(rc_out)
-        else:
-            painter.setPen(QPen(QColor("#FFc0c0c0")))
-            path = QPainterPath()
-            path.addRoundedRect(rc_out, 12, 12)
-            painter.fillPath(path, QBrush(System.UNKNOWN_COLOR))
-            painter.drawPath(path)
-
-        if self.is_system_text_visible:
-            painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
-            painter.setFont(QFont("Arial", int(delta_h*1.8)))
-            painter.drawText(rc_out, Qt.AlignmentFlag.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
-
-        if self.has_ice_belt and self.is_ice_belts_visible:
-            ice_rc_out = self.boundingRect(current_region_id).marginsAdded(QMargins(2,2,2,2))
-            ice_pen = QPen(QColor("#806495ED"))
-            ice_pen.setWidthF(2.0)
-            painter.setPen(ice_pen)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            path = QPainterPath()
+        try:
+            delta_h = self.ELEMENT_HEIGHT / 8
+            rc_out = self.boundingRect(current_region_id)
+            painter.setBrush(self.getBackgroundBrush())
             if self.renderAsOutOfRegion(current_region_id):
-                path.addRoundedRect(ice_rc_out, 0,0)
+                painter.setPen(QPen(QColor("#FFc0c0c0")))
+                painter.drawRect(rc_out)
             else:
-                path.addRoundedRect(ice_rc_out, 14, 14)
-            painter.drawPath(path)
+                painter.setPen(QPen(QColor("#FFc0c0c0")))
+                path = QPainterPath()
+                path.addRoundedRect(rc_out, 12, 12)
+                painter.fillPath(path, QBrush(System.UNKNOWN_COLOR))
+                painter.drawPath(path)
 
-        if self.is_statistics_visible:
-            rc_out = self.out_rect
-            rc_out.translate(0.0, rc_out.height())
-            rc_out.setHeight(delta_h*2)
+            if self.is_system_text_visible:
+                painter.setPen(QPen(self.textInv.getTextColourFromBackground(self.backgroundColor)))
+                painter.setFont(QFont("Arial", int(delta_h*1.8)))
+                painter.drawText(rc_out, Qt.AlignmentFlag.AlignCenter,  "{}\n{}".format(self._first_line, self._second_line))
 
-            painter.setFont(QFont("Arial", int(delta_h*1.3)))
-            painter.setPen(QPen(QColor("#C0FF0000")))
-            painter.drawText(rc_out, Qt.AlignmentFlag.AlignCenter, self._svg_text_string)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
+            if self.has_ice_belt and self.is_ice_belts_visible:
+                ice_rc_out = self.boundingRect(current_region_id).marginsAdded(QMargins(2,2,2,2))
+                ice_pen = QPen(QColor("#806495ED"))
+                ice_pen.setWidthF(2.0)
+                painter.setPen(ice_pen)
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                path = QPainterPath()
+                if self.renderAsOutOfRegion(current_region_id):
+                    path.addRoundedRect(ice_rc_out, 0,0)
+                else:
+                    path.addRoundedRect(ice_rc_out, 14, 14)
+                painter.drawPath(path)
 
-        if self.is_vulnerable_visible:
-            rc_out = self.out_rect
-            rc_out.translate(0.0, -delta_h*2)
-            rc_out.setHeight(delta_h*2)
+            if self.is_statistics_visible:
+                rc_out = self.out_rect()
+                rc_out.translate(0.0, rc_out.height())
+                rc_out.setHeight(delta_h*2)
 
-            painter.setFont(QFont("Arial", int(delta_h*1.3)))
-            painter.setPen(QPen(QColor("#C0FF8000")))
-            if self._vulnerability_text is None:
-                painter.drawText(rc_out, Qt.AlignmentFlag.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
-            else:
-                painter.drawText(rc_out, Qt.AlignmentFlag.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
-                painter.drawText(rc_out, Qt.AlignmentFlag.AlignRight, self._vulnerability_text)
-                # painter.drawText(rc_out, Qt.AlignCenter, self._vulnerability_text)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.setFont(QFont("Arial", int(delta_h*1.3)))
+                painter.setPen(QPen(QColor("#C0FF0000")))
+                painter.drawText(rc_out, Qt.AlignmentFlag.AlignCenter, self._svg_text_string)
+                painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        if self.is_structure_visible:
-            self.renderStructures(painter,current_region_id)
+            if self.is_vulnerable_visible:
+                rc_out = self.out_rect()
+                rc_out.translate(0.0, -delta_h*2)
+                rc_out.setHeight(delta_h*2)
 
-        self._is_dirty = False
+                painter.setFont(QFont("Arial", int(delta_h*1.3)))
+                painter.setPen(QPen(QColor("#C0FF8000")))
+                if self._vulnerability_text is None:
+                    painter.drawText(rc_out, Qt.AlignmentFlag.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
+                else:
+                    painter.drawText(rc_out, Qt.AlignmentFlag.AlignLeft, "{:.2f} {}".format(self.security_status, self.security_class))
+                    painter.drawText(rc_out, Qt.AlignmentFlag.AlignRight, self._vulnerability_text)
+                    # painter.drawText(rc_out, Qt.AlignCenter, self._vulnerability_text)
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+
+            if self.is_structure_visible:
+                self.renderStructures(painter,current_region_id)
+
+            self._is_dirty = False
+        except Exception as ex:
+            logging.error("renderSystemTexts failed for system %s: %s", getattr(self, "name", "unknown"), ex)
+
 
     @property
     def mapCoordinates(self) -> QRectF:

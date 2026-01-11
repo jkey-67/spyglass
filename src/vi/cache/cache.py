@@ -715,6 +715,14 @@ class Cache(object):
         else:
             return list()
 
+    def getWormholeConnections(self):
+        data = self.getFromCache("Eve_Scout_Wormhole_Signatures", outdated=True)
+        if data is not None:
+            return json.loads(data)
+        else:
+            return list()
+
+
     def insertAlliance(self, alliance_id, alliance_name, alliance_standing=None):
         with Cache.SQLITE_WRITE_LOCK:
             query = "INSERT INTO alliances (id,name,standing,maxage) VALUES (?,?, ?);"

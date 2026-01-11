@@ -27,9 +27,8 @@ import threading
 import logging
 
 from PySide6 import QtWidgets
-from PySide6.QtCore import QThread, QUrl
+from PySide6.QtCore import QThread, QUrl, Qt
 from PySide6.QtCore import Signal
-from PySide6.QtQml import QQmlModuleImportSpecialVersions
 
 try:
     from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -796,7 +795,7 @@ class APIServerThread(QThread):
         """
 
         if self.browser and parent:
-            self.browser.destroyed.connect(self.quit)
+            self.browser.destroyed.connect(self.quit,Qt.ConnectionType.QueuedConnection)
             self.browser.load(QUrl("https://login.eveonline.com/v2/oauth/authorize/?{}".format(string_params)))
             self.browser.resize(600, 800)
             self.browser.show()
@@ -832,7 +831,7 @@ class WebHostWidget(QWebEngineView):
 
     def __init__(self, parent=None):
         super(WebHostWidget, self).__init__(parent)
-        self.page().certificateError.connect(self.on_cert_error)
+        self.page().certificateError.connect(self.on_cert_error,Qt.ConnectionType.QueuedConnection)
 
     def on_cert_error(self, e):
         print(f"cert error: {e.description()}")
@@ -881,7 +880,7 @@ def oauthLoginEveOnline(client_param, parent=None):
 
     web_view = WebHostWidget()
     parent.apiThread = APIServerThread(client_param, web_view)
-    web_view.terminate_thread.connect(parent.apiThread.terminate)
+    web_view.terminate_thread.connect(parent.apiThread.terminate,Qt.ConnectionType.QueuedConnection)
     parent.apiThread.start()
     return parent.apiThread.createBrowserWindow(string_params, parent)
 
@@ -2120,14 +2119,15 @@ def checkTheraConnections(thera_connections, system_name=None, fetch_jump_route=
     Returns:
         dict: thera connections holding patched data
     """
-    if system_name and len(thera_connections):
+    if system_name is not None and len(thera_connections):
         src_id = Universe.systemIdByName(system_name)
+        rp = RoutPlanner(use_ansi=True, use_thera=False)
         for thera_item in thera_connections:
             dst_id = thera_item["in_system_id"]
             if 31000920 != src_id and 31000920 != dst_id:
                 if fetch_jump_route:
-                    cons = len(RoutPlanner.findRoute(src_id=src_id, dst_id=dst_id, use_ansi=True, use_thera=False).route)
-                    thera_item["jumps"] = cons-1 if cons > 0 else 0
+                    cons = len(rp.findRoute(src_id=src_id, dst_id=dst_id).route)
+                    thera_item["jumps"] = cons-1 if cons > 0 else None
     return thera_connections
 
 

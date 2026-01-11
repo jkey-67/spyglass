@@ -29,6 +29,9 @@ class TableModelThera(QAbstractTableModel):
         super(TableModelThera, self).__init__(parent)
         self.thera_data = []  # checkTheraConnections(system_name)
         self.model_display_list = [
+            {"Jumps": ["jumps"]},
+            {"System": ["in_system_name"]},
+            {"Region": ["in_region_name"]},
             # {"created_at": ["created_at"]},
             # {"Created by ID": ["created_by_id"]},
             # {"Created by name": ["created_by_name"]},
@@ -40,9 +43,6 @@ class TableModelThera(QAbstractTableModel):
             # {"completed": ["completed"]},
             {"Sig In": ["in_signature"]},
             {"Sig Out": ["out_signature"]},
-            {"Jumps": ["jumps"]},
-            {"System": ["in_system_name"]},
-            {"Region": ["in_region_name"]},
             {"Estimated EOL": ["expires_at"]},
             # {"wh_exits_outward": ["wh_exits_outward"]},
             # {"wh_type": ["wh_type"]},
@@ -58,10 +58,9 @@ class TableModelThera(QAbstractTableModel):
         ]
 
     def setTheraConnections(self, connections):
-        if self.thera_data != connections:
-            self.beginResetModel()
-            self.thera_data = connections
-            self.endResetModel()
+        self.beginResetModel()
+        self.thera_data = connections
+        self.endResetModel()
 
     def rowCount(self, parent: Union[QModelIndex, QPersistentModelIndex] = ...) -> int:
         return len(self.thera_data)

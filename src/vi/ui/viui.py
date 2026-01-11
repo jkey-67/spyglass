@@ -25,7 +25,7 @@ import time
 import requests
 import parse
 import logging
-
+import weakref
 from bs4 import BeautifulSoup
 from typing import Optional
 
@@ -63,6 +63,8 @@ from vi.ui.modelplayer import TableModelPlayers, StyledItemDelegatePlayers
 from vi.ui.modelthera import TableModelThera
 from vi.ui.modelstorm import TableModelStorm
 from vi.ui.modelpoi import POITableModel, StyledItemDelegatePOI
+
+from vi.region import RegionConstellationMap
 
 from vi.universe.routeplanner import RoutPlanner
 
@@ -145,7 +147,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.curr_region_name = self.cache.getFromCache("region_name")
         self.dotlan = self.setupRegionMap(self.curr_region_name)
         self.mapTimer = QTimer(self)
-        self.mapTimer.timeout.connect(self.updateMapView)
+        self.mapTimer.timeout.connect(self.updateMapView,Qt.ConnectionType.QueuedConnection)
         self.eve_time_timer = QTimer(self)
         self.eve_time_timer.setInterval(1000)
         self.eve_time_timer.timeout.connect(self._updateEveTimeLabel)
@@ -298,13 +300,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def sdeVersionUpdate(self,current_sde_version:Optional[int]):
         if current_sde_version is None:
             self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
-            self.ui.m_qSdeVersion.setText("Static Data Export version (...) pending")
+            self.ui.m_qSdeVersion.setText("EVE SDE version (...) pending")
         elif SDE_VERSION == current_sde_version:
             self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/online.svg"))
-            self.ui.m_qSdeVersion.setText("Static Data Export version ({})".format(SDE_VERSION))
+            self.ui.m_qSdeVersion.setText("EVE SDE version ({})".format(SDE_VERSION))
         else:
             self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/error.svg"))
-            self.ui.m_qSdeVersion.setText("Static Data Export version ({}/{}) outdated".format(SDE_VERSION, current_sde_version))
+            self.ui.m_qSdeVersion.setText("EVE SDE version ({}/{}) outdated".format(SDE_VERSION, current_sde_version))
 
     def showStatistic(self) -> bool:
         return self.ui.actionShowSystemStatisticOnMap.isChecked()
@@ -608,11 +610,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 player_name = act.eve_action["player_name"]
             if self.useThreaRoutes:
                 evegate.ESAPIListPublicSignatures()
-                the_route = RoutPlanner.findRoute(
+                rp = RoutPlanner(use_ansi=True,use_thera=True)
+                the_route = rp.findRoute(
                     src_id=evegate.esiCharactersLocation(player_name),
-                    dst_id=system_id,
-                    use_ansi=True,
-                    use_thera=True
+                    dst_id=system_id
                 )
 
                 last_thera = False
@@ -812,6 +813,7 @@ class MainWindow(QtWidgets.QMainWindow):
         model = TableModelThera()
         sort = QSortFilterProxyModel()
         sort.setSourceModel(model)
+        sort.sort(0,Qt.SortOrder.AscendingOrder)
         self.ui.tableViewThera.setModel(sort)
         self.ui.tableViewThera.horizontalHeader().setDragEnabled(True)
         self.ui.tableViewThera.horizontalHeader().setAcceptDrops(True)
@@ -1019,7 +1021,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _setupThreads(self):
         logging.info("Set up threads and their connections...")
         self.avatarFindThread = AvatarFindThread()
-        self.avatarFindThread.avatar_update.connect(self.updateAvatarOnChatEntry)
+        self.avatarFindThread.avatar_update.connect(self.updateAvatarOnChatEntry,Qt.ConnectionType.QueuedConnection)
 
         self.filewatcherThread = filewatcher.FileWatcher(self.pathToLogs)
         self.filewatcherThread.file_change.connect(self.logFileChanged)
@@ -1028,7 +1030,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.statistic_data_update.connect(self.updateStatisticsOnMap, Qt.ConnectionType.QueuedConnection)
 
         self.zkillboard = ZKillMonitor(parent=self)
-        self.zkillboard.report_system_kill.connect(self.updateKillboard)
+        self.zkillboard.report_system_kill.connect(self.updateKillboard, Qt.ConnectionType.QueuedConnection)
         self.zkillboard.status_kill_mail.connect(lambda online: self.ui.m_qLedZKillboarOnline.setPixmap(
                     QPixmap(u":/Icons/res/online.svg" if online else QPixmap(u":/Icons/res/offline.svg"))))
 
@@ -1246,7 +1248,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if json_generated_map is None:
             logging.critical("There is no valid source file to generate the map for the region {}.".format(region_name))
             return None
-
         region_map = dotlan.Map(
             region_name=region_name,
             json_file=json_generated_map,
@@ -1254,7 +1255,6 @@ class MainWindow(QtWidgets.QMainWindow):
             set_statistic_visible=self.showStatistic(),
             set_adm_visible=self.showADMOnMap(),
             set_jump_bridges=self.cache.getJumpGates())
-
         self.setInitialMapPositionForRegion(region_name)
         return region_map
 
@@ -1587,9 +1587,21 @@ class MainWindow(QtWidgets.QMainWindow):
         """Queue a POI add confirmation in the notification dock."""
         if not isinstance(cb_data, dict):
             return
-        poi_name = cb_data.get("name", "POI")
-        system_id = cb_data.get("system_id") or cb_data.get("solar_system_id")
-        system_name = Universe.systemNameById(system_id) if system_id else ""
+        poi_name = cb_data.get("name")
+        system_name = cb_data.get("sys")
+        system_id = None
+        if system_name is None and poi_name is not None:
+            system_name =poi_name.split(" ")[0]
+            poi_name = poi_name.split(" - ")[1]
+            system_id = Universe.systemIdByName(system_name)
+            cb_data["system_id"] = system_id
+        if system_id is None:
+            system_id = cb_data.get("system_id")
+        if system_id is None:
+            system_id = cb_data.get("solar_system_id")
+        if system_id is not None and system_name is None:
+            system_name = Universe.systemNameById(system_id) if system_id else ""
+
         notification_key = (poi_name, system_id)
         if notification_key in self.pending_poi_notifications:
             return
@@ -2020,7 +2032,9 @@ class MainWindow(QtWidgets.QMainWindow):
         elif message.user != "zKillboard.com":
             avatar_icon = self.cache.getImageFromAvatar(message.user)
             if avatar_icon is None and self.showAvatar:
+                chat_entry_widget.deleteLater()
                 self.avatarFindThread.addChatEntry(chat_entry_widget)
+
         if avatar_icon:
             chat_entry_widget.updateAvatar(avatar_icon)
 
@@ -2159,7 +2173,8 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.ui.applySoundSetting.clicked.connect(dialog.accept)
         dialog.show()
 
-    def updateAvatarOnChatEntry(self, entry, data):
+    @Slot(weakref.ref,object)
+    def updateAvatarOnChatEntry(self, entry_ref, data):
         """
         Assigns the blob data as pixmap to the entry, if a pixmap could be loaded directly, otherwise
         the blob will be loaded wia avatar thread
@@ -2170,82 +2185,95 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns:
             None: emits avatar_loaded
         """
-        if entry.updateAvatar(data):
-            # update all pending message for the user
-            self.avatar_loaded.emit(entry.message.user, data)
-        else:
-            # retry to fetch avatar, but clear database
-            self.avatarFindThread.addChatEntry(entry, clear_cache=True)
-
-    def updateStatisticsOnMap(self, data):
-
-        if STAT.STATISTICS in data.keys():
-            self.mapStatisticCache = data[STAT.STATISTICS]
-            if self.dotlan:
-                self.dotlan.addSystemStatistics(self.mapStatisticCache)
-        if STAT.SERVER_STATUS in data.keys():
-            server_status = data[STAT.SERVER_STATUS]
-            if server_status["players"] > 0:
-                self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
+        entry = entry_ref()
+        if entry:
+            if entry.updateAvatar(data):
+                # update all pending message for the user
+                self.avatar_loaded.emit(entry.message.user, data)
             else:
-                self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
-            self.ui.m_qPlayerOnline.setText("Players ({players}) Server version ({server_version})".format(
-                **server_status))
-        if STAT.CHECK_SDE_VERSION in data.keys():
-            self.sdeVersionUpdate( data[STAT.CHECK_SDE_VERSION])
-        if STAT.THERA_WORMHOLES_VERSION in data.keys():
-            thera_wormhole_version = data[STAT.THERA_WORMHOLES_VERSION]
-            self.ui.m_qEveScoutVersion.setText(thera_wormhole_version["api_version"])
+                # retry to fetch avatar, but clear database
+                self.avatarFindThread.addChatEntry(entry, clear_cache=True)
 
-        if STAT.OBSERVATIONS_RECORDS in data.keys():
-            observations_records = data[STAT.OBSERVATIONS_RECORDS]
-            self.ui.tableViewStorm.model().sourceModel().updateObservationsRecords(observations_records)
-
-        if STAT.THERA_WORMHOLES in data.keys():
-            thera_wormhole = data[STAT.THERA_WORMHOLES]
-            if thera_wormhole and len(thera_wormhole) > 0:
-                self.ui.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/online.svg"))
-            else:
-                self.ui.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
-            self.setTheraConnections(thera_wormhole)
-            logging.debug("Thera wormholes successfully fetched.")
-
-        if STAT.SOVEREIGNTY in data:
-            if self.dotlan:
-                self.dotlan.setSystemSovereignty(data[STAT.SOVEREIGNTY])
-
-        if STAT.STRUCTURES in data:
-            if self.dotlan:
-                self.dotlan.setSystemStructures(data[STAT.STRUCTURES])
-
-        if STAT.INCURSIONS in data:
-            if self.dotlan:
-                self.dotlan.setIncursionSystems(data[STAT.INCURSIONS])
-
-        if STAT.CAMPAIGNS in data:
-            if self.dotlan:
-                self.dotlan.setCampaignsSystems(data[STAT.CAMPAIGNS])
-
-        if STAT.REGISTERED_CHARS in data:
-            char_data = data[STAT.REGISTERED_CHARS]
-            char_data_online = []
-            for itm in char_data:
-                is_esi_char = evegate.esiCharName() == itm["name"]
-                if not itm["online"] and not is_esi_char:
-                    self.setLocation(itm["name"], itm["system"]["name"], change_region=False)
+    @Slot(object)
+    def updateStatisticsOnMap(self, data:object)->None:
+        if data:
+            if STAT.STATISTICS in data.keys():
+                self.mapStatisticCache = data[STAT.STATISTICS]
+                if self.dotlan:
+                    self.dotlan.addSystemStatistics(self.mapStatisticCache)
+                logging.debug("Statistic data successfully fetched.")
+            if STAT.SERVER_STATUS in data.keys():
+                server_status = data[STAT.SERVER_STATUS]
+                if server_status["players"] > 0:
+                    self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/online.svg"))
                 else:
-                    char_data_online.append(itm)
+                    self.ui.m_qLedOnline.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
+                self.ui.m_qPlayerOnline.setText("Players ({players}) Server version ({server_version})".format(
+                    **server_status))
+                logging.debug("Server status successfully fetched.")
+            if STAT.CHECK_SDE_VERSION in data.keys():
+                self.sdeVersionUpdate( data[STAT.CHECK_SDE_VERSION])
+                logging.debug("SDE-Version successfully fetched.")
+            if STAT.THERA_WORMHOLES_VERSION in data.keys():
+                thera_wormhole_version = data[STAT.THERA_WORMHOLES_VERSION]
+                self.ui.m_qEveScoutVersion.setText(thera_wormhole_version["api_version"])
+                logging.debug("EVE-Scout-Version successfully fetched.")
 
-            for itm in char_data_online:
-                curr_system = itm["system"]
-                self.setLocation(itm["name"], itm["system"]["name"], change_region=True)
-                if  "system_id" in itm["system"].keys():
-                    self.focusMapOnSystem(itm["system"]["system_id"])
+            if STAT.OBSERVATIONS_RECORDS in data.keys():
+                observations_records = data[STAT.OBSERVATIONS_RECORDS]
+                self.ui.tableViewStorm.model().sourceModel().updateObservationsRecords(observations_records)
+                logging.debug("Observer records successfully fetched.")
+
+            if STAT.THERA_WORMHOLES in data.keys():
+                thera_wormhole = data[STAT.THERA_WORMHOLES]
+                if thera_wormhole and len(thera_wormhole) > 0:
+                    self.ui.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/online.svg"))
                 else:
-                    self.focusMapOnSystem(itm["system"]["system_id"])
+                    self.ui.m_qLedEveScout.setPixmap(QPixmap(u":/Icons/res/offline.svg"))
+                self.setTheraConnections(thera_wormhole)
+                logging.debug("Thera wormholes successfully fetched.")
 
-        if STAT.CHECK_FOR_UPDATE in data:
-            self.checkForUpdate(data[STAT.CHECK_FOR_UPDATE])
+            if STAT.SOVEREIGNTY in data:
+                if self.dotlan:
+                    self.dotlan.setSystemSovereignty(data[STAT.SOVEREIGNTY])
+                logging.debug("Sovereignnity data successfully fetched.")
+
+            if STAT.STRUCTURES in data:
+                if self.dotlan:
+                    self.dotlan.setSystemStructures(data[STAT.STRUCTURES])
+                logging.debug("Structure data successfully fetched.")
+
+            if STAT.INCURSIONS in data:
+                if self.dotlan:
+                    self.dotlan.setIncursionSystems(data[STAT.INCURSIONS])
+                logging.debug("Incurison data successfully fetched.")
+
+            if STAT.CAMPAIGNS in data:
+                if self.dotlan:
+                    self.dotlan.setCampaignsSystems(data[STAT.CAMPAIGNS])
+                logging.debug("Campain data successfully fetched.")
+
+            if STAT.REGISTERED_CHARS in data:
+                char_data = data[STAT.REGISTERED_CHARS]
+                char_data_online = []
+                for itm in char_data:
+                    is_esi_char = evegate.esiCharName() == itm["name"]
+                    if not itm["online"] and not is_esi_char:
+                        self.setLocation(itm["name"], itm["system"]["name"], change_region=False)
+                    else:
+                        char_data_online.append(itm)
+
+                for itm in char_data_online:
+                    self.setLocation(itm["name"], itm["system"]["name"], change_region=True)
+                    if  "system_id" in itm["system"].keys():
+                        self.focusMapOnSystem(itm["system"]["system_id"])
+                    else:
+                        self.focusMapOnSystem(itm["system"]["system_id"])
+                logging.debug("Character data successfully fetched.")
+
+            if STAT.CHECK_FOR_UPDATE in data:
+                self.checkForUpdate(data[STAT.CHECK_FOR_UPDATE])
+                logging.debug("Update-Check fetched.")
 
     @Slot()
     def clearCacheFile(self):

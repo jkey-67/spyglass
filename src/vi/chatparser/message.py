@@ -142,14 +142,10 @@ class Message(object):
     def affectedSystems(self, systems: set = None):
         self._affectedSystems = systems if systems else set()
 
-    @property
-    def simpleText(self):
-        return lineToMessageText(self.plainText)
-
     def alarmRange(self):
         alarm_range = None
         for message_system in self.affectedSystems:
-            if message_system.isMonitored and self.status == States.ALARM:
+            if message_system.isMonitored() and self.status == States.ALARM:
                 if alarm_range is None:
                     alarm_range = message_system.monitoredRange
                 else:

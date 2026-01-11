@@ -16,12 +16,10 @@ numpy
 packaging
 parse
 pip
-pygame
 pyinstaller
 pyinstaller-hooks-contrib
 pyttsx3
 requests
-scipy
 setuptools
 shiboken6
 soupsieve

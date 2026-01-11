@@ -23,6 +23,8 @@ import os
 import logging
 import traceback
 import datetime
+import faulthandler
+import signal
 from logging.handlers import RotatingFileHandler
 from PySide6 import QtGui, QtWidgets
 from PySide6.QtWidgets import QApplication, QMessageBox
@@ -52,6 +54,26 @@ def exceptHook(exception_type, exception_value, traceback_object):
 
 sys.excepthook = exceptHook
 backGroundColor = "#c6d9ec"
+_SEGFAULT_LOG_FILE = None
+
+
+def enable_segmentation_fault_monitor(log_directory):
+    """
+        Enable faulthandler to capture segmentation faults to a dedicated log file.
+    """
+    global _SEGFAULT_LOG_FILE
+    try:
+        if _SEGFAULT_LOG_FILE:
+            return
+        os.makedirs(log_directory, exist_ok=True)
+        log_path = os.path.join(log_directory, "segfault.log")
+        _SEGFAULT_LOG_FILE = open(log_path, "a")
+        faulthandler.enable(file=_SEGFAULT_LOG_FILE, all_threads=True)
+        if hasattr(signal, "SIGSEGV"):
+            faulthandler.register(signal.SIGSEGV, file=_SEGFAULT_LOG_FILE, all_threads=True)
+        logging.info("Segmentation fault monitor active; writing to %s", log_path)
+    except Exception as exc:
+        logging.warning("Failed to enable segmentation fault monitor: %s", exc)
 
 
 class Application(QApplication):
@@ -138,6 +160,7 @@ class Application(QApplication):
         spyglass_log_directory = os.path.join(spyglass_dir, "logs")
         if not os.path.exists(spyglass_log_directory):
             os.mkdir(spyglass_log_directory)
+        enable_segmentation_fault_monitor(spyglass_log_directory)
 
         spyglass_cache = Cache()
         log_level = spyglass_cache.getFromCache("logging_level")
@@ -195,7 +218,7 @@ if __name__ == "__main__":
     res = 0
     logging.basicConfig()
     try:
-        # os.environ["XDG_SESSION_TYPE"] = "wayland"
+        os.environ["XDG_SESSION_TYPE"] = "wayland"
         # os.environ["QT_QPA_PLATFORM"] = "wayland"
         app = Application(sys.argv)
         res = app.exec()

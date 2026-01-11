@@ -264,9 +264,9 @@ class Map(object):
 
     def renderMap(self, painter,zoom=1.0):
         for system in self.systems.values():
-            system.is_ice_belts_visible = zoom > 0.7
-            system.is_structure_visible = zoom > 0.6
-            system.is_system_text_visible = zoom > 0.5
+            system.is_ice_belts_visible = zoom > 0.3
+            system.is_structure_visible = zoom > 0.2
+            system.is_system_text_visible = zoom > 0.2
             system.updateSystemBackgroundColors()
             system.renderConnections(painter, self.region_id, self.systems)
             system.renderJumpBridges(painter, self.region_id, self.systems)

@@ -12,7 +12,7 @@ import datetime
 
 import PySide6.QtNetwork
 from PySide6.QtCore import QUrl, QObject
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 from PySide6.QtNetwork import QNetworkRequest
 from PySide6.QtNetwork import QNetworkReply
 from PySide6.QtNetwork import QNetworkAccessManager
@@ -58,10 +58,11 @@ class ZKillMonitor(QObject):
         if self.zkillredisqStreamID is None:
             self.zkillredisqStreamID = "spyglass-{}".format(uuid.uuid4())
             Cache().putIntoCache("zkillredisq.stream.id", self.zkillredisqStreamID)
+        self.zkillredisqStreamID = "spyglass-{}".format(uuid.uuid4())
         self.netManager = QNetworkAccessManager()
-        self.netManager.finished.connect(self.responseReady)
+        self.netManager.finished.connect(self.responseReady,Qt.ConnectionType.QueuedConnection)
         self.killmailManager = QNetworkAccessManager()
-        self.killmailManager.finished.connect(self.killmailResponseReady)
+        self.killmailManager.finished.connect(self.killmailResponseReady,Qt.ConnectionType.QueuedConnection)
         self.pendingKillmailReplies = dict()
         self.req = QNetworkRequest()
         self.req.setUrl("https://zkillredisq.stream/listen.php?queueID={}".format(self.zkillredisqStreamID))

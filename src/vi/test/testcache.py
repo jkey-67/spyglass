@@ -68,7 +68,7 @@ class GenerateJsonlFiles(unittest.TestCase):
         file_name = FileName(self.curr_path, "shipnames.py")
         file_name.prepare()
         with open(file_name.temp_name, "w") as writer:
-            writer.write(self.STATIC_DATA_INFO)
+            writer.write(GenerateJsonlFiles.STATIC_DATA_INFO)
             writer.write("SHIPNAMES = {")
             max_len = 80
             eol_txt = "\n        "
@@ -150,7 +150,7 @@ class GenerateJsonlFiles(unittest.TestCase):
         regionnames_py = FileName(self.curr_path, "regionnames.py")
         regionnames_py.prepare()
         with open(regionnames_py.temp_name, "w", encoding="UTF-8") as writer:
-            writer.write(self.STATIC_DATA_INFO)
+            writer.write(GenerateJsonlFiles.STATIC_DATA_INFO)
             writer.write('REGION_IDS_BY_NAME = {\n')
             last = len(region_id_by_name)
             for key, val in region_id_by_name.items():
@@ -202,7 +202,7 @@ class GenerateJsonlFiles(unittest.TestCase):
         conste_name = FileName(self.curr_path, "constellationnames.py")
         conste_name.prepare()
         with open(conste_name.temp_name, "w", encoding="utf-8") as writer:
-            writer.write(self.STATIC_DATA_INFO)
+            writer.write(GenerateJsonlFiles.STATIC_DATA_INFO)
             writer.write('CONSTELLATION_IDS_BY_NAME = {\n')
             data_out = set(all_constellations_names.items())
             last = len(data_out)
@@ -303,7 +303,7 @@ class GenerateJsonlFiles(unittest.TestCase):
         factions[500016] = 'SOE'
         factions[500028] = 'AIR'
         with open(name.temp_name, "w") as writer:
-            writer.write(self.STATIC_DATA_INFO)
+            writer.write(GenerateJsonlFiles.STATIC_DATA_INFO)
             writer.write("NPCNAMES = {\n")
             cnt = len(factions)
             for key, faction in factions.items():
@@ -324,10 +324,10 @@ class GenerateJsonlFiles(unittest.TestCase):
             for obj in reader:
                 buildNumber_client = obj["buildNumber"]
                 buildNumber_server = evegate.getStaticDataVersion()
-                self.STATIC_DATA_INFO = "# This file was automatically generated with eve-online-static-data-{}-jsonl, please do not modify the file.\n".format(buildNumber_client)
-                self.assertEqual(buildNumber_client,buildNumber_server,"The static data version {}did not match the server version {}.".format(buildNumber_client,buildNumber_server))
+                GenerateJsonlFiles.STATIC_DATA_INFO = "# This file was automatically generated with eve-online-static-data-{}-jsonl, please do not modify the file.\n".format(buildNumber_client)
+                self.assertEqual(buildNumber_client,buildNumber_server,"The static data version {} did not match the server version {}.".format(buildNumber_client,buildNumber_server))
                 with open(name.temp_name, "w") as writer:
-                    writer.write(self.STATIC_DATA_INFO)
+                    writer.write(GenerateJsonlFiles.STATIC_DATA_INFO)
                     writer.write("SDE_VERSION = {}\n".format(obj["buildNumber"]))
                     writer.write("SDE_DATE = '{}'\n".format(obj["releaseDate"]))
                 name.update()

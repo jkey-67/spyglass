@@ -1,4 +1,4 @@
-# This file was automatically generated with eve-online-static-data-3159816-jsonl, please do not modify the file.
+# This file was automatically generated with eve-online-static-data-3183544-jsonl, please do not modify the file.
 SHIPNAMES = {
          582: u"Bantam",  583: u"Condor",  584: u"Griffin",  585: u"Slasher",
          586: u"Probe",  587: u"Rifter",  588: u"Reaper",  589: u"Executioner",  590: u"Inquisitor",
@@ -2644,7 +2644,7 @@ ID_BY_SHIPNAMES = {
         u"AZARIEL": 78576,
         u"アザリエル": 78576,
         u"아자리엘": 78576,
-        u"阿里艾尔": 78576,
+        u"阿扎里尔级": 78576,
         u"SQUALL": 81008,
         u"スコール": 81008,
         u"스퀄": 81008,

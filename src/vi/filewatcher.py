@@ -25,7 +25,7 @@ import time
 import threading
 
 from PySide6 import QtCore
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 
 from vi.evetime import lastDowntime
 
@@ -53,8 +53,8 @@ class FileWatcher(QtCore.QThread):
         self.path = path
         self.files = {}  # path -> {"size": int, "mtime": float}
         self.fileWatcher = QtCore.QFileSystemWatcher(self)
-        self.fileWatcher.directoryChanged.connect(self.directoryChanged)
-        self.fileWatcher.fileChanged.connect(self.fileChanged)
+        self.fileWatcher.directoryChanged.connect(self.directoryChanged,Qt.ConnectionType.QueuedConnection)
+        self.fileWatcher.fileChanged.connect(self.fileChanged,Qt.ConnectionType.QueuedConnection)
         if os.path.isdir(path):
             self.fileWatcher.addPath(path)
         else:

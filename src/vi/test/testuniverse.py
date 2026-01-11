@@ -37,10 +37,10 @@ class TestUniverse(unittest.TestCase):
     def test_system(self):
         system_a = ALL_SYSTEMS[30005132] # System:	Z-ENUD
         self.assertEqual(system_a.name, "Z-ENUD")
-        self.assertFalse(system_a.isMonitored)
+        self.assertFalse(system_a.isMonitored())
 
         system_a.addLocatedCharacter("test1", 5)
-        self.assertTrue(system_a.isMonitored)
+        self.assertTrue(system_a.isMonitored())
 
         system_b = ALL_SYSTEMS[30005133] # System:	MJ-5F9
         system_b.addLocatedCharacter("test2", 5)
@@ -51,14 +51,14 @@ class TestUniverse(unittest.TestCase):
 
         system_c = ALL_SYSTEMS[30005134]  # System:	M5NO-B
         self.assertEqual(system_c.name, "M5NO-B")
-        self.assertTrue(system_c.isMonitored)
+        self.assertTrue(system_c.isMonitored())
         self.assertEqual(system_c.monitoredRange, 1)
         system_a.removeLocatedCharacter("test1",5)
         self.assertEqual(system_c.monitoredRange, 2)
         system_a.removeLocatedCharacter("test1", 5)
         self.assertEqual(system_c.monitoredRange, 2)
         system_b.removeLocatedCharacter("test2", 5)
-        self.assertFalse(system_c.isMonitored)
+        self.assertFalse(system_c.isMonitored())
 
     if __name__ == '__main__':
         try:

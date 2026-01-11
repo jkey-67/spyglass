@@ -13,12 +13,13 @@
 #  GNU General Public License for more details.                           #
 #                                                                         #
 #                                                                         #
-#  You should have received a copy of the GNU General Public License      #
+#  You should have received a copy of the GNU General Public License      #ref
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
 
 import logging
 import datetime
+import sys
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal
@@ -117,7 +118,8 @@ class ChatEntryWidget(QtWidgets.QWidget):
             return False
         scaled_avatar = pixmap.scaled(self.DIM_IMG, self.DIM_IMG)
         try:
-            if self.ui.avatarLabel:
+            count = sys.getrefcount(self.ui.avatarLabel)
+            if count:
                 self.ui.avatarLabel.setPixmap(scaled_avatar)
         except (Exception,)as ex:
             logging.warning("Updating a deleted chat item ", ex)
