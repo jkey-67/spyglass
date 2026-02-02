@@ -2225,7 +2225,7 @@ def esiGetFactions():
         response.raise_for_status()
 
 
-def dumpSpyglassDownloadStats():
+def dumpSpyglassDownloadStats()->dict:
     req = "https://api.github.com/repos/jkey-67/spyglass/releases"
     response = requests.get(req)
     if response.status_code == 200:
@@ -2240,8 +2240,7 @@ def dumpSpyglassDownloadStats():
     else:
         _logResponseError(response)
         response.raise_for_status()
-
-
+    return {}
 
 
 def is_null_sec_system_name(name: str):
@@ -2260,82 +2259,28 @@ def is_null_sec_system_name(name: str):
         return True
 
 
-def generate_universe_system_names(use_outdated=True):
-    languages = ("en", "en-us", "de", "fr", "ja", "ru", "zh", "ko", "es")
-    systems = esiUniverseAllSystems(use_cache=False)
-
-    systems_cnt = []
-    systems_id_by_name = {}
-    pos = 1
-    count = (len(systems) + 1) * len(languages)
-    with open("universe/systemnames.json.new", "w", encoding="utf-8")as out_file:
-        out_file.write(u'{\n')
-        for system_id in systems:
-            for lang in languages:
-                pos = pos + 1
-                if system_id in systems_cnt:
-                    continue
-                retry = 1
-                res = {}
-                while retry < 4:
-                    res = esiUniverseSystems(system_id, lang=lang, use_cache=True, use_outdated=use_outdated)
-                    if res and "name" in res and "system_id" in res:
-                        if retry > 1 :
-                            print("System id {} '{}' '{}' {}/{} {:.1f}%".format(
-                                system_id, lang, res["name"], pos, count, (pos / count * 100)))
-                        systems_id_by_name[res["name"]] = res["system_id"]
-                        if is_null_sec_system_name(res["name"]):
-                            systems_cnt.append(system_id)
-                        break
-                    else:
-                        print("Retry creating system name for id: {} lang: '{}' retry : #{}.".format(
-                            system_id, lang, retry))
-                        retry = retry + 1
-
-        print("Generation of systemnames.json done.")
-
-        data_write = set(systems_id_by_name.items())
-        last = len(data_write)
-        for key, data in data_write:
-            if last == 1:
-                out_file.write(u'   "{}": {}\n'.format(key, json.dumps(data)))
-            else:
-                out_file.write(u'   "{}": {},\n'.format(key, json.dumps(data)))
-            last -= 1
-        systems_id_by_name.clear()
-        out_file.flush()
-
-        out_file.write(u'}\n\n')
-
-    if os.path.exists("universe/systemnames.json.new"):
-        if os.path.exists("universe/systemnames.json"):
-            os.remove("universe/systemnames.json")
-        os.renames("universe/systemnames.json.new", "universe/systemnames.json")
-
-
-def esiPing() -> bool:
+def esiPing()->bool:
     """
         Simple 'ping' and check response to be 'ok'
     Returns:
 
     """
     req = "https://esi.evetech.net/ping"
-    response = getSession().get(req)
+    response = getSession().get(req,timeout=1)
     if response.status_code == 200:
         return response.text == "ok"
     else:
         return False
 
 
-
-def esiStatusJson():
+def esiStatusJson()->dict:
     """
         Fetch the status of the endpoints
     Returns:
         dict() : holding the data
     """
     req = "https://esi.evetech.net/status.json/?version=latest"
-    response = getSession().get(req)
+    response = getSession().get(req,timeout=1)
     if response.status_code != 200:
         return dict()
     else:

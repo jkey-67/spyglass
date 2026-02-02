@@ -1,4 +1,4 @@
-# This file was automatically generated with eve-online-static-data-3183544-jsonl, please do not modify the file.
+# This file was automatically generated with eve-online-static-data-3187404-jsonl, please do not modify the file.
 NPCNAMES = {
     500001:"Caldari",
     500002:"Minmatar",

@@ -1,4 +1,4 @@
-# This file was automatically generated with eve-online-static-data-3183544-jsonl, please do not modify the file.
+# This file was automatically generated with eve-online-static-data-3187404-jsonl, please do not modify the file.
 SHIPNAMES = {
          582: u"Bantam",  583: u"Condor",  584: u"Griffin",  585: u"Slasher",
          586: u"Probe",  587: u"Rifter",  588: u"Reaper",  589: u"Executioner",  590: u"Inquisitor",
@@ -1126,7 +1126,7 @@ ID_BY_SHIPNAMES = {
         u"RATTLESNAKE": 17918,
         u"ラトルスネーク": 17918,
         u"래틀스네이크": 17918,
-        u"响尾蛇级": 85062,
+        u"响尾蛇级": 17918,
         u"BHAALGORN": 17920,
         u"バールゴーン": 17920,
         u"바알고른": 17920,
@@ -2664,6 +2664,7 @@ ID_BY_SHIPNAMES = {
         u"SIDEWINDER": 85062,
         u"サイドワインダー": 85062,
         u"사이드와인더": 85062,
+        u"侧进蛇级": 85062,
         u"CENOTAPH": 85086,
         u"セノターフ": 85086,
         u"세노타프": 85086,
