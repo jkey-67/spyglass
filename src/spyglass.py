@@ -26,7 +26,7 @@ import datetime
 import faulthandler
 import signal
 from logging.handlers import RotatingFileHandler
-from PySide6 import QtGui, QtWidgets
+from PySide6 import QtGui, QtWidgets, QtCore
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtSql import QSqlDatabase
 from PySide6.QtCore import Qt
@@ -218,6 +218,16 @@ if __name__ == "__main__":
     res = 0
     logging.basicConfig()
     try:
+        QtCore.QCoreApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
+        fmt = QtGui.QSurfaceFormat()
+        fmt.setRenderableType(QtGui.QSurfaceFormat.RenderableType.OpenGL)
+        fmt.setVersion(4, 6)
+        fmt.setProfile(QtGui.QSurfaceFormat.OpenGLContextProfile.CoreProfile)
+        fmt.setDepthBufferSize(24)
+        fmt.setSamples(4)
+        #fmt.setSwapInterval(1)  # sync buffer swaps to the display refresh when supported
+        QtGui.QSurfaceFormat.setDefaultFormat(fmt)
+
         os.environ["XDG_SESSION_TYPE"] = "wayland"
         # os.environ["QT_QPA_PLATFORM"] = "wayland"
         app = Application(sys.argv)

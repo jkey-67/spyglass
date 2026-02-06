@@ -204,9 +204,9 @@ class GenerateJsonlFiles(unittest.TestCase):
         with open(conste_name.temp_name, "w", encoding="utf-8") as writer:
             writer.write(GenerateJsonlFiles.STATIC_DATA_INFO)
             writer.write('CONSTELLATION_IDS_BY_NAME = {\n')
-            data_out = set(all_constellations_names.items())
+            data_out =set(all_constellations_names.items())
             last = len(data_out)
-            for key, data in set(all_constellations_names.items()):
+            for key, data in sorted(set(all_constellations_names.items())):
                 if last == 1:
                     writer.write('   u"{}": {}\n'.format(key, data))
                 else:
@@ -237,10 +237,11 @@ class GenerateJsonlFiles(unittest.TestCase):
                 elem["names"] = obj["name"]
                 elem["name"] = obj["name"]["en"]
                 elem["planets"] = obj["planetIDs"] if "planetIDs" in obj.keys() else list()
+                elem["position"] = obj["position"]
                 if "position2D" in obj.keys():
-                    elem["position"] = obj["position2D"]
+                    elem["position2D"] = obj["position2D"]
                 else:
-                    elem["position"] = { "x": obj["position"]["x"],"y": -obj["position"]["z"]}
+                    elem["position2D"] = { "x": obj["position"]["x"],"y": -obj["position"]["z"]}
                 elem["security_class"] = obj["securityClass"] if "securityClass" in obj.keys() else ""
                 if "securityStatus" in obj.keys():
                     elem["security_status"] = obj["securityStatus"]
@@ -324,7 +325,7 @@ class GenerateJsonlFiles(unittest.TestCase):
             for obj in reader:
                 buildNumber_client = obj["buildNumber"]
                 buildNumber_server = evegate.getStaticDataVersion()
-                GenerateJsonlFiles.STATIC_DATA_INFO = "# This file was automatically generated with eve-online-static-data-{}-jsonl, please do not modify the file.\n".format(buildNumber_client)
+                GenerateJsonlFiles.STATIC_DATA_INFO = "# This file was automatically generated with eve-online-static-data, please do not modify the file.\n"
                 self.assertEqual(buildNumber_client,buildNumber_server,"The static data version {} did not match the server version {}.".format(buildNumber_client,buildNumber_server))
                 with open(name.temp_name, "w") as writer:
                     writer.write(GenerateJsonlFiles.STATIC_DATA_INFO)

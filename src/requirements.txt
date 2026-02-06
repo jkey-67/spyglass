@@ -25,3 +25,4 @@ shiboken6
 soupsieve
 typing_extensions
 urllib3
+PyOpenGL

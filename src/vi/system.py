@@ -113,7 +113,8 @@ class System(object):
         self.names:dict = kwargs["names"]
         self.name:str = kwargs["name"]
         self.planets:list[int] = kwargs["planets"]
-        self.position:Position = Position(**kwargs["position"])
+        self.position:Position = Position(**kwargs["position2D"])
+        #self.position2D: Position = Position(**kwargs["position2D"])
         self.security_class:str = kwargs["security_class"]
         self.security_status:float = kwargs["security_status"]
         self.star_id: Optional[int] = kwargs["star_ID"] if "star_ID" in kwargs else None
@@ -122,7 +123,6 @@ class System(object):
         self.stations:list[int] = []
         self.structures:list[dict] = []
         self.ticker:str = "-?-"
-        #self.__dict__.update(kwargs)
         self.region_id:int = Universe.regionIDFromSystemID(self.system_id)
         self.region_name:str = Universe.regionNameFromSystemID(self.system_id)
         self._system_messages = []
@@ -183,6 +183,46 @@ class System(object):
     def isMonitored(self) -> bool:
         return bool(self._monitoredDistance)
 
+    GL_MAP_FACTOR = 1e-17*3.0
+    @property
+    def x(self)->float:
+        return self.position.x*System.GL_MAP_FACTOR
+    @property
+    def y(self)->float:
+        return self.position.y*System.GL_MAP_FACTOR
+    @property
+    def z(self)->float:
+        return self.position.z*System.GL_MAP_FACTOR
+
+    @property
+    def structure(self)->int:
+        return 0
+    @property
+    def intel_status(self) -> int:
+        if self.status == States.ALARM:
+            return 2 # red
+        elif self.status == States.CLEAR:
+            return 1 # green
+        else:
+            return 0 # none
+
+    @intel_status.setter
+    def intel_status(self,val) -> None:
+        pass
+
+    @property
+    def intel_status_time(self) -> float:
+        if len(self._system_messages ):
+            msg = self._system_messages[-1]
+            if msg:
+                return float(msg.timestamp.timestamp())
+        return 0.0
+
+    @intel_status_time.setter
+    def intel_status_time(self,val):
+        pass
+
+
     @property
     def monitoredRange(self) -> int:
         if self.isMonitored():
@@ -197,6 +237,20 @@ class System(object):
     @property
     def is_dirty(self) -> bool:
         return self._is_dirty or self._hasKill > 0.0 or self.marker != 0.0 or self._status is not States.UNKNOWN
+
+    @property
+    def sec_state(self)->str:
+        return "{:.2f} {}".format(self.security_status, self.security_class)
+
+    @property
+    def timer(self)->str:
+        return"{} {}".format(self.security_class, self.security_status)
+
+    @property
+    def statistics(self)->str:
+        return self._svg_text_string
+
+
 
     @property
     def status(self):
@@ -1293,3 +1347,4 @@ def _InitAllSystems() -> dict[int, System]:
 
 
 ALL_SYSTEMS = _InitAllSystems()
+ALL_STARGATES = Universe.STARGATES

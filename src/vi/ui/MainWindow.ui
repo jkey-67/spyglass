@@ -588,21 +588,7 @@
           </layout>
          </widget>
         </item>
-        <item row="2" column="1" rowspan="4">
-         <widget class="QScrollBar" name="mapVertScrollBar">
-          <property name="orientation">
-           <enum>Qt::Orientation::Vertical</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0" rowspan="2">
-         <widget class="QScrollBar" name="mapHorzScrollBar">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
+        <item row="2" column="0">
          <widget class="PanningWebView" name="mapView" native="true">
           <property name="enabled">
            <bool>true</bool>

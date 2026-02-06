@@ -1,4 +1,4 @@
-# This file was automatically generated with eve-online-static-data-3187404-jsonl, please do not modify the file.
+# This file was automatically generated with eve-online-static-data, please do not modify the file.
 REGION_IDS_BY_NAME = {
    "Derelik": 10000001,
    "ディレリック": 10000001,

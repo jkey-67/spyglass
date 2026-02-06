@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -20,9 +20,8 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QDock
     QFrame, QGridLayout, QHBoxLayout, QHeaderView,
     QLabel, QLineEdit, QListView, QListWidget,
     QListWidgetItem, QMainWindow, QMenu, QMenuBar,
-    QPushButton, QScrollBar, QSizePolicy, QSpacerItem,
-    QSplitter, QTableView, QToolButton, QVBoxLayout,
-    QWidget)
+    QPushButton, QSizePolicy, QSpacerItem, QSplitter,
+    QTableView, QToolButton, QVBoxLayout, QWidget)
 
 from vi.panningwebview import PanningWebView
 import resource_rc
@@ -460,18 +459,6 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.mapbuttonwidget, 0, 0, 1, 1)
 
-        self.mapVertScrollBar = QScrollBar(self.mapwidget)
-        self.mapVertScrollBar.setObjectName(u"mapVertScrollBar")
-        self.mapVertScrollBar.setOrientation(Qt.Orientation.Vertical)
-
-        self.gridLayout.addWidget(self.mapVertScrollBar, 2, 1, 4, 1)
-
-        self.mapHorzScrollBar = QScrollBar(self.mapwidget)
-        self.mapHorzScrollBar.setObjectName(u"mapHorzScrollBar")
-        self.mapHorzScrollBar.setOrientation(Qt.Orientation.Horizontal)
-
-        self.gridLayout.addWidget(self.mapHorzScrollBar, 4, 0, 2, 1)
-
         self.mapView = PanningWebView(self.mapwidget)
         self.mapView.setObjectName(u"mapView")
         self.mapView.setEnabled(True)
@@ -489,7 +476,7 @@ class Ui_MainWindow(object):
         self.systemNames.setToolTip(u"Enter the System name so select the region.")
 #endif // QT_CONFIG(tooltip)
 
-        self.gridLayout.addWidget(self.mapView, 3, 0, 1, 1)
+        self.gridLayout.addWidget(self.mapView, 2, 0, 1, 1)
 
         self.splitter.addWidget(self.mapwidget)
 

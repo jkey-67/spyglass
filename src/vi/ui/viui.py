@@ -63,9 +63,6 @@ from vi.ui.modelplayer import TableModelPlayers, StyledItemDelegatePlayers
 from vi.ui.modelthera import TableModelThera
 from vi.ui.modelstorm import TableModelStorm
 from vi.ui.modelpoi import POITableModel, StyledItemDelegatePOI
-
-from vi.region import RegionConstellationMap
-
 from vi.universe.routeplanner import RoutPlanner
 
 from PySide6.QtGui import QAction, QActionGroup
@@ -78,7 +75,6 @@ from vi.chatparser.message import Message, CTX, formatZKillMessage
 from vi.zkillboard import ZKillMonitor
 
 from vi.system import ALL_SYSTEMS
-
 """
  Timer intervals
 """
@@ -1084,10 +1080,9 @@ class MainWindow(QtWidgets.QMainWindow):
             selected_system = self.systemsById[system]
         else:
             return
-        if selected_system in self.systems_on_map.values():
-            pt_system = self.ui.mapView.scrollPositionFromMapCoordinate(selected_system.mapCoordinates)
-            self.ui.mapView.setScrollPosition(pt_system, animate=True)
-            self.ui.mapView.update()
+        if selected_system :
+            #self.ui.mapView.center_on_system(selected_system.system_id)
+            self.ui.mapView.setScrollPosition(QPointF(selected_system.x,selected_system.y),True)
 
     @Slot()
     def navigateBackward(self):
@@ -1773,7 +1768,6 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if self.dotlan and self.dotlan.is_dirty():
                 self.mapTimer.stop()
-                self.ui.mapView.setContent(self.dotlan)
                 self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
             else:
                 pass
@@ -2201,6 +2195,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.mapStatisticCache = data[STAT.STATISTICS]
                 if self.dotlan:
                     self.dotlan.addSystemStatistics(self.mapStatisticCache)
+                    self.ui.mapView.setContent(self.dotlan)
                 logging.debug("Statistic data successfully fetched.")
             if STAT.SERVER_STATUS in data.keys():
                 server_status = data[STAT.SERVER_STATUS]
@@ -2236,21 +2231,25 @@ class MainWindow(QtWidgets.QMainWindow):
             if STAT.SOVEREIGNTY in data:
                 if self.dotlan:
                     self.dotlan.setSystemSovereignty(data[STAT.SOVEREIGNTY])
+                    self.ui.mapView.setContent(self.dotlan)
                 logging.debug("Sovereignnity data successfully fetched.")
 
             if STAT.STRUCTURES in data:
                 if self.dotlan:
                     self.dotlan.setSystemStructures(data[STAT.STRUCTURES])
+                    self.ui.mapView.setContent(self.dotlan)
                 logging.debug("Structure data successfully fetched.")
 
             if STAT.INCURSIONS in data:
                 if self.dotlan:
                     self.dotlan.setIncursionSystems(data[STAT.INCURSIONS])
+                    self.ui.mapView.setContent(self.dotlan)
                 logging.debug("Incurison data successfully fetched.")
 
             if STAT.CAMPAIGNS in data:
                 if self.dotlan:
                     self.dotlan.setCampaignsSystems(data[STAT.CAMPAIGNS])
+                    self.ui.mapView.setContent(self.dotlan)
                 logging.debug("Campain data successfully fetched.")
 
             if STAT.REGISTERED_CHARS in data:
@@ -2270,7 +2269,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         self.focusMapOnSystem(itm["system"]["system_id"])
                 logging.debug("Character data successfully fetched.")
-
+                self.ui.mapView.setContent(self.dotlan)
             if STAT.CHECK_FOR_UPDATE in data:
                 self.checkForUpdate(data[STAT.CHECK_FOR_UPDATE])
                 logging.debug("Update-Check fetched.")
