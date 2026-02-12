@@ -28,7 +28,7 @@ import time
 import datetime
 from typing import Optional
 
-from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF, QSizeF
+from PySide6.QtCore import QRectF, QPointF, Qt, QMargins, QLineF
 from PySide6.QtGui import QPainter, QFont, QPen, QBrush, QColor, QRadialGradient, QPainterPath
 from vi.states import States
 from vi.cache import Cache
@@ -115,7 +115,7 @@ class System(object):
         self.name:str = kwargs["name"]
         self.planets:list[int] = kwargs["planets"]
         self.position:Position = Position(**kwargs["position2D"])
-        #self.position3D: Position = Position(**kwargs["position"])
+        self.position3D: Position = Position(**kwargs["position"])
         self.security_class:str = kwargs["security_class"]
         self.security_status:float = kwargs["security_status"]
         self.star_id: Optional[int] = kwargs["star_ID"] if "star_ID" in kwargs else None
@@ -150,7 +150,6 @@ class System(object):
         self._status = None
         self._first_line = self.name
         self._second_line = "-?-"
-        self._second_line_flash = False
         self._last_alarm_timestamp = 0.0
         self._locatedCharacters = []
         self._neighbours = None
@@ -185,17 +184,23 @@ class System(object):
     def isMonitored(self) -> bool:
         return bool(self._monitoredDistance)
 
-    GL_MAP_FACTOR = 1e-17*4.0
-    #GL_MAP_FACTOR = 1e-18*4
+    GL_MAP_FACTOR_2D = 1e-17*4.0
+    GL_MAP_FACTOR_3D = 1e-18*6.0
+
     @property
     def x(self)->float:
-        return self.position.x*System.GL_MAP_FACTOR
+        #return self.position3D.x * System.GL_MAP_FACTOR_3D
+        return self.position.x * System.GL_MAP_FACTOR_2D
+
     @property
     def y(self)->float:
-        return self.position.y*System.GL_MAP_FACTOR
+        #return self.position3D.y * System.GL_MAP_FACTOR_3D
+        return self.position.y * System.GL_MAP_FACTOR_2D
+
     @property
     def z(self)->float:
-        return self.position.z*System.GL_MAP_FACTOR
+        #return self.position3D.z * System.GL_MAP_FACTOR_3D
+        return self.position.z * System.GL_MAP_FACTOR_2D
 
     @property
     def structure(self)->int:
@@ -208,6 +213,7 @@ class System(object):
         elif status == States.CLEAR:
             return 1 # green
         else:
+            self._last_alarm_timestamp = 0.0
             return 0 # none
 
     @property
@@ -224,6 +230,14 @@ class System(object):
         status = self.status
         if self._last_alarm_timestamp:
             return self._last_alarm_timestamp  + float(Globals().intel_time) * 60.0
+        else:
+            return 0.0
+
+    def intel_status_alpha(self,now) -> float:
+        status = self.status
+        if self._last_alarm_timestamp:
+            delta = float(Globals().intel_time)*60.0
+            return max(0.0, (self._last_alarm_timestamp + delta-now)/delta)
         else:
             return 0.0
 
@@ -254,7 +268,11 @@ class System(object):
 
     @property
     def is_dirty(self) -> bool:
-        return self._is_dirty or self._hasKill > 0.0 or self.marker != 0.0 or self._status is not States.UNKNOWN
+        return self._is_dirty  or self.marker > 0.0
+        #return self._is_dirty or self._hasKill > 0.0 or or self._status is not States.UNKNOWN
+
+    def clr_dirty(self):
+        self._is_dirty = False
 
     @property
     def sec_state(self)->str:
@@ -262,7 +280,10 @@ class System(object):
 
     @property
     def timer(self)->str:
-        return"{} {}".format(self.security_class, self.security_status)
+        if self._vulnerability_text is None:
+            return ""
+        else:
+            return self._vulnerability_text
 
     @property
     def statistics(self)->str:
@@ -290,7 +311,7 @@ class System(object):
                 self.setBackgroundColor(self.CLEAR_COLOR)
             elif self._status == States.UNKNOWN:
                 self.setBackgroundColor(System.UNKNOWN_COLOR)
-                self._second_line_flash = False
+                self._last_alarm_timestamp = 0.0
         return self._status
 
     def renderConnections(self, painter: QPainter, current_region_id, systems):
@@ -882,7 +903,7 @@ class System(object):
         self.rect = map_coordinates
         self._is_dirty = True
 
-    def mark(self, sec=10.0):
+    def markSystem(self, sec=10.0):
         """
         Activate the mark for sec seconds
         Args:
@@ -936,6 +957,22 @@ class System(object):
     def setBackgroundColor(self, color):
         self.backgroundColor = color
         self._is_dirty = True
+
+    def getBackgroundBrush(self,value) -> QColor:
+        """
+        Generates the background color for the systems, blended from backgroundColor to backgroundColorNext depends
+        on the backgroundAlpha
+        Returns:
+
+        """
+        r = self.backgroundAlpha
+        col_a = QColor(self.backgroundColor)
+        col_b = QColor(self.backgroundColorNext) if self.backgroundColorNext != "#BACKGD" else System.UNKNOWN_COLOR
+        color = QColor(int(255.0*(col_b.redF() * (1.0 - r) + col_a.redF() * r)),
+                             int(255.0*(col_b.greenF() * (1.0 - r) + col_a.greenF() * r)),
+                             int(255.0*(col_b.blueF() * (1.0 - r) + col_a.blueF() * r)))
+
+        return color
 
     def getBackgroundBrush(self) -> QBrush:
         """
@@ -1096,7 +1133,6 @@ class System(object):
 
         if self.status in (States.ALARM, States.CLEAR):
             if last_cycle:
-                self._second_line_flash = False
                 self._second_line = self.ticker
                 self.backgroundAlpha = 1.0
                 self.backgroundColor = System.UNKNOWN_COLOR
@@ -1106,13 +1142,8 @@ class System(object):
                 seconds = int(alarm_time - minutes * 60)
                 if self._alarm_seconds != seconds:
                     self._alarm_seconds = seconds
-                    self._second_line_flash = not self._second_line_flash
-                    if self._second_line_flash:
-                        self._second_line = "{m:02d}:{s:02d}".format(m=minutes, s=seconds, ticker=self.ticker)
-                    else:
-                        self._second_line = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
+                    self._second_line = "{ticker}".format(m=minutes, s=seconds, ticker=self.ticker)
         else:
-            self._second_line_flash = False
             self._second_line = self.ticker
 
             self.backgroundAlpha = 1.0
@@ -1211,9 +1242,11 @@ class System(object):
     def clearIntel(self):
         self._system_messages = []
         self._status = None
-        self._is_dirty = True
-        self._second_line_flash = False
+        self._last_alarm_timestamp = 0.0
         self._hasKill = 0.0
+        self.marker_start = 0.0
+        self.marker = 0.0
+        self._is_dirty = True
 
     def pruneMessage(self, message):
         if message in self._system_messages:

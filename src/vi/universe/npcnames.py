@@ -18,7 +18,7 @@ NPCNAMES = {
     500016:"SOE",
     500017:"The Society",
     500018:"Mordu's Legion",
-    500019:"Sansha's Nation",
+    500019:"Sansha",
     500020:"Serpentis",
     500021:"Unknown",
     500024:"Drifters",

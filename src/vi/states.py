@@ -21,10 +21,10 @@
 # Holding the states for messages here                                    #
 ###########################################################################
 
-from enum import Enum
+from enum import IntEnum
 
 
-class States(Enum):
+class States(IntEnum):
     """
     IGNORE:
         Do not process the message.
@@ -50,14 +50,26 @@ class States(Enum):
     UNKNOWN:
         Initial value, not initialized jet.
     """
-    IGNORE = 'ignore'
-    UNKNOWN = 'unknown'
-    NOT_CHANGE = 'no change'
-    CLEAR = 'clear'
-    ALARM = 'alarm'
-    REQUEST = 'request'
-    LOCATION = 'location'
-    SOUND_TEST = 'sound-test'
+    UNKNOWN = 0
+    CLEAR = 1
+    ALARM = 2
+    REQUEST = 3
+    LOCATION = 4
+    IGNORE = 5
 
     def __str__(self):
-        return self.value
+        if self.value == States.IGNORE:
+            return 'ignore'
+        elif self.value == States.UNKNOWN:
+            return 'unknown'
+        elif self.value == States.CLEAR:
+            return 'clear'
+        elif self.value == States.ALARM:
+            return 'alarm'
+        elif self.value == States.REQUEST:
+            return 'request'
+        elif self.value == States.LOCATION:
+            return 'location'
+        else:
+            return ''
+

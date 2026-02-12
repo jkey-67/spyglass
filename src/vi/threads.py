@@ -322,7 +322,7 @@ class MapStatisticsThread(QThread):
     @Slot()
     def requestServerStatus(self):
         logging.debug("MapStatisticsThread.requestServerStatus.")
-        queued_emit(self.stat_query, [STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS])
+        queued_emit(self.stat_query, [STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS, STAT.CHECK_SDE_VERSION])
         logging.debug("MapStatisticsThread.requestServerStatus done.")
 
 

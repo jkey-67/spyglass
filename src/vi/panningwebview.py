@@ -18,16 +18,22 @@
 ###########################################################################
 
 import os
+
+import PySide6.QtCore
 import numpy as np
+import math
+from typing import Tuple, Optional
 from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QPropertyAnimation, Property
-
+from PySide6.QtCore import Slot
+from PySide6 import QtOpenGLWidgets
 from vi.universe import Universe
 from vi.system import ALL_SYSTEMS,System,ALL_STARGATES
 from vi.starmapwidget import StarMapWidget,select_font_family,generate_font_atlas,ConnectionLineGroups
 from typing import Iterable, List
 from string import printable
+from vi.cache import cache
 
 def _collect_name_chars(systems: Iterable[System]) -> List[str]:
     """Collect all unique characters from system names.
@@ -108,6 +114,89 @@ def _load_connections(
         return np.array([], dtype=np.float32)
     return np.array(verts, dtype=np.float32)
 
+def load_jump_bridges(
+    bridges,
+    systems,
+    segments: int = 16,
+    bulge_factor: float = 0.16,
+) -> np.ndarray:
+    """Load jump-bridge style connections defined by system names.
+
+    The file format is: ``<id> <source> --> <target>`` with ``#`` comments.
+    Curves are emitted as a list of line segments approximating a quadratic
+    Bezier with a gentle perpendicular bulge.
+
+    Args:
+        path: Path to the jump bridge file.
+        systems: Systems to match names against.
+        segments: Number of segments per curve.
+        bulge_factor: Perpendicular bulge factor for the curve.
+
+    Returns:
+        Float32 array of line segment vertices.
+    """
+    systems_by_name = {sys.name: sys for sys in systems.values()}
+    verts: List[float] = []
+    pairs = set()
+
+    def bezier_segments(a: System, b: System) -> List[float]:
+        """Build flat-ish quadratic Bezier segments between two systems.
+
+        Args:
+            a: Source system.
+            b: Destination system.
+
+        Returns:
+            Flattened list of vertex pairs representing the curve.
+        """
+        ax, ay, az = a.x, a.y, a.z
+        bx, by, bz = b.x, b.y, b.z
+        dx = bx - ax
+        dy = by - ay
+        dist = math.hypot(dx, dy)
+        if dist <= 1e-5:
+            return []
+        # Build a control point halfway along the edge, nudged perpendicular
+        # to keep the curve nearly flat.
+        px = -dy
+        py = dx
+        perp_len = math.hypot(px, py) or 1.0
+        px /= perp_len
+        py /= perp_len
+        height = dist * bulge_factor
+        cx = (ax + bx) * 0.5 + px * height
+        cy = (ay + by) * 0.5 + py * height
+        cz = (az + bz) * 0.5
+        points: List[Tuple[float, float, float]] = []
+        for i in range(segments + 1):
+            t = i / float(segments)
+            omt = 1.0 - t
+            x = omt * omt * ax + 2.0 * omt * t * cx + t * t * bx
+            y = omt * omt * ay + 2.0 * omt * t * cy + t * t * by
+            z = omt * omt * az + 2.0 * omt * t * cz + t * t * bz
+            points.append((x, y, z))
+        segs: List[float] = []
+        for i in range(len(points) - 1):
+            x0, y0, z0 = points[i]
+            x1, y1, z1 = points[i + 1]
+            segs.extend([x0, y0, z0, x1, y1, z1])
+        return segs
+
+    for src_name,_,dst_name in bridges:
+        if src_name not in systems_by_name or dst_name not in systems_by_name:
+            continue
+        key = tuple(sorted((src_name, dst_name)))
+        if key in pairs:
+            continue
+        pairs.add(key)
+        a = systems_by_name[src_name]
+        b = systems_by_name[dst_name]
+        verts.extend(bezier_segments(a, b))
+
+    if not verts:
+        return np.array([], dtype=np.float32)
+    return np.array(verts, dtype=np.float32)
+
 
 class PanningWebView(StarMapWidget):
     ZOOM_WHEEL = float(0.3)
@@ -125,8 +214,7 @@ class PanningWebView(StarMapWidget):
         atlas_dir = os.path.join(os.path.dirname(__file__), "atlas")
         font_family = select_font_family(["Noto Sans CJK", "Noto Sans"])
         _, atlas_json = generate_font_atlas(atlas_dir, font_family, 32, chars, logical_font_size=8)
-
-        jump_bridge_vertices = np.array([], dtype=np.float32)
+        jump_bridge_vertices = load_jump_bridges( cache.Cache().getJumpGates(),ALL_SYSTEMS )
 
         super(PanningWebView, self).__init__(
             systems,
@@ -144,8 +232,12 @@ class PanningWebView(StarMapWidget):
         self._scrollPos = QPointF(self.target[0], self.target[1])
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         self.setMouseTracking(True)
-        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        # QOpenGLWidget should render as an opaque surface; transparent widget
+        # flags can cause compositor artifacts while panning.
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
+        self.setUpdateBehavior(QtOpenGLWidgets.QOpenGLWidget.UpdateBehavior.NoPartialUpdate)
         self.animation = QPropertyAnimation(self, b"propScrollPos")
 
     @Property(QPointF)
@@ -302,5 +394,22 @@ class PanningWebView(StarMapWidget):
         """
         return (QPointF(mouse_event) + self.propScrollPos) / self.zoom
 
+    @Slot()
+    def updateJumpBridgesFromCache(self):
+        jump_bridge_vertices = load_jump_bridges(cache.Cache().getJumpGates(), ALL_SYSTEMS)
+        self.updateJumpBridges(jump_bridge_vertices)
 
+    @Slot(bool)
+    def showJumpBridges(self,val):
+        self.show_jumpbridges = val
+
+    @Slot(bool)
+    def showStatistics(self,val):
+        self.show_statistic = val
+        self._text_rebuild_pending = True
+
+    @Slot(bool)
+    def showTimers(self,val):
+        self.show_timers = val
+        self._text_rebuild_pending = True
 

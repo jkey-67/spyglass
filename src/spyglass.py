@@ -225,7 +225,7 @@ if __name__ == "__main__":
         fmt.setProfile(QtGui.QSurfaceFormat.OpenGLContextProfile.CoreProfile)
         fmt.setDepthBufferSize(24)
         fmt.setSamples(4)
-        #fmt.setSwapInterval(1)  # sync buffer swaps to the display refresh when supported
+        fmt.setSwapInterval(1)  # sync buffer swaps to the display refresh when supported
         QtGui.QSurfaceFormat.setDefaultFormat(fmt)
 
         os.environ["XDG_SESSION_TYPE"] = "wayland"

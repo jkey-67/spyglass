@@ -6,7 +6,21 @@ import jsonlines
 from vi.cache import Cache
 from vi.universe import Universe
 from vi.redoundoqueue import RedoUndoQueue
-from vi import evegate
+from vi import evegate, ALL_SYSTEMS
+
+import numpy as np
+
+def interior_point(poly):
+    poly = np.asarray(poly, dtype=float)
+    n = poly.shape[0]
+    if n == 0:
+      raise ValueError("Need at least 1 vertex")
+    if n == 1:
+      return poly[0]
+    if n == 2:
+      return poly.mean(axis=0)
+    return np.median(poly, axis=0)
+
 
 class FileName:
     def __init__(self, curr_path, file_name):
@@ -111,10 +125,10 @@ class GenerateJsonlFiles(unittest.TestCase):
     def test_generateAllJsonl(self):
         self.assertTrue( os.path.exists(self.STATIC_DATA_FOLDER) )
         self.test_generateSEDpy()
-        self.test_generateShipnamesJsonl()
-        self.test_generateRegionsJsonl()
-        self.test_generateConstellationsJson()
         self.test_generateSystemsJson()
+        self.test_generateConstellationsJson()
+        self.test_generateRegionsJsonl()
+        self.test_generateShipnamesJsonl()
         self.test_generateStargatesJson()
         self.test_generateNPCNamesJson()
 
@@ -132,12 +146,24 @@ class GenerateJsonlFiles(unittest.TestCase):
                 self.assertIn("name", obj.keys())
                 self.assertIn("en", obj["name"].keys())
                 self.assertIn("position", obj.keys())
+
                 elem = dict()
+                elem["region_id"] = obj["_key"]
                 elem["constellations"] = obj["constellationIDs"]
                 elem["name"] = obj["name"]["en"]
                 elem["names"] = obj["name"]
                 elem["position"] = obj["position"]
-                elem["region_id"] = obj["_key"]
+                if "position2D" in obj.keys():
+                    elem["position2D"] = obj["position2D"]
+                else:
+                    vals = []
+                    rgn_id = obj["_key"]
+                    for sys in ALL_SYSTEMS.values():
+                        if sys.region_id == rgn_id:
+                            vals.append([sys.position.x,sys.position.y])
+                    p = interior_point(vals)
+                    elem["position2D"] = {"x": p[0], "y": p[1]}
+
                 all_regions[int(obj["_key"])] = elem
                 region_name_by_id[int(obj["_key"])] = obj["name"]["en"]
                 for _,rgn_name in obj["name"].items():
@@ -178,6 +204,7 @@ class GenerateJsonlFiles(unittest.TestCase):
         all_constellations_names = dict()
         jsonl_in_filename = "{path}/mapConstellations.jsonl".format(path=self.STATIC_DATA_FOLDER)
         self.assertTrue(os.path.exists(jsonl_in_filename))
+        systems = ALL_SYSTEMS
         with jsonlines.open(jsonl_in_filename, mode='r') as reader:
             for obj in reader:
                 self.assertIn("solarSystemIDs", obj.keys())
@@ -190,6 +217,16 @@ class GenerateJsonlFiles(unittest.TestCase):
                 elem["names"] = obj["name"]
                 elem["name"] = obj["name"]["en"]
                 elem["position"] = obj["position"]
+                if "position2D" in obj.keys():
+                    elem["position2D"] = obj["position2D"]
+                else:
+                    vals = []
+                    constellation_id = obj["_key"]
+                    for sys in ALL_SYSTEMS.values():
+                        if sys.constellation_id == constellation_id:
+                            vals.append([sys.position.x,sys.position.y])
+                    p = interior_point(vals)
+                    elem["position2D"] = {"x": p[0], "y": p[1]}
                 elem["region_id"] = obj["regionID"]
                 elem["systems"] = obj["solarSystemIDs"]
                 all_constellations[obj["_key"]] = elem
@@ -300,6 +337,7 @@ class GenerateJsonlFiles(unittest.TestCase):
         for tok in ["State","Republic","Empire","Federation","Assembly","Mandate","Pirates","Covenant","Collective","Cartel","Kingdom","Circle","Command","of Conscious Thought"]:
             for key, faction in factions.items():
                 factions[key] = faction.replace(tok,"").strip()
+        factions[500019] = "Sansha"
         factions[500009] = 'Syndicate'
         factions[500016] = 'SOE'
         factions[500028] = 'AIR'

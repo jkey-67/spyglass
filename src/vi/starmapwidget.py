@@ -547,11 +547,9 @@ void main() {
     vec4 fillColor = uFillColor;
     float intelStatus = vIntel.x;
     float intelTime = vIntel.y;
-    if (intelStatus > 0.5 && intelTime >= 0.0 && uIntelDuration > 0.0) {
-        float age = max(uIntelNow - intelTime, 0.0);
-        float weight = 1.0 - clamp(age / uIntelDuration, 0.0, 1.0);
+    if (intelStatus > 0.0 && intelTime > 0.0 ) {
         vec4 intelColor = (intelStatus > 1.5) ? uIntelColorRed : uIntelColorGreen;
-        fillColor = mix(uFillColor, intelColor, weight);
+        fillColor = mix(uFillColor, intelColor, intelTime);
     }
     vec4 fill = vec4(fillColor.rgb, fillColor.a * fill_alpha);
     vec4 border = vec4(uBorderColor.rgb, uBorderColor.a * border_alpha);
@@ -564,13 +562,13 @@ void main() {
     float outer_h = inner * uHaloRadiusFactor;
     float halo_alpha = 1.0 - clamp((dist_h - inner) / max(outer_h - inner, 0.00001), 0.0, 1.0);
     vec4 base = vec4(0.0);
-    base += clampColor(uHaloColorMarked, vFlagsA.x);
-    base += clampColor(uHaloColorKill, vFlagKill);
-    base += clampColor(uHaloColorMonitored, vFlagsA.y);
-    base += clampColor(uHaloColorPopulated, vFlagsA.z);
-    base += clampColor(uHaloColorContested, vFlagsA.w);
-    base += clampColor(uHaloColorIncursion, vFlagIncursion);
-    base += clamp(base/6.0, 0.0, 1.0);
+    base = over(base,clampColor(uHaloColorKill, vFlagKill));
+    base = over(base,clampColor(uHaloColorMonitored, vFlagsA.y));
+    base = over(base,clampColor(uHaloColorContested, vFlagsA.w));
+    base = over(base,clampColor(uHaloColorIncursion, vFlagIncursion));
+    base = over(base,clampColor(uHaloColorPopulated, vFlagsA.z));
+    base = over(base,clampColor(uHaloColorMarked, vFlagsA.x));
+    //base += clamp(base/6.0, 0.0, 1.0);
     vec4 halo = vec4(base.rgb, base.a * halo_alpha);
     if (halo_alpha <= 0.0) {
         halo = vec4(0.0);
@@ -1611,7 +1609,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._text_dynamic_rebuild_pending = False
         self.atlas_scale = float(self.atlas.get("logical_scale", 1.0))
         self.font_scale = 1.4
-        self.secondary_text_scale = 0.8
+        self.secondary_text_scale = 0.7
         self.mark_timers = {idx: max(0.0, float(sys.marker)) for idx, sys in enumerate(self.systems)}
         self.kill_timers = {idx: max(0.0, float(sys.hasKill)) for idx, sys in enumerate(self.systems)}
         self._system_rebuild_pending = False
@@ -1712,10 +1710,10 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.intel_color_red = (0.7, 0.2, 0.2, 1.0)
         self.halo_color_marked = (0.36, 0.76, 0.93, 1.0)      # light blue
         self.halo_color_kill = (1.0, 0.0, 0.0, 1.0)      # red
-        self.halo_color_monitored = (1.0, 1.0, 1.0, 0.25)   # white
-        self.halo_color_populated = (0.75, 0.55, 1.0, 0.25) # purple
-        self.halo_color_contested = (0.75, 0.2, 0.2, 0.25)    # red
-        self.halo_color_incursion = (1.0, 1.0, 0.0, 0.25)  # yellow
+        self.halo_color_monitored = (1.0, 1.0, 1.0, 0.3)   # white
+        self.halo_color_populated = (0.75, 0.55, 1.0, 1.0) # purple
+        self.halo_color_contested = (0.75, 0.2, 0.2, 1.0)    # red
+        self.halo_color_incursion = (1.0, 1.0, 0.0, 1.0)  # yellow
         self.structure_vertices = self._build_structure_vertices()
         self.structure_instances = self._build_structure_instances()
         self.target = np.array([0.0, 0.0], dtype=np.float32)
@@ -1724,12 +1722,13 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.base_zoom = self.zoom
         self.camera_distance = float(self.zoom)
         self.panning = False
+        self.show_jumpbridges = True
+        self.show_timers = True
+        self.show_statistic  = True
         self.last_pos = QtCore.QPointF()
-        self.text_instances, self.text_dynamic_instances = self._build_text_instances()
+        self.text_instances, self.text_dynamic_instances = self._build_text_instances(time.time())
         self.text_instance_count = self.text_instances.shape[0] if self.text_instances.size else 0
-        self.text_dynamic_instance_count = (
-            self.text_dynamic_instances.shape[0] if self.text_dynamic_instances.size else 0
-        )
+        self.text_dynamic_instance_count =  self.text_dynamic_instances.shape[0] if self.text_dynamic_instances.size else 0
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
         self.setMouseTracking(True)
         self._hovered_system: Optional[System] = None
@@ -1746,6 +1745,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._last_frame_time = time.monotonic()
     systemDoubleClicked =  PySide6.QtCore.Signal(int)
     systemRightClicked = PySide6.QtCore.Signal(int)
+
+    def updateJumpBridges(self,jump_bridge_vertices: Optional[np.ndarray]):
+        self.bridge_line_vertices = (
+            jump_bridge_vertices if jump_bridge_vertices is not None else np.array([], dtype=np.float32)
+        )
 
     def initializeGL(self) -> None:
         """Initialize OpenGL programs, buffers, and textures.
@@ -2154,8 +2158,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         elif self._text_dynamic_rebuild_pending:
             self._refresh_text_dynamic_instances(now_utc)
             self._text_dynamic_rebuild_pending = False
-        self._refresh_system_instances()
-        self._system_rebuild_pending = False
+
+        self._system_rebuild_pending = any( sys.is_dirty for sys in self.systems )
+        if self._system_rebuild_pending:
+            self._refresh_system_instances()
+            self._system_rebuild_pending = False
         dpr = self.devicePixelRatioF()
         screen_width = max(int(self.width() * dpr), 1)
         screen_height = max(int(self.height() * dpr), 1)
@@ -2207,8 +2214,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         line_thickness_scaled = float(max(0.5, self.line_thickness * label_scale))
 
         bg = self.palette().color(QtGui.QPalette.ColorRole.Window)
-        r, g, b, a = bg.getRgbF()
-        glClearColor(float(r), float(g), float(b), float(a))
+        r, g, b, _ = bg.getRgbF()
+        # Keep the GL surface opaque to avoid translucent compositing artifacts.
+        glClearColor(float(r), float(g), float(b), 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         if True and (
@@ -2237,7 +2245,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 glBindVertexArray(self.line_region_vao)
                 glDrawArrays(GL_LINES, 0, self.line_vertices_cross_region.size // 3)
 
-        if True and self.bridge_line_vertices.size:
+        if self.show_jumpbridges  and self.bridge_line_vertices.size:
             glDisable(GL_DEPTH_TEST)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glUseProgram(self.line_program)
@@ -2403,7 +2411,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glDisable(GL_POLYGON_OFFSET_FILL)
         self._draw_hud()
-        self.update()
+        #self.update()
+
 
     def _update_hovered_system(self) -> None:
         """Update the cached hovered system based on the last mouse position.
@@ -2595,12 +2604,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             None.
         """
         self.text_instances, self.text_dynamic_instances = self._build_text_instances(now)
-        self.text_instance_count = (
-            self.text_instances.shape[0] if self.text_instances.size else 0
-        )
-        self.text_dynamic_instance_count = (
-            self.text_dynamic_instances.shape[0] if self.text_dynamic_instances.size else 0
-        )
+        self.text_instance_count = self.text_instances.shape[0] if self.text_instances.size else 0
+        self.text_dynamic_instance_count = self.text_dynamic_instances.shape[0] if self.text_dynamic_instances.size else 0
+
         if self.text_instance_vbo:
             glBindBuffer(GL_ARRAY_BUFFER, self.text_instance_vbo)
             glBufferData(
@@ -2660,38 +2666,34 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 RGBA color tuple.
             """
             if value is None:
-                return (0.0, 0.0, 0.0, 0.0)
-            if isinstance(value, str):
-                value = PySide6.QtGui.QColor(value)
-                return (value.redF(), value.greenF(), value.blueF(), max(0.0, min(1.0, value.alphaF())))
-            if isinstance(value, PySide6.QtGui.QColor):
-                return (value.redF(), value.greenF(), value.blueF(), max(0.0, min(1.0, value.alphaF())))
-            if isinstance(value, (int, float)):
+                return 0.0, 0.0, 0.0, 0.0
+            elif isinstance(value, str):
+                r,g,b,a = PySide6.QtGui.QColor(value).getRgbF()
+                return r,g,b,a
+            elif isinstance(value, PySide6.QtGui.QColor):
+                r,g,b,a = value.getRgbF()
+                return r,g,b,a
+            elif isinstance(value, (int, float)):
                 alpha = float(value)
-                return (0.16, 0.2, 0.23, max(0.0, min(1.0, alpha)))
-            if isinstance(value, (tuple, list)):
+                return 0.16, 0.2, 0.23, max(0.0, min(1.0, alpha))
+            elif isinstance(value, (tuple, list)):
                 if len(value) == 4 and all(isinstance(v, (int, float)) for v in value):
                     r, g, b, a = value
-                    return (
-                        float(r),
-                        float(g),
-                        float(b),
-                        max(0.0, min(1.0, float(a))),
-                    )
+                    return float(r),float(g),float(b),max(0.0, min(1.0, float(a)))
                 if len(value) == 3 and all(isinstance(v, (int, float)) for v in value):
                     r, g, b = value
-                    return (float(r), float(g), float(b), 1.0)
-            return (0.16, 0.2, 0.23, 1.0)
+                    return float(r), float(g), float(b), 1.0
+            return 0.16, 0.2, 0.23, 1.0
 
         utc_now = time.time()
-        for idx, sys in enumerate(self.systems):
-            intel_status = float(int(sys.intel_status))
-            intel_time = 0
+        self._intel_status_active = False
+        for sys in self.systems:
+            sys.clr_dirty()
+            intel_status = sys.intel_status
+            intel_time = 0.0
             if intel_status > 0:
                 self._intel_status_active = True
-                utc_msg_time = sys.intel_status_time
-                if utc_msg_time > 0.0:
-                    intel_time = max(0.0,utc_msg_time - utc_now)
+                intel_time = sys.intel_status_alpha(utc_now)
             if  sys.marker > 0.0:
                 delta = sys.marker-sys.marker_start
                 if sys.marker > utc_now and delta > 0.0:
@@ -2732,6 +2734,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     color[3],
                 ]
             )
+
+        if not self._intel_status_active and self._show_intel_minutes:
+            self._show_intel_minutes = False
+            self._system_rebuild_pending = True
+            self._text_rebuild_pending = True
+            self._text_dynamic_rebuild_pending = True
 
         if not instances:
             return np.array([], dtype=np.float32)
@@ -2843,6 +2851,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             Tuple of (width, height) in pixels.
         """
+        #return System.ELEMENT_WIDTH,System.ELEMENT_HEIGHT
         return 108.0, 48.0
 
     def _build_text_instances(
@@ -2866,7 +2875,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         static_instances: List[List[float]] = []
         dynamic_instances: List[List[float]] = []
         #box_w = self.label_width - self.label_padding * 2.0
-        box_w = self.label_width * 1.25
+        box_w = self.label_width * 1.2
         line_gap = self.label_line_gap
         primary_ascent = self.label_ascent
         secondary_ascent = self.label_ascent * self.secondary_text_scale
@@ -2955,7 +2964,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         intel_cleared = False
         for sys in self.systems:
-            was_intel = sys.intel_status != IntelStatus.NONE
+            intel_status = sys.intel_status
+            was_intel = intel_status != IntelStatus.NONE
             total_h = primary_line_height * 2.0 + line_gap
             baseline = -total_h / 2.0 + primary_ascent
             line1_y = baseline
@@ -2970,29 +2980,28 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 intel_text = sys.intel_status_time_string(now)
                 if intel_text:
                     status_text = intel_text
-            if was_intel and sys.intel_status != IntelStatus.NONE:
+            if was_intel and intel_status != IntelStatus.NONE:
                 add_line(dynamic_instances, sys, status_text, line2_y, "center", base_color, primary_scale)
             elif include_static:
                 add_line(static_instances, sys, status_text, line2_y, "center", base_color, primary_scale)
-            if was_intel and sys.intel_status == IntelStatus.NONE:
+            if was_intel and intel_status == IntelStatus.NONE:
                 intel_cleared = True
             if include_static:
-                add_line(static_instances, sys, sys.sec_state, above_y, "left", accent_color, secondary_scale)
-                add_line(static_instances, sys, sys.timer, above_y, "right", accent_color, secondary_scale)
-                add_line(
-                    static_instances,
-                    sys,
-                    sys.statistics,
-                    below_y,
-                    "center",
-                    alert_color,
-                    secondary_scale,
-                )
+                if self.show_timers:
+                    add_line(static_instances, sys, sys.sec_state, above_y, "left", accent_color, secondary_scale)
+                    add_line(static_instances, sys, sys.timer, above_y, "right", accent_color, secondary_scale)
+                if self.show_statistic:
+                    add_line(
+                        static_instances,
+                        sys,
+                        sys.statistics,
+                        below_y,
+                        "center",
+                        alert_color,
+                        secondary_scale,
+                    )
         if intel_cleared:
             self._system_rebuild_pending = True
-            self._intel_status_active = any(
-                sys.intel_status != IntelStatus.NONE for sys in self.systems
-            )
             if not include_static:
                 self._text_rebuild_pending = True
         static_array = (
@@ -3358,8 +3367,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         if system_idx is None:
             return
         self.mark_timers[system_idx] = self.systems[system_idx].marker
-        #self.systems[system_idx].marked = 5000
-        #self.mark_timers[system_idx] = 5000.0
         self._system_rebuild_pending = True
 
     @PySide6.QtCore.Slot(int)
@@ -3406,16 +3413,13 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             self.intel_time_base = float(status_time)
         self.systems[system_idx].intel_status = intel_status
         self.systems[system_idx].intel_status_time = float(status_time)
-        self._intel_status_active = any(
-            sys.intel_status != IntelStatus.NONE for sys in self.systems
-        )
         if not self._intel_status_active and self._show_intel_minutes:
             self._show_intel_minutes = False
         self._system_rebuild_pending = True
         self._text_rebuild_pending = True
 
-    @PySide6.QtCore.Slot(int)
-    def center_on_system(self, system_id: int) -> None:
+    @PySide6.QtCore.Slot(int,bool)
+    def centerMapOnSystem(self, system_id: int,animate:bool=False) -> None:
         """Center the map view on the system with the provided ID.
 
         Args:
@@ -3735,7 +3739,7 @@ def main() -> None:
     chars = collect_name_chars(systems)
     atlas_dir = os.path.join(os.path.dirname(__file__), "atlas")
     font_family = select_font_family(["Noto Sans CJK", "Noto Sans"])
-    _, atlas_json = generate_font_atlas(atlas_dir, font_family, 48, chars, logical_font_size=16)
+    _, atlas_json = generate_font_atlas(atlas_dir, font_family, 24, chars, logical_font_size=8)
     stargates_path = os.path.join(os.path.dirname(__file__), "mapStargates.jsonl")
     line_vertices: np.ndarray | ConnectionLineGroups = np.array([], dtype=np.float32)
     if os.path.exists(stargates_path):
@@ -3768,8 +3772,8 @@ def main() -> None:
     widget.setFormat(fmt)
     window.setCentralWidget(widget)
     window.resize(1024, 768)
-    widget.center_on_system(30001967)
-    widget.center_on_system(30002488)
+    widget.centerMapOnSystem(30001967)
+    widget.centerMapOnSystem(30002488)
 
     window.show()
     app.exec()

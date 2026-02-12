@@ -340,7 +340,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @property
     def systems_on_map(self) -> dict[str, System]:
-        return self.dotlan.systems
+        return ALL_SYSTEMS
 
     @property
     def systemsById(self) -> dict[int, System]:
@@ -468,6 +468,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.statisticsButton.setDefaultAction(self.ui.actionShowSystemStatisticOnMap)
         self.ui.toolUseTheraRouting.setDefaultAction(self.ui.actionUserTheraRoutes)
         self.ui.autoCenterChar.setDefaultAction(self.ui.actionAutoSwitchRegions)
+
+        self.ui.actionShowJumpBridgeConnectionsOnMap.toggled.connect(self.ui.mapView.showJumpBridges)
+        self.ui.actionShowSystemStatisticOnMap.toggled.connect(self.ui.mapView.showStatistics)
+        self.ui.actionShowADMonMap.toggled.connect(self.ui.mapView.showTimers)
 
         self.clipboard.dataChanged.connect(self.clipboardChanged)
         self.ui.actionAlwaysOnTop.triggered.connect(self.changeAlwaysOnTop)
@@ -828,6 +832,7 @@ class MainWindow(QtWidgets.QMainWindow):
         def callOnUpdate():
             if self.dotlan:
                 self.dotlan.setJumpbridges(self.cache.getJumpGates())
+            self.ui.mapView.updateJumpBridgesFromCache()
             model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', " 
                            "datetime(modified,'unixepoch','localtime') as 'last update', "
                            "( case used when 2 then 'API fetched' else 'User input' END ) 'Source' FROM jumpbridge")
@@ -1045,13 +1050,13 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if type(system) is System:
             selected_system = system
-        elif type(system) is int and system in self.systemsById:
-            selected_system = self.systemsById[system]
+        elif type(system) is int:
+            selected_system = ALL_SYSTEMS.get(system)
         else:
             return
-        if selected_system :
-            #self.ui.mapView.center_on_system(selected_system.system_id)
-            self.ui.mapView.setScrollPosition(QPointF(selected_system.x,selected_system.y),True)
+        if selected_system:
+            self.ui.mapView.centerMapOnSystem(selected_system.system_id)
+            #self.ui.mapView.setScrollPosition(QPointF(selected_system.x,selected_system.y),True)
 
     @Slot()
     def navigateBackward(self):
@@ -1105,12 +1110,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if system_id is not None:
                 self.focusMapOnSystem(system_id)
             else:
-                pt_system = self.ui.mapView.scrollPositionFromMapCoordinate(
-                    self.ui.mapView.imgRect)
-                self.ui.mapView.setScrollPosition(pt_system)
-                self.ui.mapView.update()
-        self.rescanIntel()
-        self.region_changed.emit(region_name)
+                rgn = Universe.REGIONS_ID_OBJ.get(Universe.regionIdByName(region_name))
+                if rgn:
+                    self.ui.mapView.setScrollPosition(QPointF(rgn.position2D.get("x")*System.GL_MAP_FACTOR_2D,rgn.position2D.get("y")*System.GL_MAP_FACTOR_2D))
+                    self.region_changed.emit(region_name)
 
     def changeRegionBySystemID(self, system_id: int) -> None:
         """
@@ -1664,12 +1667,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             system = None
         if system:
-            system.mark()
-            if system in self.systems_on_map.values():
-                self.focusMapOnSystem(system.system_id)
-            else:
-                self.changeRegionBySystemID(system.system_id)
-                self.focusMapOnSystem(system.system_id)
+            system.markSystem(5)
+            self.ui.mapView.centerMapOnSystem(system.system_id)
 
     @staticmethod
     def updateCharLocationOnMap(system_id: int, char_name: str, alarm_distance: int) -> None:
@@ -1759,31 +1758,6 @@ class MainWindow(QtWidgets.QMainWindow):
         except (Exception,) as ex:
             logging.error("Error setInitialMapPositionForRegion failed: {0}".format(str(ex)))
             pass
-
-    @Slot()
-    def fixupScrollBars(self):
-        block_h_sb = QSignalBlocker(self.ui.mapHorzScrollBar)
-        block_v_sb = QSignalBlocker(self.ui.mapVertScrollBar)
-        fac = self.ui.mapView.zoomFactor
-        pos = self.ui.mapView.propScrollPos
-        size = self.ui.mapView.imgRect
-        viewport = self.ui.mapView.size()
-        max_x = max(0, int(size.width() * fac - viewport.width()))
-        max_y = max(0, int(size.height() * fac - viewport.height()))
-        value_x = max(0, min(int(pos.x()), max_x))
-        value_y = max(0, min(int(pos.y()), max_y))
-        try:
-            if pos != QPointF(value_x, value_y) and not self.ui.mapView.scrolling:
-                self.ui.mapView.setScrollPosition( QPointF(value_x, value_y) )
-            self.ui.mapHorzScrollBar.setPageStep(int(viewport.width()))
-            self.ui.mapHorzScrollBar.setRange(0, max_x)
-            self.ui.mapHorzScrollBar.setValue(value_x)
-            self.ui.mapVertScrollBar.setPageStep(int(viewport.height()))
-            self.ui.mapVertScrollBar.setRange(0, max_y)
-            self.ui.mapVertScrollBar.setValue(value_y)
-        finally:
-            del block_h_sb
-            del block_v_sb
 
     def showChatroomChooser(self):
         chooser = ChatroomChooser(self)

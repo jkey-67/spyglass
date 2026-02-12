@@ -700,9 +700,9 @@ def esiUniverseSystem_jumps(use_outdated=False, use_cache=True):
         i = int(i)
         if i not in data:
             data[i] = {"jumps": 0}
-        data[i]["shipkills"] = v["ship"] if "ship" in v else 0
-        data[i]["factionkills"] = v["faction"] if "faction" in v else 0
-        data[i]["podkills"] = v["pod"] if "pod" in v else 0
+        data[i]["shipkills"] = v.get("ship",0)
+        data[i]["factionkills"] = v.get("faction",0)
+        data[i]["podkills"] = v.get("pod",0)
 
     return data
 
