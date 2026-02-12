@@ -24,6 +24,7 @@ import logging
 import math
 import json
 import os
+import time
 import datetime
 from typing import Optional
 
@@ -114,7 +115,7 @@ class System(object):
         self.name:str = kwargs["name"]
         self.planets:list[int] = kwargs["planets"]
         self.position:Position = Position(**kwargs["position2D"])
-        #self.position2D: Position = Position(**kwargs["position2D"])
+        #self.position3D: Position = Position(**kwargs["position"])
         self.security_class:str = kwargs["security_class"]
         self.security_status:float = kwargs["security_status"]
         self.star_id: Optional[int] = kwargs["star_ID"] if "star_ID" in kwargs else None
@@ -132,6 +133,7 @@ class System(object):
         self.backgroundColor = self.UNKNOWN_COLOR
         self.backgroundColorNext = self.UNKNOWN_COLOR
         self.statusTextColor = "#FFFFFF"
+        self.marker_start = 0.0
         self.marker = 0.0
         self.wormhole_info = list()
         self.alarm_distance = set()
@@ -149,7 +151,7 @@ class System(object):
         self._first_line = self.name
         self._second_line = "-?-"
         self._second_line_flash = False
-        self._last_alarm_timestamp = 0
+        self._last_alarm_timestamp = 0.0
         self._locatedCharacters = []
         self._neighbours = None
         self._hasCampaigns = False
@@ -183,7 +185,8 @@ class System(object):
     def isMonitored(self) -> bool:
         return bool(self._monitoredDistance)
 
-    GL_MAP_FACTOR = 1e-17*3.0
+    GL_MAP_FACTOR = 1e-17*4.0
+    #GL_MAP_FACTOR = 1e-18*4
     @property
     def x(self)->float:
         return self.position.x*System.GL_MAP_FACTOR
@@ -199,24 +202,39 @@ class System(object):
         return 0
     @property
     def intel_status(self) -> int:
-        if self.status == States.ALARM:
+        status = self.status
+        if status == States.ALARM:
             return 2 # red
-        elif self.status == States.CLEAR:
+        elif status == States.CLEAR:
             return 1 # green
         else:
             return 0 # none
 
+    @property
+    def hasKill(self)->float:
+        return self._hasKill
+
+
     @intel_status.setter
     def intel_status(self,val) -> None:
-        pass
+        self._status = None
 
     @property
     def intel_status_time(self) -> float:
-        if len(self._system_messages ):
-            msg = self._system_messages[-1]
-            if msg:
-                return float(msg.timestamp.timestamp())
-        return 0.0
+        status = self.status
+        if self._last_alarm_timestamp:
+            return self._last_alarm_timestamp  + float(Globals().intel_time) * 60.0
+        else:
+            return 0.0
+
+    def intel_status_time_string(self,now) -> str:
+        if self._last_alarm_timestamp:
+            if self._last_alarm_timestamp > 0.0:
+                age = max(0.0, now - self._last_alarm_timestamp)
+                minutes = int(age // 60.0)
+                seconds = int(age % 60.0)
+                return f"{minutes:02d}:{seconds:02d}"
+        return self.ticker
 
     @intel_status_time.setter
     def intel_status_time(self,val):
@@ -616,10 +634,10 @@ class System(object):
                 painter.fillPath(path, QBrush(gradient))
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        if self.marker > datetime.datetime.now(datetime.UTC).timestamp():
+        if self.marker > time.time():
             gradient = QRadialGradient(self.rect.center(), gradient_w)
             marker_color = QColor("#6495ed")
-            marker_color.setAlphaF((self.marker-datetime.datetime.now(datetime.UTC).timestamp())/10.0)
+            marker_color.setAlphaF((self.marker-time.time())/10.0)
 
             gradient.setColorAt(0.0, marker_color)
             gradient.setColorAt(0.6, QColor("#006495ed"))
@@ -873,7 +891,8 @@ class System(object):
         Returns:
 
         """
-        self.marker = datetime.datetime.now(datetime.UTC).timestamp() + sec
+        self.marker_start = time.time()
+        self.marker = self.marker_start + sec
         self._is_dirty = True
 
     def _addLocatedCharacter(self, distance:int):
@@ -982,8 +1001,8 @@ class System(object):
 
         return systems
 
-    def addKill(self):
-        self._hasKill = self._hasKill + 1.0
+    def addKill(self,utc_time):
+        self._hasKill = utc_time + 60.0
         self._is_dirty = True
 
     def setStatus(self, message) -> None:
@@ -1053,7 +1072,7 @@ class System(object):
             None
         """
         last_cycle = True
-        alarm_time = datetime.datetime.now(datetime.UTC).timestamp() - self._last_alarm_timestamp
+        alarm_time = time.time() - self._last_alarm_timestamp
         if self.status == States.ALARM:
             for maxDiff, alarmColour, nextColor, lineColour in self.ALARM_COLORS:
                 curr_diff = alarm_time / (Globals().intel_time * 60.0)
@@ -1194,6 +1213,7 @@ class System(object):
         self._status = None
         self._is_dirty = True
         self._second_line_flash = False
+        self._hasKill = 0.0
 
     def pruneMessage(self, message):
         if message in self._system_messages:

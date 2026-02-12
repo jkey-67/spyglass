@@ -459,32 +459,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if new_region_name in [region["name"] for _,region in Universe.REGIONS.items()]:
             self.changeRegionByName(region_name=new_region_name)
 
-    @Slot(float)
-    def updateX(self, x: float):
-        pos = self.ui.mapView.propScrollPos
-        if pos.x != x:
-            pos.setX(x)
-            self.ui.mapView.setScrollPosition(pos)
-            self.ui.mapView.update()
-
-    @Slot(float)
-    def updateY(self, y: float):
-        pos = self.ui.mapView.propScrollPos
-        if pos.y != y:
-            pos.setY(y)
-            self.ui.mapView.setScrollPosition(pos)
-            self.ui.mapView.update()
-
-    @Slot(bool)
-    def mapviewIsScrolling(self, scrolled_active):
-        if scrolled_active:
-            self.mapTimer.stop()
-        else:
-            curr_pos = self.ui.mapView.propScrollPos
-            curr_zoom = self.ui.mapView.zoomFactor
-            self.region_queue.enqueue((self.curr_region_name, curr_pos, curr_zoom))
-            self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
-
     def _wireUpUIConnections(self):
         logging.info("wireUpUIConnections")
         self.ui.frameButton.setDefaultAction(self.ui.actionFramelessWindow)
@@ -518,13 +492,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionJumpbridgeData.triggered.connect(self.showJumpbridgeChooser)
         self.ui.actionRescanIntelNow.triggered.connect(self.rescanIntel)
         self.ui.actionClear_Intel_Chat.triggered.connect(self.clearIntelChat)
-        #self.ui.mapView.webViewUpdateScrollbars.connect(self.fixupScrollBars)
         self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
         self.ui.regionNameField.addItems(sorted([region["name"] for _,region in Universe.REGIONS.items()]))
-
-        self.ui.mapView.webViewIsScrolling.connect(self.mapviewIsScrolling)
-        #self.ui.mapHorzScrollBar.valueChanged.connect(self.updateX)
-        #self.ui.mapVertScrollBar.valueChanged.connect(self.updateY)
 
         self.ui.actionOpen_on_dotlan.triggered.connect(lambda: QDesktopServices.openUrl(
             "https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name)))
@@ -1009,8 +978,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.removeChar.clicked.connect(callOnRemoveChar)
 
-    def updateKillboard(self, system_id):
-        ALL_SYSTEMS[system_id].addKill()
+    def updateKillboard(self, system_id,utc_time):
+        ALL_SYSTEMS[system_id].addKill(utc_time)
         if Globals().follow_kills:
             self.changeRegionBySystemID(system_id)
 

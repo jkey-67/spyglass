@@ -38,7 +38,7 @@ class ZKillMonitor(QObject):
         report_system_kill: Emits a solar system ID for every killmail.
     """
     status_kill_mail = Signal(bool)
-    report_system_kill = Signal(int)
+    report_system_kill = Signal(int,float)
     MONITORING_PATH = "zkillMonitor.log"
     LOG_VICTIM = True
     LOG_ATTACKERS = False
@@ -167,8 +167,14 @@ class ZKillMonitor(QObject):
         if not killmail:
             return False
 
-        if "solar_system_id" in killmail.keys():
-            self.report_system_kill.emit(killmail["solar_system_id"])
+        solar_system_id = killmail.get("solar_system_id")
+        killmail_time = killmail.get("killmail_time")
+
+        if solar_system_id is not None:
+            kill_time = datetime.datetime.strptime(killmail_time, "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=datetime.timezone.utc).timestamp()
+            self.report_system_kill.emit(solar_system_id, kill_time)
+
         self.logKillMail(killmail)
         if self.logKillAsIntel(killmail):
             kill_string = self.getIntelString(package_data)

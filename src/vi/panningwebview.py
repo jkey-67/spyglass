@@ -16,17 +16,16 @@
 #  You should have received a copy of the GNU General Public License	  #
 #  along with this program.	 If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-import logging
+
 import os
 import numpy as np
-from PySide6.QtGui import QMouseEvent
 from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QPropertyAnimation, Property
 
 from vi.universe import Universe
 from vi.system import ALL_SYSTEMS,System,ALL_STARGATES
-from vi.StarMapWidget import StarMapWidget,collect_name_chars,select_font_family,generate_font_atlas,ConnectionLineGroups
+from vi.starmapwidget import StarMapWidget,select_font_family,generate_font_atlas,ConnectionLineGroups
 from typing import Iterable, List
 from string import printable
 
@@ -112,8 +111,6 @@ def _load_connections(
 
 class PanningWebView(StarMapWidget):
     ZOOM_WHEEL = float(0.3)
-    webViewIsScrolling = Signal(bool)
-    webViewUpdateScrollbars = Signal()
     webViewNavigateForward = Signal()
     webViewNavigateBackward = Signal()
     webViewDoubleClicked = Signal(QPointF)
@@ -124,7 +121,6 @@ class PanningWebView(StarMapWidget):
         stargates = ALL_STARGATES
         line_vertices =_load_connections(stargates.values(),grouped=True)
         use_mouse_3d = False
-        tanoo = ALL_SYSTEMS.get( Universe.systemIdByName("Tanoo") )
         chars = _collect_name_chars(systems.values())
         atlas_dir = os.path.join(os.path.dirname(__file__), "atlas")
         font_family = select_font_family(["Noto Sans CJK", "Noto Sans"])
@@ -141,7 +137,6 @@ class PanningWebView(StarMapWidget):
             parent=parent,
         )
         self.pressed = False
-        self.scrolling = False
         self.positionMousePress = None
         self.scrollMousePress = None
         self.handIsClosed = False
@@ -165,6 +160,8 @@ class PanningWebView(StarMapWidget):
         Args:
             val (QPointF): New scroll position.
         """
+        if self.panning or self.orbiting:
+            return
         if val and self._scrollPos != val:
             self.target[0] = -val.x()
             self.target[1] = -val.y()
@@ -235,15 +232,16 @@ class PanningWebView(StarMapWidget):
             pos (QPointF): Target scroll position.
             animate (bool): Whether to animate the transition.
         """
-        if not self.scrolling:
-            if animate:
-                self.animation.stop()
-                self.animation.setDuration(75)
-                self.animation.setStartValue(self.propScrollPos)
-                self.animation.setEndValue(pos)
-                self.animation.start()
-            else:
-                propScrollPos = pos
+        if self.panning or self.orbiting:
+            return
+        if animate:
+            self.animation.stop()
+            self.animation.setDuration(75)
+            self.animation.setStartValue(self.propScrollPos)
+            self.animation.setEndValue(pos)
+            self.animation.start()
+        else:
+            self.propScrollPos = pos
 
     def setZoomAndScrollPos(self, zoom, pos):
         """Update zoom and scroll position together.
@@ -252,7 +250,7 @@ class PanningWebView(StarMapWidget):
             zoom (float): Target zoom value.
             pos (QPointF): Target scroll position.
         """
-        if self.scrolling:
+        if self.panning or self.orbiting:
             return
 
         if zoom and self.zoom != zoom:
@@ -265,7 +263,7 @@ class PanningWebView(StarMapWidget):
         Args:
             pos (QPointF | None): Widget position to anchor zoom.
         """
-        if self.panning:
+        if self.panning or self.orbiting:
             return
         self.zoom =  self.zoom * (1.0+self.ZOOM_WHEEL)
 
@@ -275,7 +273,7 @@ class PanningWebView(StarMapWidget):
         Args:
             pos (QPointF | None): Widget position to anchor zoom.
         """
-        if self.panning:
+        if self.panning or self.orbiting:
             return
         self.zoom =  self.zoom * (1.0-self.ZOOM_WHEEL)
 

@@ -229,7 +229,7 @@ if __name__ == "__main__":
         QtGui.QSurfaceFormat.setDefaultFormat(fmt)
 
         os.environ["XDG_SESSION_TYPE"] = "wayland"
-        # os.environ["QT_QPA_PLATFORM"] = "wayland"
+        os.environ["QT_QPA_PLATFORM"] = "wayland"
         app = Application(sys.argv)
         res = app.exec()
     except (Exception,) as e:

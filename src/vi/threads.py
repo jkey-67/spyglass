@@ -314,11 +314,17 @@ class MapStatisticsThread(QThread):
                 _data_ERROR[STAT.INFORMATION] = str(e)
                 queued_emit(self.statistic_data_update, _data_ERROR)
                 del _data_ERROR
-                queued_emit(self.stat_query, [STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS])
+                QTimer.singleShot(5000, self.requestServerStatus)
                 query = None
         logging.debug(
             "MapStatisticsThread current task is : {} isCurr:{} isMain:{} done.".format(str(query), self.isCurrentThread(),
                                                                                   self.isMainThread()))
+    @Slot()
+    def requestServerStatus(self):
+        logging.debug("MapStatisticsThread.requestServerStatus.")
+        queued_emit(self.stat_query, [STAT.THERA_WORMHOLES_VERSION, STAT.SERVER_STATUS])
+        logging.debug("MapStatisticsThread.requestServerStatus done.")
+
 
     @Slot()
     def requestEVEScout(self):
