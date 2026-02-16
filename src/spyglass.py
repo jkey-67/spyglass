@@ -229,8 +229,8 @@ if __name__ == "__main__":
         fmt.setSwapInterval(1)  # sync buffer swaps to the display refresh when supported
         QtGui.QSurfaceFormat.setDefaultFormat(fmt)
 
-        os.environ["XDG_SESSION_TYPE"] = "wayland"
-        os.environ["QT_QPA_PLATFORM"] = "wayland"
+        #os.environ["XDG_SESSION_TYPE"] = "wayland"
+        #os.environ["QT_QPA_PLATFORM"] = "wayland"
         #os.environ["QT_MEDIA_BACKEND"] = "gstreamer"
         app = Application(sys.argv)
         res = app.exec()

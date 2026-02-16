@@ -425,6 +425,7 @@ flat out vec4 vHoneyColor;
 flat out float vHoneyMargin;
 flat out float vScale;
 flat out float vHasIceBelt;
+flat out float vDepth;
 
 void main() {
     SystemData sys = systems[gl_InstanceID];
@@ -447,7 +448,7 @@ void main() {
     float depthScale = uDepthScale / depth;
     float scale = mix(uScale, depthScale, uDepthEnabled);
     vScale = scale;
-
+    vDepth = depthScale;
     float scaledBorder = uBorderThickness * scale;
     float scaledOuter = uOuterBorderThickness * scale;
     float outer_gap = scaledBorder * 3.0;
@@ -490,7 +491,7 @@ flat in vec4 vHoneyColor;
 flat in float vHoneyMargin;
 flat in float vScale;
 flat in float vHasIceBelt;
-
+flat in float vDepth;
 out vec4 FragColor;
 
 uniform vec2 uSize;
@@ -616,6 +617,7 @@ void main() {
         color = over(color, honey);
         color = over(color, rect);
     }
+    //color.a *= vDepth*vDepth;
     if (color.a <= 0.001) {
         discard;
     }

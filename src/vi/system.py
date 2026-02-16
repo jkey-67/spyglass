@@ -109,6 +109,7 @@ class System(object):
     ELEMENT_WIDTH = 62.5
     ELEMENT_HEIGHT = 30
     USE_3D = False
+
     def __init__(self, **kwargs):
         self.constellation_id = kwargs["constellation_id"]
         self.names:dict = kwargs["names"]
@@ -145,7 +146,6 @@ class System(object):
         self.is_jumpbridges_visible = True
         self.is_system_text_visible = True
         self.render_out_of_region = True
-
         self._is_dirty = True
         self._status = None
         self._first_line = self.name
@@ -168,10 +168,8 @@ class System(object):
         self.vulnerable_end_time = None
         self.vulnerable_start_time = None
         self._vulnerability_text = None
-
         self.marking_color = None
         self.marking_scale = 1.0
-
         self.has_upwell_cyno_jammer = False
         self.has_upwell_cyno_beacon = False
 

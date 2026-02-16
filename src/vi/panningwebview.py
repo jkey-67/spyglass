@@ -25,9 +25,10 @@ import math
 from typing import Tuple, Optional
 from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtCore import QPropertyAnimation, Property
 from PySide6.QtCore import Slot
-from PySide6 import QtOpenGLWidgets
+from PySide6 import QtOpenGLWidgets,QtWidgets
 from vi.universe import Universe
 from vi.system import ALL_SYSTEMS,System,ALL_STARGATES
 from vi.starmapwidget import StarMapWidget,select_font_family,generate_font_atlas,ConnectionLineGroups
@@ -369,18 +370,25 @@ class PanningWebView(StarMapWidget):
             return
         self.zoom =  self.zoom * (1.0-self.ZOOM_WHEEL)
 
+    def hoverCheck(self,global_pos: QPoint, system_id: int|None):
+        pass
 
-    def hoveCheck(self, global_pos: QPoint, map_pos: QPointF) -> bool:
-        """Optional hover check for subclasses.
+    def event(self, event) -> bool:
+        """Override event handling for tooltip suppression.
 
         Args:
-            global_pos (QPoint): Global mouse position.
-            map_pos (QPointF): Map position.
+            event (QEvent): Incoming event.
 
         Returns:
-            bool: Whether the hover was handled.
+            bool: True if handled, otherwise defer to base class.
         """
-        return False
+        if event.type() == PySide6.QtCore.QEvent.Type.ToolTip:
+            system_id = self.objectUnderMouse(event.pos())
+            if system_id:
+                self.hoverCheck(event.globalPos(),system_id )
+                event.ignore()
+                return True
+        return super(PanningWebView, self).event(event)
 
 
     def mapPosFromPoint(self, mouse_event: QPoint) -> QPointF:

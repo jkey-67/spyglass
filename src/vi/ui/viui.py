@@ -522,7 +522,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.mapView.showTimers(self.showADMOnMap())
         self.ui.mapView.showStatistics(self.showStatistic())
 
-        def hoveCheck(global_pos: QPoint, pos: QPointF):
+        def hoverCheck(global_pos: QPoint, system_id: int|None):
             """
                 Figure out if a system is below the mouse position
                 using QtWidgets.QToolTip to popup system relate information on screen
@@ -531,18 +531,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 pos: position related to the svg
             """
             system_hovered = False
-            for system in self.systems_on_map.values():
-                if system.mapCoordinates.contains(pos):
-                    if not QtWidgets.QToolTip.isVisible():
+            if not QtWidgets.QToolTip.isVisible():
+                if system_id:
+                    system = ALL_SYSTEMS.get(system_id)
+                    if system:
                         QtWidgets.QToolTip.showText(global_pos, system.getTooltipText(), self)
                         QApplication.setOverrideCursor(Qt.CursorShape.PointingHandCursor)
-                    system_hovered = True
+                        system_hovered = True
 
             if not system_hovered and QApplication.overrideCursor() and QtWidgets.QToolTip.isVisible():
                 QApplication.restoreOverrideCursor()
                 QtWidgets.QToolTip.hideText()
 
-        self.ui.mapView.hoveCheck = hoveCheck
+        self.ui.mapView.hoverCheck = hoverCheck
 
         def doubleClicked(pos: QPoint):
             for name, system in self.systems_on_map.items():
