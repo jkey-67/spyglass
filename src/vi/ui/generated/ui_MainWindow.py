@@ -1149,6 +1149,9 @@ class Ui_MainWindow(object):
         self.actionShowTabs.toggled.connect(self.dockWidget_5.setVisible)
         self.actionShowTabs.toggled.connect(self.dockWidget_6.setVisible)
         self.actionAutoSwitchRegions.toggled.connect(MainWindow.changeAutoChangeRegion)
+        self.jumpbridgesButton.toggled.connect(self.mapView.showJumpBridges)
+        self.statisticsButton.toggled.connect(self.mapView.showStatistics)
+        self.adm_vul_Button.toggled.connect(self.mapView.showTimers)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi

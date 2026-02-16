@@ -4,16 +4,14 @@ import json
 import math
 import os
 import time
-import datetime
 import re
 import string
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Iterable, List, Optional, Tuple
-
 import PySide6.QtCore
 import numpy as np
-from OpenGL.raw.GL.VERSION.GL_1_0 import GL_LESS
+from OpenGL.raw.GL.VERSION.GL_1_0 import GL_LESS, GL_DST_ALPHA, GL_ZERO
 from PySide6 import QtCore, QtGui, QtWidgets, QtOpenGLWidgets
 from OpenGL.GL import (
     GL_ARRAY_BUFFER,
@@ -35,6 +33,10 @@ from OpenGL.GL import (
     GL_MULTISAMPLE,
     GL_NICEST,
     GL_ONE,
+    GL_ONE_MINUS_CONSTANT_COLOR,
+    GL_SRC_ALPHA_SATURATE,
+    GL_DST_COLOR,
+    GL_ONE_MINUS_DST_COLOR,
     GL_ONE_MINUS_SRC_ALPHA,
     GL_SRC_ALPHA,
     GL_POLYGON_OFFSET_FILL,
@@ -44,6 +46,7 @@ from OpenGL.GL import (
     GL_SHADER_STORAGE_BUFFER,
     GL_CLAMP_TO_EDGE,
     GL_LINEAR,
+    GL_LINEAR_MIPMAP_LINEAR,
     GL_STATIC_DRAW,
     GL_TEXTURE0,
     GL_TEXTURE_2D,
@@ -61,6 +64,7 @@ from OpenGL.GL import (
     glBindBufferBase,
     glBindVertexArray,
     glBlendFunc,
+    glBlendFuncSeparate,
     glBufferData,
     glClear,
     glClearColor,
@@ -84,6 +88,7 @@ from OpenGL.GL import (
     glGetShaderInfoLog,
     glGetShaderiv,
     glGetUniformLocation,
+    glGenerateMipmap,
     glLinkProgram,
     glShaderSource,
     glTexImage2D,
@@ -333,9 +338,13 @@ in vec3 vColor;
 out vec4 FragColor;
 
 uniform sampler2D uAtlas;
+uniform float uAlphaScale;
 
 void main() {
-    float alpha = texture(uAtlas, vUV).a;
+    float alpha = texture(uAtlas, vUV).a * uAlphaScale;
+    if (alpha <= 0.001) {
+        discard;
+    }
     FragColor = vec4(vColor, alpha);
 }
 """
@@ -385,6 +394,10 @@ struct SystemData {
     vec4 intel_flags;
     vec4 flags_margin;
     vec4 honey_color;
+    float has_ice_belt;
+    float hasIncursionBoss;
+    float has_upwell_cyno_jammer;
+    float has_upwell_cyno_beacon;
 };
 
 layout(std430, binding = 2) readonly buffer Systems {
@@ -411,6 +424,7 @@ flat out float vFlagKill;
 flat out vec4 vHoneyColor;
 flat out float vHoneyMargin;
 flat out float vScale;
+flat out float vHasIceBelt;
 
 void main() {
     SystemData sys = systems[gl_InstanceID];
@@ -425,7 +439,8 @@ void main() {
     float kill = sys.flags_margin.z;
     float honey_margin = sys.flags_margin.w;
     vec4 honey_color = sys.honey_color;
-
+    vHasIceBelt = sys.has_ice_belt;
+    
     vec4 viewPos = uView * vec4(center, 1.0);
     vec4 clip = uProj * viewPos;
     float depth = max(length(viewPos.xyz), 1e-6);
@@ -474,6 +489,8 @@ flat in float vFlagKill;
 flat in vec4 vHoneyColor;
 flat in float vHoneyMargin;
 flat in float vScale;
+flat in float vHasIceBelt;
+
 out vec4 FragColor;
 
 uniform vec2 uSize;
@@ -553,14 +570,14 @@ void main() {
     }
     vec4 fill = vec4(fillColor.rgb, fillColor.a * fill_alpha);
     vec4 border = vec4(uBorderColor.rgb, uBorderColor.a * border_alpha);
-    vec4 outer = vec4(uOuterBorderColor.rgb, uOuterBorderColor.a * outer_alpha);
+    vec4 outer = vec4(uOuterBorderColor.rgb, uOuterBorderColor.a * outer_alpha*vHasIceBelt);
     vec4 innerMix = mix(fill, border, border_alpha);
     vec4 rect = mix(innerMix, outer, outer_alpha);
 
     float dist_h = length(vLocal);
     float inner = max(uSize.x, uSize.y) * 0.5 * vScale;
     float outer_h = inner * uHaloRadiusFactor;
-    float halo_alpha = 1.0 - clamp((dist_h - inner) / max(outer_h - inner, 0.00001), 0.0, 1.0);
+    float halo_alpha = smoothstep( outer_h , inner, dist_h);
     vec4 base = vec4(0.0);
     base = over(base,clampColor(uHaloColorKill, vFlagKill));
     base = over(base,clampColor(uHaloColorMonitored, vFlagsA.y));
@@ -568,7 +585,7 @@ void main() {
     base = over(base,clampColor(uHaloColorIncursion, vFlagIncursion));
     base = over(base,clampColor(uHaloColorPopulated, vFlagsA.z));
     base = over(base,clampColor(uHaloColorMarked, vFlagsA.x));
-    //base += clamp(base/6.0, 0.0, 1.0);
+
     vec4 halo = vec4(base.rgb, base.a * halo_alpha);
     if (halo_alpha <= 0.0) {
         halo = vec4(0.0);
@@ -1539,6 +1556,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
     """
 
     INTEL_FADE_SECONDS = 30.0
+    TEXT_FADE_START_SCALE = 0.1
+    TEXT_FADE_END_SCALE = 0.30
 
     def __init__(
         self,
@@ -1546,8 +1565,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         atlas_path: str,
         line_vertices: np.ndarray | ConnectionLineGroups,
         jump_bridge_vertices: Optional[np.ndarray] = None,
-        line_thickness: float = 4.0,
+        line_thickness: float = 1.0,
         mouse_3d: bool = False,
+        show_jumpbridges: bool = True,
+        show_timers: bool =  True,
+        show_statistic: bool =  True,
         parent=None,
     ) -> None:
         """Initialize the OpenGL widget and label data.
@@ -1696,6 +1718,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_text_scale = -1
         self.u_text_depth_scale = -1
         self.u_text_depth_enabled = -1
+        self.u_text_alpha_scale = -1
+        self.text_fade_start_scale = float(self.TEXT_FADE_START_SCALE)
+        self.text_fade_end_scale = float(self.TEXT_FADE_END_SCALE)
         self.label_padding = 8.0
         self.label_line_gap = 3.0
         metrics = self.atlas.get("metrics", {})
@@ -1722,9 +1747,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.base_zoom = self.zoom
         self.camera_distance = float(self.zoom)
         self.panning = False
-        self.show_jumpbridges = True
-        self.show_timers = True
-        self.show_statistic  = True
+        self.show_jumpbridges = show_jumpbridges
+        self.show_timers = show_timers
+        self.show_statistic  = show_statistic
         self.last_pos = QtCore.QPointF()
         self.text_instances, self.text_dynamic_instances = self._build_text_instances(time.time())
         self.text_instance_count = self.text_instances.shape[0] if self.text_instances.size else 0
@@ -2063,6 +2088,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_text_scale = glGetUniformLocation(self.text_program, "uLabelScale")
         self.u_text_depth_scale = glGetUniformLocation(self.text_program, "uDepthScale")
         self.u_text_depth_enabled = glGetUniformLocation(self.text_program, "uDepthEnabled")
+        self.u_text_alpha_scale = glGetUniformLocation(self.text_program, "uAlphaScale")
 
         def bind_text_instances(vao: int, vbo: int, instances: np.ndarray) -> None:
             """Bind per-instance glyph attributes to a text VAO.
@@ -2143,6 +2169,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             else:
                 self._fps_smoothed += (fps - self._fps_smoothed) * self._fps_alpha
 
+        bg = self.palette().color(QtGui.QPalette.ColorRole.Window)
+        r, g, b, _ = bg.getRgbF()
+        # Keep the GL surface opaque to avoid translucent compositing artifacts.
+        glClearColor(float(r), float(g), float(b), 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
         if self._intel_status_active:
             show_intel_minutes = bool(int(now_utc) % 2)
             if show_intel_minutes != self._show_intel_minutes:
@@ -2213,12 +2245,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         line_thickness_scaled = float(max(0.5, self.line_thickness * label_scale))
 
-        bg = self.palette().color(QtGui.QPalette.ColorRole.Window)
-        r, g, b, _ = bg.getRgbF()
-        # Keep the GL surface opaque to avoid translucent compositing artifacts.
-        glClearColor(float(r), float(g), float(b), 1.0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
         if True and (
             self.line_vertices.size
             or self.line_vertices_cross_constellation.size
@@ -2233,15 +2259,18 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glUniform1f(self.u_line_thickness, line_thickness_scaled)
 
             if self.line_vertices.size:
-                glUniform3f(self.u_line_color, 110.0/255.0, 110.0/255.0, 110.0/255.0)
+                r, g, b, _ = PySide6.QtGui.QColor("#c0c0c0").getRgbF()
+                glUniform3f(self.u_line_color, r, g, b)
                 glBindVertexArray(self.line_vao)
                 glDrawArrays(GL_LINES, 0, self.line_vertices.size // 3)
             if self.line_vertices_cross_constellation.size:
-                glUniform3f(self.u_line_color, 139.0/255.0, 0.0, 0.0)
+                r, g, b, _ = PySide6.QtGui.QColor("#60ff0000").getRgbF()
+                glUniform3f(self.u_line_color, r, g, b)
                 glBindVertexArray(self.line_constellation_vao)
                 glDrawArrays(GL_LINES, 0, self.line_vertices_cross_constellation.size // 3)
             if self.line_vertices_cross_region.size:
-                glUniform3f(self.u_line_color, 110.0/255.0, 0.0, 110.0/255.0)
+                r, g, b, _ = PySide6.QtGui.QColor("#c71585").getRgbF()
+                glUniform3f(self.u_line_color, r, g, b)
                 glBindVertexArray(self.line_region_vao)
                 glDrawArrays(GL_LINES, 0, self.line_vertices_cross_region.size // 3)
 
@@ -2254,7 +2283,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glUniformMatrix4fv(self.u_line_proj, 1, False, line_proj)
             glUniform2f(self.u_line_screen, float(screen_width), float(screen_height))
             glUniform1f(self.u_line_thickness, line_thickness_scaled)
-            glUniform3f(self.u_line_color, 0.45, 0.8, 0.45)
+            r, g, b, _ = PySide6.QtGui.QColor("#7cfc00").getRgbF()
+            glUniform3f(self.u_line_color, r, g, b)
             glBindVertexArray(self.bridge_line_vao)
             glDrawArrays(GL_LINES, 0, self.bridge_line_vertices.size // 3)
 
@@ -2271,8 +2301,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glUniform1f(self.u_system_scale, float(label_scale))
             glUniform1f(self.u_system_depth_scale, float(depth_scale))
             glUniform1f(self.u_system_depth_enabled, float(depth_enabled))
-            glUniform1f(self.u_system_border_thickness, 1.0)
-            glUniform1f(self.u_system_outer_border_thickness, 1.0)
+            glUniform1f(self.u_system_border_thickness, 1.5)
+            glUniform1f(self.u_system_outer_border_thickness, 1.5)
             glUniform1f(self.u_system_aa_margin, 1.0)
             glUniform4f(
                 self.u_system_fill,
@@ -2298,8 +2328,10 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             intel_now = now_utc - self.intel_time_base
             glUniform1f(self.u_system_intel_now, float(intel_now))
             glUniform1f(self.u_system_intel_duration, float(self.intel_fade_seconds))
-            glUniform4f(self.u_system_border, 1.0, 0.78, 0.78, 1.0)
-            glUniform4f(self.u_system_outer_border, 0.35, 0.55, 1.0, 1.0)
+            r, g, b, a = PySide6.QtGui.QColor("#ffc0c0c0").getRgbF() # border of system rect
+            glUniform4f(self.u_system_border, r, g, b, a )
+            r, g, b, a = PySide6.QtGui.QColor("#800088ff").getRgbF() # ice belt color
+            glUniform4f(self.u_system_outer_border, r, g, b, a)
             glUniform1f(self.u_system_halo_radius, float(self.halo_radius_factor))
             glUniform4f(
                 self.u_system_halo_color_marked,
@@ -2346,11 +2378,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, self.system_ssbo)
             glBindVertexArray(self.system_vao)
             glDisable(GL_DEPTH_TEST)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
             glUniform1i(self.u_system_pass, 0)
             glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.system_instance_count)
             glEnable(GL_DEPTH_TEST)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
             glUniform1i(self.u_system_pass, 1)
             glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.system_instance_count)
 
@@ -2385,30 +2417,45 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     glDrawArraysInstanced(GL_LINES, 0, draw["border_count"], draw["instance_count"])
 
         if True and ((self.text_instance_count or self.text_dynamic_instance_count) and self.atlas_texture):
-            glEnable(GL_DEPTH_TEST)
-            glEnable(GL_POLYGON_OFFSET_FILL)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            glUseProgram(self.text_program)
-            glPolygonOffset(0.1, -2.0)
-            glUniformMatrix4fv(self.u_text_view, 1, False, view)
-            glUniformMatrix4fv(self.u_text_proj, 1, False, system_proj)
-            glUniform2f(self.u_screen, float(screen_width), float(screen_height))
-            glUniform1f(self.u_text_scale, float(label_scale))
-            glUniform1f(self.u_text_depth_scale, float(depth_scale))
-            glUniform1f(self.u_text_depth_enabled, float(depth_enabled))
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, self.atlas_texture)
-            glUniform1i(self.u_atlas, 0)
-            if self.text_instance_count:
-                glBindVertexArray(self.text_vao)
-                glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_instance_count)
-            if self.text_dynamic_instance_count:
-                glBindVertexArray(self.text_dynamic_vao)
-                glDrawArraysInstanced(
-                    GL_TRIANGLE_STRIP, 0, 4, self.text_dynamic_instance_count
-                )
-            glEnable(GL_DEPTH_TEST)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+            if self.mouse_3d:
+                text_alpha_scale = 1.0
+            else:
+                # Fade text out at tiny zoom levels to avoid minified atlas shimmer.
+                fade_start = float(self.text_fade_start_scale)
+                fade_end = max(float(self.text_fade_end_scale), fade_start + 1e-6)
+                if label_scale <= fade_start:
+                    text_alpha_scale = 0.0
+                elif label_scale >= fade_end:
+                    text_alpha_scale = 1.0
+                else:
+                    text_alpha_scale = (label_scale - fade_start) / (fade_end - fade_start)
+            if text_alpha_scale > 0.001:
+                glEnable(GL_DEPTH_TEST)
+                glEnable(GL_POLYGON_OFFSET_FILL)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR)
+                glUseProgram(self.text_program)
+                glPolygonOffset(0.1, -2.0)
+                glUniformMatrix4fv(self.u_text_view, 1, False, view)
+                glUniformMatrix4fv(self.u_text_proj, 1, False, system_proj)
+                glUniform2f(self.u_screen, float(screen_width), float(screen_height))
+                glUniform1f(self.u_text_scale, float(label_scale))
+                glUniform1f(self.u_text_depth_scale, float(depth_scale))
+                glUniform1f(self.u_text_depth_enabled, float(depth_enabled))
+                glUniform1f(self.u_text_alpha_scale, float(text_alpha_scale))
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_2D, self.atlas_texture)
+                glUniform1i(self.u_atlas, 0)
+                if self.text_instance_count:
+                    glBindVertexArray(self.text_vao)
+                    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_instance_count)
+                if self.text_dynamic_instance_count:
+                    glBindVertexArray(self.text_dynamic_vao)
+                    glDrawArraysInstanced(
+                        GL_TRIANGLE_STRIP, 0, 4, self.text_dynamic_instance_count
+                    )
+                glEnable(GL_DEPTH_TEST)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glDisable(GL_POLYGON_OFFSET_FILL)
         self._draw_hud()
         #self.update()
@@ -2505,7 +2552,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         tex = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, tex)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        # Use mipmaps to stabilize atlas minification when zooming far out.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
@@ -2520,6 +2568,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             GL_UNSIGNED_BYTE,
             data,
         )
+        glGenerateMipmap(GL_TEXTURE_2D)
         return tex
 
     def _mark_factor(self, system_idx: int) -> float:
@@ -2724,15 +2773,19 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     mark_factor,            #y
                     monitored,              #z
                     char_located,           #w
-                    1.0 if sys._hasCampaigns else 0.0,
-                    1.0 if sys._hasIncursion else 0.0,
+                    1.0 if sys.hasCampaigns else 0.0,
+                    1.0 if sys.hasIncursion else 0.0,
                     kill_factor,
                     margin,
                     color[0],
                     color[1],
                     color[2],
                     color[3],
-                ]
+                    1.0 if sys.has_ice_belt else 0.0,
+                    1.0 if sys.hasIncursionBoss else 0.0,
+                    1.0 if sys.has_upwell_cyno_jammer else 0.0,
+                    1.0 if sys.has_upwell_cyno_beacon else 0.0,
+            ]
             )
 
         if not self._intel_status_active and self._show_intel_minutes:
@@ -2870,6 +2923,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             now = time.time()
         glyphs = self.atlas.get("glyphs", {})
         atlas_w, atlas_h = self.atlas.get("size", [1, 1])
+        atlas_w = max(float(atlas_w), 1.0)
+        atlas_h = max(float(atlas_h), 1.0)
         primary_scale = self.atlas_scale * self.font_scale
         secondary_scale = self.atlas_scale * self.secondary_text_scale * self.font_scale
         static_instances: List[List[float]] = []
@@ -2938,10 +2993,18 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 offset_y = line_y + float(glyph["bearing_y"]) * scale
                 size_x = float(glyph["w"]) * scale
                 size_y = float(glyph["h"]) * scale
-                u0 = float(glyph["x"]) / atlas_w
-                v0 = float(glyph["y"]) / atlas_h
-                us = float(glyph["w"]) / atlas_w
-                vs = float(glyph["h"]) / atlas_h
+                glyph_x = float(glyph["x"])
+                glyph_y = float(glyph["y"])
+                glyph_w = float(glyph["w"])
+                glyph_h = float(glyph["h"])
+                inset_u = min(0.5, max((glyph_w - 1.0) * 0.5, 0.0))
+                inset_v = min(0.5, max((glyph_h - 1.0) * 0.5, 0.0))
+                u0 = (glyph_x + inset_u) / atlas_w
+                v0 = (glyph_y + inset_v) / atlas_h
+                u1 = (glyph_x + glyph_w - inset_u) / atlas_w
+                v1 = (glyph_y + glyph_h - inset_v) / atlas_h
+                us = max(u1 - u0, 1.0 / atlas_w)
+                vs = max(v1 - v0, 1.0 / atlas_h)
                 instances.append(
                     [
                         sys.x,
@@ -3044,6 +3107,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         glyphs = self.atlas.get("glyphs", {})
         atlas_w, atlas_h = self.atlas.get("size", [1, 1])
+        atlas_w = max(float(atlas_w), 1.0)
+        atlas_h = max(float(atlas_h), 1.0)
         scale = self.atlas_scale * self.font_scale
         instances: List[List[float]] = []
         center = [-1.0, 1.0, 0.0]
@@ -3063,10 +3128,18 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             offset_y = cursor_y + float(glyph["bearing_y"]) * scale
             size_x = float(glyph["w"]) * scale
             size_y = float(glyph["h"]) * scale
-            u0 = float(glyph["x"]) / atlas_w
-            v0 = float(glyph["y"]) / atlas_h
-            us = float(glyph["w"]) / atlas_w
-            vs = float(glyph["h"]) / atlas_h
+            glyph_x = float(glyph["x"])
+            glyph_y = float(glyph["y"])
+            glyph_w = float(glyph["w"])
+            glyph_h = float(glyph["h"])
+            inset_u = min(0.5, max((glyph_w - 1.0) * 0.5, 0.0))
+            inset_v = min(0.5, max((glyph_h - 1.0) * 0.5, 0.0))
+            u0 = (glyph_x + inset_u) / atlas_w
+            v0 = (glyph_y + inset_v) / atlas_h
+            u1 = (glyph_x + glyph_w - inset_u) / atlas_w
+            v1 = (glyph_y + glyph_h - inset_v) / atlas_h
+            us = max(u1 - u0, 1.0 / atlas_w)
+            vs = max(v1 - v0, 1.0 / atlas_h)
             instances.append(
                 [
                     center[0],
@@ -3419,11 +3492,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._text_rebuild_pending = True
 
     @PySide6.QtCore.Slot(int,bool)
-    def centerMapOnSystem(self, system_id: int,animate:bool=False) -> None:
+    def centerMapOnId(self, system_id: int, animate:bool=False) -> None:
         """Center the map view on the system with the provided ID.
 
         Args:
-            system_id: Target system ID.
+            system_id: Target system or region ID.
 
         Returns:
             None.
@@ -3772,8 +3845,8 @@ def main() -> None:
     widget.setFormat(fmt)
     window.setCentralWidget(widget)
     window.resize(1024, 768)
-    widget.centerMapOnSystem(30001967)
-    widget.centerMapOnSystem(30002488)
+    widget.centerMapOnId(30001967)
+    widget.centerMapOnId(30002488)
 
     window.show()
     app.exec()

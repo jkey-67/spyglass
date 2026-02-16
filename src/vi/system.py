@@ -108,7 +108,7 @@ class System(object):
 
     ELEMENT_WIDTH = 62.5
     ELEMENT_HEIGHT = 30
-
+    USE_3D = False
     def __init__(self, **kwargs):
         self.constellation_id = kwargs["constellation_id"]
         self.names:dict = kwargs["names"]
@@ -153,11 +153,11 @@ class System(object):
         self._last_alarm_timestamp = 0.0
         self._locatedCharacters = []
         self._neighbours = None
-        self._hasCampaigns = False
-        self._hasIncursion = False
+        self.hasCampaigns = False
+        self.hasIncursion = False
         self.has_ice_belt = False
         self._isStaging = False
-        self._hasIncursionBoss = False
+        self.hasIncursionBoss = False
         self._hasThera = False
         self._monitoredDistance = []
         self._hasKill = 0.0
@@ -172,8 +172,8 @@ class System(object):
         self.marking_color = None
         self.marking_scale = 1.0
 
-        self.has_upwell_cyno_beacon = False
         self.has_upwell_cyno_jammer = False
+        self.has_upwell_cyno_beacon = False
 
     def out_rect(self)->QRectF:
         if self.is_system_text_visible:
@@ -184,23 +184,29 @@ class System(object):
     def isMonitored(self) -> bool:
         return bool(self._monitoredDistance)
 
-    GL_MAP_FACTOR_2D = 1e-17*4.0
-    GL_MAP_FACTOR_3D = 1e-18*6.0
+    GL_MAP_FACTOR_2D = 1e-17*3.0
+    GL_MAP_FACTOR_3D = 1e-18*4.0
 
     @property
     def x(self)->float:
-        #return self.position3D.x * System.GL_MAP_FACTOR_3D
-        return self.position.x * System.GL_MAP_FACTOR_2D
+        if System.USE_3D:
+            return self.position3D.x * System.GL_MAP_FACTOR_3D
+        else:
+            return self.position.x * System.GL_MAP_FACTOR_2D
 
     @property
     def y(self)->float:
-        #return self.position3D.y * System.GL_MAP_FACTOR_3D
-        return self.position.y * System.GL_MAP_FACTOR_2D
+        if System.USE_3D:
+            return self.position3D.y * System.GL_MAP_FACTOR_3D
+        else:
+            return self.position.y * System.GL_MAP_FACTOR_2D
 
     @property
     def z(self)->float:
-        #return self.position3D.z * System.GL_MAP_FACTOR_3D
-        return self.position.z * System.GL_MAP_FACTOR_2D
+        if System.USE_3D:
+            return self.position3D.z * System.GL_MAP_FACTOR_3D
+        else:
+            return self.position.z * System.GL_MAP_FACTOR_2D
 
     @property
     def structure(self)->int:
@@ -364,7 +370,7 @@ class System(object):
         test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
-        test._hasCampaigns = True
+        test.hasCampaigns = True
         test._structure_type = None
         test.structures = [{"type_id": System.L_SIZE[0]}]
         test.rect.moveTop(inx * 50.0)
@@ -372,7 +378,7 @@ class System(object):
         test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
-        test._hasCampaigns = False
+        test.hasCampaigns = False
         test.has_ice_belt = True
         test._structure_type = None
         test.structures = [{"type_id": System.XL_SIZE[0]}]
@@ -381,9 +387,9 @@ class System(object):
         test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
-        test._hasCampaigns = False
+        test.hasCampaigns = False
         test.has_ice_belt = False
-        test._hasIncursion = True
+        test.hasIncursion = True
         test._structure_type = None
         test.stations = [123]
         test.structures = None
@@ -392,9 +398,9 @@ class System(object):
         test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
-        test._hasCampaigns = False
+        test.hasCampaigns = False
         test.has_ice_belt = False
-        test._hasIncursion = False
+        test.hasIncursion = False
         test._monitoredDistance = [1]
         test._structure_type = None
         test.stations = None
@@ -405,9 +411,9 @@ class System(object):
         test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
-        test._hasCampaigns = False
+        test.hasCampaigns = False
         test.has_ice_belt = False
-        test._hasIncursion = False
+        test.hasIncursion = False
         test._monitoredDistance = []
         test._locatedCharacters = ["Test"]
         test.rect.moveTop(inx * 50.0)
@@ -415,9 +421,9 @@ class System(object):
         test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
-        test._hasCampaigns = False
+        test.hasCampaigns = False
         test.has_ice_belt = False
-        test._hasIncursion = False
+        test.hasIncursion = False
         test._monitoredDistance = []
         test._locatedCharacters = None
         test._hasKill = 1.0
@@ -426,9 +432,9 @@ class System(object):
         test.renderSystemTexts(painter, region_id)
 
         inx = inx + 1
-        test._hasCampaigns = False
+        test.hasCampaigns = False
         test.has_ice_belt = False
-        test._hasIncursion = False
+        test.hasIncursion = False
         test._monitoredDistance = []
         test._locatedCharacters = None
         test._hasKill = 10.0
@@ -567,10 +573,10 @@ class System(object):
             gradient_w = self.ELEMENT_WIDTH/2
         delta_h = self.ELEMENT_HEIGHT / 2
 
-        if self._hasIncursion:
+        if self.hasIncursion:
             gradient = QRadialGradient(self.rect.center(), gradient_w)
             gradient.setColorAt(0.0, QColor("#30ffd700"))
-            if self._hasIncursionBoss:
+            if self.hasIncursionBoss:
                 gradient.setColorAt(0.5, QColor("#10ff4500"))
                 gradient.setColorAt(0.6, QColor("#00ff4500"))
             else:
@@ -583,7 +589,7 @@ class System(object):
                 painter.fillPath(path, QBrush(gradient))
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        if self._hasCampaigns:
+        if self.hasCampaigns:
             gradient = QRadialGradient(self.rect.center(), gradient_w)
             gradient.setColorAt(0.0, QColor("#30ff0000"))
             gradient.setColorAt(0.6, QColor("#00ff0000"))
@@ -945,13 +951,13 @@ class System(object):
             self._is_dirty = True
 
     def setCampaigns(self, campaigns: bool):
-        self._hasCampaigns = campaigns
+        self.hasCampaigns = campaigns
         self._is_dirty = True
 
     def setIncursion(self, has_incursion: bool = False, is_staging: bool = False, has_boss: bool = False):
-        self._hasIncursion = has_incursion
+        self.hasIncursion = has_incursion
         self._isStaging = is_staging
-        self._hasIncursionBoss = has_boss
+        self.hasIncursionBoss = has_boss
         self._is_dirty = True
 
     def setBackgroundColor(self, color):
@@ -1188,11 +1194,11 @@ class System(object):
         def RED(txt):
             return '''<span style="font-weight:medium; color:#e01b24;">{}</span>'''.format(txt)
 
-        if self._hasIncursion:
+        if self.hasIncursion:
             if self._isStaging:
-                format_src = format_src + '''<br/><span style=" font-weight:medium; color:#ffcc00;">-Incursion Staging{}-</span>'''.format(" Boss" if self._hasIncursionBoss else "")
+                format_src = format_src + '''<br/><span style=" font-weight:medium; color:#ffcc00;">-Incursion Staging{}-</span>'''.format(" Boss" if self.hasIncursionBoss else "")
             else:
-                format_src = format_src + '''<br/><span style=" font-weight:medium; color:#ff9900;">-Incursion{}-</span>'''.format(" Boss" if self._hasIncursionBoss else "")
+                format_src = format_src + '''<br/><span style=" font-weight:medium; color:#ff9900;">-Incursion{}-</span>'''.format(" Boss" if self.hasIncursionBoss else "")
 
         if bool(self.wormhole_info):
             format_src = format_src + BR() + YELLOW("Wormholes")
@@ -1204,7 +1210,7 @@ class System(object):
                     YELLOW(region_name) + "  " + \
                     RED("({remaining_hours}h {max_ship_size})".format(**info))
 
-        if self._hasCampaigns:
+        if self.hasCampaigns:
             format_src = format_src + "<br/>Campaigns"
             cache_key = "sovereignty_campaigns"
             response = Cache().getFromCache(cache_key)

@@ -25,7 +25,7 @@ import subprocess
 from typing import Dict, Optional
 
 from threading import Thread
-from PySide6.QtCore import QLocale, QUrl
+from PySide6.QtCore import QLocale, QUrl, QCoreApplication
 from PySide6.QtMultimedia import QMediaDevices, QSoundEffect
 from vi.resources import resourcePath
 from vi.singleton import Singleton
@@ -75,12 +75,15 @@ class BaseSoundBackend:
         """
         raise NotImplementedError
 
-    def play(self, key: str, volume: float) -> None:
+    def play(self, key: str, volume: float) -> bool:
         """Play a registered sound.
 
         Args:
             key: Logical sound identifier.
             volume: Linear volume from 0.0 to 1.0 after master gain.
+
+        Returns:
+            True when playback was triggered, otherwise False.
         """
         raise NotImplementedError
 
@@ -114,7 +117,7 @@ class QtSoundBackend(BaseSoundBackend):
         """
         super().__init__()
         self.audio_device = audio_device
-        self.effects: Dict[str, QSoundEffect] = {}
+        self.effects: Dict[str, Optional[QSoundEffect]] = {}
         self.available = True
 
     def prepare(self, key: str, filename: Optional[str]) -> None:
@@ -126,17 +129,27 @@ class QtSoundBackend(BaseSoundBackend):
         if self.audio_device:
             effect.setAudioDevice(self.audio_device)
         effect.setSource(QUrl.fromLocalFile(filename))
+        effect.setLoopCount(1)
+        QCoreApplication.processEvents()
         self.effects[key] = effect
 
-    def play(self, key: str, volume: float) -> None:
+    def play(self, key: str, volume: float) -> bool:
         """Play a sound via QSoundEffect with the given volume."""
         effect = self.effects.get(key)
         if not effect:
-            return
+            return False
+        if effect.status() == QSoundEffect.Status.Error:
+            logging.warning(
+                "Qt sound backend failed to load sound '%s': %s",
+                key,
+                effect.source().toString(),
+            )
+            return False
         if effect.isPlaying():
             effect.stop()
         effect.setVolume(volume)
         effect.play()
+        return True
 
     def set_master_volume(self, volume: float) -> None:
         """Update cached effect volumes for immediate playback."""
@@ -169,7 +182,7 @@ class ExternalProcessBackend(BaseSoundBackend):
         self._command = None
         self._supports_volume = False
         self._master_volume = 1.0
-        self.paths: Dict[str, str] = {}
+        self.paths: Dict[str, Optional[str]] = {}
         if shutil.which("paplay"):
             self._command = "paplay"
             self._supports_volume = True
@@ -185,13 +198,13 @@ class ExternalProcessBackend(BaseSoundBackend):
         else:
             self.paths[key] = None
 
-    def play(self, key: str, volume: float) -> None:
+    def play(self, key: str, volume: float) -> bool:
         """Spawn the external process to play a WAV file."""
         if not self.available or volume <= 0.0 or self._master_volume <= 0.0:
-            return
+            return False
         path = self.paths.get(key)
         if not path:
-            return
+            return False
         try:
             cmd = [self._command]
             if self._command == "paplay" and self._supports_volume:
@@ -201,8 +214,10 @@ class ExternalProcessBackend(BaseSoundBackend):
                 cmd.append("-q")
             cmd.append(path)
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True
         except Exception as ex:
             logging.error(ex)
+            return False
 
     def set_master_volume(self, volume: float) -> None:
         """Store master gain used when the backend supports volume."""
@@ -226,9 +241,9 @@ class NullSoundBackend(BaseSoundBackend):
         """Ignore sound registration for the null backend."""
         return
 
-    def play(self, key: str, volume: float) -> None:
+    def play(self, key: str, volume: float) -> bool:
         """Ignore playback requests for the null backend."""
-        return
+        return False
 
     def set_master_volume(self, volume: float) -> None:
         """Ignore volume updates for the null backend."""
@@ -269,7 +284,7 @@ class SoundPlayer:
             self._backends[external_backend.name] = external_backend
         if self._backends:
             # Prefer Qt when present.
-            preferred = "qt6" if "qt6" in self._backends else list(self._backends.keys())[0]
+            preferred = ExternalProcessBackend.name if ExternalProcessBackend.name in self._backends else list(self._backends.keys())[0]
             self._backend = self._backends[preferred]
 
     @property
@@ -304,13 +319,15 @@ class SoundPlayer:
         return False
 
     def register_sound(self, key: str, filename: Optional[str]) -> None:
-        """Register a sound file with the active backend.
+        """Register a sound file with all available backends.
 
         Args:
             key: Logical sound identifier.
             filename: Path to WAV file or None to clear.
         """
-        self._backend.prepare(key, filename)
+        for backend in self._backends.values():
+            if backend.available:
+                backend.prepare(key, filename)
 
     def set_master_volume(self, volume: float) -> None:
         """Update master volume and propagate to backend.
@@ -319,7 +336,9 @@ class SoundPlayer:
             volume: Linear gain between 0.0 and 1.0.
         """
         self._master_volume = max(0.0, min(1.0, volume))
-        self._backend.set_master_volume(self._master_volume)
+        for backend in self._backends.values():
+            if backend.available:
+                backend.set_master_volume(self._master_volume)
 
     def play(self, key: str, relative_volume: float) -> None:
         """Play a registered sound with per-sound gain.
@@ -333,11 +352,20 @@ class SoundPlayer:
         final_volume = max(0.0, min(1.0, self._master_volume * relative_volume))
         if final_volume <= 0.0:
             return
-        self._backend.play(key, final_volume)
+        if self._backend.play(key, final_volume):
+            return
+        # Fallback from Qt to external player when Qt reports a failure.
+        if self._backend.name == "qt6":
+            fallback = self._backends.get("external")
+            if fallback and fallback.available and fallback.play(key, final_volume):
+                self._backend = fallback
+                logging.info("Switched sound backend to 'external' after Qt playback failure.")
 
     def stop_all(self) -> None:
         """Stop any ongoing playback."""
-        self._backend.stop_all()
+        for backend in self._backends.values():
+            if backend.available:
+                backend.stop_all()
 
 
 class SayThread(Thread):
@@ -431,22 +459,27 @@ class SoundManager(metaclass=Singleton):
             self.audioDevices = tuple(device.description() for device in qt_outputs)
             if qt_outputs:
                 self._audio_device = QMediaDevices.defaultAudioOutput()
+                logging.info("Using Qt6 audio device '{}'".format(self._audio_device.description()))
         except Exception as ex:
             logging.error(ex)
             self.audioDevices = tuple()
 
-        self._player = SoundPlayer(audio_device=self._audio_device, enable_qt_backend=bool(qt_outputs))
+        # Keep Qt backend enabled even when device enumeration is empty; some systems
+        # still route to a default output, and we can fallback to external when needed.
+        self._player = SoundPlayer(audio_device=self._audio_device, enable_qt_backend=True)
         self.soundAvailable = self._player.available
         type(self).soundAvailable = self.soundAvailable
         self.soundActive = self.soundAvailable
         if self.soundAvailable:
-            if self._player.backend_name == "qt6" and qt_outputs:
+            if self._player.backend_name == "qt6":
                 default_name = self._audio_device.description() if self._audio_device else "default"
                 logging.info("Using Qt6 audio device '{}'".format(default_name))
                 for device in qt_outputs:
                     if self._audio_device and device == self._audio_device:
                         continue
                     logging.info(" Available audio device '{}'".format(device.description()))
+                if not qt_outputs:
+                    logging.info(" Qt returned no enumerated outputs; using default routing.")
             else:
                 logging.info("Using external audio backend '{}'".format(self._player.backend_name))
         else:
@@ -459,8 +492,12 @@ class SoundManager(metaclass=Singleton):
         self.SOUNDS["alarm_4"] = cache.getFromCache("soundsetting.alarm_4")
         self.SOUNDS["alarm_5"] = cache.getFromCache("soundsetting.alarm_5")
         vol = cache.getFromCache("soundsetting.volume")
-        if vol:
-            self.soundVolume = vol
+        if vol is not None:
+            try:
+                self.soundVolume = int(vol)
+            except (TypeError, ValueError):
+                logging.warning("Invalid cached sound volume '{}'; using default.".format(vol))
+        self.soundVolume = max(0, min(100, int(self.soundVolume)))
         if self._player:
             self._player.set_master_volume(self.soundVolume / 100.0)
         self.loadSoundFiles()
@@ -496,6 +533,33 @@ class SoundManager(metaclass=Singleton):
             Cache().putIntoCache("soundsetting.{}".format(mask), filename)
             self.loadSoundFile(mask)
 
+    def _resolve_sound_file(self, sound_filename: Optional[str]) -> Optional[str]:
+        """Resolve a configured sound filename to an existing path.
+
+        Resolution order:
+            1) Absolute path (or user-expanded path).
+            2) Path relative to current working directory.
+            3) Legacy resourcePath lookup.
+            4) Path relative to this package (`vi/ui/res`).
+
+        Args:
+            sound_filename: Configured filename or path.
+
+        Returns:
+            Existing absolute/relative path, or None if unresolved.
+        """
+        if not sound_filename:
+            return None
+        expanded = os.path.expanduser(str(sound_filename))
+        candidates = [expanded]
+        if not os.path.isabs(expanded):
+            candidates.append(resourcePath(os.path.join("vi", "ui", "res", expanded)))
+            candidates.append(os.path.join(os.path.dirname(__file__), "ui", "res", expanded))
+        for candidate in candidates:
+            if candidate and os.path.exists(candidate):
+                return candidate
+        return None
+
     def loadSoundFile(self, itm):
         """Load and register a single sound file with the active backend.
 
@@ -506,13 +570,9 @@ class SoundManager(metaclass=Singleton):
         if sound_filename is None:
             self.SOUNDS[itm] = SoundManager.DEF_SND_FILE
             sound_filename = SoundManager.DEF_SND_FILE
-        res_sound_filename = resourcePath(os.path.join("vi", "ui", "res", sound_filename))
-        if sound_filename and os.path.exists(sound_filename):
-            sound_filename_used = sound_filename
-        elif self.SOUNDS[itm] and os.path.exists(res_sound_filename):
-            sound_filename_used = res_sound_filename
-        else:
-            sound_filename_used = None
+        sound_filename_used = self._resolve_sound_file(sound_filename)
+        if sound_filename and sound_filename_used is None:
+            logging.warning("Sound file for '{}' not found: '{}'".format(itm, sound_filename))
 
         if self._player.available:
             self._player.register_sound(itm, sound_filename_used)
@@ -537,7 +597,7 @@ class SoundManager(metaclass=Singleton):
         if self.speach_engine:
             if isinstance(self.speach_engine, QTextToSpeech):
                 self.useSpokenNotifications = True
-            elif isinstance(self.speach_engine, pyttsx3.engine.Engine):
+            elif PYTTSX3_ENABLED and isinstance(self.speach_engine, pyttsx3.engine.Engine):
                 self.useSpokenNotifications = True
             elif isinstance(self.speach_engine, Speaker):
                 self.speach_engine.voice = 'en'
@@ -574,7 +634,7 @@ class SoundManager(metaclass=Singleton):
             if self.useSpokenNotifications and abbreviated_message != "":
                 if isinstance(self.speach_engine, QTextToSpeech):
                     self.speach_engine.say(abbreviated_message)
-                elif isinstance(self.speach_engine, pyttsx3.engine.Engine):
+                elif PYTTSX3_ENABLED and isinstance(self.speach_engine, pyttsx3.engine.Engine):
                     SayThread.soundVolume = self.soundVolume / 100.0
                     SayThread(args=abbreviated_message)
 

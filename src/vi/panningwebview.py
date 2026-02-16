@@ -73,35 +73,35 @@ def _load_connections(
     cross_constellation: List[float] = []
     cross_region: List[float] = []
     for stargate in stargates:
-        src = stargate.get("system_id")
-        dst = stargate.get("destination", {}).get("system_id")
-        if src is None or dst is None:
+        id_src = stargate.get("system_id")
+        id_dst = stargate.get("destination", {}).get("system_id")
+        if id_src is None or id_dst is None:
             continue
-        if src > 31999999 or dst > 31999999:
+        if id_src > 31999999 or id_dst > 31999999:
             continue
-        a = Universe.systemById(src)
-        b = Universe.systemById(dst)
-        if a is None or b is None:
+        sys_src = Universe.systemById(id_src)
+        sys_dst = Universe.systemById(id_dst)
+        if sys_src is None or sys_dst is None:
             continue
-        key = (src, dst) if src < dst else (dst, src)
+        key = (id_src, id_dst) if id_src < id_dst else (id_dst, id_src)
         if key in pairs:
             continue
         pairs.add(key)
-        a = ALL_SYSTEMS.get(src)
-        b = ALL_SYSTEMS.get(dst)
+        sys_src = ALL_SYSTEMS.get(id_src)
+        sys_dst = ALL_SYSTEMS.get(id_dst)
         if grouped:
-            region_a = a.region_id
-            region_b = b.region_id
-            const_a = a.constellation_id
-            const_b = b.constellation_id
+            region_a = sys_src.region_id
+            region_b = sys_dst.region_id
+            const_a = sys_src.constellation_id
+            const_b = sys_dst.constellation_id
             if region_a is not None and region_b is not None and region_a != region_b:
-                cross_region.extend([a.x, a.y, a.z, b.x, b.y, b.z])
+                cross_region.extend([sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z])
             elif const_a is not None and const_b is not None and const_a != const_b:
-                cross_constellation.extend([a.x, a.y, a.z, b.x, b.y, b.z])
+                cross_constellation.extend([sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z])
             else:
-                standard.extend([a.x, a.y, a.z, b.x, b.y, b.z])
+                standard.extend([sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z])
         else:
-            verts.extend([a.x, a.y, a.z, b.x, b.y, b.z])
+            verts.extend([sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z])
 
     if grouped:
         return ConnectionLineGroups(
@@ -204,12 +204,11 @@ class PanningWebView(StarMapWidget):
     webViewNavigateBackward = Signal()
     webViewDoubleClicked = Signal(QPointF)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None,show_jumpbridges: bool = True,show_timers: bool = True,show_statistic: bool = True ):
         """Initialize the widget state and input handling."""
         systems = ALL_SYSTEMS
         stargates = ALL_STARGATES
         line_vertices =_load_connections(stargates.values(),grouped=True)
-        use_mouse_3d = False
         chars = _collect_name_chars(systems.values())
         atlas_dir = os.path.join(os.path.dirname(__file__), "atlas")
         font_family = select_font_family(["Noto Sans CJK", "Noto Sans"])
@@ -221,7 +220,7 @@ class PanningWebView(StarMapWidget):
             atlas_json,
             line_vertices,
             jump_bridge_vertices,
-            mouse_3d=use_mouse_3d,
+            mouse_3d=System.USE_3D,
             parent=parent,
         )
         self.pressed = False
@@ -272,7 +271,7 @@ class PanningWebView(StarMapWidget):
         """
         return QRectF()
 
-    def setContent(self, content)->None:
+    def updateContent(self)->None:
         """Set the content provider for rendering.
 
         The content object must provide:
@@ -285,6 +284,7 @@ class PanningWebView(StarMapWidget):
         """
         if not self._text_rebuild_pending:
             self._text_rebuild_pending = True
+            self.update()
 
     @Property(float)
     def zoomFactor(self)->float:
@@ -406,10 +406,12 @@ class PanningWebView(StarMapWidget):
     @Slot(bool)
     def showStatistics(self,val):
         self.show_statistic = val
-        self._text_rebuild_pending = True
+        if not self._text_rebuild_pending:
+            self._text_rebuild_pending = True
 
     @Slot(bool)
     def showTimers(self,val):
         self.show_timers = val
-        self._text_rebuild_pending = True
+        if not self._text_rebuild_pending:
+            self._text_rebuild_pending = True
 

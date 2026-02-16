@@ -1285,7 +1285,7 @@ def esiLatestSovereigntyMap(use_outdated=False, use_cache=True):
     cache_key = "sovereignty"
     cache_data = cache.getFromCache(cache_key, use_outdated) if use_cache else None
     if cache_data is not None:
-        campaigns_list = json.loads(cache_data)
+        return json.loads(cache_data)
     else:
         url = "https://esi.evetech.net/latest/sovereignty/map/?datasource=tranquility"
         response = getSession().get(url=url)

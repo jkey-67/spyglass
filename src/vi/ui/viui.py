@@ -266,11 +266,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._startThreads()
 
         self._update_splash_window_info("Apply theme.")
-        self._update_splash_window_info("EVE-Syp perform an initial scan of all intel files.")
+        self._update_splash_window_info("EVE-Spy perform an initial scan of all intel files.")
         self.rescanIntel()
         self.tool_widget = None
 
-        self._update_splash_window_info("EVE-Syp preparing the map view.")
+        self._update_splash_window_info("EVE-Spy preparing the map view.")
         self.updateMapView()
 
         self.updateJumpbridgeDataFromCachedURL()
@@ -308,15 +308,15 @@ class MainWindow(QtWidgets.QMainWindow):
         return self.ui.actionShowSystemStatisticOnMap.isChecked()
 
     def setShowStatistic(self, val):
-        if val != self.ui.actionShowSystemStatisticOnMap.isChecked():
-            self.ui.actionShowSystemStatisticOnMap.setChecked(val)
+        #if val != self.ui.actionShowSystemStatisticOnMap.isChecked():
+        self.ui.actionShowSystemStatisticOnMap.setChecked(val)
 
     def showJumpbridge(self) -> bool:
         return self.ui.actionShowJumpBridgeConnectionsOnMap.isChecked()
 
     def setShowJumpbridge(self, value):
-        if value != self.ui.actionShowJumpBridgeConnectionsOnMap.isChecked():
-            self.ui.actionShowJumpBridgeConnectionsOnMap.setChecked(value)
+        #if value != self.ui.actionShowJumpBridgeConnectionsOnMap.isChecked():
+        self.ui.actionShowJumpBridgeConnectionsOnMap.setChecked(value)
 
     def showADMOnMap(self) -> bool:
         return self.ui.actionShowADMonMap.isChecked()
@@ -469,10 +469,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.toolUseTheraRouting.setDefaultAction(self.ui.actionUserTheraRoutes)
         self.ui.autoCenterChar.setDefaultAction(self.ui.actionAutoSwitchRegions)
 
-        self.ui.actionShowJumpBridgeConnectionsOnMap.toggled.connect(self.ui.mapView.showJumpBridges)
-        self.ui.actionShowSystemStatisticOnMap.toggled.connect(self.ui.mapView.showStatistics)
-        self.ui.actionShowADMonMap.toggled.connect(self.ui.mapView.showTimers)
-
         self.clipboard.dataChanged.connect(self.clipboardChanged)
         self.ui.actionAlwaysOnTop.triggered.connect(self.changeAlwaysOnTop)
         self.ui.actionCatchRegion.triggered.connect(
@@ -496,7 +492,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionJumpbridgeData.triggered.connect(self.showJumpbridgeChooser)
         self.ui.actionRescanIntelNow.triggered.connect(self.rescanIntel)
         self.ui.actionClear_Intel_Chat.triggered.connect(self.clearIntelChat)
-        self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
+
         self.ui.regionNameField.addItems(sorted([region["name"] for _,region in Universe.REGIONS.items()]))
 
         self.ui.actionOpen_on_dotlan.triggered.connect(lambda: QDesktopServices.openUrl(
@@ -520,6 +516,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionIntel_Time_20_min.triggered.connect(lambda: self.changeIntelTime(20))
         self.ui.actionIntel_Time_30_min.triggered.connect(lambda: self.changeIntelTime(30))
         self.ui.actionIntel_Time_60_min.triggered.connect(lambda: self.changeIntelTime(60))
+
+        self.ui.mapView.customContextMenuRequested.connect(self.showMapContextMenu)
+        self.ui.mapView.showJumpBridges(self.showJumpbridge())
+        self.ui.mapView.showTimers(self.showADMOnMap())
+        self.ui.mapView.showStatistics(self.showStatistic())
 
         def hoveCheck(global_pos: QPoint, pos: QPointF):
             """
@@ -830,12 +831,11 @@ class MainWindow(QtWidgets.QMainWindow):
         model = QSqlQueryModel()
 
         def callOnUpdate():
-            if self.dotlan:
-                self.dotlan.setJumpbridges(self.cache.getJumpGates())
-            self.ui.mapView.updateJumpBridgesFromCache()
             model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', " 
                            "datetime(modified,'unixepoch','localtime') as 'last update', "
                            "( case used when 2 then 'API fetched' else 'User input' END ) 'Source' FROM jumpbridge")
+            self.ui.mapView.updateJumpBridgesFromCache()
+
         self.callOnJbUpdate = callOnUpdate
         callOnUpdate()
         self.jbs_changed.connect(callOnUpdate)
@@ -1055,7 +1055,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             return
         if selected_system:
-            self.ui.mapView.centerMapOnSystem(selected_system.system_id)
+            self.ui.mapView.centerMapOnId(selected_system.system_id)
             #self.ui.mapView.setScrollPosition(QPointF(selected_system.x,selected_system.y),True)
 
     @Slot()
@@ -1501,17 +1501,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def changeJumpbridgesVisibility(self, val):
         self.setShowJumpbridge(val)
-        self.dotlan.changeJumpbridgesVisibility(val)
 
     @Slot(bool)
     def changeADMVisibility(self, val):
         self.setShowADMOnMap(val)
-        self.dotlan.changeVulnerableVisibility(val)
 
     @Slot()
     def changeStatisticsVisibility(self, val):
         self.setShowStatistic(val)
-        self.dotlan.changeStatisticsVisibility(val)
 
     def _setupPoiNotificationDock(self):
         """Create a dock to show pending POI add confirmations."""
@@ -1668,7 +1665,7 @@ class MainWindow(QtWidgets.QMainWindow):
             system = None
         if system:
             system.markSystem(5)
-            self.ui.mapView.centerMapOnSystem(system.system_id)
+            self.ui.mapView.centerMapOnId(system.system_id)
 
     @staticmethod
     def updateCharLocationOnMap(system_id: int, char_name: str, alarm_distance: int) -> None:
@@ -1715,21 +1712,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.updateCharLocationOnMap(system_id, char_name, self.alarmDistance)
         self.current_system_changed.emit(system_name)
         self.theraSystemChanged()
-        if system_name in self.systems_on_map:
-            if change_region:
-                self.focusMapOnSystem(system_id)
-        else:
-            if change_region:
-                try:
-                    selected_region_name = Universe.regionNameFromSystemID(system_id)
-                    if selected_region_name != self.curr_region_name:
-                        self.changeRegionByName(region_name=selected_region_name, system_id=system_id)
-                except (Exception,) as ex:
-                    logging.error(ex)
-                    pass
+        if change_region:
+            self.focusMapOnSystem(system_id)
 
     def updateRegionMap(self):
-        # self.ui.regionView.setContent(self.dotlan)
         pass
 
     def updateMapView(self):
@@ -2133,12 +2119,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot(object)
     def updateStatisticsOnMap(self, data:object)->None:
+        update_map_view = False
         if data:
             if STAT.STATISTICS in data.keys():
                 self.mapStatisticCache = data[STAT.STATISTICS]
                 if self.dotlan:
                     self.dotlan.addSystemStatistics(self.mapStatisticCache)
-                    self.ui.mapView.setContent(self.dotlan)
+                update_map_view = True
                 logging.debug("Statistic data successfully fetched.")
             if STAT.SERVER_STATUS in data.keys():
                 server_status = data[STAT.SERVER_STATUS]
@@ -2174,25 +2161,25 @@ class MainWindow(QtWidgets.QMainWindow):
             if STAT.SOVEREIGNTY in data:
                 if self.dotlan:
                     self.dotlan.setSystemSovereignty(data[STAT.SOVEREIGNTY])
-                    self.ui.mapView.setContent(self.dotlan)
+                update_map_view = True
                 logging.debug("Sovereignnity data successfully fetched.")
 
             if STAT.STRUCTURES in data:
                 if self.dotlan:
                     self.dotlan.setSystemStructures(data[STAT.STRUCTURES])
-                    self.ui.mapView.setContent(self.dotlan)
+                update_map_view = True
                 logging.debug("Structure data successfully fetched.")
 
             if STAT.INCURSIONS in data:
                 if self.dotlan:
                     self.dotlan.setIncursionSystems(data[STAT.INCURSIONS])
-                    self.ui.mapView.setContent(self.dotlan)
+                update_map_view = True
                 logging.debug("Incurison data successfully fetched.")
 
             if STAT.CAMPAIGNS in data:
                 if self.dotlan:
                     self.dotlan.setCampaignsSystems(data[STAT.CAMPAIGNS])
-                    self.ui.mapView.setContent(self.dotlan)
+                update_map_view = True
                 logging.debug("Campain data successfully fetched.")
 
             if STAT.REGISTERED_CHARS in data:
@@ -2212,10 +2199,14 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         self.focusMapOnSystem(itm["system"]["system_id"])
                 logging.debug("Character data successfully fetched.")
-                self.ui.mapView.setContent(self.dotlan)
+                update_map_view = True
+
             if STAT.CHECK_FOR_UPDATE in data:
                 self.checkForUpdate(data[STAT.CHECK_FOR_UPDATE])
                 logging.debug("Update-Check fetched.")
+
+            if update_map_view:
+                self.ui.mapView.updateContent()
 
     @Slot()
     def clearCacheFile(self):
@@ -2266,7 +2257,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """ checks if there is a system below the mouse position, if the systems region differs from the current
             region, the menu item to change the current region is added.
         """
-        selected_system = self.systemUnderMouse(self.ui.mapView.mapPosFromPoint(pos))
+        hovered_id = self.ui.mapView.objectUnderMouse(pos)
+        selected_system = ALL_SYSTEMS.get(hovered_id) if hovered_id  else None
         map_ctx_menu = MapContextMenu(self.ui)
         map_ctx_menu.setStyleSheet(Styles.getStyle())
         if selected_system:

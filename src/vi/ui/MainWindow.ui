@@ -2495,6 +2495,11 @@
     <slot>webViewIsScrolling(bool)</slot>
     <slot>webViewUpdateScrollbars()</slot>
     <slot>webViewDoubleClicked()</slot>
+    <slot>updateJumpBridgesFromCache()</slot>
+    <slot>showJumpBridges(bool)</slot>
+    <slot>showStatistics(bool)</slot>
+    <slot>showTimers(bool)</slot>
+    <slot>centerMapOnId(int)</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -2529,8 +2534,8 @@
    <slot>rescanIntel()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1318</x>
-     <y>77</y>
+     <x>1355</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
      <x>511</x>
@@ -2561,7 +2566,7 @@
    <slot>zoomMapIn()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>843</x>
+     <x>877</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -2577,7 +2582,7 @@
    <slot>zoomMapOut()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
+     <x>911</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -2593,8 +2598,8 @@
    <slot>chatLarger()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
-     <y>78</y>
+     <x>1393</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -2609,8 +2614,8 @@
    <slot>chatSmaller()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1382</x>
-     <y>78</y>
+     <x>1431</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
      <x>520</x>
@@ -2641,7 +2646,7 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>362</x>
+     <x>345</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -2677,8 +2682,8 @@
      <y>378</y>
     </hint>
     <hint type="destinationlabel">
-     <x>207</x>
-     <y>394</y>
+     <x>199</x>
+     <y>435</y>
     </hint>
    </hints>
   </connection>
@@ -2721,8 +2726,8 @@
    <slot>updateTheraConnections()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>261</x>
-     <y>382</y>
+     <x>267</x>
+     <y>438</y>
     </hint>
     <hint type="destinationlabel">
      <x>278</x>
@@ -2881,8 +2886,8 @@
    <slot>updateObservationsRecords()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>253</x>
-     <y>635</y>
+     <x>267</x>
+     <y>671</y>
     </hint>
     <hint type="destinationlabel">
      <x>278</x>
@@ -2897,8 +2902,8 @@
    <slot>clearCacheFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>271</x>
-     <y>350</y>
+     <x>267</x>
+     <y>375</y>
     </hint>
     <hint type="destinationlabel">
      <x>278</x>
@@ -2977,8 +2982,8 @@
    <slot>setUseThreaRoutes(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>223</x>
-     <y>397</y>
+     <x>233</x>
+     <y>438</y>
     </hint>
     <hint type="destinationlabel">
      <x>708</x>
@@ -3095,6 +3100,54 @@
     <hint type="destinationlabel">
      <x>708</x>
      <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>jumpbridgesButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mapView</receiver>
+   <slot>showJumpBridges(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>950</x>
+     <y>42</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>970</x>
+     <y>543</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>statisticsButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mapView</receiver>
+   <slot>showStatistics(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>994</x>
+     <y>45</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>999</x>
+     <y>100</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>adm_vul_Button</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mapView</receiver>
+   <slot>showTimers(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1037</x>
+     <y>50</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1025</x>
+     <y>132</y>
     </hint>
    </hints>
   </connection>
