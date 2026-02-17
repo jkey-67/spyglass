@@ -17,11 +17,11 @@
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
 
+import os
 import json
 import jsonlines
 from typing import Optional
-import os
-from .shipnames import SHIPNAMES, ID_BY_SHIPNAMES
+from .shipnames import ID_BY_SHIPNAMES
 from .npcnames import NPCNAMES
 
 try:
@@ -36,11 +36,21 @@ except (Exception,):
     CONSTELLATION_IDS_BY_NAME = {}
     pass
 
-
 def _loadJsonFile(name, **kw):
     with open(name, **kw) as fp:
         res = json.load(fp)
     return res
+
+
+class Position(object):
+    USE_3D = False
+    GL_MAP_FACTOR_2D = 1e-17*3.0
+    GL_MAP_FACTOR_3D = 1e-18*4.0
+    def __init__(self, **kwargs):
+        self.x = float()
+        self.y = float()
+        self.z = float()
+        self.__dict__.update(**kwargs)
 
 
 class Region(object):
@@ -49,17 +59,30 @@ class Region(object):
         self.name = kwargs["name"]
         self.names = kwargs["names"]
         self.region_id = kwargs["region_id"]
-        self.position = Position(**{"position": kwargs["position"]})
-        self.__dict__.update(**kwargs)
+        self.position3D = Position(** kwargs["position"])
+        self.position2D = Position(** kwargs["position2D"])
 
 
-class Position(object):
-    def __init__(self, **kwargs):
-        self.x = float()
-        self.y = float()
-        self.z = float()
-        self.__dict__.update(**kwargs)
+    @property
+    def x(self)->float:
+        if Position.USE_3D:
+            return self.position3D.x * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.x * Position.GL_MAP_FACTOR_2D
 
+    @property
+    def y(self)->float:
+        if Position.USE_3D:
+            return self.position3D.y * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.y * Position.GL_MAP_FACTOR_2D
+
+    @property
+    def z(self)->float:
+        if Position.USE_3D:
+            return self.position3D.z * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.z * Position.GL_MAP_FACTOR_2D
 
 class Constellation(object):
     def __init__(self, **kwargs):
@@ -69,7 +92,30 @@ class Constellation(object):
         self.names = kwargs["names"]
         self.name = kwargs["name"]
         self.constellation_id = kwargs["constellation_id"]
-        self.position = Position(**{"position": kwargs["position"]})
+        self.position2D = Position(** kwargs["position2D"])
+        self.position3D = Position(** kwargs["position"])
+
+    @property
+    def x(self)->float:
+        if Position.USE_3D:
+            return self.position3D.x * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.x * Position.GL_MAP_FACTOR_2D
+
+    @property
+    def y(self)->float:
+        if Position.USE_3D:
+            return self.position3D.y * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.y * Position.GL_MAP_FACTOR_2D
+
+    @property
+    def z(self)->float:
+        if Position.USE_3D:
+            return self.position3D.z * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.z * Position.GL_MAP_FACTOR_2D
+
 
 class Destination(object):
     def __init__(self, **kwargs):
@@ -82,7 +128,30 @@ class Stargate(object):
         self.stargate_id = stargate_id
         self.system_id = kwargs["system_id"]
         self.destination = Destination(**kwargs["destination"])
-        self.position = Position(**{"position": kwargs["position"]})
+        self.position2D = None # ALL_SYSTEMS.get(self.system_id).position2D
+        self.position3D = Position(**kwargs["position"])
+
+    @property
+    def x(self)->float:
+        if Position.USE_3D:
+            return self.position3D.x * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.x * Position.GL_MAP_FACTOR_2D
+
+    @property
+    def y(self)->float:
+        if Position.USE_3D:
+            return self.position3D.y * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.y * Position.GL_MAP_FACTOR_2D
+
+    @property
+    def z(self)->float:
+        if Position.USE_3D:
+            return self.position3D.z * Position.GL_MAP_FACTOR_3D
+        else:
+            return self.position2D.z * Position.GL_MAP_FACTOR_2D
+
 
 class Universe(object):
     curr_path = os.path.dirname(__file__)

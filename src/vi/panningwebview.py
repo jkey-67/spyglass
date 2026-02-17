@@ -25,11 +25,10 @@ import math
 from typing import Tuple, Optional
 from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt
-from PySide6.QtCore import QCoreApplication
 from PySide6.QtCore import QPropertyAnimation, Property
 from PySide6.QtCore import Slot
-from PySide6 import QtOpenGLWidgets,QtWidgets
-from vi.universe import Universe
+from PySide6 import QtOpenGLWidgets
+from vi.universe import Position
 from vi.system import ALL_SYSTEMS,System,ALL_STARGATES
 from vi.starmapwidget import StarMapWidget,select_font_family,generate_font_atlas,ConnectionLineGroups
 from typing import Iterable, List
@@ -74,35 +73,44 @@ def _load_connections(
     cross_constellation: List[float] = []
     cross_region: List[float] = []
     for stargate in stargates:
-        id_src = stargate.get("system_id")
-        id_dst = stargate.get("destination", {}).get("system_id")
+        id_src = stargate.system_id
+        id_dst = stargate.destination.system_id
         if id_src is None or id_dst is None:
             continue
         if id_src > 31999999 or id_dst > 31999999:
             continue
-        sys_src = Universe.systemById(id_src)
-        sys_dst = Universe.systemById(id_dst)
+        sys_src = ALL_SYSTEMS.get(id_src)
+        sys_dst = ALL_SYSTEMS.get(id_dst)
         if sys_src is None or sys_dst is None:
             continue
         key = (id_src, id_dst) if id_src < id_dst else (id_dst, id_src)
         if key in pairs:
             continue
         pairs.add(key)
-        sys_src = ALL_SYSTEMS.get(id_src)
-        sys_dst = ALL_SYSTEMS.get(id_dst)
+        pos = [sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z]
         if grouped:
             region_a = sys_src.region_id
             region_b = sys_dst.region_id
             const_a = sys_src.constellation_id
             const_b = sys_dst.constellation_id
+            if Position.USE_3D:
+                gate_src = ALL_STARGATES.get(stargate.stargate_id)
+                gate_dst = ALL_STARGATES.get(stargate.destination.stargate_id)
+                pos[0] += gate_src.x
+                pos[1] += gate_src.y
+                pos[2] += gate_src.z
+                pos[3] += gate_dst.x
+                pos[4] += gate_dst.y
+                pos[5] += gate_dst.z
+
             if region_a is not None and region_b is not None and region_a != region_b:
-                cross_region.extend([sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z])
+                cross_region.extend(pos)
             elif const_a is not None and const_b is not None and const_a != const_b:
-                cross_constellation.extend([sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z])
+                cross_constellation.extend(pos)
             else:
-                standard.extend([sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z])
+                standard.extend(pos)
         else:
-            verts.extend([sys_src.x, sys_src.y, sys_src.z, sys_dst.x, sys_dst.y, sys_dst.z])
+            verts.extend(pos)
 
     if grouped:
         return ConnectionLineGroups(
@@ -221,7 +229,7 @@ class PanningWebView(StarMapWidget):
             atlas_json,
             line_vertices,
             jump_bridge_vertices,
-            mouse_3d=System.USE_3D,
+            mouse_3d=Position.USE_3D,
             parent=parent,
         )
         self.pressed = False

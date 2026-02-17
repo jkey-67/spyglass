@@ -2,6 +2,7 @@ from .universe import Universe
 from .universe import Position
 from .universe import Constellation
 from .universe import Region
+from .universe import Stargate
 from .sde import SDE_VERSION
 from .sde import SDE_DATE
 from .npcnames import NPCNAMES

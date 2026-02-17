@@ -33,7 +33,7 @@ from PySide6.QtGui import QPainter, QFont, QPen, QBrush, QColor, QRadialGradient
 from vi.states import States
 from vi.cache import Cache
 from vi.ui.styles import Styles, TextInverter
-from vi.universe import Universe, Position
+from vi.universe import Universe, Position, Stargate
 from vi.globals import Globals
 
 
@@ -108,14 +108,13 @@ class System(object):
 
     ELEMENT_WIDTH = 62.5
     ELEMENT_HEIGHT = 30
-    USE_3D = False
 
     def __init__(self, **kwargs):
         self.constellation_id = kwargs["constellation_id"]
         self.names:dict = kwargs["names"]
         self.name:str = kwargs["name"]
         self.planets:list[int] = kwargs["planets"]
-        self.position:Position = Position(**kwargs["position2D"])
+        self.position2D:Position = Position(**kwargs["position2D"])
         self.position3D: Position = Position(**kwargs["position"])
         self.security_class:str = kwargs["security_class"]
         self.security_status:float = kwargs["security_status"]
@@ -182,29 +181,26 @@ class System(object):
     def isMonitored(self) -> bool:
         return bool(self._monitoredDistance)
 
-    GL_MAP_FACTOR_2D = 1e-17*3.0
-    GL_MAP_FACTOR_3D = 1e-18*4.0
-
     @property
     def x(self)->float:
-        if System.USE_3D:
-            return self.position3D.x * System.GL_MAP_FACTOR_3D
+        if Position.USE_3D:
+            return self.position3D.x * Position.GL_MAP_FACTOR_3D
         else:
-            return self.position.x * System.GL_MAP_FACTOR_2D
+            return self.position2D.x * Position.GL_MAP_FACTOR_2D
 
     @property
     def y(self)->float:
-        if System.USE_3D:
-            return self.position3D.y * System.GL_MAP_FACTOR_3D
+        if Position.USE_3D:
+            return self.position3D.y * Position.GL_MAP_FACTOR_3D
         else:
-            return self.position.y * System.GL_MAP_FACTOR_2D
+            return self.position2D.y * Position.GL_MAP_FACTOR_2D
 
     @property
     def z(self)->float:
-        if System.USE_3D:
-            return self.position3D.z * System.GL_MAP_FACTOR_3D
+        if Position.USE_3D:
+            return self.position3D.z * Position.GL_MAP_FACTOR_3D
         else:
-            return self.position.z * System.GL_MAP_FACTOR_2D
+            return self.position2D.z * Position.GL_MAP_FACTOR_2D
 
     @property
     def structure(self)->int:
@@ -1402,6 +1398,12 @@ def _InitAllSystems() -> dict[int, System]:
     _ApplyStructuresToSystem(res)
     return res
 
+def _InitAllStargates() -> dict[int, Stargate]:
+    res = dict[int, Stargate]()
+    for _id, _data in Universe.STARGATES.items():
+        res[_id] = Stargate(_id,**_data)
+    return res
+
 
 ALL_SYSTEMS = _InitAllSystems()
-ALL_STARGATES = Universe.STARGATES
+ALL_STARGATES = _InitAllStargates()

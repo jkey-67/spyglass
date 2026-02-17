@@ -9,6 +9,7 @@ import string
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Iterable, List, Optional, Tuple
+from vi.universe import Universe
 import PySide6.QtCore
 import numpy as np
 from OpenGL.raw.GL.VERSION.GL_1_0 import GL_LESS, GL_DST_ALPHA, GL_ZERO
@@ -617,7 +618,7 @@ void main() {
         color = over(color, honey);
         color = over(color, rect);
     }
-    //color.a *= vDepth*vDepth;
+    //color.a *= vDepth*vDepth*0.01;//blend out by distance
     if (color.a <= 0.001) {
         discard;
     }
@@ -3497,7 +3498,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
     def centerMapOnId(self, system_id: int, animate:bool=False) -> None:
         """Center the map view on the system with the provided ID.
 
-        Args:
+        Args:pos[4] += gate_dst.x
             system_id: Target system or region ID.
 
         Returns:
@@ -3780,80 +3781,3 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glDeleteVertexArrays(1, [self.system_vao])
         super().closeEvent(event)
 
-
-def main() -> None:
-    """Application entry point.
-
-    Returns:
-        None.
-    """
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
-    fmt = QtGui.QSurfaceFormat()
-    fmt.setRenderableType(QtGui.QSurfaceFormat.RenderableType.OpenGL)
-    fmt.setVersion(4, 6)
-    fmt.setProfile(QtGui.QSurfaceFormat.OpenGLContextProfile.CoreProfile)
-    fmt.setDepthBufferSize(24)
-    fmt.setSamples(4)
-    fmt.setSwapInterval(1)  # sync buffer swaps to the display refresh when supported
-    QtGui.QSurfaceFormat.setDefaultFormat(fmt)
-    app = QtWidgets.QApplication([])
-
-    systems = []
-    info_path = os.path.join(os.path.dirname(__file__), "InfoObjects.txt")
-    data_path = os.path.join(os.path.dirname(__file__), "mapSolarSystems.jsonl")
-    use_mouse_3d = False
-    if os.path.exists(data_path):
-        try:
-            systems = load_systems(data_path, info_objects_path=info_path,mouse_3d=use_mouse_3d)
-        except (OSError, json.JSONDecodeError) as exc:
-            print(f"Failed to load {data_path}: {exc}")
-
-    if not systems:
-        systems = create_default_systems()
-
-    chars = collect_name_chars(systems)
-    atlas_dir = os.path.join(os.path.dirname(__file__), "atlas")
-    font_family = select_font_family(["Noto Sans CJK", "Noto Sans"])
-    _, atlas_json = generate_font_atlas(atlas_dir, font_family, 24, chars, logical_font_size=8)
-    stargates_path = os.path.join(os.path.dirname(__file__), "mapStargates.jsonl")
-    line_vertices: np.ndarray | ConnectionLineGroups = np.array([], dtype=np.float32)
-    if os.path.exists(stargates_path):
-        try:
-            line_vertices = load_connections(stargates_path, systems, grouped=True)
-        except (OSError, json.JSONDecodeError) as exc:
-            print(f"Failed to load {stargates_path}: {exc}")
-    if not line_vertices.size:
-        print("No stargate connections loaded.")
-
-    jb_path = os.path.join(os.path.dirname(__file__), "jb.txt")
-    jump_bridge_vertices = np.array([], dtype=np.float32)
-    if os.path.exists(jb_path):
-        try:
-            jump_bridge_vertices = load_jump_bridges(jb_path, systems)
-        except (OSError, json.JSONDecodeError) as exc:
-            print(f"Failed to load {jb_path}: {exc}")
-    if not jump_bridge_vertices.size:
-        print("No jump bridge connections loaded.")
-
-    window = QtWidgets.QMainWindow()
-    window.setWindowTitle("Universe Star Map")
-    widget = StarMapWidget(
-        systems,
-        atlas_json,
-        line_vertices,
-        jump_bridge_vertices,
-        mouse_3d=use_mouse_3d,
-    )
-    widget.setFormat(fmt)
-    window.setCentralWidget(widget)
-    window.resize(1024, 768)
-    widget.centerMapOnId(30001967)
-    widget.centerMapOnId(30002488)
-
-    window.show()
-    app.exec()
-
-
-if __name__ == "__main__":
-    main()
-# codex resume 019c2992-06a8-7a41-9195-a85f05f9e704

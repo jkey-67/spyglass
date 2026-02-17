@@ -38,7 +38,7 @@ from PySide6.QtGui import QIcon, QPixmap, QDesktopServices
 from PySide6.QtWidgets import (QMessageBox, QFileDialog, QApplication, QAbstractItemView)
 
 import vi.version
-from vi.universe import Universe, SDE_VERSION, SDE_DATE
+from vi.universe import Universe, SDE_VERSION, SDE_DATE, Position
 from vi.system import System
 from vi import evegate
 from vi import dotlan, filewatcher
@@ -1113,7 +1113,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 rgn = Universe.REGIONS_ID_OBJ.get(Universe.regionIdByName(region_name))
                 if rgn:
-                    self.ui.mapView.setScrollPosition(QPointF(rgn.position2D.get("x")*System.GL_MAP_FACTOR_2D,rgn.position2D.get("y")*System.GL_MAP_FACTOR_2D))
+                    self.ui.mapView.setScrollPosition(QPointF(rgn.x,rgn.y))
                     self.region_changed.emit(region_name)
 
     def changeRegionBySystemID(self, system_id: int) -> None:
