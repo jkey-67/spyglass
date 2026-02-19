@@ -393,6 +393,7 @@ class PanningWebView(StarMapWidget):
         if event.type() == PySide6.QtCore.QEvent.Type.ToolTip:
             system_id = self.objectUnderMouse(event.pos())
             if system_id:
+                self._hovered_system = ALL_SYSTEMS.get(system_id)
                 self.hoverCheck(event.globalPos(),system_id )
                 event.ignore()
                 return True

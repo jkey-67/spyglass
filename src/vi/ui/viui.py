@@ -301,7 +301,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/online.svg"))
             self.ui.m_qSdeVersion.setText("EVE SDE version ({})".format(SDE_VERSION))
         else:
-            self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/error.svg"))
+            self.ui.m_qLedSDE.setPixmap(QPixmap(u":/Icons/res/orange.svg"))
             self.ui.m_qSdeVersion.setText("EVE SDE version ({}/{}) outdated".format(SDE_VERSION, current_sde_version))
 
     def showStatistic(self) -> bool:
@@ -426,10 +426,6 @@ class MainWindow(QtWidgets.QMainWindow):
     @Slot(bool)
     def changeInvertMouseWheel(self, checked):
         self.invertWheel = checked
-        if self.invertWheel:
-            self.ui.mapView.wheel_dir = -1.0
-        else:
-            self.ui.mapView.wheel_dir = 1.0
         self.ui.actionInvertMouseWheel.setChecked(self.invertWheel)
 
     def _recallCachedSettings(self):

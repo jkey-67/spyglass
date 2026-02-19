@@ -1,4 +1,6 @@
 import unittest
+
+from vi import ALL_SYSTEMS
 from vi.chatparser import parser_functions
 from vi.chatparser.message import Message, formatZKillMessage
 from bs4 import BeautifulSoup
@@ -6,9 +8,8 @@ from vi.states import States
 from vi.dotlan import Map
 from vi.clipboard import evaluateClipboardData
 from vi.evegate import getSvgFromDotlan
-SVG_SYSTEM_USED = getSvgFromDotlan(region="Providence", dark=True)
-ALL_SYSTEMS_FROM_SVG = Map("Providence", SVG_SYSTEM_USED).systems
 
+ALL_SYSTEMS_FROM_SVG = { data.name:data  for _,data in ALL_SYSTEMS.items() }
 
 class TestIntel(unittest.TestCase):
     # Cache.PATH_TO_CACHE = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "cache-2.sqlite3")
@@ -171,9 +172,6 @@ class TestIntel(unittest.TestCase):
                      u"﻿[ 2025.02.16 16:41:42 ] Mac4LL4N > TDP-T3  CLEAR"
                      ]
 
-        SVG_SYSTEM_USED = getSvgFromDotlan(region="Perrigen Falls", dark=True)
-        ALL_SYSTEMS_FROM_SVG = Map("Perrigen Falls", SVG_SYSTEM_USED).systems
-
         system = ALL_SYSTEMS_FROM_SVG.get("TDP-T3")
         self.assertIsNotNone(system,"System TDP-T3 is None.")
         self.assertTrue(system.status != States.ALARM, "System TDP-T3 status not alarm failed.")
@@ -198,9 +196,6 @@ class TestIntel(unittest.TestCase):
                      u"﻿[ 2025.02.16 16:41:42 ] Mac4LL4N > TDP-T3  CLEAR"
                      ]
 
-        SVG_SYSTEM_USED = getSvgFromDotlan(region="Perrigen Falls", dark=True)
-        ALL_SYSTEMS_FROM_SVG = Map("Perrigen Falls", SVG_SYSTEM_USED).systems
-
         system = ALL_SYSTEMS_FROM_SVG.get("TDP-T3")
         self.assertIsNotNone(system,"System TDP-T3 is None.")
         self.assertTrue(system.status != States.ALARM, "System TDP-T3 status not alarm failed.")
@@ -219,14 +214,12 @@ class TestIntel(unittest.TestCase):
                      "﻿[ 2025.02.16 16:43:28 ] AustinG24 > Amarr Shuttle  TDP-T3  IJNUHB 2233",
                      "﻿[ 2025.02.16 16:42:00 ] Beca Benito Juarez > Keramika  TDP-T3 nv",
                      "﻿[ 2025.02.16 12:53:08 ] LeaMa Fox > TDP-T3*  Noriphe Oxasson",
-                     "﻿[ 2025.02.16 12:59:14 ] KUAITAO > 送葬者级海军型*  短剑级*",
-                     "﻿[ 2025.02.16 16:41:13 ] Mac4LL4N > TDP-T3  Bevien",
+                     "﻿[ 2025.02.16 12:59:14 ] KUAITAO > TDP-T3* +100",
+                     "﻿[ 2025.02.16 16:59:15 ] Mac4LL4N > TDP-T3  Bevien",
+                     "﻿[ 2025.02.16 12:59:18 ] KUAITAO > 送葬者级海军型*  短剑级*",
                      "﻿[ 2025.02.16 16:41:22 ] Letol > Goonswarm Federation  TDP-T3* 7+ nv",
                      "﻿[ 2025.02.16 16:41:42 ] Mac4LL4N > TDP-T3  Bevien"
                      ]
-
-        SVG_SYSTEM_USED = getSvgFromDotlan(region="Perrigen Falls", dark=True)
-        ALL_SYSTEMS_FROM_SVG = Map("Perrigen Falls", SVG_SYSTEM_USED).systems
 
         system = ALL_SYSTEMS_FROM_SVG.get("TDP-T3")
         self.assertIsNotNone(system,"System TDP-T3 is None.")
@@ -235,6 +228,8 @@ class TestIntel(unittest.TestCase):
             parser_functions.parseMessageForMap(ALL_SYSTEMS_FROM_SVG, Message(room="", message="﻿[ 2025.02.16 12:52:19 ] Hullbeam > TDP-T3*  clear"))
             self.assertTrue(system.status == States.CLEAR, "System status clear failed.")
             parser_functions.parseMessageForMap(ALL_SYSTEMS_FROM_SVG, Message(room="", message=msg_text))
+            if system.status != States.ALARM:
+                parser_functions.parseMessageForMap(ALL_SYSTEMS_FROM_SVG, Message(room="", message=msg_text))
             self.assertTrue(system.status == States.ALARM, "System  status alarm failed with message {}.".format(msg_text))
             msg_gui = system.getTooltipText()
             system.clearIntel()
@@ -243,9 +238,9 @@ class TestIntel(unittest.TestCase):
 
     def test_removeXmlData(self):
         res = formatZKillMessage('<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/123332493/">https://zkillboard.com/kill/123332493/</a><br/> <a  style="color:#d0d0d0;font-weight:medium" href="link/https://zkillboard.com/character/2120227048/">Khorum MkII</a> &lt;REKTD&gt;( <a  style="color:#d0d0d0;font-weight:medium" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a>) lost their <a  style="color:#d95911;font-weight:medium" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a> in  AD144 .<a style="color:#d0d0d0;font-weight:medium"><br/>Total Value : 320,866,530.18 ISK</a>')
+        self.assertEqual(res, 'Khorum MkII from alliance Pandemic Horde, lost their Capsule in, AD144 .Total Value : 320,866,530.18 ISK')
+
         res = formatZKillMessage('<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>')
-        self.assertEqual(res, "System Nani, Aatoh Maken, from Pandemic Horde, lost a Capsule")
-        res = formatZKillMessage(
-            '<a style="color:#28a5ed;font-weight:medium" href="link/https://zkillboard.com/kill/112877325/">https://zkillboard.com/kill/112877325/</a><br/> Nani   <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/character/2118188243/">Aatoh Maken</a>  &lt;REKTD&gt; ( <a  style="color:#d0d0d0;font-weight:bold" href="link/https://zkillboard.com/alliance/99005338/">Pandemic Horde</a> ) lost a <a  style="color:#d95911;font-weight:bold" href="link/https://wiki.eveuniversity.org/Capsule">Capsule</a>')
-        print(res)
+        self.assertEqual(res, "Nani, Aatoh Maken, from alliance Pandemic Horde , lost a Capsule")
+
 

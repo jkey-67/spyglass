@@ -1547,6 +1547,331 @@ def select_font_family(preferred: List[str]) -> str:
     return preferred[-1]
 
 
+class RegionBackgroundLabelLayer:
+    """Manage background region label data, instances, and drawing."""
+
+    def __init__(self, atlas: dict, atlas_scale: float, data, font_scale:float=0.15,color="#80303030") -> None:
+        """Initialize region label rendering state.
+
+        Args:
+            atlas: Font atlas metadata dictionary.
+            atlas_scale: Logical atlas scale applied to glyph metrics.
+
+        Returns:
+            None.
+        """
+        self._data = data
+        self._atlas = atlas
+        self._atlas_scale = float(atlas_scale)
+        self.labels = self._build_region_background_labels()
+        self.instances = np.array([], dtype=np.float32)
+        self.instances_dirty = True
+        self.instance_viewport = (0, 0)
+        self.text_color = QtGui.QColor(color)
+        self.font_scale = font_scale
+        self.vao = 0
+        self.instance_vbo = 0
+        self.instance_count = 0
+
+    def mark_dirty(self) -> None:
+        """Mark cached text instances as stale.
+
+        Returns:
+            None.
+        """
+        self.instances_dirty = True
+
+    def rebuild_labels(self) -> None:
+        """Rebuild static region labels and invalidate instance cache.
+
+        Returns:
+            None.
+        """
+        self.labels = self._build_region_background_labels()
+        self.instances_dirty = True
+
+    def _build_region_background_labels(self) -> list[tuple[str, np.ndarray]]:
+        """Build one background label center per region.
+
+        Returns:
+            List of (region name, center xyz) tuples.
+        """
+        labels: list[tuple[str, np.ndarray]] = []
+        for rgn in self._data.values():
+            labels.append(
+                (
+                    rgn.name,
+                    np.array([rgn.x, rgn.y, rgn.z], dtype=np.float32),
+                )
+            )
+        return labels
+
+    def _build_region_background_text_instances(self, width: int, height: int) -> np.ndarray:
+        """Build per-glyph instances for background region labels.
+
+        Args:
+            width: View width in pixels.
+            height: View height in pixels.
+
+        Returns:
+            Float32 instance array for instanced glyph draws.
+        """
+        if not self.labels or width <= 0 or height <= 0:
+            return np.array([], dtype=np.float32)
+        glyphs = self._atlas.get("glyphs", {})
+        if not glyphs:
+            return np.array([], dtype=np.float32)
+        atlas_w, atlas_h = self._atlas.get("size", [1, 1])
+        atlas_w = max(float(atlas_w), 1.0)
+        atlas_h = max(float(atlas_h), 1.0)
+        metrics = self._atlas.get("metrics", {})
+        metric_height = max(float(metrics.get("height", 1.0)), 1.0)
+        metric_ascent = max(float(metrics.get("ascent", metric_height)), 0.0)
+        metric_descent = max(float(metrics.get("descent", metric_height - metric_ascent)), 0.0)
+        target_height = max(48.0, min(width, height) )
+        base_height = max(metric_height * self._atlas_scale, 1.0)
+        scale = target_height / base_height * self.font_scale
+        glyph_scale = self._atlas_scale * scale
+        ascent = metric_ascent * glyph_scale
+        descent = metric_descent * glyph_scale
+        baseline_y = (ascent - descent) * 0.5
+        color_r, color_g, color_b, _ = self.text_color.getRgbF()
+        instances: List[List[float]] = []
+
+        for region_name, center in self.labels:
+            if not region_name:
+                continue
+            line_width = 0.0
+            for ch in region_name:
+                glyph = glyphs.get(ch) or glyphs.get("?")
+                if glyph:
+                    line_width += float(glyph["advance"]) * glyph_scale
+            if line_width <= 0.0:
+                continue
+            pen_x = -line_width * 0.5
+            center_x = float(center[0])
+            center_y = float(center[1])
+            center_z = float(center[2])
+            for ch in region_name:
+                glyph = glyphs.get(ch) or glyphs.get("?")
+                if not glyph:
+                    continue
+                adv = float(glyph["advance"]) * glyph_scale
+                if glyph["w"] <= 0 or glyph["h"] <= 0:
+                    pen_x += adv
+                    continue
+                offset_x = pen_x + float(glyph["bearing_x"]) * glyph_scale
+                offset_y = baseline_y + float(glyph["bearing_y"]) * glyph_scale
+                size_x = float(glyph["w"]) * glyph_scale
+                size_y = float(glyph["h"]) * glyph_scale
+                glyph_x = float(glyph["x"])
+                glyph_y = float(glyph["y"])
+                glyph_w = float(glyph["w"])
+                glyph_h = float(glyph["h"])
+                inset_u = min(0.5, max((glyph_w - 1.0) * 0.5, 0.0))
+                inset_v = min(0.5, max((glyph_h - 1.0) * 0.5, 0.0))
+                u0 = (glyph_x + inset_u) / atlas_w
+                v0 = (glyph_y + inset_v) / atlas_h
+                u1 = (glyph_x + glyph_w - inset_u) / atlas_w
+                v1 = (glyph_y + glyph_h - inset_v) / atlas_h
+                us = max(u1 - u0, 1.0 / atlas_w)
+                vs = max(v1 - v0, 1.0 / atlas_h)
+                instances.append(
+                    [
+                        center_x,
+                        center_y,
+                        center_z,
+                        offset_x,
+                        offset_y,
+                        size_x,
+                        size_y,
+                        u0,
+                        v0,
+                        us,
+                        vs,
+                        float(color_r),
+                        float(color_g),
+                        float(color_b),
+                    ]
+                )
+                pen_x += adv
+        if not instances:
+            return np.array([], dtype=np.float32)
+        return np.array(instances, dtype=np.float32)
+
+    def refresh_text_instances(self, width: int, height: int) -> None:
+        """Update GPU region-label text instances when data or viewport changes.
+
+        Args:
+            width: View width in pixels.
+            height: View height in pixels.
+
+        Returns:
+            None.
+        """
+        viewport = (int(width), int(height))
+        if not self.instances_dirty and self.instance_viewport == viewport:
+            return
+        self.instances = self._build_region_background_text_instances(width, height)
+        self.instance_count = self.instances.shape[0] if self.instances.size else 0
+        self.instance_viewport = viewport
+        self.instances_dirty = False
+        if self.instance_vbo:
+            glBindBuffer(GL_ARRAY_BUFFER, self.instance_vbo)
+            if self.instances.size:
+                data = self.instances
+                size = self.instances.nbytes
+            else:
+                data = None
+                size = 0
+            glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW)
+
+    def draw(
+        self,
+        view: np.ndarray,
+        proj: np.ndarray,
+        screen_width: int,
+        screen_height: int,
+        *,
+        widget_width: int,
+        widget_height: int,
+        text_program: int,
+        atlas_texture: int,
+        u_text_view: int,
+        u_text_proj: int,
+        u_screen: int,
+        u_text_scale: int,
+        u_text_depth_scale: int,
+        u_text_depth_enabled: int,
+        u_text_alpha_scale: int,
+        u_atlas: int,
+        mouse_3d: bool,
+        zoom: float,
+        base_zoom: float,
+    ) -> None:
+        """Draw region names as a background layer using the text shader.
+
+        Args:
+            view: View matrix.
+            proj: Projection matrix.
+            screen_width: View width in physical pixels.
+            screen_height: View height in physical pixels.
+            widget_width: Widget width in logical pixels.
+            widget_height: Widget height in logical pixels.
+            text_program: Text shader program.
+            atlas_texture: Atlas texture handle.
+            u_text_view: View matrix uniform location.
+            u_text_proj: Projection matrix uniform location.
+            u_screen: Screen-size uniform location.
+            u_text_scale: Label-scale uniform location.
+            u_text_depth_scale: Depth-scale uniform location.
+            u_text_depth_enabled: Depth-enabled uniform location.
+            u_text_alpha_scale: Alpha-scale uniform location.
+            u_atlas: Atlas sampler uniform location.
+            mouse_3d: Whether map interaction is in 3D mode.
+            zoom: Current camera zoom.
+            base_zoom: Baseline camera zoom.
+
+        Returns:
+            None.
+        """
+        if not self.labels or not text_program or not atlas_texture or not self.vao:
+            return
+        if widget_width <= 0 or widget_height <= 0 or screen_width <= 0 or screen_height <= 0:
+            return
+        self.refresh_text_instances(screen_width, screen_height)
+        if not self.instance_count:
+            return
+        _, _, _, alpha = self.text_color.getRgbF()
+        if alpha <= 0.001:
+            return
+        if mouse_3d:
+            label_scale = 0.1 / zoom
+        else:
+            label_scale = zoom / base_zoom if base_zoom else 1.0
+        glDisable(GL_DEPTH_TEST)
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
+        glUseProgram(text_program)
+        glPolygonOffset(0.1, -3.0)
+        glUniformMatrix4fv(u_text_view, 1, False, view)
+        glUniformMatrix4fv(u_text_proj, 1, False, proj)
+        glUniform2f(u_screen, float(screen_width), float(screen_height))
+        glUniform1f(u_text_scale, 3.0 * label_scale)
+        glUniform1f(u_text_depth_scale, 1.0)
+        glUniform1f(u_text_depth_enabled, 0.0)
+        glUniform1f(u_text_alpha_scale, float(alpha))
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, atlas_texture)
+        glUniform1i(u_atlas, 0)
+        glBindVertexArray(self.vao)
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.instance_count)
+
+    def release_gl(self) -> None:
+        """Delete GL resources owned by the layer.
+
+        Returns:
+            None.
+        """
+        if self.instance_vbo:
+            glDeleteBuffers(1, [self.instance_vbo])
+            self.instance_vbo = 0
+        if self.vao:
+            glDeleteVertexArrays(1, [self.vao])
+            self.vao = 0
+
+    def initialize_vao(self) -> None:
+        self.vao = glGenVertexArrays(1)
+
+    def initialize_vbo(self) -> None:
+        self.instance_vbo = glGenBuffers(1)
+        bind_text_instances(
+            self.vao,
+            self.instance_vbo,
+            self.instances,
+        )
+
+
+def bind_text_instances(vao: int, vbo: int, instances: np.ndarray) -> None:
+            """Bind per-instance glyph attributes to a text VAO.
+
+            Args:
+                vao: Vertex array object to update.
+                vbo: Instance buffer object to upload.
+                instances: Instance data to bind.
+
+            Returns:
+                None.
+            """
+            glBindVertexArray(vao)
+            glBindBuffer(GL_ARRAY_BUFFER, vbo)
+            glBufferData(GL_ARRAY_BUFFER, instances.nbytes, instances, GL_DYNAMIC_DRAW)
+            stride = 14 * ctypes.sizeof(ctypes.c_float)
+            glVertexAttribPointer(2, 3, GL_FLOAT, False, stride, ctypes.c_void_p(0))
+            glEnableVertexAttribArray(2)
+            glVertexAttribDivisor(2, 1)
+            glVertexAttribPointer(
+                3, 2, GL_FLOAT, False, stride, ctypes.c_void_p(3 * ctypes.sizeof(ctypes.c_float))
+            )
+            glEnableVertexAttribArray(3)
+            glVertexAttribDivisor(3, 1)
+            glVertexAttribPointer(
+                4, 2, GL_FLOAT, False, stride, ctypes.c_void_p(5 * ctypes.sizeof(ctypes.c_float))
+            )
+            glEnableVertexAttribArray(4)
+            glVertexAttribDivisor(4, 1)
+            glVertexAttribPointer(
+                5, 4, GL_FLOAT, False, stride, ctypes.c_void_p(7 * ctypes.sizeof(ctypes.c_float))
+            )
+            glEnableVertexAttribArray(5)
+            glVertexAttribDivisor(5, 1)
+            glVertexAttribPointer(
+                6, 3, GL_FLOAT, False, stride, ctypes.c_void_p(11 * ctypes.sizeof(ctypes.c_float))
+            )
+            glEnableVertexAttribArray(6)
+            glVertexAttribDivisor(6, 1)
+
+
+
 class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
     """OpenGL widget that renders systems, connections, and labels.
 
@@ -1610,11 +1935,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.text_vbo = 0
         self.text_instance_vbo = 0
         self.text_dynamic_instance_vbo = 0
-        self.region_background_vao = 0
-        self.region_background_instance_vbo = 0
         self.text_instance_count = 0
         self.text_dynamic_instance_count = 0
-        self.region_background_instance_count = 0
         self.system_vao = 0
         self.system_ssbo = 0
         self.system_instance_count = 0
@@ -1636,6 +1958,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._text_rebuild_pending = False
         self._text_dynamic_rebuild_pending = False
         self.atlas_scale = float(self.atlas.get("logical_scale", 1.0))
+        self.region_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.REGIONS_ID_OBJ,font_scale=0.13,color="#30808080")
+        self.constellation_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.CONSTELLATIONS_ID_OBJS,font_scale=0.04,color="#30808000")
         self.font_scale = 1.4
         self.secondary_text_scale = 0.7
         self.mark_timers = {idx: max(0.0, float(sys.marker)) for idx, sys in enumerate(self.systems)}
@@ -1768,15 +2092,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._fps_alpha = 0.12
         self._hud_padding = 8
         self._hud_radius = 6
+        self._mouse_scale = 1
         self._hud_bg = QtGui.QColor(12, 14, 16, 80)
         self._hud_text = QtGui.QColor(235, 235, 235, 80)
         self.show_region_background_labels = True
-        self._region_background_labels = self._build_region_background_labels()
-        self._region_background_instances = np.array([], dtype=np.float32)
-        self._region_background_instances_dirty = True
-        self._region_background_instance_viewport = (0, 0)
-        self._region_background_text_color = QtGui.QColor("#80303030")
-        self._region_background_font_scale = 0.15
+        self.show_constellation_background_labels = True
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
         self.timer.start(int(1000 / 25))
@@ -1970,7 +2290,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         self.text_vao = glGenVertexArrays(1)
         self.text_dynamic_vao = glGenVertexArrays(1)
-        self.region_background_vao = glGenVertexArrays(1)
+        self.region_background_layer.initialize_vao()
+        self.constellation_background_layer.initialize_vao()
         self.text_vbo = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.text_vbo)
         quad = np.array(
@@ -1995,7 +2316,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             dtype=np.float32,
         )
         glBufferData(GL_ARRAY_BUFFER, quad.nbytes, quad, GL_STATIC_DRAW)
-        for vao in (self.text_vao, self.text_dynamic_vao, self.region_background_vao):
+        for vao in (self.text_vao, self.text_dynamic_vao, self.region_background_layer.vao, self.constellation_background_layer.vao):
             glBindVertexArray(vao)
             glBindBuffer(GL_ARRAY_BUFFER, self.text_vbo)
             glVertexAttribPointer(
@@ -2104,57 +2425,14 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_text_depth_enabled = glGetUniformLocation(self.text_program, "uDepthEnabled")
         self.u_text_alpha_scale = glGetUniformLocation(self.text_program, "uAlphaScale")
 
-        def bind_text_instances(vao: int, vbo: int, instances: np.ndarray) -> None:
-            """Bind per-instance glyph attributes to a text VAO.
-
-            Args:
-                vao: Vertex array object to update.
-                vbo: Instance buffer object to upload.
-                instances: Instance data to bind.
-
-            Returns:
-                None.
-            """
-            glBindVertexArray(vao)
-            glBindBuffer(GL_ARRAY_BUFFER, vbo)
-            glBufferData(GL_ARRAY_BUFFER, instances.nbytes, instances, GL_DYNAMIC_DRAW)
-            stride = 14 * ctypes.sizeof(ctypes.c_float)
-            glVertexAttribPointer(2, 3, GL_FLOAT, False, stride, ctypes.c_void_p(0))
-            glEnableVertexAttribArray(2)
-            glVertexAttribDivisor(2, 1)
-            glVertexAttribPointer(
-                3, 2, GL_FLOAT, False, stride, ctypes.c_void_p(3 * ctypes.sizeof(ctypes.c_float))
-            )
-            glEnableVertexAttribArray(3)
-            glVertexAttribDivisor(3, 1)
-            glVertexAttribPointer(
-                4, 2, GL_FLOAT, False, stride, ctypes.c_void_p(5 * ctypes.sizeof(ctypes.c_float))
-            )
-            glEnableVertexAttribArray(4)
-            glVertexAttribDivisor(4, 1)
-            glVertexAttribPointer(
-                5, 4, GL_FLOAT, False, stride, ctypes.c_void_p(7 * ctypes.sizeof(ctypes.c_float))
-            )
-            glEnableVertexAttribArray(5)
-            glVertexAttribDivisor(5, 1)
-            glVertexAttribPointer(
-                6, 3, GL_FLOAT, False, stride, ctypes.c_void_p(11 * ctypes.sizeof(ctypes.c_float))
-            )
-            glEnableVertexAttribArray(6)
-            glVertexAttribDivisor(6, 1)
-
         self.text_instance_vbo = glGenBuffers(1)
         bind_text_instances(self.text_vao, self.text_instance_vbo, self.text_instances)
         self.text_dynamic_instance_vbo = glGenBuffers(1)
         bind_text_instances(
             self.text_dynamic_vao, self.text_dynamic_instance_vbo, self.text_dynamic_instances
         )
-        self.region_background_instance_vbo = glGenBuffers(1)
-        bind_text_instances(
-            self.region_background_vao,
-            self.region_background_instance_vbo,
-            self._region_background_instances,
-        )
+        self.region_background_layer.initialize_vbo()
+        self.constellation_background_layer.initialize_vbo()
 
         self.atlas_texture = self._load_atlas_texture()
 
@@ -2170,7 +2448,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         dpr = self.devicePixelRatioF()
         glViewport(0, 0, max(int(width * dpr), 1), max(int(height * dpr), 1))
-        self._region_background_instances_dirty = True
+        self.region_background_layer.mark_dirty()
+        self.constellation_background_layer.mark_dirty()
 
     def paintGL(self) -> None:
         """Render the scene for the current frame.
@@ -2263,9 +2542,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             system_proj = proj.copy()
         depth_enabled = 1.0 if self.mouse_3d else 0.0
         depth_scale = 0.1
-
-        if self.show_region_background_labels:
-            self._draw_region_background_labels(view, system_proj, screen_width, screen_height)
 
         line_thickness_scaled = float(max(0.5, self.line_thickness * label_scale))
 
@@ -2480,8 +2756,53 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     )
                 glEnable(GL_DEPTH_TEST)
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+
+        if self.show_region_background_labels:
+            self.region_background_layer.draw(
+                view,
+                system_proj,
+                screen_width,
+                screen_height,
+                widget_width=self.width(),
+                widget_height=self.height(),
+                text_program=self.text_program,
+                atlas_texture=self.atlas_texture,
+                u_text_view=self.u_text_view,
+                u_text_proj=self.u_text_proj,
+                u_screen=self.u_screen,
+                u_text_scale=self.u_text_scale,
+                u_text_depth_scale=self.u_text_depth_scale,
+                u_text_depth_enabled=self.u_text_depth_enabled,
+                u_text_alpha_scale=self.u_text_alpha_scale,
+                u_atlas=self.u_atlas,
+                mouse_3d=self.mouse_3d,
+                zoom=self.zoom,
+                base_zoom=self.base_zoom,
+            )
+        if self.show_constellation_background_labels:
+            self.constellation_background_layer.draw(
+                view,
+                system_proj,
+                screen_width,
+                screen_height,
+                widget_width=self.width(),
+                widget_height=self.height(),
+                text_program=self.text_program,
+                atlas_texture=self.atlas_texture,
+                u_text_view=self.u_text_view,
+                u_text_proj=self.u_text_proj,
+                u_screen=self.u_screen,
+                u_text_scale=self.u_text_scale,
+                u_text_depth_scale=self.u_text_depth_scale,
+                u_text_depth_enabled=self.u_text_depth_enabled,
+                u_text_alpha_scale=self.u_text_alpha_scale,
+                u_atlas=self.u_atlas,
+                mouse_3d=self.mouse_3d,
+                zoom=self.zoom,
+                base_zoom=self.base_zoom,
+            )
+
         glDisable(GL_POLYGON_OFFSET_FILL)
-        #self._draw_region_background_labels(view, system_proj, screen_width, screen_height)
         self._draw_hud()
         #self.update()
 
@@ -2523,205 +2844,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             return ""
         return f"ID {region_id}"
 
-    def _build_region_background_labels(self) -> list[tuple[str, np.ndarray]]:
-        """Build one background label center per region.
-
-        Returns:
-            List of (region name, center xyz) tuples.
-        """
-        labels: list[tuple[str, np.ndarray]] = []
-        for rgn in Universe.REGIONS_ID_OBJ.values():
-            labels.append(
-                (
-                    rgn.name,
-                    np.array([rgn.x, rgn.y , rgn.z], dtype=np.float32),
-                )
-            )
-        return labels
-
-    def _build_region_background_text_instances(self, width: int, height: int) -> np.ndarray:
-        """Build per-glyph instances for background region labels.
-
-        Args:
-            width: View width in pixels.
-            height: View height in pixels.
-
-        Returns:
-            Float32 instance array for instanced glyph draws.
-        """
-        if not self._region_background_labels or width <= 0 or height <= 0:
-            return np.array([], dtype=np.float32)
-        glyphs = self.atlas.get("glyphs", {})
-        if not glyphs:
-            return np.array([], dtype=np.float32)
-        atlas_w, atlas_h = self.atlas.get("size", [1, 1])
-        atlas_w = max(float(atlas_w), 1.0)
-        atlas_h = max(float(atlas_h), 1.0)
-        metrics = self.atlas.get("metrics", {})
-        metric_height = max(float(metrics.get("height", 1.0)), 1.0)
-        metric_ascent = max(float(metrics.get("ascent", metric_height)), 0.0)
-        metric_descent = max(float(metrics.get("descent", metric_height - metric_ascent)), 0.0)
-        target_height = max(48.0, min(width, height) * self._region_background_font_scale)
-        base_height = max(metric_height * self.atlas_scale, 1.0)
-        scale = target_height / base_height
-        glyph_scale = self.atlas_scale * scale
-        ascent = metric_ascent * glyph_scale
-        descent = metric_descent * glyph_scale
-        baseline_y = (ascent - descent) * 0.5
-        color_r, color_g, color_b, _ = self._region_background_text_color.getRgbF()
-        instances: List[List[float]] = []
-
-        for region_name, center in self._region_background_labels:
-            if not region_name:
-                continue
-            line_width = 0.0
-            for ch in region_name:
-                glyph = glyphs.get(ch) or glyphs.get("?")
-                if glyph:
-                    line_width += float(glyph["advance"]) * glyph_scale
-            if line_width <= 0.0:
-                continue
-            pen_x = -line_width * 0.5
-            center_x = float(center[0])
-            center_y = float(center[1])
-            center_z = float(center[2])
-            for ch in region_name:
-                glyph = glyphs.get(ch) or glyphs.get("?")
-                if not glyph:
-                    continue
-                adv = float(glyph["advance"]) * glyph_scale
-                if glyph["w"] <= 0 or glyph["h"] <= 0:
-                    pen_x += adv
-                    continue
-                offset_x = pen_x + float(glyph["bearing_x"]) * glyph_scale
-                offset_y = baseline_y + float(glyph["bearing_y"]) * glyph_scale
-                size_x = float(glyph["w"]) * glyph_scale
-                size_y = float(glyph["h"]) * glyph_scale
-                glyph_x = float(glyph["x"])
-                glyph_y = float(glyph["y"])
-                glyph_w = float(glyph["w"])
-                glyph_h = float(glyph["h"])
-                inset_u = min(0.5, max((glyph_w - 1.0) * 0.5, 0.0))
-                inset_v = min(0.5, max((glyph_h - 1.0) * 0.5, 0.0))
-                u0 = (glyph_x + inset_u) / atlas_w
-                v0 = (glyph_y + inset_v) / atlas_h
-                u1 = (glyph_x + glyph_w - inset_u) / atlas_w
-                v1 = (glyph_y + glyph_h - inset_v) / atlas_h
-                us = max(u1 - u0, 1.0 / atlas_w)
-                vs = max(v1 - v0, 1.0 / atlas_h)
-                instances.append(
-                    [
-                        center_x,
-                        center_y,
-                        center_z,
-                        offset_x,
-                        offset_y,
-                        size_x,
-                        size_y,
-                        u0,
-                        v0,
-                        us,
-                        vs,
-                        float(color_r),
-                        float(color_g),
-                        float(color_b),
-                    ]
-                )
-                pen_x += adv
-        if not instances:
-            return np.array([], dtype=np.float32)
-        return np.array(instances, dtype=np.float32)
-
-    def _refresh_region_background_text_instances(self, width: int, height: int) -> None:
-        """Update GPU region-label text instances when data or viewport changes.
-
-        Args:
-            width: View width in pixels.
-            height: View height in pixels.
-
-        Returns:
-            None.
-        """
-        viewport = (int(width), int(height))
-        if (
-            not self._region_background_instances_dirty
-            and self._region_background_instance_viewport == viewport
-        ):
-            return
-        self._region_background_instances = self._build_region_background_text_instances(
-            width, height
-        )
-        self.region_background_instance_count = (
-            self._region_background_instances.shape[0]
-            if self._region_background_instances.size
-            else 0
-        )
-        self._region_background_instance_viewport = viewport
-        self._region_background_instances_dirty = False
-        if self.region_background_instance_vbo:
-            glBindBuffer(GL_ARRAY_BUFFER, self.region_background_instance_vbo)
-            if self._region_background_instances.size:
-                data = self._region_background_instances
-                size = self._region_background_instances.nbytes
-            else:
-                data = None
-                size = 0
-            glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW)
-
-    def _draw_region_background_labels(
-        self,
-        view: np.ndarray,
-        proj: np.ndarray,
-        screen_width: int,
-        screen_height: int,
-    ) -> None:
-        """Draw region names as a background layer using the text shader.
-
-        Args:
-            view: View matrix.
-            proj: Projection matrix.
-            screen_width: View width in physical pixels.
-            screen_height: View height in physical pixels.
-
-        Returns:
-            None.
-        """
-        if (
-            not self._region_background_labels
-            or not self.text_program
-            or not self.atlas_texture
-            or not self.region_background_vao
-        ):
-            return
-        if self.width() <= 0 or self.height() <= 0 or screen_width <= 0 or screen_height <= 0:
-            return
-        self._refresh_region_background_text_instances(screen_width, screen_height)
-        if not self.region_background_instance_count:
-            return
-        _, _, _, alpha = self._region_background_text_color.getRgbF()
-        if alpha <= 0.001:
-            return
-        if self.mouse_3d:
-            label_scale = 0.1 / self.zoom
-        else:
-            label_scale = self.zoom / self.base_zoom if self.base_zoom else 1.0
-        glDisable(GL_DEPTH_TEST)
-        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
-        glUseProgram(self.text_program)
-        glPolygonOffset(0.1, -3.0)
-        glUniformMatrix4fv(self.u_text_view, 1, False, view)
-        glUniformMatrix4fv(self.u_text_proj, 1, False, proj)
-        glUniform2f(self.u_screen, float(screen_width), float(screen_height))
-        glUniform1f(self.u_text_scale, 3.0 * label_scale)
-        glUniform1f(self.u_text_depth_scale, 1.0)
-        glUniform1f(self.u_text_depth_enabled, 0.0)
-        glUniform1f(self.u_text_alpha_scale, float(alpha))
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.atlas_texture)
-        glUniform1i(self.u_atlas, 0)
-        glBindVertexArray(self.region_background_vao)
-        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.region_background_instance_count)
-
     def _resolve_hud_labels(self) -> tuple[str, str]:
         """Return region/constellation labels for the HUD.
 
@@ -2731,13 +2853,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         system = self._hovered_system
         if system is None:
             return "-", "-"
-        record = getattr(system, "record", None) or {}
-        region_name = self._region_name_for_system(system) or "Unknown"
-        const_name = record.get("constellationName") or record.get("constellation")
-        if not const_name:
-            const_id = record.get("constellationID")
-            const_name = f"ID {const_id}" if const_id is not None else "Unknown"
-        return str(region_name), str(const_name)
+        return system.region_name, system.constellation_name
 
     def _draw_hud(self) -> None:
         """Draw a HUD overlay for region/constellation and FPS.
@@ -2873,8 +2989,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             None.
         """
-        self._region_background_labels = self._build_region_background_labels()
-        self._region_background_instances_dirty = True
+        self.region_background_layer.rebuild_labels()
+        self.constellation_background_layer.rebuild_labels()
         self.mark_timers = {idx: max(0.0, float(sys.marker)) for idx, sys in enumerate(self.systems)}
         self.kill_timers = {idx: max(0.0, float(sys.hasKill)) for idx, sys in enumerate(self.systems)}
         self.system_instances = self._build_system_instances()
@@ -3674,6 +3790,13 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.panning = False
         self.unsetCursor()
 
+    @PySide6.QtCore.Slot(bool)
+    def invertMouse(self,val:bool)-> None:
+        if val:
+            self._mouse_scale = 1.0
+        else:
+            self._mouse_scale = -1.0
+
     @PySide6.QtCore.Slot(int)
     def set_system_marked(self, system_id: int) -> None:
         """Set the mark timer for a system to 5000 ms.
@@ -3930,7 +4053,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             None.
         """
-        steps = float(event.angleDelta().y()) / 120.0
+        steps = self._mouse_scale * float(event.angleDelta().y()) / 120.0
         if steps == 0.0:
             return
 

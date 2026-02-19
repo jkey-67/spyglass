@@ -350,6 +350,8 @@ def parseLocal(path: str, char_name: str, line: str) -> Message:
     return message
 
 
+LAST_USER_MESSAGE:dict[str:(int,str)] = dict()
+
 def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> Message:
     """
         Parse the massage based on the current systems and text
@@ -379,9 +381,16 @@ def parseMessageForMap(systems_on_map: dict[str, System], message: Message) -> M
         while parsePlayerNames(rtext):
             pass
 
-
     parsed_status = parseStatus(rtext)
     message.status = parsed_status if parsed_status is not None else States.ALARM
+
+    if not message.affectedSystems:
+        _,systems = LAST_USER_MESSAGE.get(message.user)
+        if systems:
+            message.affectedSystems = systems
+
+    if message.user:
+        LAST_USER_MESSAGE[message.user] = (message.status,message.affectedSystems)
 
     message.guiText = str(rtext)
     message.original_text = original_text

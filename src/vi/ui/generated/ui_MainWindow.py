@@ -1152,6 +1152,7 @@ class Ui_MainWindow(object):
         self.jumpbridgesButton.toggled.connect(self.mapView.showJumpBridges)
         self.statisticsButton.toggled.connect(self.mapView.showStatistics)
         self.adm_vul_Button.toggled.connect(self.mapView.showTimers)
+        self.actionInvertMouseWheel.toggled.connect(self.mapView.invertMouse)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi

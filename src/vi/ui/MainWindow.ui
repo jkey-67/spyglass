@@ -2500,6 +2500,7 @@
     <slot>showStatistics(bool)</slot>
     <slot>showTimers(bool)</slot>
     <slot>centerMapOnId(int)</slot>
+    <slot>invertMouse(bool)</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -3148,6 +3149,22 @@
     <hint type="destinationlabel">
      <x>1025</x>
      <y>132</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionInvertMouseWheel</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mapView</receiver>
+   <slot>invertMouse(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>670</x>
+     <y>436</y>
     </hint>
    </hints>
   </connection>

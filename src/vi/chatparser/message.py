@@ -164,12 +164,14 @@ def formatZKillMessage(message:str)->str:
     if http_start != -1:
         http_end = res.find(" ", http_start)
         substr = res[http_start:http_end]
-        res = res.replace(substr, "")
-    res = res.replace("  ", ",")
-    corp_start = res.find("<")
-    if corp_start != -1:
-        corp_end = res.find(" ", corp_start)
-        substr = res[corp_start:corp_end]
-        res = res.replace(substr, ", from alliance")
+        res = res.replace(substr, "").strip()
+    res = res.replace("  ", ", ")
+    ticker_start = res.find("<")
+    ticker_end = res.find(">", ticker_start)
+    if ticker_start != -1 and ticker_end != -1:
+        substr = res[ticker_start:ticker_end+1]
+        res = res.replace("(", "")
+        res = res.replace(substr, " from alliance")
+    res = res.replace("  ", " ")
     res = res.replace(")", ",")
     return res
