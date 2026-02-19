@@ -231,7 +231,9 @@ if __name__ == "__main__":
 
         #os.environ["XDG_SESSION_TYPE"] = "wayland"
         #os.environ["QT_QPA_PLATFORM"] = "wayland"
-        #os.environ["QT_MEDIA_BACKEND"] = "gstreamer"
+        #os.environ["QT_MEDIA_BACKEND"] = "ffmpeg"
+        #os.environ["QT_FFMPEG_DEBUG"] = "1"
+        #os.environ["QT_LOGGING_RULES"] = "*.multimedia.*=true"
         app = Application(sys.argv)
         res = app.exec()
     except (Exception,) as e:

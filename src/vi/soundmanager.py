@@ -131,7 +131,8 @@ class QtSoundBackend(BaseSoundBackend):
         effect.setSource(QUrl.fromLocalFile(filename))
         effect.setLoopCount(1)
         QCoreApplication.processEvents()
-        self.effects[key] = effect
+        if effect.status() == QSoundEffect.Status.Ready:
+            self.effects[key] = effect
 
     def play(self, key: str, volume: float) -> bool:
         """Play a sound via QSoundEffect with the given volume."""
@@ -147,8 +148,14 @@ class QtSoundBackend(BaseSoundBackend):
             return False
         if effect.isPlaying():
             effect.stop()
-        effect.setVolume(volume)
-        effect.play()
+        if effect.status() == QSoundEffect.Status.Ready:
+            effect.setVolume(volume)
+        else:
+            return False
+        if effect.status() == QSoundEffect.Status.Ready:
+            effect.play()
+        else:
+            return False
         return True
 
     def set_master_volume(self, volume: float) -> None:

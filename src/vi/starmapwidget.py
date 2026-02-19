@@ -1610,8 +1610,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.text_vbo = 0
         self.text_instance_vbo = 0
         self.text_dynamic_instance_vbo = 0
+        self.region_background_vao = 0
+        self.region_background_instance_vbo = 0
         self.text_instance_count = 0
         self.text_dynamic_instance_count = 0
+        self.region_background_instance_count = 0
         self.system_vao = 0
         self.system_ssbo = 0
         self.system_instance_count = 0
@@ -1767,6 +1770,13 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._hud_radius = 6
         self._hud_bg = QtGui.QColor(12, 14, 16, 80)
         self._hud_text = QtGui.QColor(235, 235, 235, 80)
+        self.show_region_background_labels = True
+        self._region_background_labels = self._build_region_background_labels()
+        self._region_background_instances = np.array([], dtype=np.float32)
+        self._region_background_instances_dirty = True
+        self._region_background_instance_viewport = (0, 0)
+        self._region_background_text_color = QtGui.QColor("#80303030")
+        self._region_background_font_scale = 0.15
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
         self.timer.start(int(1000 / 25))
@@ -1960,6 +1970,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         self.text_vao = glGenVertexArrays(1)
         self.text_dynamic_vao = glGenVertexArrays(1)
+        self.region_background_vao = glGenVertexArrays(1)
         self.text_vbo = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.text_vbo)
         quad = np.array(
@@ -1984,7 +1995,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             dtype=np.float32,
         )
         glBufferData(GL_ARRAY_BUFFER, quad.nbytes, quad, GL_STATIC_DRAW)
-        for vao in (self.text_vao, self.text_dynamic_vao):
+        for vao in (self.text_vao, self.text_dynamic_vao, self.region_background_vao):
             glBindVertexArray(vao)
             glBindBuffer(GL_ARRAY_BUFFER, self.text_vbo)
             glVertexAttribPointer(
@@ -2138,6 +2149,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         bind_text_instances(
             self.text_dynamic_vao, self.text_dynamic_instance_vbo, self.text_dynamic_instances
         )
+        self.region_background_instance_vbo = glGenBuffers(1)
+        bind_text_instances(
+            self.region_background_vao,
+            self.region_background_instance_vbo,
+            self._region_background_instances,
+        )
 
         self.atlas_texture = self._load_atlas_texture()
 
@@ -2153,6 +2170,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         dpr = self.devicePixelRatioF()
         glViewport(0, 0, max(int(width * dpr), 1), max(int(height * dpr), 1))
+        self._region_background_instances_dirty = True
 
     def paintGL(self) -> None:
         """Render the scene for the current frame.
@@ -2245,6 +2263,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             system_proj = proj.copy()
         depth_enabled = 1.0 if self.mouse_3d else 0.0
         depth_scale = 0.1
+
+        if self.show_region_background_labels:
+            self._draw_region_background_labels(view, system_proj, screen_width, screen_height)
 
         line_thickness_scaled = float(max(0.5, self.line_thickness * label_scale))
 
@@ -2460,6 +2481,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 glEnable(GL_DEPTH_TEST)
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glDisable(GL_POLYGON_OFFSET_FILL)
+        #self._draw_region_background_labels(view, system_proj, screen_width, screen_height)
         self._draw_hud()
         #self.update()
 
@@ -2476,6 +2498,230 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         hovered_id = self.objectUnderMouse(self._last_mouse_pos)
         self._hovered_system = self._system_by_id(hovered_id)
 
+    def _region_name_for_system(self, system) -> str:
+        """Resolve a region name from a system object.
+
+        Args:
+            system: System-like object with region metadata.
+
+        Returns:
+            Best available region name, or an empty string.
+        """
+        region_name = getattr(system, "region_name", None)
+        if region_name:
+            return str(region_name)
+        record = getattr(system, "record", None)
+        if isinstance(record, dict):
+            region_name = record.get("regionName") or record.get("region")
+            if region_name:
+                return str(region_name)
+            region_id = record.get("regionID")
+            if region_id is not None:
+                return f"ID {region_id}"
+        region_id = getattr(system, "region_id", None)
+        if region_id is None:
+            return ""
+        return f"ID {region_id}"
+
+    def _build_region_background_labels(self) -> list[tuple[str, np.ndarray]]:
+        """Build one background label center per region.
+
+        Returns:
+            List of (region name, center xyz) tuples.
+        """
+        labels: list[tuple[str, np.ndarray]] = []
+        for rgn in Universe.REGIONS_ID_OBJ.values():
+            labels.append(
+                (
+                    rgn.name,
+                    np.array([rgn.x, rgn.y , rgn.z], dtype=np.float32),
+                )
+            )
+        return labels
+
+    def _build_region_background_text_instances(self, width: int, height: int) -> np.ndarray:
+        """Build per-glyph instances for background region labels.
+
+        Args:
+            width: View width in pixels.
+            height: View height in pixels.
+
+        Returns:
+            Float32 instance array for instanced glyph draws.
+        """
+        if not self._region_background_labels or width <= 0 or height <= 0:
+            return np.array([], dtype=np.float32)
+        glyphs = self.atlas.get("glyphs", {})
+        if not glyphs:
+            return np.array([], dtype=np.float32)
+        atlas_w, atlas_h = self.atlas.get("size", [1, 1])
+        atlas_w = max(float(atlas_w), 1.0)
+        atlas_h = max(float(atlas_h), 1.0)
+        metrics = self.atlas.get("metrics", {})
+        metric_height = max(float(metrics.get("height", 1.0)), 1.0)
+        metric_ascent = max(float(metrics.get("ascent", metric_height)), 0.0)
+        metric_descent = max(float(metrics.get("descent", metric_height - metric_ascent)), 0.0)
+        target_height = max(48.0, min(width, height) * self._region_background_font_scale)
+        base_height = max(metric_height * self.atlas_scale, 1.0)
+        scale = target_height / base_height
+        glyph_scale = self.atlas_scale * scale
+        ascent = metric_ascent * glyph_scale
+        descent = metric_descent * glyph_scale
+        baseline_y = (ascent - descent) * 0.5
+        color_r, color_g, color_b, _ = self._region_background_text_color.getRgbF()
+        instances: List[List[float]] = []
+
+        for region_name, center in self._region_background_labels:
+            if not region_name:
+                continue
+            line_width = 0.0
+            for ch in region_name:
+                glyph = glyphs.get(ch) or glyphs.get("?")
+                if glyph:
+                    line_width += float(glyph["advance"]) * glyph_scale
+            if line_width <= 0.0:
+                continue
+            pen_x = -line_width * 0.5
+            center_x = float(center[0])
+            center_y = float(center[1])
+            center_z = float(center[2])
+            for ch in region_name:
+                glyph = glyphs.get(ch) or glyphs.get("?")
+                if not glyph:
+                    continue
+                adv = float(glyph["advance"]) * glyph_scale
+                if glyph["w"] <= 0 or glyph["h"] <= 0:
+                    pen_x += adv
+                    continue
+                offset_x = pen_x + float(glyph["bearing_x"]) * glyph_scale
+                offset_y = baseline_y + float(glyph["bearing_y"]) * glyph_scale
+                size_x = float(glyph["w"]) * glyph_scale
+                size_y = float(glyph["h"]) * glyph_scale
+                glyph_x = float(glyph["x"])
+                glyph_y = float(glyph["y"])
+                glyph_w = float(glyph["w"])
+                glyph_h = float(glyph["h"])
+                inset_u = min(0.5, max((glyph_w - 1.0) * 0.5, 0.0))
+                inset_v = min(0.5, max((glyph_h - 1.0) * 0.5, 0.0))
+                u0 = (glyph_x + inset_u) / atlas_w
+                v0 = (glyph_y + inset_v) / atlas_h
+                u1 = (glyph_x + glyph_w - inset_u) / atlas_w
+                v1 = (glyph_y + glyph_h - inset_v) / atlas_h
+                us = max(u1 - u0, 1.0 / atlas_w)
+                vs = max(v1 - v0, 1.0 / atlas_h)
+                instances.append(
+                    [
+                        center_x,
+                        center_y,
+                        center_z,
+                        offset_x,
+                        offset_y,
+                        size_x,
+                        size_y,
+                        u0,
+                        v0,
+                        us,
+                        vs,
+                        float(color_r),
+                        float(color_g),
+                        float(color_b),
+                    ]
+                )
+                pen_x += adv
+        if not instances:
+            return np.array([], dtype=np.float32)
+        return np.array(instances, dtype=np.float32)
+
+    def _refresh_region_background_text_instances(self, width: int, height: int) -> None:
+        """Update GPU region-label text instances when data or viewport changes.
+
+        Args:
+            width: View width in pixels.
+            height: View height in pixels.
+
+        Returns:
+            None.
+        """
+        viewport = (int(width), int(height))
+        if (
+            not self._region_background_instances_dirty
+            and self._region_background_instance_viewport == viewport
+        ):
+            return
+        self._region_background_instances = self._build_region_background_text_instances(
+            width, height
+        )
+        self.region_background_instance_count = (
+            self._region_background_instances.shape[0]
+            if self._region_background_instances.size
+            else 0
+        )
+        self._region_background_instance_viewport = viewport
+        self._region_background_instances_dirty = False
+        if self.region_background_instance_vbo:
+            glBindBuffer(GL_ARRAY_BUFFER, self.region_background_instance_vbo)
+            if self._region_background_instances.size:
+                data = self._region_background_instances
+                size = self._region_background_instances.nbytes
+            else:
+                data = None
+                size = 0
+            glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW)
+
+    def _draw_region_background_labels(
+        self,
+        view: np.ndarray,
+        proj: np.ndarray,
+        screen_width: int,
+        screen_height: int,
+    ) -> None:
+        """Draw region names as a background layer using the text shader.
+
+        Args:
+            view: View matrix.
+            proj: Projection matrix.
+            screen_width: View width in physical pixels.
+            screen_height: View height in physical pixels.
+
+        Returns:
+            None.
+        """
+        if (
+            not self._region_background_labels
+            or not self.text_program
+            or not self.atlas_texture
+            or not self.region_background_vao
+        ):
+            return
+        if self.width() <= 0 or self.height() <= 0 or screen_width <= 0 or screen_height <= 0:
+            return
+        self._refresh_region_background_text_instances(screen_width, screen_height)
+        if not self.region_background_instance_count:
+            return
+        _, _, _, alpha = self._region_background_text_color.getRgbF()
+        if alpha <= 0.001:
+            return
+        if self.mouse_3d:
+            label_scale = 0.1 / self.zoom
+        else:
+            label_scale = self.zoom / self.base_zoom if self.base_zoom else 1.0
+        glDisable(GL_DEPTH_TEST)
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
+        glUseProgram(self.text_program)
+        glPolygonOffset(0.1, -3.0)
+        glUniformMatrix4fv(self.u_text_view, 1, False, view)
+        glUniformMatrix4fv(self.u_text_proj, 1, False, proj)
+        glUniform2f(self.u_screen, float(screen_width), float(screen_height))
+        glUniform1f(self.u_text_scale, 3.0 * label_scale)
+        glUniform1f(self.u_text_depth_scale, 1.0)
+        glUniform1f(self.u_text_depth_enabled, 0.0)
+        glUniform1f(self.u_text_alpha_scale, float(alpha))
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.atlas_texture)
+        glUniform1i(self.u_atlas, 0)
+        glBindVertexArray(self.region_background_vao)
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.region_background_instance_count)
+
     def _resolve_hud_labels(self) -> tuple[str, str]:
         """Return region/constellation labels for the HUD.
 
@@ -2485,11 +2731,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         system = self._hovered_system
         if system is None:
             return "-", "-"
-        record = system.record or {}
-        region_name = record.get("regionName") or record.get("region")
-        if not region_name:
-            region_id = record.get("regionID")
-            region_name = f"ID {region_id}" if region_id is not None else "Unknown"
+        record = getattr(system, "record", None) or {}
+        region_name = self._region_name_for_system(system) or "Unknown"
         const_name = record.get("constellationName") or record.get("constellation")
         if not const_name:
             const_id = record.get("constellationID")
@@ -2630,6 +2873,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             None.
         """
+        self._region_background_labels = self._build_region_background_labels()
+        self._region_background_instances_dirty = True
         self.mark_timers = {idx: max(0.0, float(sys.marker)) for idx, sys in enumerate(self.systems)}
         self.kill_timers = {idx: max(0.0, float(sys.hasKill)) for idx, sys in enumerate(self.systems)}
         self.system_instances = self._build_system_instances()
@@ -3771,6 +4016,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glDeleteBuffers(1, [self.text_instance_vbo])
         if self.text_dynamic_instance_vbo:
             glDeleteBuffers(1, [self.text_dynamic_instance_vbo])
+        if self.region_background_instance_vbo:
+            glDeleteBuffers(1, [self.region_background_instance_vbo])
         if self.system_ssbo:
             glDeleteBuffers(1, [self.system_ssbo])
         if self.pick_positions_ssbo:
@@ -3779,5 +4026,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glDeleteBuffers(1, [self.pick_distances_ssbo])
         if self.system_vao:
             glDeleteVertexArrays(1, [self.system_vao])
+        if self.region_background_vao:
+            glDeleteVertexArrays(1, [self.region_background_vao])
         super().closeEvent(event)
-

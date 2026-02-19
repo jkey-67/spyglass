@@ -59,8 +59,8 @@ class Region(object):
         self.name = kwargs["name"]
         self.names = kwargs["names"]
         self.region_id = kwargs["region_id"]
-        self.position3D = Position(** kwargs["position"])
         self.position2D = Position(** kwargs["position2D"])
+        self.position3D = Position(** kwargs["position"])
 
 
     @property
@@ -157,11 +157,15 @@ class Universe(object):
     curr_path = os.path.dirname(__file__)
     SYSTEMS = dict()
     STARGATES = dict()
-    STARGATES_ID_OBJ = dict()
-    SYSTEM_NAMES = list()
-    UPPER_SYSTEM_NAMES = list()
-    SYSTEM_IDS_BY_NAME = dict()
-    SYSTEM_IDS_BY_UPPER_NAME = dict()
+    STARGATES_ID_OBJ:dict[int,Stargate] = dict()
+    SYSTEM_NAMES:list[str] = list()
+    UPPER_SYSTEM_NAMES:list[str] = list()
+    SYSTEM_IDS_BY_NAME:dict[str,int] = dict()
+    SYSTEM_IDS_BY_UPPER_NAME:dict[str,int] = dict()
+    REGIONS:dict[int, dict] = dict()
+    REGIONS_ID_OBJ:dict[int, Region] = dict()
+    CONSTELLATIONS:dict[int, dict] = dict()
+    CONSTELLATIONS_ID_OBJS:dict[int, Constellation]=dict()
 
     try:
         with jsonlines.open(os.path.join(curr_path, "systemnames.jsonl"), mode='r') as reader:

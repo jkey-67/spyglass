@@ -160,7 +160,7 @@ class GenerateJsonlFiles(unittest.TestCase):
                     rgn_id = obj["_key"]
                     for sys in ALL_SYSTEMS.values():
                         if sys.region_id == rgn_id:
-                            vals.append([sys.position.x,sys.position.y])
+                            vals.append([sys.position2D.x,sys.position2D.y])
                     p = interior_point(vals)
                     elem["position2D"] = {"x": p[0], "y": p[1]}
 
@@ -224,7 +224,7 @@ class GenerateJsonlFiles(unittest.TestCase):
                     constellation_id = obj["_key"]
                     for sys in ALL_SYSTEMS.values():
                         if sys.constellation_id == constellation_id:
-                            vals.append([sys.position.x,sys.position.y])
+                            vals.append([sys.position2D.x,sys.position2D.y])
                     p = interior_point(vals)
                     elem["position2D"] = {"x": p[0], "y": p[1]}
                 elem["region_id"] = obj["regionID"]

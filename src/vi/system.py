@@ -110,9 +110,13 @@ class System(object):
     ELEMENT_HEIGHT = 30
 
     def __init__(self, **kwargs):
-        self.constellation_id = kwargs["constellation_id"]
-        self.names:dict = kwargs["names"]
+        self.system_id:int = kwargs["system_id"]
         self.name:str = kwargs["name"]
+        self.names:dict = kwargs["names"]
+        self.constellation_id = kwargs["constellation_id"]
+        self.constellation_name: str = Universe.CONSTELLATIONS_ID_OBJS.get(self.constellation_id).name
+        self.region_id:int = kwargs["region_id"]
+        self.region_name:str = Universe.REGIONS_ID_OBJ.get(self.region_id).name
         self.planets:list[int] = kwargs["planets"]
         self.position2D:Position = Position(**kwargs["position2D"])
         self.position3D: Position = Position(**kwargs["position"])
@@ -120,12 +124,9 @@ class System(object):
         self.security_status:float = kwargs["security_status"]
         self.star_id: Optional[int] = kwargs["star_ID"] if "star_ID" in kwargs else None
         self.stargates:list[int] = kwargs["stargates"]
-        self.system_id:int = kwargs["system_id"]
         self.stations:list[int] = []
         self.structures:list[dict] = []
         self.ticker:str = "-?-"
-        self.region_id:int = Universe.regionIDFromSystemID(self.system_id)
-        self.region_name:str = Universe.regionNameFromSystemID(self.system_id)
         self._system_messages = []
         self.jumpBridges:set = set()
         self.theraWormholes:set = set()
@@ -1252,13 +1253,6 @@ class System(object):
         if message in self._system_messages:
             self._system_messages.remove(message)
             self._status = None
-
-
-def _InitAllSystemsA():
-    for system_id, sys in Universe.SYSTEMS.items():
-        Universe.SYSTEMS[system_id]["System"] = System(**sys)
-        Universe.SYSTEMS[system_id].merge()
-    return Universe.SYSTEMS
 
 
 def _ApplyColorToSystem(data:dict[int, System]()):
