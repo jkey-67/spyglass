@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU General Public License      #
 #  along with this program. If not, see <https://www.gnu.org/licenses/>.  #
 ###########################################################################
+import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal
@@ -23,12 +24,13 @@ from PySide6.QtGui import QDesktopServices
 from vi.ui import Ui_SystemChat
 from vi.ui.chatentrywidget import ChatEntryWidget
 from .chatentrywidget import ChatEntryItem
+from ..chatparser import Message
+from ..states import States
 
 
 class SystemChat(QtWidgets.QDialog):
     SYSTEM = 0
     location_set = Signal(str, str)
-    repaint_needed = Signal()
 
     def __init__(self, parent, chat_type, selector, chat_entries, known_player_names):
         QtWidgets.QDialog.__init__(self, parent)
@@ -97,12 +99,18 @@ class SystemChat(QtWidgets.QDialog):
                 entry.updateAvatar(avatar_data)
 
     def setSystemAlarm(self):
-        # self.system.setStatus(States.ALARM, datetime.datetime.now(datetime.UTC))
-        self.repaint_needed.emit()
+        msg = Message("EVE-Spy","Force system state to alarm.")
+        msg.status = States.ALARM
+        msg.timestamp = datetime.datetime.now(datetime.timezone.utc)
+        msg.affectedSystems.add(self.system)
+        self.system.setStatus(msg)
 
     def setSystemClear(self):
-        # self.system.setStatus(States.CLEAR, datetime.datetime.now(datetime.UTC))
-        self.repaint_needed.emit()
+        msg = Message("EVE-Spy","Force system state to clear.")
+        msg.status = States.CLEAR
+        msg.timestamp = datetime.datetime.now(datetime.timezone.utc)
+        msg.affectedSystems.add(self.system)
+        self.system.setStatus(msg)
 
     def closeDialog(self):
         self.accept()

@@ -1122,7 +1122,7 @@ class Ui_MainWindow(object):
         self.actionRescanIntelNow.triggered.connect(MainWindow.rescanIntel)
         self.searchSystem.toggled.connect(self.systemNames.setVisible)
         self.locateChar.clicked.connect(MainWindow.locateChar)
-        MainWindow.current_system_changed.connect(self.lineEditThera.setText)
+        self.mapView.systemChanged.connect(self.lineEditThera.setText)
         self.actionUserTheraRoutes.toggled.connect(MainWindow.setUseThreaRoutes)
         self.actionShowADMonMap.triggered["bool"].connect(MainWindow.changeADMVisibility)
         self.toolRescanThrea.clicked.connect(MainWindow.updateTheraConnections)
@@ -1134,7 +1134,6 @@ class Ui_MainWindow(object):
         self.actionShowChatAvatars.triggered["bool"].connect(MainWindow.changeShowAvatars)
         self.mapView.webViewNavigateBackward.connect(MainWindow.navigateBackward)
         self.mapView.webViewNavigateForward.connect(MainWindow.navigateForward)
-        MainWindow.region_changed.connect(self.regionNameField.setCurrentText)
         self.toolRescanStorm.clicked.connect(MainWindow.updateObservationsRecords)
         self.clearCache.clicked.connect(MainWindow.clearCacheFile)
         self.actionShowJumpBridgeConnectionsOnMap.toggled.connect(MainWindow.changeJumpbridgesVisibility)
@@ -1153,6 +1152,9 @@ class Ui_MainWindow(object):
         self.statisticsButton.toggled.connect(self.mapView.showStatistics)
         self.adm_vul_Button.toggled.connect(self.mapView.showTimers)
         self.actionInvertMouseWheel.toggled.connect(self.mapView.invertMouse)
+        self.mapView.regionChanged.connect(self.regionNameField.setEditText)
+        self.mapView.regionChanged.connect(self.regionNameField.setCurrentText)
+        self.mapView.systemChanged.connect(MainWindow.theraSystemChanged)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi

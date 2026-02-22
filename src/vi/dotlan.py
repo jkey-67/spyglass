@@ -171,7 +171,7 @@ class Map(object):
     default_scale = 1.3
 
     @staticmethod
-    def setIncursionSystems(incursions):
+    def setIncursionSystems(incursions:dict):
         """
         Mark all incursion systems on the current map
         Args:
@@ -182,11 +182,17 @@ class Map(object):
 
         """
         for incursion in incursions:
-            lst_system_ids = incursion["infested_solar_systems"]
-            staging_solar_system_id = incursion["staging_solar_system_id"]
-            has_boss = incursion["has_boss"]
+            lst_system_ids = incursion.get("infested_solar_systems")
+            if lst_system_ids is None:
+                continue
+            staging_solar_system_id = incursion.get("staging_solar_system_id")
+            if staging_solar_system_id is None:
+                continue
+            has_boss = incursion.get("has_boss",False)
             for sys_id in lst_system_ids:
-                sys = ALL_SYSTEMS[sys_id]
+                sys = ALL_SYSTEMS.get(sys_id)
+                if sys is None:
+                    continue
                 sys.setIncursion(has_incursion=sys_id in lst_system_ids,
                                  is_staging=sys_id == staging_solar_system_id,
                                  has_boss=has_boss)
@@ -259,34 +265,14 @@ class Map(object):
             sys = ALL_SYSTEMS[int(sys_stats["solar_system_id"])]
             sys.setVulnerabilityInfo(sys_stats)
 
-    def renderLegend(self, painter):
-        System.renderLegend(painter, self.region_name)
-
-    def renderMap(self, painter,zoom=1.0):
-        for system in self.systems.values():
-            system.is_ice_belts_visible = zoom > 0.3
-            system.is_structure_visible = zoom > 0.2
-            system.is_system_text_visible = zoom > 0.2
-            system.updateSystemBackgroundColors()
-            system.renderConnections(painter, self.region_id, self.systems)
-            system.renderJumpBridges(painter, self.region_id, self.systems)
-            system.renderWormHoles(painter, self.region_id, self.systems)
-            system.renderBackground(painter, self.region_id)
-
-        #if zoom > 0.4:
-        for system in self.systems.values():
-            system.renderSystemTexts(painter, self.region_id)
-
-    def is_dirty(self):
+    @staticmethod
+    def is_dirty():
         """
             Checks all systems for repaint
         Returns:
             True if at least one system on the map needs to be repainted or if the map is empty
         """
-        for system in self.systems.values():
-            if system.is_dirty:
-                return True
-        return len(self.systems) == 0
+        return  any(sys.is_dirty for sys in ALL_SYSTEMS.values())
 
     @staticmethod
     def addSystemStatistics(statistics):
@@ -331,20 +317,10 @@ class Map(object):
             sys1.wormhole_info.append(connection)
             sys2.wormhole_info.append(connection)
 
-    def changeVulnerableVisibility(self, selected: bool) -> bool:
-        self._set_vulnerable_visible = selected
-        self._updateVulnerableVisibility()
-        return self._set_vulnerable_visible
-
     def _updateVulnerableVisibility(self) -> None:
         for system in self.systems.values():
             system.is_vulnerable_visible = self._set_vulnerable_visible
 
-    def changeStatisticsVisibility(self, selected: bool) -> bool:
-        self._statisticsVisible = selected
-        for system in self.systems.values():
-            system.is_statistics_visible = self._statisticsVisible
-        return self._statisticsVisible
 
     def _updateStatisticsVisibility(self) -> None:
         for system in self.systems.values():
@@ -359,7 +335,8 @@ class Map(object):
         self._updateJumpbridgesVisibility()
         return self._jumpMapsVisible
 
-    def updateStyle(self):
-        for system in self.systems.values():
+    @staticmethod
+    def updateStyle():
+        for system in ALL_SYSTEMS.values():
             system.updateStyle()
 

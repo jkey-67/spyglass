@@ -9,12 +9,13 @@ import string
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Iterable, List, Optional, Tuple
-from vi.universe import Universe
+from vi.universe import Universe, Region, Constellation
 import PySide6.QtCore
 import numpy as np
-from OpenGL.raw.GL.VERSION.GL_1_0 import GL_LESS, GL_DST_ALPHA, GL_ZERO
-from PySide6 import QtCore, QtGui, QtWidgets, QtOpenGLWidgets
+from PySide6 import QtCore, QtGui, QtOpenGLWidgets
+from vi.system import System
 from OpenGL.GL import (
+    GL_LESS,
     GL_ARRAY_BUFFER,
     GL_BLEND,
     GL_COLOR_BUFFER_BIT,
@@ -35,9 +36,6 @@ from OpenGL.GL import (
     GL_NICEST,
     GL_ONE,
     GL_ONE_MINUS_CONSTANT_COLOR,
-    GL_SRC_ALPHA_SATURATE,
-    GL_DST_COLOR,
-    GL_ONE_MINUS_DST_COLOR,
     GL_ONE_MINUS_SRC_ALPHA,
     GL_SRC_ALPHA,
     GL_POLYGON_OFFSET_FILL,
@@ -126,56 +124,6 @@ class IntelStatus(IntEnum):
     NONE = 0
     GREEN = 1
     RED = 2
-
-
-@dataclass(frozen=False)
-class System:
-    """Represents a solar system with renderable position and metadata.
-
-    Attributes:
-        x: Normalized X coordinate in map space.
-        y: Normalized Y coordinate in map space.
-        z: Normalized Z coordinate in map space (unused in 2D render).
-        name_en: Localized system name used for labels and lookups.
-        status: Status text displayed on the second label line.
-        sec_state: Security state indicator rendered above the label.
-        statistics: Statistic text rendered below the label.
-        timer: Timer text rendered above the label on the right.
-        marked: Remaining mark timer in milliseconds driving halo fade-out.
-        killed: Remaining kill timer in milliseconds driving halo fade-out.
-        intel_status: Intel status enum indicating a red or green alert state.
-        intel_status_time: UTC timestamp (float seconds) when intel was recorded.
-        monitored: Flag for halo rendering when system is monitored.
-        populated: Flag for halo rendering when system is populated.
-        contested: Flag for halo rendering when a system is contested (red).
-        incursion: Flag for halo rendering when under incursion (yellow).
-        structure: Structure type indicator (0 = none, 1/2/3 = small/medium/large).
-        system_id: Unique numeric identifier for stargate linkage.
-        record: Raw record dictionary from the source dataset.
-        honeycomb_color: RGBA tuple controlling the honeycomb fill color.
-        honeycomb_margin: Extra pixel margin added around the label for the honeycomb.
-    """
-    x: float
-    y: float
-    z: float
-    name_en: str
-    status: str
-    sec_state: str
-    statistics: str
-    timer: str
-    marked: int
-    killed: int
-    intel_status: IntelStatus
-    intel_status_time: float
-    monitored: int
-    populated: int
-    contested: int
-    incursion: int
-    structure: int
-    system_id: int
-    record: dict
-    honeycomb_color: Tuple[float, float, float, float] = (0.16, 0.2, 0.23, 1.0)
-    honeycomb_margin: float = 8.0
 
 
 @dataclass(frozen=True)
@@ -395,10 +343,8 @@ struct SystemData {
     vec4 intel_flags;
     vec4 flags_margin;
     vec4 honey_color;
-    float has_ice_belt;
-    float hasIncursionBoss;
-    float has_upwell_cyno_jammer;
-    float has_upwell_cyno_beacon;
+    vec4 status;
+    vec4 marker;
 };
 
 layout(std430, binding = 2) readonly buffer Systems {
@@ -416,6 +362,7 @@ uniform float uBorderThickness;
 uniform float uOuterBorderThickness;
 uniform float uAAMargin;
 uniform float uHaloRadiusFactor;
+uniform float uIntelNow;
 
 out vec2 vLocal;
 flat out vec2 vIntel;
@@ -432,17 +379,25 @@ void main() {
     SystemData sys = systems[gl_InstanceID];
     vec3 center = sys.pos_intel.xyz;
     float intel_status = sys.pos_intel.w;
-    float intel_time = sys.intel_flags.x;
-    float mark = sys.intel_flags.y;
+    float intel_delta = sys.intel_flags.x;
+    float intel_end = sys.intel_flags.y;
     float monitored = sys.intel_flags.z;
     float populated = sys.intel_flags.w;
     float contested = sys.flags_margin.x;
     float incursion = sys.flags_margin.y;
-    float kill = sys.flags_margin.z;
+    float incursion_boss = sys.flags_margin.z;
+    float incursion_staging = sys.status.y;
+    float kill_delta = sys.marker.z;
+    float kill_end = sys.marker.w;
     float honey_margin = sys.flags_margin.w;
+    float marker_delta = sys.marker.x;
+    float timer_end   = sys.marker.y;
     vec4 honey_color = sys.honey_color;
-    vHasIceBelt = sys.has_ice_belt;
-    
+    vHasIceBelt = sys.status.x;
+    float intel = intel_delta*max(0.0,intel_end-uIntelNow); 
+    float kill = kill_delta*max(0.0,kill_end-uIntelNow)*(0.5+0.5*sin((kill_end-uIntelNow)*10.0));
+    float mark = marker_delta*max(0.0,timer_end-uIntelNow);
+      
     vec4 viewPos = uView * vec4(center, 1.0);
     vec4 clip = uProj * viewPos;
     float depth = max(length(viewPos.xyz), 1e-6);
@@ -472,9 +427,9 @@ void main() {
     gl_Position = clip;
 
     vLocal = pixel;
-    vIntel = vec2(intel_status, intel_time);
+    vIntel = vec2(intel_status, intel);
     vFlagsA = vec4(mark, monitored, populated, contested);
-    vFlagIncursion = incursion;
+    vFlagIncursion = 0.1*(5.0*incursion+2.5*incursion_boss+2.5*incursion_staging);
     vFlagKill = kill;
     vHoneyColor = honey_color;
     vHoneyMargin = honey_margin;
@@ -505,8 +460,6 @@ uniform vec4 uIntelColorGreen;
 uniform vec4 uIntelColorRed;
 uniform vec4 uBorderColor;
 uniform vec4 uOuterBorderColor;
-uniform float uIntelNow;
-uniform float uIntelDuration;
 uniform float uHaloRadiusFactor;
 uniform vec4 uHaloColorMarked;
 uniform vec4 uHaloColorKill;
@@ -568,7 +521,7 @@ void main() {
     float intelTime = vIntel.y;
     if (intelStatus > 0.0 && intelTime > 0.0 ) {
         vec4 intelColor = (intelStatus > 1.5) ? uIntelColorRed : uIntelColorGreen;
-        fillColor = mix(uFillColor, intelColor, intelTime);
+        fillColor = mix(uFillColor, intelColor, clamp(intelTime,0.0,1.0));
     }
     vec4 fill = vec4(fillColor.rgb, fillColor.a * fill_alpha);
     vec4 border = vec4(uBorderColor.rgb, uBorderColor.a * border_alpha);
@@ -796,7 +749,7 @@ def collect_name_chars(systems: Iterable[System]) -> List[str]:
     """
     chars = set(string.printable)
     for sys in systems:
-        for ch in sys.name_en:
+        for ch in sys.name:
             chars.add(ch)
     return sorted(chars)
 
@@ -872,52 +825,6 @@ def look_at(eye: np.ndarray, target: np.ndarray, up: np.ndarray) -> np.ndarray:
     mat[1, 3] = -np.dot(up_vec, eye)
     mat[2, 3] = np.dot(forward, eye)
     return mat.T  # transpose for column-major ordering in GL
-
-
-def create_default_systems(count: int = 2000) -> List[System]:
-    """Generate a random fallback system set for testing.
-
-    Args:
-        count: Number of systems to generate.
-
-    Returns:
-        List of generated systems.
-    """
-    rng = np.random.default_rng(7)
-    positions = rng.normal(size=(count, 3)).astype(np.float32)
-    positions *= rng.uniform(2.0, 10.0, size=(count, 1)).astype(np.float32)
-    colors = rng.uniform(0.14, 0.26, size=(count, 3)).astype(np.float32)
-    alphas = rng.uniform(0.6, 1.0, size=(count,)).astype(np.float32)
-    margins = rng.uniform(6.0, 12.0, size=(count,)).astype(np.float32)
-    return [
-        System(
-            float(x),
-            float(y),
-            float(z),
-            f"System {i + 1}",
-            "A",
-            "B",
-            "C",
-            "D",
-            0,
-            0,
-            IntelStatus.NONE,
-            0.0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            i,
-            {},
-            (float(color[0]), float(color[1]), float(color[2]), float(alpha)),
-            float(margin),
-        )
-        for i, ((x, y, z), color, alpha, margin) in enumerate(
-            zip(positions, colors, alphas, margins)
-        )
-    ]
-
 
 def format_status(record: dict) -> str:
     """Create a short status string for a system.
@@ -1886,7 +1793,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
     INTEL_FADE_SECONDS = 30.0
     TEXT_FADE_START_SCALE = 0.1
     TEXT_FADE_END_SCALE = 0.30
-
+    INTEL_BASE_TIME  = time.time()
     def __init__(
         self,
         systems: dict[int,System],
@@ -1949,10 +1856,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.atlas = load_atlas(atlas_path)
         self.systems = list(systems.values())
         now_utc = time.time()
-        intel_times = [sys.intel_status_time for sys in self.systems if sys.intel_status_time > 0.0]
+        intel_times = [sys.intel_end for sys in self.systems if sys.intel_end > sys.intel_start]
         self.intel_time_base = min([now_utc] + intel_times)
         self.intel_fade_seconds = float(self.INTEL_FADE_SECONDS)
         self.system_index_by_id = {sys.system_id: idx for idx, sys in enumerate(self.systems)}
+        self._update_jump_bridges  = False
         self._intel_status_active = False
         self._show_intel_minutes = False
         self._text_rebuild_pending = False
@@ -1962,7 +1870,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.constellation_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.CONSTELLATIONS_ID_OBJS,font_scale=0.04,color="#30808000")
         self.font_scale = 1.4
         self.secondary_text_scale = 0.7
-        self.mark_timers = {idx: max(0.0, float(sys.marker)) for idx, sys in enumerate(self.systems)}
         self.kill_timers = {idx: max(0.0, float(sys.hasKill)) for idx, sys in enumerate(self.systems)}
         self._system_rebuild_pending = False
 
@@ -2021,8 +1928,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_system_intel_color_red = -1
         self.u_system_border = -1
         self.u_system_outer_border = -1
-        self.u_system_intel_now = -1
-        self.u_system_intel_duration = -1
+        self.u_system_uIntelNow = -1
         self.u_system_halo_radius = -1
         self.u_system_pass = -1
         self.u_system_halo_color_marked = -1
@@ -2103,11 +2009,15 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._last_frame_time = time.monotonic()
     systemDoubleClicked =  PySide6.QtCore.Signal(int)
     systemRightClicked = PySide6.QtCore.Signal(int)
+    systemChanged = PySide6.QtCore.Signal(str)
+    regionChanged = PySide6.QtCore.Signal(str)
+    constellationChanged = PySide6.QtCore.Signal(str)
 
     def updateJumpBridges(self,jump_bridge_vertices: Optional[np.ndarray]):
         self.bridge_line_vertices = (
             jump_bridge_vertices if jump_bridge_vertices is not None else np.array([], dtype=np.float32)
         )
+        self._update_jump_bridges = True
 
     def initializeGL(self) -> None:
         """Initialize OpenGL programs, buffers, and textures.
@@ -2206,26 +2116,15 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_system_intel_color_red = glGetUniformLocation(self.system_program, "uIntelColorRed")
         self.u_system_border = glGetUniformLocation(self.system_program, "uBorderColor")
         self.u_system_outer_border = glGetUniformLocation(self.system_program, "uOuterBorderColor")
-        self.u_system_intel_now = glGetUniformLocation(self.system_program, "uIntelNow")
-        self.u_system_intel_duration = glGetUniformLocation(self.system_program, "uIntelDuration")
         self.u_system_halo_radius = glGetUniformLocation(self.system_program, "uHaloRadiusFactor")
+        self.u_system_uIntelNow = glGetUniformLocation(self.system_program, "uIntelNow")
         self.u_system_pass = glGetUniformLocation(self.system_program, "uPass")
-        self.u_system_halo_color_marked = glGetUniformLocation(
-            self.system_program, "uHaloColorMarked"
-        )
+        self.u_system_halo_color_marked = glGetUniformLocation(self.system_program, "uHaloColorMarked")
         self.u_system_halo_color_kill = glGetUniformLocation(self.system_program, "uHaloColorKill")
-        self.u_system_halo_color_monitored = glGetUniformLocation(
-            self.system_program, "uHaloColorMonitored"
-        )
-        self.u_system_halo_color_populated = glGetUniformLocation(
-            self.system_program, "uHaloColorPopulated"
-        )
-        self.u_system_halo_color_contested = glGetUniformLocation(
-            self.system_program, "uHaloColorContested"
-        )
-        self.u_system_halo_color_incursion = glGetUniformLocation(
-            self.system_program, "uHaloColorIncursion"
-        )
+        self.u_system_halo_color_monitored = glGetUniformLocation(self.system_program, "uHaloColorMonitored")
+        self.u_system_halo_color_populated = glGetUniformLocation(self.system_program, "uHaloColorPopulated")
+        self.u_system_halo_color_contested = glGetUniformLocation(self.system_program, "uHaloColorContested")
+        self.u_system_halo_color_incursion = glGetUniformLocation(self.system_program, "uHaloColorIncursion")
 
         if self.line_vertices.size:
             self.line_vao = glGenVertexArrays(1)
@@ -2240,7 +2139,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             )
             glEnableVertexAttribArray(0)
 
-        if True and self.line_vertices_cross_constellation.size:
+        if self.line_vertices_cross_constellation.size:
             self.line_constellation_vao = glGenVertexArrays(1)
             self.line_constellation_vbo = glGenBuffers(1)
             glBindVertexArray(self.line_constellation_vao)
@@ -2256,7 +2155,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             )
             glEnableVertexAttribArray(0)
 
-        if True and self.line_vertices_cross_region.size:
+        if self.line_vertices_cross_region.size:
             self.line_region_vao = glGenVertexArrays(1)
             self.line_region_vbo = glGenBuffers(1)
             glBindVertexArray(self.line_region_vao)
@@ -2272,7 +2171,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             )
             glEnableVertexAttribArray(0)
 
-        if True and self.bridge_line_vertices.size:
+        if self.bridge_line_vertices.size:
             self.bridge_line_vao = glGenVertexArrays(1)
             self.bridge_line_vbo = glGenBuffers(1)
             glBindVertexArray(self.bridge_line_vao)
@@ -2474,22 +2373,25 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         # Keep the GL surface opaque to avoid translucent compositing artifacts.
         glClearColor(float(r), float(g), float(b), 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        if self._intel_status_active:
-            show_intel_minutes = bool(int(now_utc) % 2)
-            if show_intel_minutes != self._show_intel_minutes:
-                self._show_intel_minutes = show_intel_minutes
+        if  not ( self.orbiting or self.panning):
+            if self._update_jump_bridges:
+                self._refresh_jump_bridges()
+                self._update_jump_bridges=False
+            if self._intel_status_active:
+                show_intel_minutes = bool(int(now_utc) % 2)
+                if show_intel_minutes != self._show_intel_minutes:
+                    self._show_intel_minutes = show_intel_minutes
+                    self._text_dynamic_rebuild_pending = True
+            elif self._show_intel_minutes:
+                self._show_intel_minutes = False
                 self._text_dynamic_rebuild_pending = True
-        elif self._show_intel_minutes:
-            self._show_intel_minutes = False
-            self._text_dynamic_rebuild_pending = True
-        if self._text_rebuild_pending:
-            self._refresh_text_instances(now_utc)
-            self._text_rebuild_pending = False
-            self._text_dynamic_rebuild_pending = False
-        elif self._text_dynamic_rebuild_pending:
-            self._refresh_text_dynamic_instances(now_utc)
-            self._text_dynamic_rebuild_pending = False
+            if self._text_rebuild_pending:
+                self._refresh_text_instances(now_utc)
+                self._text_rebuild_pending = False
+                self._text_dynamic_rebuild_pending = False
+            elif self._text_dynamic_rebuild_pending:
+                self._refresh_text_dynamic_instances(now_utc)
+                self._text_dynamic_rebuild_pending = False
 
         self._system_rebuild_pending = any( sys.is_dirty for sys in self.systems )
         if self._system_rebuild_pending:
@@ -2589,6 +2491,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glDrawArrays(GL_LINES, 0, self.bridge_line_vertices.size // 3)
 
         if self.system_instance_count:
+            intel_base_time = now_utc - self.INTEL_BASE_TIME
             glEnable(GL_POLYGON_OFFSET_FILL)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glUseProgram(self.system_program)
@@ -2604,6 +2507,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glUniform1f(self.u_system_border_thickness, 1.5)
             glUniform1f(self.u_system_outer_border_thickness, 1.5)
             glUniform1f(self.u_system_aa_margin, 1.0)
+            glUniform1f(self.u_system_uIntelNow,  float(intel_base_time))
             glUniform4f(
                 self.u_system_fill,
                 float(self.rect_fill_color[0]),
@@ -2625,9 +2529,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 float(self.intel_color_red[2]),
                 float(self.intel_color_red[3]),
             )
-            intel_now = now_utc - self.intel_time_base
-            glUniform1f(self.u_system_intel_now, float(intel_now))
-            glUniform1f(self.u_system_intel_duration, float(self.intel_fade_seconds))
             r, g, b, a = PySide6.QtGui.QColor("#ffc0c0c0").getRgbF() # border of system rect
             glUniform4f(self.u_system_border, r, g, b, a )
             r, g, b, a = PySide6.QtGui.QColor("#800088ff").getRgbF() # ice belt color
@@ -2804,7 +2705,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         glDisable(GL_POLYGON_OFFSET_FILL)
         self._draw_hud()
-        #self.update()
+        self.update()
 
 
     def _update_hovered_system(self) -> None:
@@ -2844,16 +2745,16 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             return ""
         return f"ID {region_id}"
 
-    def _resolve_hud_labels(self) -> tuple[str, str]:
+    def _resolve_hud_labels(self) -> tuple[str,str, str]:
         """Return region/constellation labels for the HUD.
 
         Returns:
-            Tuple of (region_name, constellation_name).
+            Tuple of (region_name, constellation_name, system_name).
         """
         system = self._hovered_system
         if system is None:
-            return "-", "-"
-        return system.region_name, system.constellation_name
+            return "-", "-","-"
+        return system.region_name, system.constellation_name, system.name
 
     def _draw_hud(self) -> None:
         """Draw a HUD overlay for region/constellation and FPS.
@@ -2870,11 +2771,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             font.setPointSizeF(font.pointSizeF() * 0.9)
         painter.setFont(font)
 
-        region_name, const_name = self._resolve_hud_labels()
+        region_name, const_name, sys_name = self._resolve_hud_labels()
         fps_text = "--" if self._fps_smoothed <= 0.0 else f"{self._fps_smoothed:4.1f}"
         lines = [
             f"Region: {region_name}",
             f"Constellation: {const_name}",
+            f"System: {sys_name}",
             f"FPS: {fps_text}",
         ]
 
@@ -2933,56 +2835,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         glGenerateMipmap(GL_TEXTURE_2D)
         return tex
 
-    def _mark_factor(self, system_idx: int) -> float:
-        """Convert remaining mark time to a [0, 1] weight.
-
-        Args:
-            system_idx: Index of the system in `self.systems`.
-
-        Returns:
-            Normalized mark weight.
-        """
-        mark_ms = self.mark_timers.get(system_idx, 0.0)
-        if mark_ms <= 0.0:
-            return 0.0
-        return max(0.0, min(mark_ms / 10000.0, 1.0))
-
-    def _kill_factor(self, system_idx: int) -> float:
-        """Convert remaining kill time to a [0, 1] weight.
-
-        Args:
-            system_idx: Index of the system in `self.systems`.
-
-        Returns:
-            Normalized kill weight.
-        """
-        kill_ms = self.kill_timers.get(system_idx, 0.0)
-        if kill_ms <= 0.0:
-            return 0.0
-        return max(0.0, min(kill_ms, 1.0))
-        #return max(0.0, min(kill_ms / 10000.0, 1.0))
-
-    def _tick_kill_timers(self, delta_ms: float) -> bool:
-        """Decrease kill timers by elapsed milliseconds.
-
-        Args:
-            delta_ms: Elapsed time in milliseconds.
-
-        Returns:
-            True if any timer changed, else False.
-        """
-        if delta_ms <= 0.0:
-            return False
-        changed = False
-        for idx, remaining in list(self.kill_timers.items()):
-            if remaining <= 0.0:
-                continue
-            updated = max(0.0, remaining - delta_ms)
-            if updated != remaining:
-                self.kill_timers[idx] = updated
-                changed = True
-        return changed
-
     def _refresh_system_instances(self) -> None:
         """Update GPU system instances after data changes.
 
@@ -2991,7 +2843,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         self.region_background_layer.rebuild_labels()
         self.constellation_background_layer.rebuild_labels()
-        self.mark_timers = {idx: max(0.0, float(sys.marker)) for idx, sys in enumerate(self.systems)}
         self.kill_timers = {idx: max(0.0, float(sys.hasKill)) for idx, sys in enumerate(self.systems)}
         self.system_instances = self._build_system_instances()
         self.system_instance_count = (
@@ -3006,6 +2857,16 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 data = None
                 size = 0
             glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_DRAW)
+
+    def _refresh_jump_bridges(self):
+        glBindVertexArray(self.bridge_line_vao)
+        glBindBuffer(GL_ARRAY_BUFFER, self.bridge_line_vbo)
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            self.bridge_line_vertices.nbytes,
+            self.bridge_line_vertices,
+            GL_STATIC_DRAW,
+        )
 
     def _refresh_text_instances(self, now: Optional[float] = None) -> None:
         """Update GPU text instances after label text changes.
@@ -3068,7 +2929,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         instances: List[List[float]] = []
 
         def coerce_color(
-            value: None|Tuple[float, float, float, float] | Tuple[float, float, float] | float | list
+                value: None|Tuple[float, float, float, float] | Tuple[float, float, float] | float | list
         ) -> Tuple[float, float, float, float]:
             """Normalize honeycomb color inputs to RGBA floats.
 
@@ -3101,61 +2962,85 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         utc_now = time.time()
         self._intel_status_active = False
         for sys in self.systems:
-            sys.clr_dirty()
+            if type(sys) != System:
+                pass
             intel_status = sys.intel_status
-            intel_time = 0.0
-            if intel_status > 0:
-                self._intel_status_active = True
-                intel_time = sys.intel_status_alpha(utc_now)
-            if  sys.marker > 0.0:
-                delta = sys.marker-sys.marker_start
-                if sys.marker > utc_now and delta > 0.0:
-                    mark_factor = max(0.0,(sys.marker - utc_now)/delta)
+            intel_delta = 0.0
+            intel_end = 0.0
+            if intel_status > 0 and sys.intel_end  > sys.intel_start:
+                intel_delta = 1.0 / (sys.intel_end - sys.intel_start)
+                intel_end = sys.intel_end - self.INTEL_BASE_TIME
+                utc = utc_now - self.INTEL_BASE_TIME
+                if utc > intel_end:
+                    sys.intel_start = sys.intel_end = intel_delta = intel_end = 0.0
                 else:
-                    sys.marker_start = 0.0
-                    sys.marker = 0.0
-                    mark_factor = 0.0
-            else:
-                mark_factor =0.0
-            if sys.hasKill > 0.0:
-                kill_factor = max(0.0,(sys.hasKill - utc_now)/600.0)
-            else:
-                kill_factor = 0.0
+                    self._intel_status_active = True
+                pass
+
             color = coerce_color(sys.marking_color)
             margin = max(0.0, float(sys.marking_scale*24.0))
             monitored = 1.0 if sys.isMonitored() else 0.0
-            char_located = 1.0 if bool(sys._locatedCharacters) else 0.0
+            char_located = 1.0 if bool(sys.locatedCharacters) else 0.0
             if char_located == 1.0:
                 pass
+
+            mark_delta = 0.0
+            mark_end = 0.0
+            utc = 0.0
+            if sys.marker_start < sys.marker_end:
+                mark_delta = 1.0 / (sys.marker_end - sys.marker_start)
+                mark_end = sys.marker_end - self.INTEL_BASE_TIME
+                utc = utc_now - self.INTEL_BASE_TIME
+                if utc > mark_end:
+                    sys.marker_end = 0.0
+                    sys.marker_start = 0.0
+                pass
+
+            kill_delta = 0.0
+            kill_end = 0.0
+            if sys.kill_start < sys.kill_end:
+                kill_delta = 1.0 / (sys.kill_end - sys.kill_start)
+                kill_end = sys.kill_end - self.INTEL_BASE_TIME
+                utc = utc_now - self.INTEL_BASE_TIME
+                if utc > kill_end:
+                    sys.kill_start = 0.0
+                    sys.kill_end = 0.0
+                pass
+
             instances.append(
                 [
-                    sys.x,                  #x
-                    sys.y,                  #y
-                    sys.z,                  #z
-                    intel_status,           #w
-                    intel_time,             #x
-                    mark_factor,            #y
-                    monitored,              #z
-                    char_located,           #w
-                    1.0 if sys.hasCampaigns else 0.0,
-                    1.0 if sys.hasIncursion else 0.0,
-                    kill_factor,
-                    margin,
-                    color[0],
-                    color[1],
-                    color[2],
-                    color[3],
-                    1.0 if sys.has_ice_belt else 0.0,
-                    1.0 if sys.hasIncursionBoss else 0.0,
-                    1.0 if sys.has_upwell_cyno_jammer else 0.0,
-                    1.0 if sys.has_upwell_cyno_beacon else 0.0,
-            ]
+                    sys.x,                              #pos_intel.x
+                    sys.y,                              #pos_intel.y
+                    sys.z,                              #pos_intel.z
+                    intel_status,                       #pos_intel.w
+                    intel_delta,                        #intel_flags.x
+                    intel_end,                          #intel_flags.y
+                    monitored,                          #intel_flags.z
+                    char_located,                       #intel_flags.w
+                    1.0 if sys.hasCampaigns else 0.0,   #flags_margin.x
+                    1.0 if sys.hasIncursion else 0.0,   #flags_margin.y
+                    1.0 if sys.hasIncursionBoss else 0.0, #flags_margin.z
+                    margin,                             #flags_margin.w
+                    color[0],                           #honey_color.r
+                    color[1],                           #honey_color.g
+                    color[2],                           #honey_color.b
+                    color[3],                           #honey_color.a
+                    1.0 if sys.has_ice_belt else 0.0,           # status.x
+                    1.0 if sys.isIncursionStaging else 0.0,     # status.y
+                    1.0 if sys.has_upwell_cyno_jammer else 0.0, # status.z
+                    1.0 if sys.has_upwell_cyno_beacon else 0.0, # status.w
+                    mark_delta,  # marker.x
+                    mark_end,  # marker.y
+                    kill_delta,  # marker.z
+                    kill_end,  # marker.w
+                ]
             )
+            sys.clr_dirty()
 
         if not self._intel_status_active and self._show_intel_minutes:
             self._show_intel_minutes = False
-            self._system_rebuild_pending = True
-            self._text_rebuild_pending = True
+            #self._system_rebuild_pending = True
+            #self._text_rebuild_pending = True
             self._text_dynamic_rebuild_pending = True
 
         if not instances:
@@ -3389,10 +3274,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 )
                 pen_x += adv
 
-        intel_cleared = False
         for sys in self.systems:
-            intel_status = sys.intel_status
-            was_intel = intel_status != IntelStatus.NONE
             total_h = primary_line_height * 2.0 + line_gap
             baseline = -total_h / 2.0 + primary_ascent
             line1_y = baseline
@@ -3402,35 +3284,14 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             below_y = half_height + outer_gap + secondary_ascent - outside_offset
             if include_static:
                 add_line(static_instances, sys, sys.name, line1_y, "center", base_color, primary_scale)
-            status_text = sys.ticker
-            if was_intel and self._show_intel_minutes:
-                intel_text = sys.intel_status_time_string(now)
-                if intel_text:
-                    status_text = intel_text
-            if was_intel and intel_status != IntelStatus.NONE:
-                add_line(dynamic_instances, sys, status_text, line2_y, "center", base_color, primary_scale)
-            elif include_static:
-                add_line(static_instances, sys, status_text, line2_y, "center", base_color, primary_scale)
-            if was_intel and intel_status == IntelStatus.NONE:
-                intel_cleared = True
-            if include_static:
                 if self.show_timers:
                     add_line(static_instances, sys, sys.sec_state, above_y, "left", accent_color, secondary_scale)
                     add_line(static_instances, sys, sys.timer, above_y, "right", accent_color, secondary_scale)
                 if self.show_statistic:
-                    add_line(
-                        static_instances,
-                        sys,
-                        sys.statistics,
-                        below_y,
-                        "center",
-                        alert_color,
-                        secondary_scale,
-                    )
-        if intel_cleared:
-            self._system_rebuild_pending = True
-            if not include_static:
-                self._text_rebuild_pending = True
+                    add_line(static_instances, sys, sys.statistics, below_y, "center", alert_color,secondary_scale )
+
+            add_line(dynamic_instances, sys, sys.intel_status_time_string(now), line2_y, "center", base_color, primary_scale)
+
         static_array = (
             np.array(static_instances, dtype=np.float32)
             if static_instances and include_static
@@ -3755,7 +3616,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         self.line_thickness = max(0.1, float(thickness))
 
-    def _focus_on_system(self, system: System) -> None:
+    def _focus_on_system(self, system: System|Region|Constellation) -> None:
         """Recenter orbit controls and camera target on a specific system.
 
         Args:
@@ -3810,24 +3671,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         system_idx = self.system_index_by_id.get(int(system_id))
         if system_idx is None:
             return
-        self.mark_timers[system_idx] = self.systems[system_idx].marker
-        self._system_rebuild_pending = True
-
-    @PySide6.QtCore.Slot(int)
-    def set_system_killed(self, system_id: int) -> None:
-        """Set the kill timer for a system to 5000 ms.
-
-        Args:
-            system_id: Target system ID.
-
-        Returns:
-            None.
-        """
-        system_idx = self.system_index_by_id.get(int(system_id))
-        if system_idx is None:
-            return
-        self.systems[system_idx].killed = 5000
-        self.kill_timers[system_idx] = 5000.0
         self._system_rebuild_pending = True
 
     @PySide6.QtCore.Slot(int, int, float)
@@ -3863,24 +3706,36 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._text_rebuild_pending = True
 
     @PySide6.QtCore.Slot(int,bool)
-    def centerMapOnId(self, system_id: int, animate:bool=False) -> None:
+    def centerMapOnId(self, requested_id: int, animate:bool=False) -> None:
         """Center the map view on the system with the provided ID.
 
         Args:pos[4] += gate_dst.x
-            system_id: Target system or region ID.
-
+            requested_id: Target system, region or constellation  ID.
+            animate: use animations
         Returns:
             None.
         """
-        system_idx = self.system_index_by_id.get(int(system_id))
-        if system_idx is None:
+        requested_object = Universe.REGIONS_ID_OBJ.get(requested_id)
+        if requested_object is None:
+            requested_object = Universe.CONSTELLATIONS_ID_OBJS.get(requested_id)
+        if requested_object is None:
+            system_idx = self.system_index_by_id.get(requested_id)
+            if system_idx:
+                requested_object = self.systems[system_idx]
+
+        if requested_object is None:
             return
-        system = self.systems[system_idx]
-        if self.mouse_3d:
-            self._focus_on_system(system)
-        else:
-            self.target[0] = -float(system.x)
-            self.target[1] = -float(system.y)
+
+        self._focus_on_system(requested_object)
+        if type(requested_object) is System:
+            self.systemChanged.emit(requested_object.name)
+            self.regionChanged.emit(requested_object.region_name)
+            self.constellationChanged.emit(requested_object.constellation_name)
+        elif type(requested_object) is Constellation:
+            self.regionChanged.emit(requested_object.name)
+            self.constellationChanged.emit(requested_object.constellation_name)
+        elif type(requested_object) is Region:
+            self.regionChanged.emit(requested_object.name)
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         """Start panning when the left mouse button is pressed.
@@ -3968,15 +3823,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             event.ignore()
             return
         hovered = self._system_by_id(hovered_id)
-        self.set_system_marked(hovered_id)
-        self.set_system_intel_status(hovered_id, IntelStatus.GREEN, time.time())
         self.systemDoubleClicked.emit(int(hovered_id))
-        if self.mouse_3d:
-            self.orbiting = False
-            self.panning = False
-            if hovered is not None:
-                self._focus_on_system(hovered)
-            self.unsetCursor()
         event.accept()
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
@@ -4042,6 +3889,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         self._last_mouse_pos = None
         self._hovered_system = None
+        self.panning = False
+        self.orbiting = False
         event.accept()
 
     def wheelEvent(self, event: QtGui.QWheelEvent) -> None:
@@ -4139,8 +3988,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glDeleteBuffers(1, [self.text_instance_vbo])
         if self.text_dynamic_instance_vbo:
             glDeleteBuffers(1, [self.text_dynamic_instance_vbo])
-        if self.region_background_instance_vbo:
-            glDeleteBuffers(1, [self.region_background_instance_vbo])
         if self.system_ssbo:
             glDeleteBuffers(1, [self.system_ssbo])
         if self.pick_positions_ssbo:
@@ -4149,6 +3996,4 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glDeleteBuffers(1, [self.pick_distances_ssbo])
         if self.system_vao:
             glDeleteVertexArrays(1, [self.system_vao])
-        if self.region_background_vao:
-            glDeleteVertexArrays(1, [self.region_background_vao])
         super().closeEvent(event)

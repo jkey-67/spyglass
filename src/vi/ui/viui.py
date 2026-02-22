@@ -38,7 +38,7 @@ from PySide6.QtGui import QIcon, QPixmap, QDesktopServices
 from PySide6.QtWidgets import (QMessageBox, QFileDialog, QApplication, QAbstractItemView)
 
 import vi.version
-from vi.universe import Universe, SDE_VERSION, SDE_DATE, Position
+from vi.universe import Universe, SDE_VERSION
 from vi.system import System
 from vi import evegate
 from vi import dotlan, filewatcher
@@ -517,6 +517,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.mapView.showJumpBridges(self.showJumpbridge())
         self.ui.mapView.showTimers(self.showADMOnMap())
         self.ui.mapView.showStatistics(self.showStatistic())
+        self.ui.mapView.invertMouse(self.invertWheel)
 
         def hoverCheck(global_pos: QPoint, system_id: int|None):
             """
@@ -541,13 +542,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.mapView.hoverCheck = hoverCheck
 
-        def doubleClicked(pos: QPoint):
-            for name, system in self.systems_on_map.items():
-                if system.mapCoordinates.contains(pos):
-                    self.mapLinkClicked(QtCore.QUrl("map_link/{0}".format(name)))
-                    break
+        def doubleClicked(system_id: int):
+            system = ALL_SYSTEMS.get(system_id)
+            if system:
+                self.mapLinkClicked(system)
 
-        self.ui.mapView.webViewDoubleClicked.connect(doubleClicked)
+        self.ui.mapView.systemDoubleClicked.connect(doubleClicked)
 
     def handleDestinationActions(self, act, destination, jump_route=None) -> bool:
         """
@@ -765,6 +765,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.dotlan.setTheraConnections(connections)
         self.ui.tableViewThera.model().sourceModel().setTheraConnections(connections)
 
+    @Slot(str)
+    def theraSystemChanged(self,system_name):
+        self.cache.putIntoCache("thera_source_system", system_name)
+        self.statisticsThread.setCurrentTheraSystem(system_name)
+        self.statisticsThread.requestWormholes()
+
     @Slot()
     def theraSystemChanged(self):
         system_name = self.ui.lineEditThera.text()
@@ -980,10 +986,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.removeChar.clicked.connect(callOnRemoveChar)
 
-    def updateKillboard(self, system_id,utc_time):
-        ALL_SYSTEMS[system_id].addKill(utc_time)
-        if Globals().follow_kills:
-            self.changeRegionBySystemID(system_id)
+    def updateKillboard(self, system_id, utc_timestamp):
+        mark_time = 60.0
+        if time.time() <  utc_timestamp + mark_time:
+            ALL_SYSTEMS[system_id].addKill(utc_time=utc_timestamp,delta=mark_time)
+            if Globals().follow_kills:
+                self.changeRegionBySystemID(system_id)
 
     def _setupThreads(self):
         logging.info("Set up threads and their connections...")
@@ -1053,7 +1061,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if selected_system:
             self.ui.mapView.centerMapOnId(selected_system.system_id)
-            #self.ui.mapView.setScrollPosition(QPointF(selected_system.x,selected_system.y),True)
+            self.region_changed.emit(selected_system.region_name)
 
     @Slot()
     def navigateBackward(self):
@@ -1197,7 +1205,7 @@ class MainWindow(QtWidgets.QMainWindow):
         except(Exception,):
             return {}
 
-    def setupRegionMap(self, region_name)->Optional[dotlan.Map]:
+    def setupRegionMap(self, region_name)->Optional[dotlan. Map]:
         """
             Prepares a new dotlan object for the selected region
         Args:
@@ -1239,7 +1247,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     room_name = ChatParser.roomNameFromFileName(file)
                     modify_time = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
                     delta = now - modify_time
-                    if (delta.total_seconds() < 60 * Globals().intel_time) and (delta.total_seconds() > 0):
+                    if (delta.total_seconds() < 60.0 * Globals().intel_time) and (delta.total_seconds() > 0):
                         if room_name in self.room_names:
                             self.logFileChanged(file_path, rescan=True)
         except (Exception,) as ex:
@@ -1335,7 +1343,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(action,"theme"):
             styles.setStyle(action.theme)
         theme = styles.getStyle()
-        self.dotlan.updateStyle()
+        dotlan.Map.updateStyle()
         self.setStyleSheet(theme)
         self.cache.putIntoCache("theme", action.theme, 60 * 60 * 24 * 365)
 
@@ -1623,23 +1631,20 @@ class MainWindow(QtWidgets.QMainWindow):
             if jb_changed:
                 self.jbs_changed.emit()
 
-    def mapLinkClicked(self, url: QtCore.QUrl) -> None:
+    def mapLinkClicked(self, system: System|None) -> None:
         """
             Opens the solar system dialog
         Args:
-            url:
+            system:
 
         Returns:
             None
         """
-        system_name = str(url.path().split("/")[-1])
-        if system_name in self.systems_on_map:
-            system = self.systems_on_map[system_name]
+        if system:
             sc = SystemChat(self, SystemChat.SYSTEM, system, self.chatEntries, self.knownPlayerNames)
             self.chat_message_added.connect(sc.addChatEntry)
             self.avatar_loaded.connect(sc.newAvatarAvailable)
             sc.location_set.connect(self.setLocation)
-            sc.repaint_needed.connect(self.updateMapView)
             sc.show()
 
     def markSystemOnMap(self, system_marked) -> None:
@@ -1661,8 +1666,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             system = None
         if system:
-            system.markSystem(5)
             self.ui.mapView.centerMapOnId(system.system_id)
+            system.markSystem(now=time.time(),duration=5)
 
     @staticmethod
     def updateCharLocationOnMap(system_id: int, char_name: str, alarm_distance: int) -> None:
@@ -1851,9 +1856,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 elif os.path.exists(url):
                     with open(url, 'r') as f:
                         data = set( f.readlines() )
-
-                #self.cache.clearJumpGate(None)
-                #self.jbs_changed.emit()
 
                 for line in data:
                     jump_bridge_text = parse.parse("{src} » {dst}", line)
@@ -2115,13 +2117,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.avatarFindThread.addChatEntry(entry, clear_cache=True)
 
     @Slot(object)
-    def updateStatisticsOnMap(self, data:object)->None:
+    def updateStatisticsOnMap(self, data:dict)->None:
         update_map_view = False
         if data:
             if STAT.STATISTICS in data.keys():
                 self.mapStatisticCache = data[STAT.STATISTICS]
                 if self.dotlan:
-                    self.dotlan.addSystemStatistics(self.mapStatisticCache)
+                    dotlan.Map.addSystemStatistics(self.mapStatisticCache)
                 update_map_view = True
                 logging.debug("Statistic data successfully fetched.")
             if STAT.SERVER_STATUS in data.keys():
@@ -2241,14 +2243,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self._updateKnownPlayerAndMenu(name)
             for sys_name in systems:
                 self.setLocation(name, sys_name, self.autoChangeRegion)
-
-    def systemUnderMouse(self, pos: QPoint) -> Optional[dotlan.System]:
-        """returns the name of the system under the mouse pointer
-        """
-        for system in self.systems_on_map.values():
-            if system.mapCoordinates.contains(pos):
-                return system
-        return None
 
     def showMapContextMenu(self, pos):
         """ checks if there is a system below the mouse position, if the systems region differs from the current

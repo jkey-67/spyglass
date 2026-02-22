@@ -153,13 +153,14 @@ class ChatParser(object):
             logging.debug("Skip {} Room:{}".format(line, room_name))
             return None
 
-        # May happen if someone plays > 1 account
-        if message in self.knownMessages:
-            message.status = States.IGNORE
-            return None
-        else:
-            parseMessageForMap(systems_on_map, message)
-            self.knownMessages.append(message)
+        if message:
+            # May happen if someone plays > 1 account
+            if message in self.knownMessages:
+                message.status = States.IGNORE
+                return None
+            else:
+                parseMessageForMap(systems_on_map, message)
+                self.knownMessages.append(message)
         return message
 
     def clearIntel(self):

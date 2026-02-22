@@ -2492,6 +2492,9 @@
    <slots>
     <signal>webViewNavigateForward()</signal>
     <signal>webViewNavigateBackward()</signal>
+    <signal>systemChanged(QString)</signal>
+    <signal>regionChanged(QString)</signal>
+    <signal>constellationChanged(QString)</signal>
     <slot>webViewIsScrolling(bool)</slot>
     <slot>webViewUpdateScrollbars()</slot>
     <slot>webViewDoubleClicked()</slot>
@@ -2673,14 +2676,14 @@
    </hints>
   </connection>
   <connection>
-   <sender>MainWindow</sender>
-   <signal>current_system_changed(QString)</signal>
+   <sender>mapView</sender>
+   <signal>systemChanged(QString)</signal>
    <receiver>lineEditThera</receiver>
    <slot>setText(QString)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>520</x>
-     <y>378</y>
+     <x>670</x>
+     <y>436</y>
     </hint>
     <hint type="destinationlabel">
      <x>199</x>
@@ -2861,22 +2864,6 @@
     <hint type="destinationlabel">
      <x>1073</x>
      <y>689</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MainWindow</sender>
-   <signal>region_changed(QString)</signal>
-   <receiver>regionNameField</receiver>
-   <slot>setCurrentText(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>708</x>
-     <y>421</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>570</x>
-     <y>42</y>
     </hint>
    </hints>
   </connection>
@@ -3168,6 +3155,54 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>mapView</sender>
+   <signal>regionChanged(QString)</signal>
+   <receiver>regionNameField</receiver>
+   <slot>setEditText(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>670</x>
+     <y>436</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>495</x>
+     <y>49</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mapView</sender>
+   <signal>regionChanged(QString)</signal>
+   <receiver>regionNameField</receiver>
+   <slot>setCurrentText(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>639</x>
+     <y>582</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>539</x>
+     <y>42</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mapView</sender>
+   <signal>systemChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>theraSystemChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>670</x>
+     <y>436</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>735</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>region_changed(QString)</signal>
@@ -3209,5 +3244,6 @@
   <slot>setUseThreaRoutes(bool)</slot>
   <slot>changeInvertMouseWheel(bool)</slot>
   <slot>changeAutoChangeRegion(bool)</slot>
+  <slot>theraSystemChanged(QString)</slot>
  </slots>
 </ui>

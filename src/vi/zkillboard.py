@@ -41,7 +41,7 @@ class ZKillMonitor(QObject):
     report_system_kill = Signal(int,float)
     MONITORING_PATH = "zkillMonitor.log"
     LOG_VICTIM = True
-    LOG_ATTACKERS = False
+    LOG_ATTACKERS = True
 
     def __init__(self, parent=None):
         """Initialize the zKillboard monitor and networking state.
@@ -58,7 +58,7 @@ class ZKillMonitor(QObject):
         if self.zkillredisqStreamID is None:
             self.zkillredisqStreamID = "spyglass-{}".format(uuid.uuid4())
             Cache().putIntoCache("zkillredisq.stream.id", self.zkillredisqStreamID)
-        self.zkillredisqStreamID = "spyglass-{}".format(uuid.uuid4())
+        # self.zkillredisqStreamID = "spyglass-{}".format(uuid.uuid4())
         self.netManager = QNetworkAccessManager()
         self.netManager.finished.connect(self.responseReady,Qt.ConnectionType.QueuedConnection)
         self.killmailManager = QNetworkAccessManager()

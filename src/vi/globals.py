@@ -26,12 +26,12 @@ class Globals(object):
         self.cache = Cache()
 
     @property
-    def intel_time(self):
+    def intel_time(self)->int:
         return Globals._INTEL_TIME
 
     @intel_time.setter
-    def intel_time(self, intel_time):
-        Globals._INTEL_TIME = intel_time
+    def intel_time(self, intel_time:int):
+        Globals._INTEL_TIME = int(intel_time)
 
     @property
     def follow_kills(self):
