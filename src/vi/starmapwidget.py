@@ -4,7 +4,6 @@ import json
 import math
 import os
 import time
-import re
 import string
 from dataclasses import dataclass
 from enum import IntEnum
@@ -363,6 +362,7 @@ uniform float uOuterBorderThickness;
 uniform float uAAMargin;
 uniform float uHaloRadiusFactor;
 uniform float uIntelNow;
+uniform vec4 uHaloColorIncursion;
 
 out vec2 vLocal;
 flat out vec2 vIntel;
@@ -370,6 +370,7 @@ flat out vec4 vFlagsA;
 flat out float vFlagIncursion;
 flat out float vFlagKill;
 flat out vec4 vHoneyColor;
+flat out vec4 vIncursionColor;
 flat out float vHoneyMargin;
 flat out float vScale;
 flat out float vHasIceBelt;
@@ -433,6 +434,8 @@ void main() {
     vFlagKill = kill;
     vHoneyColor = honey_color;
     vHoneyMargin = honey_margin;
+    vIncursionColor = uHaloColorIncursion;
+    vIncursionColor.r = vIncursionColor.r+0.2*incursion_boss;
 }
 """
 
@@ -444,6 +447,7 @@ flat in vec4 vFlagsA;
 flat in float vFlagIncursion;
 flat in float vFlagKill;
 flat in vec4 vHoneyColor;
+flat in vec4 vIncursionColor;
 flat in float vHoneyMargin;
 flat in float vScale;
 flat in float vHasIceBelt;
@@ -537,7 +541,7 @@ void main() {
     base = over(base,clampColor(uHaloColorKill, vFlagKill));
     base = over(base,clampColor(uHaloColorMonitored, vFlagsA.y));
     base = over(base,clampColor(uHaloColorContested, vFlagsA.w));
-    base = over(base,clampColor(uHaloColorIncursion, vFlagIncursion));
+    base = over(base,clampColor(vIncursionColor, vFlagIncursion));
     base = over(base,clampColor(uHaloColorPopulated, vFlagsA.z));
     base = over(base,clampColor(uHaloColorMarked, vFlagsA.x));
 
@@ -858,7 +862,7 @@ def _parse_color_rgba(
         try:
             alpha = float(raw)
             if math.isfinite(alpha):
-                return (fallback[0], fallback[1], fallback[2], max(0.0, min(1.0, alpha)))
+                return fallback[0], fallback[1], fallback[2], max(0.0, min(1.0, alpha))
         except (TypeError, ValueError):
             pass
     color = QtGui.QColor(raw)
@@ -907,299 +911,6 @@ def load_info_objects(path: str) -> dict:
                 "structure": 1 if marker_upper else 0,
             }
     return markers
-
-
-def load_systems(
-    path: str,
-    target_radius: float = 20.0,
-    info_objects_path: Optional[str] = None,
-    mouse_3d=False
-) -> List[System]:
-    """Load systems from a JSONL file and normalize positions.
-
-    Args:
-        path: Path to the JSONL file.
-        target_radius: Radius used to scale positions.
-        info_objects_path: Optional CSV used to override per-system markers, margins, and honeycomb colors.
-
-    Returns:
-        List of systems with normalized coordinates.
-    """
-    positions = []
-    records = []
-    info_objects: dict[str, dict] = {}
-    inferred_info_path = info_objects_path or os.path.join(os.path.dirname(path), "InfoObjects.txt")
-    if os.path.exists(inferred_info_path):
-        try:
-            info_objects = load_info_objects(inferred_info_path)
-        except (OSError, csv.Error) as exc:
-            print(f"Failed to load {inferred_info_path}: {exc}")
-
-    def pick_honeycomb_margin(structure: int) -> float:
-        """Increase the background margin slightly for larger structures.
-
-        Args:
-            structure: Structure size indicator.
-
-        Returns:
-            Additional margin in pixels.
-        """
-        base = 8.0
-        return base + float(max(structure, 0)) * 1.5
-    with open(path, "r", encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            record = json.loads(line)
-            system_id = int(record.get("_key", -1))
-            if system_id > 31999999:
-                continue
-            pos = None
-            if mouse_3d:
-                pos = record.get("position")
-            else:
-                pos = record.get("position2D")
-
-            if not pos:
-                continue
-            positions.append([pos.get("x",0), pos.get("y",0), pos.get("z",0)])
-            records.append(record)
-
-    if not positions:
-        return []
-
-    coords = np.array(positions, dtype=np.float32)
-    center = coords.mean(axis=0)
-    coords -= center
-    max_dist = np.linalg.norm(coords, axis=1).max()
-    scale = target_radius / max(max_dist, 1.0)
-    coords *= scale
-    systems = []
-    for (x, y, z), record in zip(coords, records):
-        name_en = record.get("name", {}).get("en", "Unknown")
-        status = format_status(record)
-        sec_state = record.get("securityClass", "") or ""
-        statistics = "stat"
-        timer = "timer"
-        marked = 15000 if name_en == "Ronne" else 0
-        killed = 0
-        intel_status = IntelStatus.NONE
-        intel_status_time = 0.0
-        monitored = 1 if name_en == "Anka" else 0
-        populated = 1 if name_en == "Lamaa" else 0
-        contested = 1 if name_en == "Iesa" else 0
-        incursion = 1 if name_en == "Gammel" else 0
-        structure = 0
-        if name_en == "Iesa":
-            structure = 1
-        elif name_en == "Anka":
-            structure = 2
-        elif name_en == "Saikamon":
-            structure = 3
-        info = info_objects.get(name_en)
-        if info:
-            region_name = info.get("region")
-            if region_name and not record.get("regionName"):
-                record = dict(record)
-                record["regionName"] = region_name
-            structure = info.get("structure", structure) or structure
-
-        system_id = int(record.get("_key", -1))
-        honeycomb_color = (0.,0.,0.,0.)
-        honeycomb_margin = pick_honeycomb_margin(structure)
-        if info:
-            honeycomb_color = info.get("color", honeycomb_color) or honeycomb_color
-            honeycomb_margin = float(info.get("margin", honeycomb_margin))
-        systems.append(
-            System(
-                float(x),
-                float(y),
-                float(z),
-                name_en,
-                status,
-                sec_state,
-                statistics,
-                timer,
-                marked,
-                killed,
-                intel_status,
-                intel_status_time,
-                monitored,
-                populated,
-                contested,
-                incursion,
-                structure,
-                system_id,
-                record,
-                honeycomb_color,
-                honeycomb_margin,
-            )
-        )
-    return systems
-
-
-def load_connections(
-    path: str,
-    systems: List[System],
-    *,
-    grouped: bool = False,
-) -> np.ndarray | ConnectionLineGroups:
-    """Load stargate connections into a flat vertex array.
-
-    Args:
-        path: Path to the stargates JSONL file.
-        systems: Systems to match IDs against.
-        grouped: If True, returns vertices split into groups based on whether
-            the connection crosses constellations/regions.
-
-    Returns:
-        Either a float32 array of line vertices (x, y, z pairs), or a
-        ConnectionLineGroups instance when ``grouped`` is True.
-    """
-    systems_by_id = {sys.system_id: sys for sys in systems if sys.system_id >= 0}
-    pairs = set()
-    verts: List[float] = []
-    standard: List[float] = []
-    cross_constellation: List[float] = []
-    cross_region: List[float] = []
-    with open(path, "r", encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            record = json.loads(line)
-            src = record.get("solarSystemID")
-            dst = record.get("destination", {}).get("solarSystemID")
-            if src is None or dst is None:
-                continue
-            if src > 31999999 or dst > 31999999:
-                continue
-            if src not in systems_by_id or dst not in systems_by_id:
-                continue
-            key = (src, dst) if src < dst else (dst, src)
-            if key in pairs:
-                continue
-            pairs.add(key)
-            a = systems_by_id[src]
-            b = systems_by_id[dst]
-            if grouped:
-                region_a = a.record.get("regionID")
-                region_b = b.record.get("regionID")
-                const_a = a.record.get("constellationID")
-                const_b = b.record.get("constellationID")
-                if region_a is not None and region_b is not None and region_a != region_b:
-                    cross_region.extend([a.x, a.y, a.z, b.x, b.y, b.z])
-                elif const_a is not None and const_b is not None and const_a != const_b:
-                    cross_constellation.extend([a.x, a.y, a.z, b.x, b.y, b.z])
-                else:
-                    standard.extend([a.x, a.y, a.z, b.x, b.y, b.z])
-            else:
-                verts.extend([a.x, a.y, a.z, b.x, b.y, b.z])
-
-    if grouped:
-        return ConnectionLineGroups(
-            np.array(standard, dtype=np.float32),
-            np.array(cross_constellation, dtype=np.float32),
-            np.array(cross_region, dtype=np.float32),
-        )
-
-    if not verts:
-        return np.array([], dtype=np.float32)
-    return np.array(verts, dtype=np.float32)
-
-
-def load_jump_bridges(
-    path: str,
-    systems: List[System],
-    segments: int = 16,
-    bulge_factor: float = 0.16,
-) -> np.ndarray:
-    """Load jump-bridge style connections defined by system names.
-
-    The file format is: ``<id> <source> --> <target>`` with ``#`` comments.
-    Curves are emitted as a list of line segments approximating a quadratic
-    Bezier with a gentle perpendicular bulge.
-
-    Args:
-        path: Path to the jump bridge file.
-        systems: Systems to match names against.
-        segments: Number of segments per curve.
-        bulge_factor: Perpendicular bulge factor for the curve.
-
-    Returns:
-        Float32 array of line segment vertices.
-    """
-    systems_by_name = {sys.name_en: sys for sys in systems}
-    verts: List[float] = []
-    pairs = set()
-
-    def bezier_segments(a: System, b: System) -> List[float]:
-        """Build flat-ish quadratic Bezier segments between two systems.
-
-        Args:
-            a: Source system.
-            b: Destination system.
-
-        Returns:
-            Flattened list of vertex pairs representing the curve.
-        """
-        ax, ay, az = a.x, a.y, a.z
-        bx, by, bz = b.x, b.y, b.z
-        dx = bx - ax
-        dy = by - ay
-        dist = math.hypot(dx, dy)
-        if dist <= 1e-5:
-            return []
-        # Build a control point halfway along the edge, nudged perpendicular
-        # to keep the curve nearly flat.
-        px = -dy
-        py = dx
-        perp_len = math.hypot(px, py) or 1.0
-        px /= perp_len
-        py /= perp_len
-        height = dist * bulge_factor
-        cx = (ax + bx) * 0.5 + px * height
-        cy = (ay + by) * 0.5 + py * height
-        cz = (az + bz) * 0.5
-        points: List[Tuple[float, float, float]] = []
-        for i in range(segments + 1):
-            t = i / float(segments)
-            omt = 1.0 - t
-            x = omt * omt * ax + 2.0 * omt * t * cx + t * t * bx
-            y = omt * omt * ay + 2.0 * omt * t * cy + t * t * by
-            z = omt * omt * az + 2.0 * omt * t * cz + t * t * bz
-            points.append((x, y, z))
-        segs: List[float] = []
-        for i in range(len(points) - 1):
-            x0, y0, z0 = points[i]
-            x1, y1, z1 = points[i + 1]
-            segs.extend([x0, y0, z0, x1, y1, z1])
-        return segs
-
-    pattern = re.compile(r"^\s*(\d+)\s+(.+?)\s+-->\s+(.+?)\s*$")
-    with open(path, "r", encoding="utf-8") as handle:
-        for raw in handle:
-            line = raw.strip()
-            if not line or line.startswith("#"):
-                continue
-            match = pattern.match(line)
-            if not match:
-                continue
-            _, src_name, dst_name = match.groups()
-            if src_name not in systems_by_name or dst_name not in systems_by_name:
-                continue
-            key = tuple(sorted((src_name, dst_name)))
-            if key in pairs:
-                continue
-            pairs.add(key)
-            a = systems_by_name[src_name]
-            b = systems_by_name[dst_name]
-            verts.extend(bezier_segments(a, b))
-
-    if not verts:
-        return np.array([], dtype=np.float32)
-    return np.array(verts, dtype=np.float32)
 
 
 STRUCTURE_GRIDS: dict[int, List[str]] = {
@@ -1731,12 +1442,7 @@ class RegionBackgroundLabelLayer:
 
     def initialize_vbo(self) -> None:
         self.instance_vbo = glGenBuffers(1)
-        bind_text_instances(
-            self.vao,
-            self.instance_vbo,
-            self.instances,
-        )
-
+        bind_text_instances(self.vao,self.instance_vbo,self.instances,)
 
 def bind_text_instances(vao: int, vbo: int, instances: np.ndarray) -> None:
             """Bind per-instance glyph attributes to a text VAO.
@@ -1837,13 +1543,19 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.line_region_vbo = 0
         self.bridge_line_vao = 0
         self.bridge_line_vbo = 0
-        self.text_vao = 0
-        self.text_dynamic_vao = 0
         self.text_vbo = 0
-        self.text_instance_vbo = 0
+        self.text_static_vao = 0
+        self.text_dynamic_vao = 0
+        self.text_timer_vao = 0
+        self.text_statistic_vao = 0
+        self.text_static_instance_vbo = 0
         self.text_dynamic_instance_vbo = 0
-        self.text_instance_count = 0
+        self.text_timer_instance_vbo = 0
+        self.text_statistic_instance_vbo = 0
+        self.text_static_instance_count = 0
         self.text_dynamic_instance_count = 0
+        self.text_timer_instance_count = 0
+        self.text_statistic_instance_count = 0
         self.system_vao = 0
         self.system_ssbo = 0
         self.system_instance_count = 0
@@ -1863,14 +1575,14 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._update_jump_bridges  = False
         self._intel_status_active = False
         self._show_intel_minutes = False
-        self._text_rebuild_pending = False
-        self._text_dynamic_rebuild_pending = False
+        self._text_rebuild_pending = True
+        self._text_dynamic_rebuild_pending = True
+        self._text_static_rebuild_pending = False
         self.atlas_scale = float(self.atlas.get("logical_scale", 1.0))
         self.region_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.REGIONS_ID_OBJ,font_scale=0.13,color="#30808080")
         self.constellation_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.CONSTELLATIONS_ID_OBJS,font_scale=0.04,color="#30808000")
         self.font_scale = 1.4
         self.secondary_text_scale = 0.7
-        self.kill_timers = {idx: max(0.0, float(sys.hasKill)) for idx, sys in enumerate(self.systems)}
         self._system_rebuild_pending = False
 
         self.vertices = np.array([[s.x, s.y, s.z] for s in self.systems], dtype=np.float32)
@@ -1987,9 +1699,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.show_timers = show_timers
         self.show_statistic  = show_statistic
         self.last_pos = QtCore.QPointF()
-        self.text_instances, self.text_dynamic_instances = self._build_text_instances(time.time())
-        self.text_instance_count = self.text_instances.shape[0] if self.text_instances.size else 0
+        self.text_static_instances, self.text_dynamic_instances, self.text_timer_instances, self.text_statistic_instances = self._build_text_instances(
+            time.time(), include_dynamic=True, include_static=True, include_timer=True, include_statistic=True)
+        self.text_static_instance_count = self.text_static_instances.shape[0] if self.text_static_instances.size else 0
         self.text_dynamic_instance_count =  self.text_dynamic_instances.shape[0] if self.text_dynamic_instances.size else 0
+        self.text_timer_instance_count = self.text_timer_instances.shape[0] if self.text_timer_instances.size else 0
+        self.text_statistic_instance_count = self.text_statistic_instances.shape[0] if self.text_statistic_instances.size else 0
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
         self.setMouseTracking(True)
         self._hovered_system: Optional[System] = None
@@ -2187,8 +1902,10 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             )
             glEnableVertexAttribArray(0)
 
-        self.text_vao = glGenVertexArrays(1)
+        self.text_static_vao = glGenVertexArrays(1)
         self.text_dynamic_vao = glGenVertexArrays(1)
+        self.text_timer_vao =  glGenVertexArrays(1)
+        self.text_statistic_vao = glGenVertexArrays(1)
         self.region_background_layer.initialize_vao()
         self.constellation_background_layer.initialize_vao()
         self.text_vbo = glGenBuffers(1)
@@ -2215,7 +1932,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             dtype=np.float32,
         )
         glBufferData(GL_ARRAY_BUFFER, quad.nbytes, quad, GL_STATIC_DRAW)
-        for vao in (self.text_vao, self.text_dynamic_vao, self.region_background_layer.vao, self.constellation_background_layer.vao):
+        for vao in (self.text_static_vao, self.text_dynamic_vao,self.text_timer_vao, self.text_statistic_vao, self.region_background_layer.vao, self.constellation_background_layer.vao):
             glBindVertexArray(vao)
             glBindBuffer(GL_ARRAY_BUFFER, self.text_vbo)
             glVertexAttribPointer(
@@ -2324,12 +2041,15 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_text_depth_enabled = glGetUniformLocation(self.text_program, "uDepthEnabled")
         self.u_text_alpha_scale = glGetUniformLocation(self.text_program, "uAlphaScale")
 
-        self.text_instance_vbo = glGenBuffers(1)
-        bind_text_instances(self.text_vao, self.text_instance_vbo, self.text_instances)
+        self.text_static_instance_vbo = glGenBuffers(1)
+        bind_text_instances(self.text_static_vao, self.text_static_instance_vbo, self.text_static_instances)
         self.text_dynamic_instance_vbo = glGenBuffers(1)
-        bind_text_instances(
-            self.text_dynamic_vao, self.text_dynamic_instance_vbo, self.text_dynamic_instances
-        )
+        bind_text_instances(self.text_dynamic_vao, self.text_dynamic_instance_vbo, self.text_dynamic_instances)
+        self.text_timer_instance_vbo = glGenBuffers(1)
+        bind_text_instances(self.text_timer_vao, self.text_timer_instance_vbo, self.text_timer_instances)
+        self.text_statistic_instance_vbo = glGenBuffers(1)
+        bind_text_instances(self.text_statistic_vao, self.text_statistic_instance_vbo, self.text_statistic_instances)
+
         self.region_background_layer.initialize_vbo()
         self.constellation_background_layer.initialize_vbo()
 
@@ -2373,7 +2093,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         # Keep the GL surface opaque to avoid translucent compositing artifacts.
         glClearColor(float(r), float(g), float(b), 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        if  not ( self.orbiting or self.panning):
+        if not ( self.orbiting or self.panning):
             if self._update_jump_bridges:
                 self._refresh_jump_bridges()
                 self._update_jump_bridges=False
@@ -2385,13 +2105,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             elif self._show_intel_minutes:
                 self._show_intel_minutes = False
                 self._text_dynamic_rebuild_pending = True
+
             if self._text_rebuild_pending:
                 self._refresh_text_instances(now_utc)
-                self._text_rebuild_pending = False
-                self._text_dynamic_rebuild_pending = False
             elif self._text_dynamic_rebuild_pending:
                 self._refresh_text_dynamic_instances(now_utc)
-                self._text_dynamic_rebuild_pending = False
 
         self._system_rebuild_pending = any( sys.is_dirty for sys in self.systems )
         if self._system_rebuild_pending:
@@ -2617,7 +2335,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     glBindVertexArray(draw["border_vao"])
                     glDrawArraysInstanced(GL_LINES, 0, draw["border_count"], draw["instance_count"])
 
-        if True and ((self.text_instance_count or self.text_dynamic_instance_count) and self.atlas_texture):
+        if True and ((self.text_static_instance_count or self.text_dynamic_instance_count) and self.atlas_texture):
             if self.mouse_3d:
                 text_alpha_scale = 1.0
             else:
@@ -2647,14 +2365,18 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 glActiveTexture(GL_TEXTURE0)
                 glBindTexture(GL_TEXTURE_2D, self.atlas_texture)
                 glUniform1i(self.u_atlas, 0)
-                if self.text_instance_count:
-                    glBindVertexArray(self.text_vao)
-                    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_instance_count)
+                if self.text_static_instance_count:
+                    glBindVertexArray(self.text_static_vao)
+                    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_static_instance_count)
                 if self.text_dynamic_instance_count:
                     glBindVertexArray(self.text_dynamic_vao)
-                    glDrawArraysInstanced(
-                        GL_TRIANGLE_STRIP, 0, 4, self.text_dynamic_instance_count
-                    )
+                    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_dynamic_instance_count)
+                if self.text_timer_instance_count and self.show_timers:
+                    glBindVertexArray(self.text_timer_vao)
+                    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_timer_instance_count)
+                if self.text_statistic_instance_count and self.show_statistic:
+                    glBindVertexArray(self.text_statistic_vao)
+                    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_statistic_instance_count)
                 glEnable(GL_DEPTH_TEST)
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE)
 
@@ -2705,7 +2427,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         glDisable(GL_POLYGON_OFFSET_FILL)
         self._draw_hud()
-        self.update()
+        # self.update()
 
 
     def _update_hovered_system(self) -> None:
@@ -2843,7 +2565,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         self.region_background_layer.rebuild_labels()
         self.constellation_background_layer.rebuild_labels()
-        self.kill_timers = {idx: max(0.0, float(sys.hasKill)) for idx, sys in enumerate(self.systems)}
         self.system_instances = self._build_system_instances()
         self.system_instance_count = (
             self.system_instances.shape[0] if self.system_instances.size else 0
@@ -2877,26 +2598,61 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             None.
         """
-        self.text_instances, self.text_dynamic_instances = self._build_text_instances(now)
-        self.text_instance_count = self.text_instances.shape[0] if self.text_instances.size else 0
-        self.text_dynamic_instance_count = self.text_dynamic_instances.shape[0] if self.text_dynamic_instances.size else 0
+        text_static_instances, text_dynamic_instances, text_timer_instances, text_statistic_instances = self._build_text_instances(
+            now,
+            include_dynamic=self._text_dynamic_rebuild_pending,
+            include_static=self._text_static_rebuild_pending,
+            include_timer=self._text_rebuild_pending,
+            include_statistic=self._text_rebuild_pending)
 
-        if self.text_instance_vbo:
-            glBindBuffer(GL_ARRAY_BUFFER, self.text_instance_vbo)
-            glBufferData(
-                GL_ARRAY_BUFFER,
-                self.text_instances.nbytes,
-                self.text_instances,
-                GL_DYNAMIC_DRAW,
-            )
-        if self.text_dynamic_instance_vbo:
-            glBindBuffer(GL_ARRAY_BUFFER, self.text_dynamic_instance_vbo)
-            glBufferData(
-                GL_ARRAY_BUFFER,
-                self.text_dynamic_instances.nbytes,
-                self.text_dynamic_instances,
-                GL_DYNAMIC_DRAW,
-            )
+        if self._text_static_rebuild_pending:
+            self.text_static_instances = text_static_instances
+            self.text_static_instance_count = self.text_static_instances.shape[0] if self.text_static_instances.size else 0
+            if self.text_static_instance_vbo:
+                glBindBuffer(GL_ARRAY_BUFFER, self.text_static_instance_vbo)
+                glBufferData(
+                    GL_ARRAY_BUFFER,
+                    self.text_static_instances.nbytes,
+                    self.text_static_instances,
+                    GL_DYNAMIC_DRAW,
+                )
+            self._text_static_rebuild_pending = False
+
+        if self._text_dynamic_rebuild_pending:
+            self.text_dynamic_instances = text_dynamic_instances
+            self.text_dynamic_instance_count = self.text_dynamic_instances.shape[0] if self.text_dynamic_instances.size else 0
+            if self.text_dynamic_instance_vbo:
+                glBindBuffer(GL_ARRAY_BUFFER, self.text_dynamic_instance_vbo)
+                glBufferData(
+                    GL_ARRAY_BUFFER,
+                    self.text_dynamic_instances.nbytes,
+                    self.text_dynamic_instances,
+                    GL_DYNAMIC_DRAW,
+                )
+            self._text_dynamic_rebuild_pending = False
+
+        if self._text_rebuild_pending:
+            self.text_timer_instances = text_timer_instances
+            self.text_statistic_instances = text_statistic_instances
+            self.text_timer_instance_count = self.text_timer_instances.shape[0] if self.text_timer_instances.size else 0
+            self.text_statistic_instance_count = self.text_statistic_instances.shape[0] if self.text_statistic_instances.size else 0
+            if self.text_timer_instance_vbo:
+                glBindBuffer(GL_ARRAY_BUFFER, self.text_timer_instance_vbo)
+                glBufferData(
+                    GL_ARRAY_BUFFER,
+                    self.text_timer_instances.nbytes,
+                    self.text_timer_instances,
+                    GL_DYNAMIC_DRAW,
+                )
+            if self.text_statistic_instance_vbo:
+                glBindBuffer(GL_ARRAY_BUFFER, self.text_statistic_instance_vbo)
+                glBufferData(
+                    GL_ARRAY_BUFFER,
+                    self.text_statistic_instances.nbytes,
+                    self.text_statistic_instances,
+                    GL_DYNAMIC_DRAW,
+                )
+            self._text_rebuild_pending = False
 
     def _refresh_text_dynamic_instances(self, now: Optional[float] = None) -> None:
         """Update GPU text instances for the dynamic status line.
@@ -2963,7 +2719,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._intel_status_active = False
         for sys in self.systems:
             if type(sys) != System:
-                pass
+                continue
+
             intel_status = sys.intel_status
             intel_delta = 0.0
             intel_end = 0.0
@@ -2981,12 +2738,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             margin = max(0.0, float(sys.marking_scale*24.0))
             monitored = 1.0 if sys.isMonitored() else 0.0
             char_located = 1.0 if bool(sys.locatedCharacters) else 0.0
-            if char_located == 1.0:
-                pass
 
             mark_delta = 0.0
             mark_end = 0.0
-            utc = 0.0
             if sys.marker_start < sys.marker_end:
                 mark_delta = 1.0 / (sys.marker_end - sys.marker_start)
                 mark_end = sys.marker_end - self.INTEL_BASE_TIME
@@ -3039,8 +2793,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         if not self._intel_status_active and self._show_intel_minutes:
             self._show_intel_minutes = False
-            #self._system_rebuild_pending = True
-            #self._text_rebuild_pending = True
             self._text_dynamic_rebuild_pending = True
 
         if not instances:
@@ -3157,16 +2909,21 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         return 108.0, 48.0
 
     def _build_text_instances(
-        self, now: Optional[float] = None, include_static: bool = True
-    ) -> Tuple[np.ndarray, np.ndarray]:
+            self, now: Optional[float] = None,
+            include_dynamic: bool = False,
+            include_static: bool = True,
+            include_timer: bool = False,
+            include_statistic: bool = False
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Build per-glyph instance data for static and dynamic system labels.
 
         Args:
             now: Optional timestamp used for intel aging.
             include_static: Whether to include static label lines.
-
+            include_timer:
+            include_statistic
         Returns:
-            Tuple of (static_instances, dynamic_instances) arrays.
+            Tuple of (static_instances, dynamic_instances, timer_instance, statistic) arrays.
         """
         if now is None:
             now = time.time()
@@ -3178,7 +2935,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         secondary_scale = self.atlas_scale * self.secondary_text_scale * self.font_scale
         static_instances: List[List[float]] = []
         dynamic_instances: List[List[float]] = []
-        #box_w = self.label_width - self.label_padding * 2.0
+        timer_instances: List[List[float]] = []
+        statistic_instances: List[List[float]] = []
         box_w = self.label_width * 1.2
         line_gap = self.label_line_gap
         primary_ascent = self.label_ascent
@@ -3192,18 +2950,19 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         alert_color = (0.95, 0.25, 0.25)
 
         def add_line(
-            instances: List[List[float]],
-            sys,
-            text: str,
-            line_y: float,
-            align: str,
-            color: Tuple[float, float, float],
-            scale: float,
+                instances: List[List[float]],
+                system,
+                text: str,
+                line_y: float,
+                align: str,
+                color: Tuple[float, float, float],
+                scale: float,
         ) -> None:
             """Build glyph instances for a single label line.
 
             Args:
-                sys: System whose label is being drawn.
+                instances:
+                system: System whose label is being drawn.
                 text: Text content for the line.
                 line_y: Baseline Y offset relative to the label center.
                 align: Horizontal alignment ('left', 'right', 'center').
@@ -3256,9 +3015,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 vs = max(v1 - v0, 1.0 / atlas_h)
                 instances.append(
                     [
-                        sys.x,
-                        sys.y,
-                        sys.z,
+                        system.x,
+                        system.y,
+                        system.z,
                         offset_x,
                         offset_y,
                         size_x,
@@ -3274,35 +3033,46 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 )
                 pen_x += adv
 
+        total_h = primary_line_height * 2.0 + line_gap
+        baseline = -total_h / 2.0 + primary_ascent
+        line1_y = baseline
+        line2_y = baseline + primary_line_height + line_gap
+        outside_offset = secondary_line_height * 0.5
+        above_y = -half_height - outer_gap + secondary_ascent - outside_offset
+        below_y = half_height + outer_gap + secondary_ascent - outside_offset
+
         for sys in self.systems:
-            total_h = primary_line_height * 2.0 + line_gap
-            baseline = -total_h / 2.0 + primary_ascent
-            line1_y = baseline
-            line2_y = baseline + primary_line_height + line_gap
-            outside_offset = secondary_line_height * 0.5
-            above_y = -half_height - outer_gap + secondary_ascent - outside_offset
-            below_y = half_height + outer_gap + secondary_ascent - outside_offset
             if include_static:
                 add_line(static_instances, sys, sys.name, line1_y, "center", base_color, primary_scale)
-                if self.show_timers:
-                    add_line(static_instances, sys, sys.sec_state, above_y, "left", accent_color, secondary_scale)
-                    add_line(static_instances, sys, sys.timer, above_y, "right", accent_color, secondary_scale)
-                if self.show_statistic:
-                    add_line(static_instances, sys, sys.statistics, below_y, "center", alert_color,secondary_scale )
+            if include_timer:
+                add_line(timer_instances, sys, sys.sec_state, above_y, "left", accent_color, secondary_scale)
+                add_line(timer_instances, sys, sys.timer, above_y, "right", accent_color, secondary_scale)
+            if include_statistic:
+                add_line(statistic_instances, sys, sys.statistics, below_y, "center", alert_color,secondary_scale )
+            if include_dynamic:
+                add_line(dynamic_instances, sys, sys.intel_status_time_string(now), line2_y, "center", base_color, primary_scale)
 
-            add_line(dynamic_instances, sys, sys.intel_status_time_string(now), line2_y, "center", base_color, primary_scale)
-
-        static_array = (
-            np.array(static_instances, dtype=np.float32)
-            if static_instances and include_static
-            else np.array([], dtype=np.float32)
-        )
         dynamic_array = (
             np.array(dynamic_instances, dtype=np.float32)
             if dynamic_instances
             else np.array([], dtype=np.float32)
         )
-        return static_array, dynamic_array
+        static_array = (
+            np.array(static_instances, dtype=np.float32)
+            if static_instances and include_static
+            else np.array([], dtype=np.float32)
+        )
+        timer_array = (
+            np.array(timer_instances, dtype=np.float32)
+            if timer_instances
+            else np.array([], dtype=np.float32)
+        )
+        statistic_array = (
+            np.array(statistic_instances, dtype=np.float32)
+            if statistic_instances
+            else np.array([], dtype=np.float32)
+        )
+        return static_array, dynamic_array, timer_array, statistic_array
 
     def _build_text_dynamic_instances(self, now: Optional[float] = None) -> np.ndarray:
         """Build per-glyph instance data for dynamic status lines only.
@@ -3313,7 +3083,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             Float32 instance array for dynamic glyphs.
         """
-        _, dynamic_instances = self._build_text_instances(now, include_static=False)
+        _, dynamic_instances, _, _ = self._build_text_instances(now, include_dynamic=self._text_dynamic_rebuild_pending, include_static=False, include_timer=False, include_statistic=False)
+        self._text_dynamic_rebuild_pending = False
         return dynamic_instances
 
     def _build_hud_instances(
@@ -3616,7 +3387,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         self.line_thickness = max(0.1, float(thickness))
 
-    def _focus_on_system(self, system: System|Region|Constellation) -> None:
+    def _focus_on_system(self, system: System|Region|Constellation,animate:bool) -> None:
         """Recenter orbit controls and camera target on a specific system.
 
         Args:
@@ -3625,6 +3396,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             None.
         """
+        if animate:
+            pass
+
         if self.mouse_3d:
             self.target[0] = float(system.x)
             self.target[1] = float(system.y)
@@ -3673,38 +3447,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             return
         self._system_rebuild_pending = True
 
-    @PySide6.QtCore.Slot(int, int, float)
-    def set_system_intel_status(self, system_id: int, status: int, status_time: float) -> None:
-        """Update the intel status and timestamp for a system.
-
-        Args:
-            system_id: Target system ID.
-            status: Intel status enum value.
-            status_time: Timestamp for the intel entry.
-
-        Returns:
-            None.
-        """
-        system_idx = self.system_index_by_id.get(int(system_id))
-        if system_idx is None:
-            return
-        try:
-            intel_status = IntelStatus(int(status))
-        except ValueError:
-            intel_status = IntelStatus.NONE
-        if intel_status == IntelStatus.NONE:
-            status_time = 0.0
-        elif status_time <= 0.0:
-            status_time = time.time()
-        elif status_time < self.intel_time_base:
-            self.intel_time_base = float(status_time)
-        self.systems[system_idx].intel_status = intel_status
-        self.systems[system_idx].intel_status_time = float(status_time)
-        if not self._intel_status_active and self._show_intel_minutes:
-            self._show_intel_minutes = False
-        self._system_rebuild_pending = True
-        self._text_rebuild_pending = True
-
     @PySide6.QtCore.Slot(int,bool)
     def centerMapOnId(self, requested_id: int, animate:bool=False) -> None:
         """Center the map view on the system with the provided ID.
@@ -3726,7 +3468,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         if requested_object is None:
             return
 
-        self._focus_on_system(requested_object)
         if type(requested_object) is System:
             self.systemChanged.emit(requested_object.name)
             self.regionChanged.emit(requested_object.region_name)
@@ -3736,6 +3477,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             self.constellationChanged.emit(requested_object.constellation_name)
         elif type(requested_object) is Region:
             self.regionChanged.emit(requested_object.name)
+        self._focus_on_system(requested_object,animate)
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         """Start panning when the left mouse button is pressed.
@@ -3816,13 +3558,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         if event.button() != QtCore.Qt.MouseButton.LeftButton:
             event.ignore()
-
             return
+
         hovered_id = self.objectUnderMouse(event.position())
         if hovered_id is None:
             event.ignore()
-            return
-        hovered = self._system_by_id(hovered_id)
+
         self.systemDoubleClicked.emit(int(hovered_id))
         event.accept()
 
@@ -3984,8 +3725,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 glDeleteVertexArrays(1, [draw["border_vao"]])
         if self.text_vbo:
             glDeleteBuffers(1, [self.text_vbo])
-        if self.text_instance_vbo:
-            glDeleteBuffers(1, [self.text_instance_vbo])
+        if self.text_static_instance_vbo:
+            glDeleteBuffers(1, [self.text_static_instance_vbo])
         if self.text_dynamic_instance_vbo:
             glDeleteBuffers(1, [self.text_dynamic_instance_vbo])
         if self.system_ssbo:

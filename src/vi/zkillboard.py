@@ -1,6 +1,6 @@
 """Integration helpers for consuming the zKillboard RedisQ feed.
 
-This module polls RedisQ, converts killmails into Spyglass' UTF-16 encoded
+This module polls RedisQ, converts kill mails into Spyglass' UTF-16 encoded
 log format, caches the raw payloads for later lookup, and emits Qt signals so
 the UI can react to kill events in real time.
 """
@@ -52,7 +52,7 @@ class ZKillMonitor(QObject):
         Returns:
             None.
         """
-        QObject.__init__(self)
+        QObject.__init__(self,parent=parent)
         self.writeHeader()
         self.zkillredisqStreamID = Cache().getFromCache("zkillredisq.stream.id")
         if self.zkillredisqStreamID is None:

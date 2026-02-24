@@ -141,9 +141,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zkillboard = None  # zKillBoard monitor
         self._setupThreads()
         self.curr_region_name = self.cache.getFromCache("region_name")
-        self.dotlan = self.setupRegionMap(self.curr_region_name)
-        self.mapTimer = QTimer(self)
-        self.mapTimer.timeout.connect(self.updateMapView,Qt.ConnectionType.QueuedConnection)
         self.eve_time_timer = QTimer(self)
         self.eve_time_timer.setInterval(1000)
         self.eve_time_timer.timeout.connect(self._updateEveTimeLabel)
@@ -271,7 +268,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tool_widget = None
 
         self._update_splash_window_info("EVE-Spy preparing the map view.")
-        self.updateMapView()
 
         self.updateJumpbridgeDataFromCachedURL()
 
@@ -341,14 +337,6 @@ class MainWindow(QtWidgets.QMainWindow):
     @property
     def systems_on_map(self) -> dict[str, System]:
         return ALL_SYSTEMS
-
-    @property
-    def systemsById(self) -> dict[int, System]:
-        return self.dotlan.systemsById
-
-    @property
-    def systemsByName(self) -> dict[str, System]:
-        return self.dotlan.systemsByName
 
     @property
     def monitoredPlayerNames(self):
@@ -761,8 +749,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statisticsThread.requestObservationsRecords()
 
     def setTheraConnections(self, connections):
-        if self.dotlan:
-            self.dotlan.setTheraConnections(connections)
+        dotlan.Map.setTheraConnections(connections)
         self.ui.tableViewThera.model().sourceModel().setTheraConnections(connections)
 
     @Slot(str)
@@ -1035,7 +1022,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.statisticsThread.quit()
             self.statisticsThread.wait()
             logging.debug("Terminating application threads .....")
-            self.mapTimer.stop()
             if self.apiThread:
                 self.apiThread.quit()
                 self.apiThread.wait()
@@ -1108,9 +1094,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.region_queue.enqueue((self.curr_region_name, curr_pos, curr_zoom))
 
         self.curr_region_name = region_name
-        self.dotlan = self.setupRegionMap(region_name)
-        self.updateMapView()
-        self.updateRegionMap()
         if update_queue:
             if system_id is not None:
                 self.focusMapOnSystem(system_id)
@@ -1717,20 +1700,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if change_region:
             self.focusMapOnSystem(system_id)
 
-    def updateRegionMap(self):
-        pass
-
-    def updateMapView(self):
-        try:
-            if self.dotlan and self.dotlan.is_dirty():
-                self.mapTimer.stop()
-                self.mapTimer.start(MAP_UPDATE_INTERVAL_MSEC)
-            else:
-                pass
-        except (Exception,) as ex:
-            logging.error("Error updateMapView failed: {0}".format(str(ex)))
-            pass
-
     def loadInitialMapPositions(self, new_dictionary):
         self.mapPositionsDict = new_dictionary
 
@@ -2122,8 +2091,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if data:
             if STAT.STATISTICS in data.keys():
                 self.mapStatisticCache = data[STAT.STATISTICS]
-                if self.dotlan:
-                    dotlan.Map.addSystemStatistics(self.mapStatisticCache)
+                dotlan.Map.addSystemStatistics(self.mapStatisticCache)
                 update_map_view = True
                 logging.debug("Statistic data successfully fetched.")
             if STAT.SERVER_STATUS in data.keys():
@@ -2158,26 +2126,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 logging.debug("Thera wormholes successfully fetched.")
 
             if STAT.SOVEREIGNTY in data:
-                if self.dotlan:
-                    self.dotlan.setSystemSovereignty(data[STAT.SOVEREIGNTY])
+                dotlan.Map.setSystemSovereignty(data[STAT.SOVEREIGNTY])
                 update_map_view = True
                 logging.debug("Sovereignnity data successfully fetched.")
 
             if STAT.STRUCTURES in data:
-                if self.dotlan:
-                    self.dotlan.setSystemStructures(data[STAT.STRUCTURES])
+                dotlan.Map.setSystemStructures(data[STAT.STRUCTURES])
                 update_map_view = True
                 logging.debug("Structure data successfully fetched.")
 
             if STAT.INCURSIONS in data:
-                if self.dotlan:
-                    self.dotlan.setIncursionSystems(data[STAT.INCURSIONS])
+                dotlan.Map.setIncursionSystems(data[STAT.INCURSIONS])
                 update_map_view = True
                 logging.debug("Incurison data successfully fetched.")
 
             if STAT.CAMPAIGNS in data:
-                if self.dotlan:
-                    self.dotlan.setCampaignsSystems(data[STAT.CAMPAIGNS])
+                dotlan.Map.setCampaignsSystems(data[STAT.CAMPAIGNS])
                 update_map_view = True
                 logging.debug("Campain data successfully fetched.")
 

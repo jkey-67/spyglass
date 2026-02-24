@@ -89,8 +89,8 @@ class Constellation(object):
         self.__dict__.update(**kwargs)
         self.region_id = int()
         self.systems = kwargs["systems"]
-        self.names = kwargs["names"]
         self.name = kwargs["name"]
+        self.names = kwargs["names"]
         self.constellation_id = kwargs["constellation_id"]
         self.position2D = Position(** kwargs["position2D"])
         self.position3D = Position(** kwargs["position"])

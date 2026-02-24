@@ -293,7 +293,6 @@ class PanningWebView(StarMapWidget):
         """
         if not self._text_rebuild_pending:
             self._text_rebuild_pending = True
-            self.update()
 
     @Property(float)
     def zoomFactor(self)->float:
@@ -399,18 +398,6 @@ class PanningWebView(StarMapWidget):
                 return True
         return super(PanningWebView, self).event(event)
 
-
-    def mapPosFromPoint(self, mouse_event: QPoint) -> QPointF:
-        """Convert a widget point to map coordinates.
-
-        Args:
-            mouse_event (QPoint): Widget point.
-
-        Returns:
-            QPointF: Map coordinates.
-        """
-        return (QPointF(mouse_event) + self.propScrollPos) / self.zoom
-
     @Slot()
     def updateJumpBridgesFromCache(self):
         jump_bridge_vertices = load_jump_bridges(cache.Cache().getJumpGates(), ALL_SYSTEMS)
@@ -423,12 +410,8 @@ class PanningWebView(StarMapWidget):
     @Slot(bool)
     def showStatistics(self,val):
         self.show_statistic = val
-        if not self._text_rebuild_pending:
-            self._text_rebuild_pending = True
 
     @Slot(bool)
     def showTimers(self,val):
         self.show_timers = val
-        if not self._text_rebuild_pending:
-            self._text_rebuild_pending = True
 

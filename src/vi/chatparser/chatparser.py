@@ -29,7 +29,7 @@ from vi.evetime import lastDowntime, currentEveTime
 from .line_parser import lineToDatetime
 from ..states import States
 from ..globals import Globals
-from ..dotlan import System
+from vi.system import System
 
 # Names the local chat logs could start with (depends on l10n of the client)
 

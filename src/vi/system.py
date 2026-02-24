@@ -20,8 +20,6 @@ import logging
 ###########################################################################
 # Little lib and tool to get the map and information from dotlan		  #
 ###########################################################################
-
-import math
 import json
 import os
 import time
@@ -110,7 +108,7 @@ class System(object):
 
     def __init__(self, **kwargs):
         self.system_id:int = kwargs["system_id"]
-        self.name:str = kwargs["name"]
+        self.name:str = kwargs["names"]["en"]
         self.names:dict = kwargs["names"]
         self.constellation_id = kwargs["constellation_id"]
         self.constellation_name: str = Universe.CONSTELLATIONS_ID_OBJS.get(self.constellation_id).name
@@ -148,7 +146,7 @@ class System(object):
         self._is_dirty = True
         self._status = None
         self._first_line = self.name
-        self._second_line = "-?-"
+        self._second_line = self.ticker
         self.intel_start = 0.0
         self.intel_end = 0.0
         self.locatedCharacters = []
@@ -157,6 +155,8 @@ class System(object):
         self.hasIncursion = False
         self.has_ice_belt = False
         self.isIncursionStaging = False
+        self.incursionState = ""
+        self.incursionInfluence = 0.0
         self.hasIncursionBoss = False
         self._hasThera = False
         self._monitoredDistance = []
@@ -386,14 +386,14 @@ class System(object):
         if char_name not in self.locatedCharacters:
             self.locatedCharacters.append(char_name)
             self._addLocatedCharacter(0)
-            self.getNeighbours(intel_range, System._addLocatedCharacter )
+            self.getNeighbors(intel_range, System._addLocatedCharacter)
 
 
     def removeLocatedCharacter(self, char_name, intel_range):
         if char_name in self.locatedCharacters:
             self.locatedCharacters.remove(char_name)
             self._removeLocatedCharacter(0)
-            self.getNeighbours(intel_range, System._removeLocatedCharacter)
+            self.getNeighbors(intel_range, System._removeLocatedCharacter)
 
     def changeIntelRange(self, old_intel_range, new_intel_range):
         for char_name in self.locatedCharacters:
@@ -405,47 +405,17 @@ class System(object):
         self.hasCampaigns = campaigns
         self._is_dirty = True
 
-    def setIncursion(self, has_incursion: bool = False, is_staging: bool = False, has_boss: bool = False):
+    def setIncursion(self, has_incursion: bool = False, is_staging: bool = False, has_boss: bool = False, state:str="",influence:float=0.0,):
         self.hasIncursion = has_incursion
         self.isIncursionStaging = is_staging
         self.hasIncursionBoss = has_boss
+        self.incursionState = state
+        self.incursionInfluence = influence
         self._is_dirty = True
 
     def setBackgroundColor(self, color):
         self.backgroundColor = color
-        self._is_dirty = True
-
-    def getBackgroundBrush(self,value) -> QColor:
-        """
-        Generates the background color for the systems, blended from backgroundColor to backgroundColorNext depends
-        on the backgroundAlpha
-        Returns:
-
-        """
-        r = self.backgroundAlpha
-        col_a = QColor(self.backgroundColor)
-        col_b = QColor(self.backgroundColorNext) if self.backgroundColorNext != "#BACKGD" else System.UNKNOWN_COLOR
-        color = QColor(int(255.0*(col_b.redF() * (1.0 - r) + col_a.redF() * r)),
-                             int(255.0*(col_b.greenF() * (1.0 - r) + col_a.greenF() * r)),
-                             int(255.0*(col_b.blueF() * (1.0 - r) + col_a.blueF() * r)))
-
-        return color
-
-    def getBackgroundBrush(self) -> QBrush:
-        """
-        Generates the background brush for the systems, blended from backgroundColor to backgroundColorNext depends
-        on the backgroundAlpha
-        Returns:
-
-        """
-        r = self.backgroundAlpha
-        col_a = QColor(self.backgroundColor)
-        col_b = QColor(self.backgroundColorNext) if self.backgroundColorNext != "#BACKGD" else System.UNKNOWN_COLOR
-        brush_color = QColor(int(255.0*(col_b.redF() * (1.0 - r) + col_a.redF() * r)),
-                             int(255.0*(col_b.greenF() * (1.0 - r) + col_a.greenF() * r)),
-                             int(255.0*(col_b.blueF() * (1.0 - r) + col_a.blueF() * r)))
-
-        return QBrush(brush_color)
+        # self._is_dirty = True
 
     def getLocatedCharacters(self):
         characters = []
@@ -454,9 +424,9 @@ class System(object):
         return characters
 
     @property
-    def neighbours(self):
+    def neighbors(self):
         """
-        Gets the lazy evaluated neighbours systems
+        Gets the lazy evaluated neighbors systems
         Returns: set[System]
             A set of all Systems with a direct gate connection
         """
@@ -468,9 +438,9 @@ class System(object):
                 self._neighbours.add(destination_system)
         return self._neighbours
 
-    def getNeighbours(self, distance=1, fnc_distance=None):
+    def getNeighbors(self, distance=1, fnc_distance=None):
         """
-            Get all neighboured system with a distance of distance.
+            Get all neighbors system with a distance of distance.
             example: sys1 <-> sys2 <-> sys3 <-> sys4 <-> sys5
             sys3(distance=1) will find sys2, sys3, sys4
             sys3(distance=2) will find sys1, sys2, sys3, sys4, sys5
@@ -485,7 +455,7 @@ class System(object):
             current_distance += 1
             new_systems = []
             for system in systems.keys():
-                for neighbour in system.neighbours:
+                for neighbour in system.neighbors:
                     if neighbour not in systems:
                         new_systems.append(neighbour)
             for newSystem in new_systems:
