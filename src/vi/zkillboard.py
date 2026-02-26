@@ -41,7 +41,7 @@ class ZKillMonitor(QObject):
     report_system_kill = Signal(int,float)
     MONITORING_PATH = "zkillMonitor.log"
     LOG_VICTIM = True
-    LOG_ATTACKERS = True
+    LOG_ATTACKERS = False
 
     def __init__(self, parent=None):
         """Initialize the zKillboard monitor and networking state.
