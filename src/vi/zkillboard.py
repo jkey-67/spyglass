@@ -285,7 +285,7 @@ class ZKillMonitor(QObject):
         zk_time = kill_data["killmail_time"] if "killmail_time" in kill_data.keys() else ""
         system_id = kill_data["solar_system_id"] if "solar_system_id" in kill_data.keys() else dict()
         zkb_data = package_data["zkb"] if "zkb" in package_data.keys() else dict()
-        kill_url = "https://zkillboard.com/kill/{}".format( package_data["killID"] if "killID" in package_data.keys() else "" )
+        kill_url = "https://zkillboard.com/kill/{}/".format( package_data["killID"] if "killID" in package_data.keys() else "" )
 
         """
           Date encoding like

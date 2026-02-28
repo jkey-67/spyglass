@@ -82,7 +82,7 @@ class SystemChat(QtWidgets.QDialog):
                 self._addMessageToChat(message, avatar_pixmap)
 
     def openDotlan(self):
-        url = "https://evemaps.dotlan.net/system/{system}".format(system=self.system.name)
+        url = "https://evemaps.dotlan.net/system/{system}/".format(system=self.system.name)
         QDesktopServices.openUrl(url)
 
     def openzKillboard(self):

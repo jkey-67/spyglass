@@ -8,7 +8,7 @@ import string
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Iterable, List, Optional, Tuple
-from vi.universe import Universe, Region, Constellation
+from vi.universe import Universe, Region, Constellation, Position
 import PySide6.QtCore
 import numpy as np
 from PySide6 import QtCore, QtGui, QtOpenGLWidgets
@@ -1506,6 +1506,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
     TEXT_FADE_START_SCALE = 0.1
     TEXT_FADE_END_SCALE = 0.30
     INTEL_BASE_TIME  = time.time()
+    THERA_OFFSET = (0.055,0.065)
     def __init__(
         self,
         systems: dict[int,System],
@@ -1554,17 +1555,20 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.thera_line_vbo = 0
         self.text_vbo = 0
         self.text_static_vao = 0
-        self.text_dynamic_vao = 0
-        self.text_timer_vao = 0
-        self.text_statistic_vao = 0
         self.text_static_instance_vbo = 0
-        self.text_dynamic_instance_vbo = 0
-        self.text_timer_instance_vbo = 0
-        self.text_statistic_instance_vbo = 0
         self.text_static_instance_count = 0
+        self.text_dynamic_vao = 0
+        self.text_dynamic_instance_vbo = 0
         self.text_dynamic_instance_count = 0
+        self.text_thera_vao = 0
+        self.text_thera_instance_vbo = 0
+        self.text_thera_instance_count = 0
+        self.text_timer_vao = 0
+        self.text_timer_instance_vbo = 0
         self.text_timer_instance_count = 0
+        self.text_statistic_vao = 0
         self.text_statistic_instance_count = 0
+        self.text_statistic_instance_vbo = 0
         self.system_vao = 0
         self.system_ssbo = 0
         self.system_instance_count = 0
@@ -1588,6 +1592,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._text_rebuild_pending = True
         self._text_dynamic_rebuild_pending = True
         self._text_static_rebuild_pending = False
+        self._text_thera_rebuild_pending = False
         self.atlas_scale = float(self.atlas.get("logical_scale", 1.0))
         self.region_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.REGIONS_ID_OBJ,font_scale=0.13,color="#30808080")
         self.constellation_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.CONSTELLATIONS_ID_OBJS,font_scale=0.04,color="#30808000")
@@ -1710,12 +1715,13 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.show_timers = show_timers
         self.show_statistic  = show_statistic
         self.last_pos = QtCore.QPointF()
-        self.text_static_instances, self.text_dynamic_instances, self.text_timer_instances, self.text_statistic_instances = self._build_text_instances(
-            time.time(), include_dynamic=True, include_static=True, include_timer=True, include_statistic=True)
+        self.text_static_instances, self.text_dynamic_instances, self.text_timer_instances, self.text_statistic_instances, self.text_thera_instances = self._build_text_instances(
+            time.time(), include_dynamic=True, include_static=True, include_timer=True, include_statistic=True, include_thera=True)
         self.text_static_instance_count = self.text_static_instances.shape[0] if self.text_static_instances.size else 0
         self.text_dynamic_instance_count =  self.text_dynamic_instances.shape[0] if self.text_dynamic_instances.size else 0
         self.text_timer_instance_count = self.text_timer_instances.shape[0] if self.text_timer_instances.size else 0
         self.text_statistic_instance_count = self.text_statistic_instances.shape[0] if self.text_statistic_instances.size else 0
+        self.text_thera_instance_count = self.text_thera_instances.shape[0] if self.text_thera_instances.size else 0
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
         self.setMouseTracking(True)
         self._hovered_system: Optional[System] = None
@@ -1746,6 +1752,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
     def updateWormholeBridges(self,thera_bridge_vertices: Optional[np.ndarray]):
         self.thera_line_vertices = (thera_bridge_vertices if thera_bridge_vertices is not None else np.array([], dtype=np.float32))
         self._update_thera_jump_bridges = True
+        self._text_thera_rebuild_pending = True
 
     def initializeGL(self) -> None:
         """Initialize OpenGL programs, buffers, and textures.
@@ -1903,6 +1910,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.text_dynamic_vao = glGenVertexArrays(1)
         self.text_timer_vao =  glGenVertexArrays(1)
         self.text_statistic_vao = glGenVertexArrays(1)
+        self.text_thera_vao = glGenVertexArrays(1)
         self.region_background_layer.initialize_vao()
         self.constellation_background_layer.initialize_vao()
         self.text_vbo = glGenBuffers(1)
@@ -1929,7 +1937,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             dtype=np.float32,
         )
         glBufferData(GL_ARRAY_BUFFER, quad.nbytes, quad, GL_STATIC_DRAW)
-        for vao in (self.text_static_vao, self.text_dynamic_vao,self.text_timer_vao, self.text_statistic_vao, self.region_background_layer.vao, self.constellation_background_layer.vao):
+        for vao in (self.text_static_vao, self.text_dynamic_vao,self.text_timer_vao, self.text_statistic_vao, self.region_background_layer.vao, self.constellation_background_layer.vao,self.text_thera_vao):
             glBindVertexArray(vao)
             glBindBuffer(GL_ARRAY_BUFFER, self.text_vbo)
             glVertexAttribPointer(0, 2, GL_FLOAT, False, 4 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
@@ -2031,6 +2039,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         bind_text_instances(self.text_timer_vao, self.text_timer_instance_vbo, self.text_timer_instances)
         self.text_statistic_instance_vbo = glGenBuffers(1)
         bind_text_instances(self.text_statistic_vao, self.text_statistic_instance_vbo, self.text_statistic_instances)
+        self.text_thera_instance_vbo = glGenBuffers(1)
+        bind_text_instances(self.text_thera_vao, self.text_thera_instance_vbo, self.text_thera_instances)
 
         self.region_background_layer.initialize_vbo()
         self.constellation_background_layer.initialize_vbo()
@@ -2369,6 +2379,11 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 if self.text_statistic_instance_count and self.show_statistic:
                     glBindVertexArray(self.text_statistic_vao)
                     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_statistic_instance_count)
+                if self.text_thera_instance_count and self.show_jumpbridges:
+                    glUniform1f(self.u_text_angle, float(math.radians(self.text_angle_degrees+65.0)))
+                    glBindVertexArray(self.text_thera_vao)
+                    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_thera_instance_count)
+
                 glEnable(GL_DEPTH_TEST)
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE)
 
@@ -2601,12 +2616,14 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             None.
         """
-        text_static_instances, text_dynamic_instances, text_timer_instances, text_statistic_instances = self._build_text_instances(
+        text_static_instances, text_dynamic_instances, text_timer_instances, text_statistic_instances, text_thera_instances = self._build_text_instances(
             now,
             include_dynamic=self._text_dynamic_rebuild_pending,
             include_static=self._text_static_rebuild_pending,
             include_timer=self._text_rebuild_pending,
-            include_statistic=self._text_rebuild_pending)
+            include_statistic=self._text_rebuild_pending,
+            include_thera=self._text_thera_rebuild_pending,
+        )
 
         if self._text_static_rebuild_pending:
             self.text_static_instances = text_static_instances
@@ -2636,11 +2653,26 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 glBindBuffer(GL_ARRAY_BUFFER, 0)
             self._text_dynamic_rebuild_pending = False
 
+        if self._text_thera_rebuild_pending:
+            self.text_thera_instances = text_thera_instances
+            self.text_thera_instance_count = self.text_thera_instances.shape[0] if self.text_thera_instances.size else 0
+            if self.text_thera_instance_vbo:
+                glBindBuffer(GL_ARRAY_BUFFER, self.text_thera_instance_vbo)
+                glBufferData(
+                    GL_ARRAY_BUFFER,
+                    self.text_thera_instances.nbytes,
+                    self.text_thera_instances,
+                    GL_DYNAMIC_DRAW,
+                )
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
+            self._text_thera_rebuild_pending = False
+
         if self._text_rebuild_pending:
             self.text_timer_instances = text_timer_instances
             self.text_statistic_instances = text_statistic_instances
             self.text_timer_instance_count = self.text_timer_instances.shape[0] if self.text_timer_instances.size else 0
             self.text_statistic_instance_count = self.text_statistic_instances.shape[0] if self.text_statistic_instances.size else 0
+
             if self.text_timer_instance_vbo:
                 glBindBuffer(GL_ARRAY_BUFFER, self.text_timer_instance_vbo)
                 glBufferData(
@@ -2660,6 +2692,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 )
                 glBindBuffer(GL_ARRAY_BUFFER, 0)
             self._text_rebuild_pending = False
+
 
     def _refresh_text_dynamic_instances(self, now: Optional[float] = None) -> None:
         """Update GPU text instances for the dynamic status line.
@@ -2921,8 +2954,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             include_dynamic: bool = False,
             include_static: bool = True,
             include_timer: bool = False,
-            include_statistic: bool = False
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+            include_statistic: bool = False,
+            include_thera: bool = False,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Build per-glyph instance data for static and dynamic system labels.
 
         Args:
@@ -2945,6 +2979,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         dynamic_instances: List[List[float]] = []
         timer_instances: List[List[float]] = []
         statistic_instances: List[List[float]] = []
+        thera_instances: List[List[float]] = []
         box_w = self.label_width * 1.2
         line_gap = self.label_line_gap
         primary_ascent = self.label_ascent
@@ -2956,14 +2991,14 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         base_color = (0.95, 0.95, 0.98)
         accent_color = (1.0, 0.65, 0.25)
         alert_color = (0.95, 0.25, 0.25)
-
+        thera_color = (r,g,b,_) = PySide6.QtGui.QColor("#c0c000").getRgbF()
         def add_line(
                 instances: List[List[float]],
                 system,
                 text: str,
                 line_y: float,
                 align: str,
-                color: Tuple[float, float, float],
+                color: Tuple[float, float, float]|Tuple[float, float, float, float],
                 scale: float,
         ) -> None:
             """Build glyph instances for a single label line.
@@ -3059,6 +3094,15 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 add_line(statistic_instances, sys, sys.statistics, below_y, "center", alert_color,secondary_scale )
             if include_dynamic:
                 add_line(dynamic_instances, sys, sys.intel_status_time_string(now), line2_y, "center", base_color, primary_scale)
+            if include_thera:
+                if len(sys.theraWormholes)==1:
+                    elem = next(iter(sys.theraWormholes))
+                    pos = Position()
+                    pos.x = sys.x + self.THERA_OFFSET[0]
+                    pos.y = sys.y + self.THERA_OFFSET[1]
+                    pos.z = sys.z
+                    add_line(instances=thera_instances, system=pos, text=elem.name, line_y=0, align="center",
+                             color=thera_color, scale=secondary_scale)
 
         dynamic_array = (
             np.array(dynamic_instances, dtype=np.float32)
@@ -3080,7 +3124,13 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             if statistic_instances
             else np.array([], dtype=np.float32)
         )
-        return static_array, dynamic_array, timer_array, statistic_array
+        thera_array = (
+            np.array(thera_instances, dtype=np.float32)
+            if thera_instances
+            else np.array([], dtype=np.float32)
+            )
+
+        return static_array, dynamic_array, timer_array, statistic_array, thera_array
 
     def _build_text_dynamic_instances(self, now: Optional[float] = None) -> np.ndarray:
         """Build per-glyph instance data for dynamic status lines only.
@@ -3091,7 +3141,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         Returns:
             Float32 instance array for dynamic glyphs.
         """
-        _, dynamic_instances, _, _ = self._build_text_instances(now, include_dynamic=self._text_dynamic_rebuild_pending, include_static=False, include_timer=False, include_statistic=False)
+        _, dynamic_instances, _, _, _ = self._build_text_instances(now, include_dynamic=self._text_dynamic_rebuild_pending, include_static=False, include_timer=False, include_statistic=False)
         self._text_dynamic_rebuild_pending = False
         return dynamic_instances
 

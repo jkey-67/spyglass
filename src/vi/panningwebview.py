@@ -136,7 +136,7 @@ def _bezier_segments( a: System, b: System|None, segments, bulge_factor) -> List
         """
         ax, ay, az = a.x, a.y, a.z
         if b is None:
-            bx, by, bz = a.x+0.035, a.y+0.045, a.z
+            bx, by, bz = a.x+StarMapWidget.THERA_OFFSET[0], a.y+StarMapWidget.THERA_OFFSET[1], a.z
         else:
             bx, by, bz = b.x, b.y, b.z
         dx = bx - ax
@@ -173,7 +173,7 @@ def _bezier_segments( a: System, b: System|None, segments, bulge_factor) -> List
 def load_jump_bridges(
     bridges,
     systems,
-    segments: int = 32,
+    segments: int = 16,
     bulge_factor: float = 0.16,
 ) -> np.ndarray:
     """Load jump-bridge style connections defined by system names.

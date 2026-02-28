@@ -102,7 +102,7 @@ class ActionPackage(QObject):
 
     def browserOpenZKillboard(self):
         if self.currentSystem:
-            QDesktopServices.openUrl("https://zkillboard.com/system/{}".format(self.currentSystem.system_id))
+            QDesktopServices.openUrl("https://zkillboard.com/system/{}/".format(self.currentSystem.system_id))
 
 
 class TrayContextMenu(QtWidgets.QMenu):

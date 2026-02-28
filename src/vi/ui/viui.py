@@ -480,10 +480,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.regionNameField.addItems(sorted([region["name"] for _,region in Universe.REGIONS.items()]))
 
         self.ui.actionOpen_on_dotlan.triggered.connect(lambda: QDesktopServices.openUrl(
-            "https://evemaps.dotlan.net/system/{}".format(self.currentSystem.name)))
+            "https://evemaps.dotlan.net/system/{}/".format(self.currentSystem.name)))
 
         self.ui.actionOpen_on_zKillboard.triggered.connect(lambda: QDesktopServices.openUrl(
-            "https://zkillboard.com/system/{}".format(self.currentSystem.system_id)))
+            "https://zkillboard.com/system/{}/".format(self.currentSystem.system_id)))
 
         self.ui.actionChange_Region_to.triggered.connect(lambda: self.changeRegionBySystemID(
             self.currentSystem.system_id))
