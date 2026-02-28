@@ -2482,6 +2482,14 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
+  <action name="actionWormhole_connection_update">
+   <property name="text">
+    <string>Wormhole connection update</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2504,6 +2512,7 @@
     <slot>showTimers(bool)</slot>
     <slot>centerMapOnId(int)</slot>
     <slot>invertMouse(bool)</slot>
+    <slot>updateWormholeBridgesFromCache()</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -3200,6 +3209,22 @@
     <hint type="destinationlabel">
      <x>735</x>
      <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionWormhole_connection_update</sender>
+   <signal>triggered()</signal>
+   <receiver>mapView</receiver>
+   <slot>updateWormholeBridgesFromCache()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>670</x>
+     <y>436</y>
     </hint>
    </hints>
   </connection>

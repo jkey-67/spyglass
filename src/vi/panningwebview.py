@@ -123,32 +123,8 @@ def _load_connections(
         return np.array([], dtype=np.float32)
     return np.array(verts, dtype=np.float32)
 
-def load_jump_bridges(
-    bridges,
-    systems,
-    segments: int = 16,
-    bulge_factor: float = 0.16,
-) -> np.ndarray:
-    """Load jump-bridge style connections defined by system names.
 
-    The file format is: ``<id> <source> --> <target>`` with ``#`` comments.
-    Curves are emitted as a list of line segments approximating a quadratic
-    Bezier with a gentle perpendicular bulge.
-
-    Args:
-        path: Path to the jump bridge file.
-        systems: Systems to match names against.
-        segments: Number of segments per curve.
-        bulge_factor: Perpendicular bulge factor for the curve.
-
-    Returns:
-        Float32 array of line segment vertices.
-    """
-    systems_by_name = {sys.name: sys for sys in systems.values()}
-    verts: List[float] = []
-    pairs = set()
-
-    def bezier_segments(a: System, b: System) -> List[float]:
+def _bezier_segments( a: System, b: System|None, segments, bulge_factor) -> List[float]:
         """Build flat-ish quadratic Bezier segments between two systems.
 
         Args:
@@ -159,7 +135,10 @@ def load_jump_bridges(
             Flattened list of vertex pairs representing the curve.
         """
         ax, ay, az = a.x, a.y, a.z
-        bx, by, bz = b.x, b.y, b.z
+        if b is None:
+            bx, by, bz = a.x+0.035, a.y+0.045, a.z
+        else:
+            bx, by, bz = b.x, b.y, b.z
         dx = bx - ax
         dy = by - ay
         dist = math.hypot(dx, dy)
@@ -184,12 +163,37 @@ def load_jump_bridges(
             y = omt * omt * ay + 2.0 * omt * t * cy + t * t * by
             z = omt * omt * az + 2.0 * omt * t * cz + t * t * bz
             points.append((x, y, z))
-        segs: List[float] = []
+        segments: List[float] = []
         for i in range(len(points) - 1):
             x0, y0, z0 = points[i]
             x1, y1, z1 = points[i + 1]
-            segs.extend([x0, y0, z0, x1, y1, z1])
-        return segs
+            segments.extend([x0, y0, z0, x1, y1, z1])
+        return segments
+
+def load_jump_bridges(
+    bridges,
+    systems,
+    segments: int = 32,
+    bulge_factor: float = 0.16,
+) -> np.ndarray:
+    """Load jump-bridge style connections defined by system names.
+
+    The file format is: ``<id> <source> --> <target>`` with ``#`` comments.
+    Curves are emitted as a list of line segments approximating a quadratic
+    Bezier with a gentle perpendicular bulge.
+
+    Args:
+        bridges: list of jump bridge file.
+        systems: Systems to match names against.
+        segments: Number of segments per curve.
+        bulge_factor: Perpendicular bulge factor for the curve.
+
+    Returns:
+        Float32 array of line segment vertices.
+    """
+    systems_by_name = {sys.name: sys for sys in systems.values()}
+    vertices: List[float] = []
+    pairs = set()
 
     for src_name,_,dst_name in bridges:
         if src_name not in systems_by_name or dst_name not in systems_by_name:
@@ -200,11 +204,54 @@ def load_jump_bridges(
         pairs.add(key)
         a = systems_by_name[src_name]
         b = systems_by_name[dst_name]
-        verts.extend(bezier_segments(a, b))
+        vertices.extend(_bezier_segments(a, b, segments, bulge_factor))
 
-    if not verts:
+    if not vertices:
         return np.array([], dtype=np.float32)
-    return np.array(verts, dtype=np.float32)
+    return np.array(vertices, dtype=np.float32)
+
+def load_thera_jump_bridges(
+    bridges,
+    systems,
+    segments: int = 16,
+    bulge_factor: float = 0.3,
+) -> np.ndarray:
+    """Load jump-bridge style connections defined by system names.
+
+    The file format is: ``<id> <source> --> <target>`` with ``#`` comments.
+    Curves are emitted as a list of line segments approximating a quadratic
+    Bezier with a gentle perpendicular bulge.
+
+    Args:
+        bridges: list of jump bridge file.
+        systems: Systems to match names against.
+        segments: Number of segments per curve.
+        bulge_factor: Perpendicular bulge factor for the curve.
+
+    Returns:
+        Float32 array of line segment vertices.
+    """
+    systems_by_name = {sys.name: sys for sys in systems.values()}
+    vertices: List[float] = []
+    pairs = set()
+
+    for src in bridges:
+        src_name = src.get("in_system_name")
+        dst_name = src.get("out_system_name")
+        if src_name not in systems_by_name or dst_name not in systems_by_name:
+            continue
+        key = tuple(sorted((src_name, dst_name)))
+        if key in pairs:
+            continue
+        pairs.add(key)
+        a = systems_by_name[src_name]
+        # b = systems_by_name[dst_name]
+        # b = None
+        vertices.extend(_bezier_segments(a, None, segments, bulge_factor))
+
+    if not vertices:
+        return np.array([], dtype=np.float32)
+    return np.array(vertices, dtype=np.float32)
 
 
 class PanningWebView(StarMapWidget):
@@ -215,6 +262,7 @@ class PanningWebView(StarMapWidget):
 
     def __init__(self, parent=None,show_jumpbridges: bool = True,show_timers: bool = True,show_statistic: bool = True ):
         """Initialize the widget state and input handling."""
+        curr_cache = cache.Cache()
         systems = ALL_SYSTEMS
         stargates = ALL_STARGATES
         line_vertices =_load_connections(stargates.values(),grouped=True)
@@ -222,13 +270,16 @@ class PanningWebView(StarMapWidget):
         atlas_dir = os.path.join(os.path.dirname(__file__), "atlas")
         font_family = select_font_family(["Noto Sans CJK", "Noto Sans"])
         _, atlas_json = generate_font_atlas(atlas_dir, font_family, 32, chars, logical_font_size=8)
-        jump_bridge_vertices = load_jump_bridges( cache.Cache().getJumpGates(),ALL_SYSTEMS )
+        jump_bridge_vertices = load_jump_bridges( curr_cache.getJumpGates(),ALL_SYSTEMS )
+        thera_bridge_vertices = load_thera_jump_bridges(curr_cache.getThreaConnections(),ALL_SYSTEMS)
+
 
         super(PanningWebView, self).__init__(
-            systems,
-            atlas_json,
-            line_vertices,
-            jump_bridge_vertices,
+            systems=systems,
+            atlas_path=atlas_json,
+            line_vertices=line_vertices,
+            jump_bridge_vertices=jump_bridge_vertices,
+            thera_bridge_vertices=thera_bridge_vertices,
             mouse_3d=Position.USE_3D,
             parent=parent,
         )
@@ -400,8 +451,11 @@ class PanningWebView(StarMapWidget):
 
     @Slot()
     def updateJumpBridgesFromCache(self):
-        jump_bridge_vertices = load_jump_bridges(cache.Cache().getJumpGates(), ALL_SYSTEMS)
-        self.updateJumpBridges(jump_bridge_vertices)
+        self.updateJumpBridges(load_jump_bridges(cache.Cache().getJumpGates(), ALL_SYSTEMS))
+
+    @Slot()
+    def updateWormholeBridgesFromCache(self):
+        self.updateWormholeBridges(load_thera_jump_bridges(cache.Cache().getThreaConnections(), ALL_SYSTEMS))
 
     @Slot(bool)
     def showJumpBridges(self,val):

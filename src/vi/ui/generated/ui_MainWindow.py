@@ -239,6 +239,9 @@ class Ui_MainWindow(object):
         self.actionClear_Jump_Gates = QAction(MainWindow)
         self.actionClear_Jump_Gates.setObjectName(u"actionClear_Jump_Gates")
         self.actionClear_Jump_Gates.setMenuRole(QAction.MenuRole.NoRole)
+        self.actionWormhole_connection_update = QAction(MainWindow)
+        self.actionWormhole_connection_update.setObjectName(u"actionWormhole_connection_update")
+        self.actionWormhole_connection_update.setMenuRole(QAction.MenuRole.NoRole)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout_5 = QVBoxLayout(self.centralwidget)
@@ -1155,6 +1158,7 @@ class Ui_MainWindow(object):
         self.mapView.regionChanged.connect(self.regionNameField.setEditText)
         self.mapView.regionChanged.connect(self.regionNameField.setCurrentText)
         self.mapView.systemChanged.connect(MainWindow.theraSystemChanged)
+        self.actionWormhole_connection_update.triggered.connect(self.mapView.updateWormholeBridgesFromCache)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -1241,6 +1245,7 @@ class Ui_MainWindow(object):
         self.actionOpacity_40.setText(QCoreApplication.translate("MainWindow", u"Opacity 40%", None))
         self.actionOpacity_20.setText(QCoreApplication.translate("MainWindow", u"Opacity 20%", None))
         self.actionClear_Jump_Gates.setText(QCoreApplication.translate("MainWindow", u"Remove Ansiblex Jump Gate", None))
+        self.actionWormhole_connection_update.setText(QCoreApplication.translate("MainWindow", u"Wormhole connection update", None))
 #if QT_CONFIG(tooltip)
         self.frameButton.setToolTip(QCoreApplication.translate("MainWindow", u"Restore WIndow Frame.", None))
 #endif // QT_CONFIG(tooltip)

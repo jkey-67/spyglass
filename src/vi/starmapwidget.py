@@ -260,6 +260,7 @@ uniform vec2 uScreen;
 uniform float uLabelScale;
 uniform float uDepthScale;
 uniform float uDepthEnabled;
+uniform float uTextAngle;
 
 out vec2 vUV;
 out vec3 vColor;
@@ -270,7 +271,14 @@ void main() {
     float depth = max(length(viewPos.xyz), 1e-6);
     float depthScale = uDepthScale / depth;
     float scale = mix(uLabelScale, depthScale, uDepthEnabled);
-    vec2 pixel = (iOffset + aPos * iSize) * scale;
+    vec2 local = iOffset + aPos * iSize;
+    float c = cos(uTextAngle);
+    float s = sin(uTextAngle);
+    vec2 rotated = vec2(
+        c * local.x - s * local.y,
+        s * local.x + c * local.y
+    );
+    vec2 pixel = rotated * scale;
     vec2 ndcOffset = vec2((pixel.x / uScreen.x) * 2.0, -(pixel.y / uScreen.y) * 2.0);
     clip.xy += ndcOffset * clip.w;
     gl_Position = clip;
@@ -1343,6 +1351,7 @@ class RegionBackgroundLabelLayer:
                 data = None
                 size = 0
             glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW)
+            glBindBuffer(GL_ARRAY_BUFFER, 0)
 
     def draw(
         self,
@@ -1362,10 +1371,12 @@ class RegionBackgroundLabelLayer:
         u_text_depth_scale: int,
         u_text_depth_enabled: int,
         u_text_alpha_scale: int,
+        u_text_angle: int,
         u_atlas: int,
         mouse_3d: bool,
         zoom: float,
         base_zoom: float,
+        text_angle_radians: float,
     ) -> None:
         """Draw region names as a background layer using the text shader.
 
@@ -1385,10 +1396,12 @@ class RegionBackgroundLabelLayer:
             u_text_depth_scale: Depth-scale uniform location.
             u_text_depth_enabled: Depth-enabled uniform location.
             u_text_alpha_scale: Alpha-scale uniform location.
+            u_text_angle: Text-angle uniform location.
             u_atlas: Atlas sampler uniform location.
             mouse_3d: Whether map interaction is in 3D mode.
             zoom: Current camera zoom.
             base_zoom: Baseline camera zoom.
+            text_angle_radians: Glyph rotation angle in radians.
 
         Returns:
             None.
@@ -1418,6 +1431,7 @@ class RegionBackgroundLabelLayer:
         glUniform1f(u_text_depth_scale, 1.0)
         glUniform1f(u_text_depth_enabled, 0.0)
         glUniform1f(u_text_alpha_scale, float(alpha))
+        glUniform1f(u_text_angle, float(text_angle_radians))
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, atlas_texture)
         glUniform1i(u_atlas, 0)
@@ -1462,24 +1476,16 @@ def bind_text_instances(vao: int, vbo: int, instances: np.ndarray) -> None:
             glVertexAttribPointer(2, 3, GL_FLOAT, False, stride, ctypes.c_void_p(0))
             glEnableVertexAttribArray(2)
             glVertexAttribDivisor(2, 1)
-            glVertexAttribPointer(
-                3, 2, GL_FLOAT, False, stride, ctypes.c_void_p(3 * ctypes.sizeof(ctypes.c_float))
-            )
+            glVertexAttribPointer(3, 2, GL_FLOAT, False, stride, ctypes.c_void_p(3 * ctypes.sizeof(ctypes.c_float)))
             glEnableVertexAttribArray(3)
             glVertexAttribDivisor(3, 1)
-            glVertexAttribPointer(
-                4, 2, GL_FLOAT, False, stride, ctypes.c_void_p(5 * ctypes.sizeof(ctypes.c_float))
-            )
+            glVertexAttribPointer(4, 2, GL_FLOAT, False, stride, ctypes.c_void_p(5 * ctypes.sizeof(ctypes.c_float)))
             glEnableVertexAttribArray(4)
             glVertexAttribDivisor(4, 1)
-            glVertexAttribPointer(
-                5, 4, GL_FLOAT, False, stride, ctypes.c_void_p(7 * ctypes.sizeof(ctypes.c_float))
-            )
+            glVertexAttribPointer(5, 4, GL_FLOAT, False, stride, ctypes.c_void_p(7 * ctypes.sizeof(ctypes.c_float)))
             glEnableVertexAttribArray(5)
             glVertexAttribDivisor(5, 1)
-            glVertexAttribPointer(
-                6, 3, GL_FLOAT, False, stride, ctypes.c_void_p(11 * ctypes.sizeof(ctypes.c_float))
-            )
+            glVertexAttribPointer(6, 3, GL_FLOAT, False, stride, ctypes.c_void_p(11 * ctypes.sizeof(ctypes.c_float)))
             glEnableVertexAttribArray(6)
             glVertexAttribDivisor(6, 1)
 
@@ -1506,6 +1512,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         atlas_path: str,
         line_vertices: np.ndarray | ConnectionLineGroups,
         jump_bridge_vertices: Optional[np.ndarray] = None,
+        thera_bridge_vertices: Optional[np.ndarray] = None,
         line_thickness: float = 1.0,
         mouse_3d: bool = False,
         show_jumpbridges: bool = True,
@@ -1539,10 +1546,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.line_vbo = 0
         self.line_constellation_vao = 0
         self.line_constellation_vbo = 0
-        self.line_region_vao = 0
-        self.line_region_vbo = 0
+        self.line_cross_region_vao = 0
+        self.line_cross_region_vbo = 0
         self.bridge_line_vao = 0
         self.bridge_line_vbo = 0
+        self.thera_line_vao = 0
+        self.thera_line_vbo = 0
         self.text_vbo = 0
         self.text_static_vao = 0
         self.text_dynamic_vao = 0
@@ -1573,6 +1582,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.intel_fade_seconds = float(self.INTEL_FADE_SECONDS)
         self.system_index_by_id = {sys.system_id: idx for idx, sys in enumerate(self.systems)}
         self._update_jump_bridges  = False
+        self._update_thera_jump_bridges = False
         self._intel_status_active = False
         self._show_intel_minutes = False
         self._text_rebuild_pending = True
@@ -1602,9 +1612,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             self.line_vertices = line_vertices
             self.line_vertices_cross_constellation = np.array([], dtype=np.float32)
             self.line_vertices_cross_region = np.array([], dtype=np.float32)
-        self.bridge_line_vertices = (
-            jump_bridge_vertices if jump_bridge_vertices is not None else np.array([], dtype=np.float32)
-        )
+        self.bridge_line_vertices = (jump_bridge_vertices if jump_bridge_vertices is not None else np.array([], dtype=np.float32))
+        self.thera_line_vertices = (thera_bridge_vertices if thera_bridge_vertices is not None else np.array([], dtype=np.float32))
         self.line_thickness = max(0.1, float(line_thickness))
         self.mouse_3d = bool(mouse_3d)
         self.orbiting = False
@@ -1667,8 +1676,10 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_text_depth_scale = -1
         self.u_text_depth_enabled = -1
         self.u_text_alpha_scale = -1
+        self.u_text_angle = -1
         self.text_fade_start_scale = float(self.TEXT_FADE_START_SCALE)
         self.text_fade_end_scale = float(self.TEXT_FADE_END_SCALE)
+        self.text_angle_degrees = 0.0
         self.label_padding = 8.0
         self.label_line_gap = 3.0
         metrics = self.atlas.get("metrics", {})
@@ -1729,10 +1740,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
     constellationChanged = PySide6.QtCore.Signal(str)
 
     def updateJumpBridges(self,jump_bridge_vertices: Optional[np.ndarray]):
-        self.bridge_line_vertices = (
-            jump_bridge_vertices if jump_bridge_vertices is not None else np.array([], dtype=np.float32)
-        )
+        self.bridge_line_vertices = (jump_bridge_vertices if jump_bridge_vertices is not None else np.array([], dtype=np.float32))
         self._update_jump_bridges = True
+
+    def updateWormholeBridges(self,thera_bridge_vertices: Optional[np.ndarray]):
+        self.thera_line_vertices = (thera_bridge_vertices if thera_bridge_vertices is not None else np.array([], dtype=np.float32))
+        self._update_thera_jump_bridges = True
 
     def initializeGL(self) -> None:
         """Initialize OpenGL programs, buffers, and textures.
@@ -1779,6 +1792,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     self._pick_positions,
                     GL_STATIC_DRAW,
                 )
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
                 self.pick_distances_ssbo = glGenBuffers(1)
                 glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.pick_distances_ssbo)
                 glBufferData(
@@ -1786,7 +1800,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     self._pick_positions.shape[0] * ctypes.sizeof(ctypes.c_float),
                     None,
                     GL_DYNAMIC_READ,
-                )
+                    )
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
             except RuntimeError as exc:
                 self.pick_program = 0
                 self._gpu_picking_enabled = False
@@ -1796,9 +1811,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         glBindVertexArray(self.point_vao)
         glBindBuffer(GL_ARRAY_BUFFER, self.point_vbo)
         glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
-        glVertexAttribPointer(
-            0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-        )
+        glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
         glEnableVertexAttribArray(0)
 
         self.u_line_view = glGetUniformLocation(self.line_program, "uView")
@@ -1841,65 +1854,49 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_system_halo_color_contested = glGetUniformLocation(self.system_program, "uHaloColorContested")
         self.u_system_halo_color_incursion = glGetUniformLocation(self.system_program, "uHaloColorIncursion")
 
+        self.line_vao = glGenVertexArrays(1)
+        self.line_vbo = glGenBuffers(1)
         if self.line_vertices.size:
-            self.line_vao = glGenVertexArrays(1)
-            self.line_vbo = glGenBuffers(1)
             glBindVertexArray(self.line_vao)
             glBindBuffer(GL_ARRAY_BUFFER, self.line_vbo)
-            glBufferData(
-                GL_ARRAY_BUFFER, self.line_vertices.nbytes, self.line_vertices, GL_STATIC_DRAW
-            )
-            glVertexAttribPointer(
-                0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-            )
+            glBufferData(GL_ARRAY_BUFFER, self.line_vertices.nbytes, self.line_vertices, GL_STATIC_DRAW)
+            glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
             glEnableVertexAttribArray(0)
 
+        self.line_constellation_vao = glGenVertexArrays(1)
+        self.line_constellation_vbo = glGenBuffers(1)
         if self.line_vertices_cross_constellation.size:
-            self.line_constellation_vao = glGenVertexArrays(1)
-            self.line_constellation_vbo = glGenBuffers(1)
             glBindVertexArray(self.line_constellation_vao)
             glBindBuffer(GL_ARRAY_BUFFER, self.line_constellation_vbo)
-            glBufferData(
-                GL_ARRAY_BUFFER,
-                self.line_vertices_cross_constellation.nbytes,
-                self.line_vertices_cross_constellation,
-                GL_STATIC_DRAW,
-            )
-            glVertexAttribPointer(
-                0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-            )
+            glBufferData(GL_ARRAY_BUFFER,self.line_vertices_cross_constellation.nbytes,self.line_vertices_cross_constellation,GL_STATIC_DRAW,)
+            glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
             glEnableVertexAttribArray(0)
 
+        self.line_cross_region_vao = glGenVertexArrays(1)
+        self.line_cross_region_vbo = glGenBuffers(1)
         if self.line_vertices_cross_region.size:
-            self.line_region_vao = glGenVertexArrays(1)
-            self.line_region_vbo = glGenBuffers(1)
-            glBindVertexArray(self.line_region_vao)
-            glBindBuffer(GL_ARRAY_BUFFER, self.line_region_vbo)
-            glBufferData(
-                GL_ARRAY_BUFFER,
-                self.line_vertices_cross_region.nbytes,
-                self.line_vertices_cross_region,
-                GL_STATIC_DRAW,
-            )
-            glVertexAttribPointer(
-                0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-            )
+            glBindVertexArray(self.line_cross_region_vao)
+            glBindBuffer(GL_ARRAY_BUFFER, self.line_cross_region_vbo)
+            glBufferData(GL_ARRAY_BUFFER,self.line_vertices_cross_region.nbytes,self.line_vertices_cross_region,GL_STATIC_DRAW,)
+            glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
             glEnableVertexAttribArray(0)
 
+        self.bridge_line_vao = glGenVertexArrays(1)
+        self.bridge_line_vbo = glGenBuffers(1)
         if self.bridge_line_vertices.size:
-            self.bridge_line_vao = glGenVertexArrays(1)
-            self.bridge_line_vbo = glGenBuffers(1)
             glBindVertexArray(self.bridge_line_vao)
             glBindBuffer(GL_ARRAY_BUFFER, self.bridge_line_vbo)
-            glBufferData(
-                GL_ARRAY_BUFFER,
-                self.bridge_line_vertices.nbytes,
-                self.bridge_line_vertices,
-                GL_STATIC_DRAW,
-            )
-            glVertexAttribPointer(
-                0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-            )
+            glBufferData(GL_ARRAY_BUFFER, self.bridge_line_vertices.nbytes, self.bridge_line_vertices, GL_DYNAMIC_DRAW, )
+            glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
+            glEnableVertexAttribArray(0)
+
+        self.thera_line_vao = glGenVertexArrays(1)
+        self.thera_line_vbo = glGenBuffers(1)
+        if self.thera_line_vertices.size:
+            glBindVertexArray(self.thera_line_vao)
+            glBindBuffer(GL_ARRAY_BUFFER, self.thera_line_vbo)
+            glBufferData(GL_ARRAY_BUFFER,self.thera_line_vertices.nbytes,self.thera_line_vertices,GL_DYNAMIC_DRAW,)
+            glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
             glEnableVertexAttribArray(0)
 
         self.text_static_vao = glGenVertexArrays(1)
@@ -1935,26 +1932,16 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         for vao in (self.text_static_vao, self.text_dynamic_vao,self.text_timer_vao, self.text_statistic_vao, self.region_background_layer.vao, self.constellation_background_layer.vao):
             glBindVertexArray(vao)
             glBindBuffer(GL_ARRAY_BUFFER, self.text_vbo)
-            glVertexAttribPointer(
-                0, 2, GL_FLOAT, False, 4 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-            )
+            glVertexAttribPointer(0, 2, GL_FLOAT, False, 4 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
             glEnableVertexAttribArray(0)
-            glVertexAttribPointer(
-                1,
-                2,
-                GL_FLOAT,
-                False,
-                4 * ctypes.sizeof(ctypes.c_float),
-                ctypes.c_void_p(2 * ctypes.sizeof(ctypes.c_float)),
-            )
+            glVertexAttribPointer(1, 2, GL_FLOAT, False, 4 * ctypes.sizeof(ctypes.c_float),
+                                  ctypes.c_void_p(2 * ctypes.sizeof(ctypes.c_float)), )
             glEnableVertexAttribArray(1)
 
         self.system_vao = glGenVertexArrays(1)
         glBindVertexArray(self.system_vao)
         glBindBuffer(GL_ARRAY_BUFFER, self.text_vbo)
-        glVertexAttribPointer(
-            0, 2, GL_FLOAT, False, 4 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-        )
+        glVertexAttribPointer(0, 2, GL_FLOAT, False, 4 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
         glEnableVertexAttribArray(0)
 
         self.system_ssbo = glGenBuffers(1)
@@ -1989,9 +1976,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     glBindVertexArray(draw_entry["fill_vao"])
                     glBindBuffer(GL_ARRAY_BUFFER, draw_entry["fill_vbo"])
                     glBufferData(GL_ARRAY_BUFFER, parts["fill"].nbytes, parts["fill"], GL_STATIC_DRAW)
-                    glVertexAttribPointer(
-                        0, 2, GL_FLOAT, False, 2 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-                    )
+                    glVertexAttribPointer(0, 2, GL_FLOAT, False, 2 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
                     glEnableVertexAttribArray(0)
                     draw_entry["fill_count"] = parts["fill"].size // 2
                 if parts.get("border") is not None and parts["border"].size:
@@ -2000,9 +1985,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     glBindVertexArray(draw_entry["border_vao"])
                     glBindBuffer(GL_ARRAY_BUFFER, draw_entry["border_vbo"])
                     glBufferData(GL_ARRAY_BUFFER, parts["border"].nbytes, parts["border"], GL_STATIC_DRAW)
-                    glVertexAttribPointer(
-                        0, 2, GL_FLOAT, False, 2 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-                    )
+                    glVertexAttribPointer(0, 2, GL_FLOAT, False, 2 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
                     glEnableVertexAttribArray(0)
                     draw_entry["border_count"] = parts["border"].size // 2
                 draw_entry["inst_vbo"] = glGenBuffers(1)
@@ -2020,9 +2003,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     """
                     glBindVertexArray(vao)
                     glBindBuffer(GL_ARRAY_BUFFER, draw_entry["inst_vbo"])
-                    glVertexAttribPointer(
-                        1, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0)
-                    )
+                    glVertexAttribPointer(1, 3, GL_FLOAT, False, 3 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
                     glEnableVertexAttribArray(1)
                     glVertexAttribDivisor(1, 1)
 
@@ -2040,6 +2021,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.u_text_depth_scale = glGetUniformLocation(self.text_program, "uDepthScale")
         self.u_text_depth_enabled = glGetUniformLocation(self.text_program, "uDepthEnabled")
         self.u_text_alpha_scale = glGetUniformLocation(self.text_program, "uAlphaScale")
+        self.u_text_angle = glGetUniformLocation(self.text_program, "uTextAngle")
 
         self.text_static_instance_vbo = glGenBuffers(1)
         bind_text_instances(self.text_static_vao, self.text_static_instance_vbo, self.text_static_instances)
@@ -2096,7 +2078,10 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         if not ( self.orbiting or self.panning):
             if self._update_jump_bridges:
                 self._refresh_jump_bridges()
-                self._update_jump_bridges=False
+                self._update_jump_bridges = False
+            if self._update_thera_jump_bridges:
+                self._refresh_thera_jump_bridges()
+                self._update_thera_jump_bridges = False
             if self._intel_status_active:
                 show_intel_minutes = bool(int(now_utc) % 2)
                 if show_intel_minutes != self._show_intel_minutes:
@@ -2165,10 +2150,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         line_thickness_scaled = float(max(0.5, self.line_thickness * label_scale))
 
-        if True and (
-            self.line_vertices.size
-            or self.line_vertices_cross_constellation.size
-            or self.line_vertices_cross_region.size )        :
+        if self.line_vertices.size or self.line_vertices_cross_constellation.size or self.line_vertices_cross_region.size :
             glDisable(GL_DEPTH_TEST)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glUseProgram(self.line_program)
@@ -2183,18 +2165,20 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 glUniform3f(self.u_line_color, r, g, b)
                 glBindVertexArray(self.line_vao)
                 glDrawArrays(GL_LINES, 0, self.line_vertices.size // 3)
+
             if self.line_vertices_cross_constellation.size:
                 r, g, b, _ = PySide6.QtGui.QColor("#60ff0000").getRgbF()
                 glUniform3f(self.u_line_color, r, g, b)
                 glBindVertexArray(self.line_constellation_vao)
                 glDrawArrays(GL_LINES, 0, self.line_vertices_cross_constellation.size // 3)
+
             if self.line_vertices_cross_region.size:
                 r, g, b, _ = PySide6.QtGui.QColor("#c71585").getRgbF()
                 glUniform3f(self.u_line_color, r, g, b)
-                glBindVertexArray(self.line_region_vao)
+                glBindVertexArray(self.line_cross_region_vao)
                 glDrawArrays(GL_LINES, 0, self.line_vertices_cross_region.size // 3)
 
-        if self.show_jumpbridges  and self.bridge_line_vertices.size:
+        if self.show_jumpbridges:
             glDisable(GL_DEPTH_TEST)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glUseProgram(self.line_program)
@@ -2203,10 +2187,17 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glUniformMatrix4fv(self.u_line_proj, 1, False, line_proj)
             glUniform2f(self.u_line_screen, float(screen_width), float(screen_height))
             glUniform1f(self.u_line_thickness, line_thickness_scaled)
-            r, g, b, _ = PySide6.QtGui.QColor("#7cfc00").getRgbF()
-            glUniform3f(self.u_line_color, r, g, b)
-            glBindVertexArray(self.bridge_line_vao)
-            glDrawArrays(GL_LINES, 0, self.bridge_line_vertices.size // 3)
+            if  self.bridge_line_vertices.size:
+                r, g, b, _ = PySide6.QtGui.QColor("#7cfc00").getRgbF()
+                glUniform3f(self.u_line_color, r, g, b)
+                glBindVertexArray(self.bridge_line_vao)
+                glDrawArrays(GL_LINES, 0, self.bridge_line_vertices.size // 3)
+
+            if self.thera_line_vertices.size:
+                r, g, b, _ = PySide6.QtGui.QColor("#c0c000").getRgbF()
+                glUniform3f(self.u_line_color, r, g, b)
+                glBindVertexArray(self.thera_line_vao)
+                glDrawArrays(GL_LINES, 0, self.thera_line_vertices.size // 3)
 
         if self.system_instance_count:
             intel_base_time = now_utc - self.INTEL_BASE_TIME
@@ -2362,6 +2353,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 glUniform1f(self.u_text_depth_scale, float(depth_scale))
                 glUniform1f(self.u_text_depth_enabled, float(depth_enabled))
                 glUniform1f(self.u_text_alpha_scale, float(text_alpha_scale))
+                glUniform1f(self.u_text_angle, float(math.radians(self.text_angle_degrees)))
                 glActiveTexture(GL_TEXTURE0)
                 glBindTexture(GL_TEXTURE_2D, self.atlas_texture)
                 glUniform1i(self.u_atlas, 0)
@@ -2397,10 +2389,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 u_text_depth_scale=self.u_text_depth_scale,
                 u_text_depth_enabled=self.u_text_depth_enabled,
                 u_text_alpha_scale=self.u_text_alpha_scale,
+                u_text_angle=self.u_text_angle,
                 u_atlas=self.u_atlas,
                 mouse_3d=self.mouse_3d,
                 zoom=self.zoom,
                 base_zoom=self.base_zoom,
+                text_angle_radians=float(math.radians(self.text_angle_degrees)),
             )
         if self.show_constellation_background_labels:
             self.constellation_background_layer.draw(
@@ -2419,10 +2413,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 u_text_depth_scale=self.u_text_depth_scale,
                 u_text_depth_enabled=self.u_text_depth_enabled,
                 u_text_alpha_scale=self.u_text_alpha_scale,
+                u_text_angle=self.u_text_angle,
                 u_atlas=self.u_atlas,
                 mouse_3d=self.mouse_3d,
                 zoom=self.zoom,
                 base_zoom=self.base_zoom,
+                text_angle_radians=float(math.radians(self.text_angle_degrees)),
             )
 
         glDisable(GL_POLYGON_OFFSET_FILL)
@@ -2580,14 +2576,21 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_DRAW)
 
     def _refresh_jump_bridges(self):
-        glBindVertexArray(self.bridge_line_vao)
-        glBindBuffer(GL_ARRAY_BUFFER, self.bridge_line_vbo)
-        glBufferData(
-            GL_ARRAY_BUFFER,
-            self.bridge_line_vertices.nbytes,
-            self.bridge_line_vertices,
-            GL_STATIC_DRAW,
-        )
+        if self._update_jump_bridges:
+            glBindVertexArray(self.bridge_line_vao)
+            glBindBuffer(GL_ARRAY_BUFFER, self.bridge_line_vbo)
+            glBufferData(GL_ARRAY_BUFFER,self.bridge_line_vertices.nbytes,self.bridge_line_vertices,GL_DYNAMIC_DRAW,)
+            glBindBuffer(GL_ARRAY_BUFFER, 0)
+            self._update_jump_bridges = False
+
+    def _refresh_thera_jump_bridges(self):
+        if self._update_thera_jump_bridges:
+            glBindVertexArray(self.thera_line_vao)
+            glBindBuffer(GL_ARRAY_BUFFER, self.thera_line_vbo)
+            glBufferData(GL_ARRAY_BUFFER,self.thera_line_vertices.nbytes,self.thera_line_vertices,GL_DYNAMIC_DRAW,)
+            glEnableVertexAttribArray(0)
+            glBindBuffer(GL_ARRAY_BUFFER, 0)
+            self._update_thera_jump_bridges = False
 
     def _refresh_text_instances(self, now: Optional[float] = None) -> None:
         """Update GPU text instances after label text changes.
@@ -2616,6 +2619,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     self.text_static_instances,
                     GL_DYNAMIC_DRAW,
                 )
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
             self._text_static_rebuild_pending = False
 
         if self._text_dynamic_rebuild_pending:
@@ -2629,6 +2633,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     self.text_dynamic_instances,
                     GL_DYNAMIC_DRAW,
                 )
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
             self._text_dynamic_rebuild_pending = False
 
         if self._text_rebuild_pending:
@@ -2644,6 +2649,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     self.text_timer_instances,
                     GL_DYNAMIC_DRAW,
                 )
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
             if self.text_statistic_instance_vbo:
                 glBindBuffer(GL_ARRAY_BUFFER, self.text_statistic_instance_vbo)
                 glBufferData(
@@ -2652,6 +2658,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     self.text_statistic_instances,
                     GL_DYNAMIC_DRAW,
                 )
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
             self._text_rebuild_pending = False
 
     def _refresh_text_dynamic_instances(self, now: Optional[float] = None) -> None:
@@ -2675,6 +2682,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 self.text_dynamic_instances,
                 GL_DYNAMIC_DRAW,
             )
+            glBindBuffer(GL_ARRAY_BUFFER, 0)
 
     def _build_system_instances(self) -> np.ndarray:
         """Build per-system SSBO data for the unified system shader.
@@ -3387,6 +3395,18 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         self.line_thickness = max(0.1, float(thickness))
 
+    def set_text_angle(self, angle_degrees: float) -> None:
+        """Rotate map text around each label anchor.
+
+        Args:
+            angle_degrees: Rotation in degrees.
+
+        Returns:
+            None.
+        """
+        self.text_angle_degrees = float(angle_degrees)
+        self.update()
+
     def _focus_on_system(self, system: System|Region|Constellation,animate:bool) -> None:
         """Recenter orbit controls and camera target on a specific system.
 
@@ -3708,10 +3728,12 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glDeleteBuffers(1, [self.line_vbo])
         if self.line_constellation_vbo:
             glDeleteBuffers(1, [self.line_constellation_vbo])
-        if self.line_region_vbo:
-            glDeleteBuffers(1, [self.line_region_vbo])
+        if self.line_cross_region_vbo:
+            glDeleteBuffers(1, [self.line_cross_region_vbo])
         if self.bridge_line_vbo:
             glDeleteBuffers(1, [self.bridge_line_vbo])
+        if self.thera_line_vbo:
+            glDeleteBuffers(1, [self.thera_line_vbo])
         for draw in self.structure_draws:
             if draw.get("fill_vbo"):
                 glDeleteBuffers(1, [draw["fill_vbo"]])

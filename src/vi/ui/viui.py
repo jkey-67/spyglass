@@ -751,6 +751,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def setTheraConnections(self, connections):
         dotlan.Map.setTheraConnections(connections)
         self.ui.tableViewThera.model().sourceModel().setTheraConnections(connections)
+        self.ui.actionWormhole_connection_update.trigger()
 
     @Slot(str)
     def theraSystemChanged(self,system_name):
