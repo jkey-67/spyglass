@@ -9,9 +9,10 @@ import json
 import logging
 import os.path
 import datetime
+import time
 
 import PySide6.QtNetwork
-from PySide6.QtCore import QUrl, QObject
+from PySide6.QtCore import QUrl, QObject, QTimer
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtNetwork import QNetworkRequest
 from PySide6.QtNetwork import QNetworkReply
@@ -22,8 +23,8 @@ from .cache import Cache
 from .chatparser.ctx import CTX
 import uuid
 
-UTF16_BOM = u'\uFEFF\n'
-
+def getTickMs()->int:
+     return int(time.time()*1000.0)
 
 class ZKillMonitor(QObject):
     """Subscribe to the zKillboard RedisQ stream and surface kills to Spyglass.
@@ -31,6 +32,11 @@ class ZKillMonitor(QObject):
     The monitor uses HTTP long-polling to receive messages, writes formatted
     kill intel to ``zkillMonitor.log`` in UTF-16 LE, and caches the raw
     killmail JSON for other components.
+
+    If USE_R2Z2 is true
+        https://github.com/zKillboard/zKillboard/wiki/API-(R2Z2)
+    otherwise
+        https://github.com/zKillboard/RedisQ
 
     Attributes:
         status_kill_mail: Emits True when a killmail is processed, False on
@@ -40,8 +46,11 @@ class ZKillMonitor(QObject):
     status_kill_mail = Signal(bool)
     report_system_kill = Signal(int,float)
     MONITORING_PATH = "zkillMonitor.log"
-    LOG_VICTIM = True
-    LOG_ATTACKERS = False
+    LOG_VICTIM = True               # logs if a blue alliance is in victims
+    LOG_ATTACKERS = False           # logs if a blue alliance is in attackers
+    LOG_ALL_KILL_MAILS = False      # log all messages, for debugging only
+    USE_R2Z2 = True
+    UTF16_BOM = u'\uFEFF\n'
 
     def __init__(self, parent=None):
         """Initialize the zKillboard monitor and networking state.
@@ -60,15 +69,101 @@ class ZKillMonitor(QObject):
             Cache().putIntoCache("zkillredisq.stream.id", self.zkillredisqStreamID)
         # self.zkillredisqStreamID = "spyglass-{}".format(uuid.uuid4())
         self.netManager = QNetworkAccessManager()
-        self.netManager.finished.connect(self.responseReady,Qt.ConnectionType.QueuedConnection)
+        self.netSequenceReader = QNetworkAccessManager()
+        if ZKillMonitor.USE_R2Z2:
+            self.netManager.finished.connect(self._responseSequenceJsonReady, Qt.ConnectionType.QueuedConnection)
+            self.netSequenceReader.finished.connect(self._responseSequenceReady, Qt.ConnectionType.QueuedConnection)
+        else:
+            self.netManager.finished.connect(self._responseReady, Qt.ConnectionType.QueuedConnection)
         self.killmailManager = QNetworkAccessManager()
         self.killmailManager.finished.connect(self.killmailResponseReady,Qt.ConnectionType.QueuedConnection)
         self.pendingKillmailReplies = dict()
         self.req = QNetworkRequest()
-        self.req.setUrl("https://zkillredisq.stream/listen.php?queueID={}".format(self.zkillredisqStreamID))
+        self.reqSequence = QNetworkRequest()
+        self.sequence = None
         self.reply = None
+        self.reply_sequence = None
 
-    def responseReady(self, reply:QNetworkReply):
+        if ZKillMonitor.USE_R2Z2:
+            self.req.setUrl("https://r2z2.zkillboard.com/ephemeral/sequence.json")
+        else:
+            self.req.setUrl("https://zkillredisq.stream/listen.php?queueID={}".format(self.zkillredisqStreamID))
+        self.last_query = getTickMs()
+
+    def _waitTimeMS(self, delta:int)->int:
+        return max(0,delta - (getTickMs() - self.last_query))
+
+    def _getNextSequence(self):
+        self.reqSequence.setUrl("https://r2z2.zkillboard.com/ephemeral/{}.json".format(self.sequence))
+        if self.reply_sequence:
+            self.reply_sequence.deleteLater()
+        self.reply_sequence = self.netSequenceReader.get(self.reqSequence)
+        self.last_query = getTickMs()
+        logging.debug( "GET ({} ms) https://r2z2.zkillboard.com/ephemeral/{}.json".format(self.last_query,self.sequence))
+
+    def _responseSequenceReady(self, reply:QNetworkReply):
+        try:
+            if reply.error() == PySide6.QtNetwork.QNetworkReply.NetworkError.NoError:
+                sequence_data = json.loads(reply.readAll().data())
+                if self.processKillPackage(sequence_data, reply.url().toString()):
+                    self.status_kill_mail.emit(True)
+                self.sequence = sequence_data.get("sequence_id")
+                if self.sequence:
+                    self.sequence += 1
+                    QTimer.singleShot(self._waitTimeMS(100), self._getNextSequence)
+                    return
+            elif reply.error() == PySide6.QtNetwork.QNetworkReply.NetworkError.ContentNotFoundError:  # 404
+                QTimer.singleShot(self._waitTimeMS(6000), self._getNextSequence)
+                return
+            else:
+                logging.error(
+                    "Error {} : {}".format(
+                        reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute), reply.errorString()))
+
+        except (Exception,) as ex:
+            logging.error(
+                "Error : {} during the handling of an zKillboard message {}".format(ex, reply.url().toString()))
+        self.status_kill_mail.emit(False)
+        QTimer.singleShot(6000, self.startConnect)
+
+    def _responseSequenceJsonReady(self, reply:QNetworkReply):
+        """Handle one RedisQ HTTP reply.
+
+        Args:
+            reply: Network reply returned by the long-poll request.
+
+        Returns:
+            None.
+
+        Side Effects:
+            Emits ``status_kill_mail`` when a killmail is parsed and schedules
+            the next request.
+        """
+        try:
+            if reply.error() == PySide6.QtNetwork.QNetworkReply.NetworkError.NoError:
+                self.sequence = json.loads(reply.readAll().data()).get("sequence")
+                if self.sequence:
+                    self._getNextSequence()
+                    return
+            elif reply.error() == PySide6.QtNetwork.QNetworkReply.NetworkError.ContentNotFoundError:  # 404
+                self.reply.deleteLater()
+                QTimer.singleShot(self._waitTimeMS(6000), self._getNextSequence)
+                return
+            else:
+                logging.error(
+                    "Error {} : {}".format(
+                        reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute), reply.errorString()))
+
+        except (Exception,) as ex:
+            logging.error(
+                "Error : {} during the handling of an zKillboard message {}".format(ex, reply.url().toString()))
+        if self.reply:
+            self.reply.deleteLater()
+            self.reply = None
+        self.status_kill_mail.emit(False)
+        QTimer.singleShot(6000, self.startConnect)
+
+    def _responseReady(self, reply:QNetworkReply):
         """Handle one RedisQ HTTP reply.
 
         Args:
@@ -89,7 +184,9 @@ class ZKillMonitor(QObject):
                 if processed:
                     self.status_kill_mail.emit(True)
             else:
-                logging.error("{} for {}".format(reply.errorString(), reply.url()))
+                logging.error(
+                    "Error {} : {}".format(
+                        reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute), reply.errorString()))
                 self.status_kill_mail.emit(False)
         except (Exception,)as ex:
             logging.error("Error : {} during the handling of an zKillboard message {}".format(ex, reply.url().toString()))
@@ -98,6 +195,9 @@ class ZKillMonitor(QObject):
         if self.reply:
             self.reply.deleteLater()
             self.reply = self.netManager.get(self.req)
+
+    def _restartConnect(self):
+        self.reply = self.netManager.get(self.req)
 
     def startConnect(self):
         """Start polling zKillboard via RedisQ.
@@ -129,7 +229,7 @@ class ZKillMonitor(QObject):
         Returns:
             None.
         """
-        fp.write(UTF16_BOM + txt)
+        fp.write(ZKillMonitor.UTF16_BOM + txt)
 
     @staticmethod
     def writeHeader():
@@ -163,7 +263,10 @@ class ZKillMonitor(QObject):
         Returns:
             bool: True when the package was handled (even if not logged).
         """
-        killmail = package_data["killmail"] if "killmail" in package_data.keys() else None
+        killmail = package_data.get("killmail")
+        if not killmail:
+            killmail = package_data.get("esi")
+
         if not killmail:
             return False
 
@@ -182,7 +285,7 @@ class ZKillMonitor(QObject):
             with open(ZKillMonitor.MONITORING_PATH, "at", encoding='utf-16-le') as fp:
                 ZKillMonitor.writeUTF16BOM(fp, kill_string)
             if source_url:
-                logging.info("new zKillboard message {}".format(source_url))
+                logging.debug("new zKillboard message {}".format(source_url))
         return True
 
     def fetchKillmail(self, href: str, package_data: dict):
@@ -220,7 +323,9 @@ class ZKillMonitor(QObject):
                     if processed:
                         self.status_kill_mail.emit(True)
                 else:
-                    logging.error("{} for {}".format(reply.errorString(), reply.url()))
+                    logging.error(
+                        "Error {} : {}".format(
+                            reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute), reply.errorString()))
                     self.status_kill_mail.emit(False)
             except (Exception,) as ex:
                 logging.error("Error : {} during the handling of an zKillboard message {}".format(ex, reply.url().toString()))
@@ -280,12 +385,18 @@ class ZKillMonitor(QObject):
         Returns:
             str: Intel line ready to be written to the zKillboard log.
         """
-        kill_data = package_data["killmail"] if "killmail" in package_data.keys() else dict()
+        if ZKillMonitor.USE_R2Z2:
+            kill_data = package_data["esi"] if "esi" in package_data.keys() else dict()
+            kill_url = "https://zkillboard.com/kill/{}/".format(package_data["killmail_id"] if "killmail_id" in package_data.keys() else "")
+        else:
+            kill_data = package_data["killmail"] if "killmail" in package_data.keys() else dict()
+            kill_url = "https://zkillboard.com/kill/{}/".format(package_data["killID"] if "killID" in package_data.keys() else "")
+
         victim = kill_data["victim"] if "victim" in kill_data.keys() else dict()
         zk_time = kill_data["killmail_time"] if "killmail_time" in kill_data.keys() else ""
         system_id = kill_data["solar_system_id"] if "solar_system_id" in kill_data.keys() else dict()
         zkb_data = package_data["zkb"] if "zkb" in package_data.keys() else dict()
-        kill_url = "https://zkillboard.com/kill/{}/".format( package_data["killID"] if "killID" in package_data.keys() else "" )
+
 
         """
           Date encoding like
@@ -359,7 +470,12 @@ class ZKillMonitor(QObject):
             ``LOG_ATTACKERS`` flags and checks alliance IDs against the cached
             blue list.
         """
+
+        if ZKillMonitor.LOG_ALL_KILL_MAILS:
+            return True
+
         blue_alliances = Cache().getAllianceBlue()
+
         if ZKillMonitor.LOG_VICTIM:
             victim = kill_data["victim"] if "victim" in kill_data.keys() else None
             if "character_id" in victim.keys():
