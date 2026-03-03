@@ -22,13 +22,13 @@ import os
 import PySide6.QtCore
 import numpy as np
 import math
-from typing import Tuple, Optional
+from typing import Tuple
 from PySide6.QtCore import QPoint, QPointF, Signal, QSizeF, QRectF
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QPropertyAnimation, Property
 from PySide6.QtCore import Slot
 from PySide6 import QtOpenGLWidgets
-from vi.universe import Position
+from vi.universe import Position, Region, Constellation
 from vi.system import ALL_SYSTEMS,System,ALL_STARGATES
 from vi.starmapwidget import StarMapWidget,select_font_family,generate_font_atlas,ConnectionLineGroups
 from typing import Iterable, List
@@ -256,8 +256,6 @@ def load_thera_jump_bridges(
 
 class PanningWebView(StarMapWidget):
     ZOOM_WHEEL = float(0.3)
-    webViewNavigateForward = Signal()
-    webViewNavigateBackward = Signal()
     webViewDoubleClicked = Signal(QPointF)
 
     def __init__(self, parent=None,show_jumpbridges: bool = True,show_timers: bool = True,show_statistic: bool = True ):
@@ -299,10 +297,10 @@ class PanningWebView(StarMapWidget):
         self.setUpdateBehavior(QtOpenGLWidgets.QOpenGLWidget.UpdateBehavior.NoPartialUpdate)
         self.animation = QPropertyAnimation(self, b"propScrollPos")
 
-    @Property(QPointF)
-    def propScrollPos(self)->QPointF:
+    @Property(Position)
+    def propScrollPos(self)->Position:
         """QProperty getter for the current scroll position."""
-        return QPointF(-self.target[0],-self.target[1])
+        return Position(x=float(-self.target[0]),y=float(-self.target[1]),z=float(0.0))
 
     @propScrollPos.setter
     def propScrollPos(self, val):
@@ -314,8 +312,8 @@ class PanningWebView(StarMapWidget):
         if self.panning or self.orbiting:
             return
         if val and self._scrollPos != val:
-            self.target[0] = -val.x()
-            self.target[1] = -val.y()
+            self.target[0] = -val.x
+            self.target[1] = -val.y
             self.camera_target[0] = self.target[0]
             self.camera_target[1] = self.target[1]
             self.camera_target[2] = 0.0
@@ -338,9 +336,6 @@ class PanningWebView(StarMapWidget):
         - content.svg_size (QSizeF)
         - content.renderMap(QPainter) -> None
         - content.renderLegend(QPainter) -> None
-
-        Args:
-            content: Content provider used for rendering.
         """
         if not self._text_rebuild_pending:
             self._text_rebuild_pending = True
@@ -361,8 +356,7 @@ class PanningWebView(StarMapWidget):
         Args:
             zoom (float): Requested zoom factor.
         """
-        if self.zoom != zoom:
-            self.zoom = zoom
+        self.zoom = zoom
 
     def scrollPositionFromMapCoordinate(self, pt_system: QRectF)->QPointF:
         """Calculate the scroll position for centering a map rectangle.
@@ -376,7 +370,7 @@ class PanningWebView(StarMapWidget):
         return QPointF(pt_system.center().x() * self.zoom - 0.5*self.size().width(),
                        pt_system.center().y() * self.zoom - 0.5*self.size().height())
 
-    def setScrollPosition(self, pos: QPointF, animate=False):
+    def setScrollPosition(self, pos, animate=False):
         """Set the scroll position, optionally animated.
 
         Args:
@@ -394,25 +388,29 @@ class PanningWebView(StarMapWidget):
         else:
             self.propScrollPos = pos
 
-    def setZoomAndScrollPos(self, zoom, pos):
+    def setZoomAndScrollPos(self, zoom:float|None, pos:Position|None=None, region_name:str|None=None):
         """Update zoom and scroll position together.
 
         Args:
-            zoom (float): Target zoom value.
-            pos (QPointF): Target scroll position.
+            zoom (float): Target zoom value or None.
+            pos (QPointF): Target scroll position or None.
+            region_name (str):Name of the new region or None
         """
         if self.panning or self.orbiting:
             return
 
-        if zoom and self.zoom != zoom:
-            if self.zoom != zoom:
-                self.zoom = zoom
+        if zoom:
+            self.zoom = zoom
+        if pos:
+            self._focus_on_system(pos,False)
+        if region_name:
+            self.regionChanged.emit(region_name)
 
-    def zoomIn(self, pos=None)->None:
+    def zoomIn(self)->None:
         """Zoom in around a widget position.
 
         Args:
-            pos (QPointF | None): Widget position to anchor zoom.
+
         """
         if self.panning or self.orbiting:
             return

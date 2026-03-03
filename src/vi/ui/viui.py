@@ -31,14 +31,14 @@ from typing import Optional
 
 from PySide6.QtGui import Qt
 from PySide6 import QtGui, QtCore, QtWidgets
-from PySide6.QtCore import QPoint, QPointF, QRectF, QSortFilterProxyModel, QTimer, Qt, QSignalBlocker
+from PySide6.QtCore import QPoint, QPointF, QSortFilterProxyModel, QTimer, Qt
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QIcon, QPixmap, QDesktopServices
 from PySide6.QtWidgets import (QMessageBox, QFileDialog, QApplication, QAbstractItemView)
 
 import vi.version
-from vi.universe import Universe, SDE_VERSION
+from vi.universe import Universe, SDE_VERSION, Position
 from vi.system import System
 from vi import evegate
 from vi import dotlan, filewatcher
@@ -385,11 +385,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playerGroup = QActionGroup(self.ui.menu)
         self.playerGroup.setExclusionPolicy(QActionGroup.ExclusionPolicy.None_)
         self.ui.menuChars.clear()
+        monitored_players = self.monitoredPlayerNames
         for name in self.knownPlayerNames:
             action = QAction(name)
             action.setCheckable(True)
             action.playerName = name
-            action.playerUse = name in self.monitoredPlayerNames
+            action.playerUse = name in monitored_players
             action.setChecked(action.playerUse)
             action.setIconVisibleInMenu(action.playerUse)
             action.triggered.connect(self.changeMonitoredPlayerNamesFromMenu)
@@ -513,7 +514,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 using QtWidgets.QToolTip to popup system relate information on screen
             Args:
                 global_pos: global position
-                pos: position related to the svg
+                system_id:
             """
             system_hovered = False
             if not QtWidgets.QToolTip.isVisible():
@@ -1058,10 +1059,19 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns:
 
         """
-        region_name, pos, zoom = self.region_queue.undo()
-        if region_name:
-            self.changeRegionByName(region_name=region_name, update_queue=False)
-            self.ui.mapView.setZoomAndScrollPos(zoom, pos)
+        elem  = self.region_queue.undo()
+        if elem:
+            elem_region, elem_pos, elem_zoom = elem
+            logging.debug("navigateBackward {} {} (x:{},y:{})".format(elem_region, elem_zoom, elem_pos.x, elem_pos.y))
+            self.ui.mapView.setZoomAndScrollPos(zoom=elem_zoom, pos=elem_pos, region_name=elem_region)
+
+    @Slot()
+    def navigateUpdate(self):
+        if self.curr_region_name:
+            curr_pos = self.ui.mapView.propScrollPos
+            curr_zoom = self.ui.mapView.zoomFactor
+            self.region_queue.enqueue((self.curr_region_name, curr_pos, curr_zoom))
+            logging.debug( "navigateUpdate {} {} (x:{},y:{})".format(self.curr_region_name,curr_zoom,curr_pos.x,curr_pos.y))
 
     @Slot()
     def navigateForward(self):
@@ -1070,39 +1080,34 @@ class MainWindow(QtWidgets.QMainWindow):
         Returns:
 
         """
-        region_name, pos, zoom = self.region_queue.redo()
-        if region_name:
-            self.changeRegionByName(region_name=region_name, update_queue=False)
-            self.ui.mapView.setZoomAndScrollPos(zoom, pos)
+        elem = self.region_queue.redo()
+        if elem:
+            elem_region, elem_pos, elem_zoom = elem
+            logging.debug("navigateForward {} {} (x:{},y:{})".format(elem_region, elem_zoom, elem_pos.x, elem_pos.y))
+            self.ui.mapView.setZoomAndScrollPos(zoom=elem_zoom, pos=elem_pos, region_name=elem_region)
 
-    def changeRegionByName(self, region_name, system_id=None, update_queue=True) -> None:
+    def changeRegionByName(self, region_name, system_id=None) -> None:
         """
             Change to a region and highlight a single system.
             The Map will be configured and a rescan of the intel will be performed
         Args:
             region_name: name of the region to be activated
             system_id: id of the system to highlight or None
-            update_queue: update the undo/redo queue
 
         Returns:
             None
         """
         if self.curr_region_name == region_name:
             return
-        if update_queue:
-            curr_pos = self.ui.mapView.propScrollPos
-            curr_zoom = self.ui.mapView.zoomFactor
-            self.region_queue.enqueue((self.curr_region_name, curr_pos, curr_zoom))
 
         self.curr_region_name = region_name
-        if update_queue:
-            if system_id is not None:
-                self.focusMapOnSystem(system_id)
-            else:
-                rgn = Universe.REGIONS_ID_OBJ.get(Universe.regionIdByName(region_name))
-                if rgn:
-                    self.ui.mapView.setScrollPosition(QPointF(rgn.x,rgn.y))
-                    self.region_changed.emit(region_name)
+
+        if system_id is not None:
+            self.ui.mapView.centerMapOnId(system_id)
+        else:
+            rgn = Universe.REGIONS_ID_OBJ.get(Universe.regionIdByName(region_name))
+            if rgn:
+                self.ui.mapView.centerMapOnId(rgn.region_id)
 
     def changeRegionBySystemID(self, system_id: int) -> None:
         """
@@ -1188,31 +1193,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 return {}
         except(Exception,):
             return {}
-
-    def setupRegionMap(self, region_name)->Optional[dotlan. Map]:
-        """
-            Prepares a new dotlan object for the selected region
-        Args:
-            region_name:
-
-        Returns:
-
-        """
-        if not region_name:
-            region_name = "Providence"
-        json_generated_map = self.loadJsonMapFile(self.cache, region_name)
-        if json_generated_map is None:
-            logging.critical("There is no valid source file to generate the map for the region {}.".format(region_name))
-            return None
-        region_map = dotlan.Map(
-            region_name=region_name,
-            json_file=json_generated_map,
-            set_jump_maps_visible=self.showJumpbridge(),
-            set_statistic_visible=self.showStatistic(),
-            set_adm_visible=self.showADMOnMap(),
-            set_jump_bridges=self.cache.getJumpGates())
-        self.setInitialMapPositionForRegion(region_name)
-        return region_map
 
     @Slot()
     def rescanIntel(self) -> None:
@@ -2071,7 +2051,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Assigns the blob data as pixmap to the entry, if a pixmap could be loaded directly, otherwise
         the blob will be loaded wia avatar thread
         Args:
-            entry: new message
+            entry_ref: new message
             data: blob of image
 
         Returns:

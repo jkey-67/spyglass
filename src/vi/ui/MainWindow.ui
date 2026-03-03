@@ -2503,6 +2503,7 @@
     <signal>systemChanged(QString)</signal>
     <signal>regionChanged(QString)</signal>
     <signal>constellationChanged(QString)</signal>
+    <signal>webViewNavigateUpdate()</signal>
     <slot>webViewIsScrolling(bool)</slot>
     <slot>webViewUpdateScrollbars()</slot>
     <slot>webViewDoubleClicked()</slot>
@@ -3228,6 +3229,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>mapView</sender>
+   <signal>webViewNavigateUpdate()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>navigateUpdate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>742</x>
+     <y>285</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1130</x>
+     <y>-14</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>region_changed(QString)</signal>
@@ -3270,5 +3287,6 @@
   <slot>changeInvertMouseWheel(bool)</slot>
   <slot>changeAutoChangeRegion(bool)</slot>
   <slot>theraSystemChanged(QString)</slot>
+  <slot>navigateUpdate()</slot>
  </slots>
 </ui>

@@ -20,7 +20,10 @@ class RedoUndoQueue:
         """
         while self.q[0]:
             self.q.popleft()
-        self.q.append(region_name)
+        if self.q[-1] != region_name:
+            self.q.append(region_name)
+        else:
+            pass
 
     def pop(self):
         result = self.q.pop()
@@ -35,11 +38,7 @@ class RedoUndoQueue:
         if len(self.q):
             if self.q[-1]:
                 self.q.rotate(1)
-            res = self.q[-1]
-            if res:
-                return res
-            else:
-                return self.q[0]
+            return  self.q[-1]
         else:
             return None
 
@@ -52,13 +51,13 @@ class RedoUndoQueue:
         if len(self.q):
             if self.q[-1] is None:
                 self.q.rotate(-1)
-                return self.q[0]
+                return self.q[-1]
             res = self.q[0]
             if res:
                 self.q.rotate(-1)
-                return res
             else:
-                return self.q[-1]
+                res = self.q[-1]
+            return res
         else:
             return None
 

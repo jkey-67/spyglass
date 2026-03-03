@@ -46,12 +46,15 @@ class Position(object):
     USE_3D = False
     GL_MAP_FACTOR_2D = 1e-17*3.0
     GL_MAP_FACTOR_3D = 1e-18*4.0
+
     def __init__(self, **kwargs):
         self.x = float()
         self.y = float()
         self.z = float()
         self.__dict__.update(**kwargs)
 
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y and self.z == other.z
 
 class Region(object):
     def __init__(self, **kwargs):

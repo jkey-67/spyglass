@@ -20,7 +20,6 @@
 import datetime
 import locale
 import json
-import os.path
 import time
 import parse
 import threading

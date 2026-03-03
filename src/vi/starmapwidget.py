@@ -404,7 +404,8 @@ void main() {
     vec4 honey_color = sys.honey_color;
     vHasIceBelt = sys.status.x;
     float intel = intel_delta*max(0.0,intel_end-uIntelNow); 
-    float kill = kill_delta*max(0.0,kill_end-uIntelNow)*(0.5+0.5*sin((kill_end-uIntelNow)*10.0));
+    //float kill = kill_delta*max(0.0,kill_end-uIntelNow)*(0.5+0.5*sin((kill_end-uIntelNow)*10.0));
+    float kill = kill_delta*max(0.0,kill_end-uIntelNow);
     float mark = marker_delta*max(0.0,timer_end-uIntelNow);
       
     vec4 viewPos = uView * vec4(center, 1.0);
@@ -1592,7 +1593,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self._text_rebuild_pending = True
         self._text_dynamic_rebuild_pending = True
         self._text_static_rebuild_pending = False
-        self._text_thera_rebuild_pending = False
+        self._text_thera_rebuild_pending = True
         self.atlas_scale = float(self.atlas.get("logical_scale", 1.0))
         self.region_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.REGIONS_ID_OBJ,font_scale=0.13,color="#30808080")
         self.constellation_background_layer = RegionBackgroundLabelLayer(self.atlas, self.atlas_scale, Universe.CONSTELLATIONS_ID_OBJS,font_scale=0.04,color="#30808000")
@@ -1739,11 +1740,16 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.timer.timeout.connect(self.update)
         self.timer.start(int(1000 / 25))
         self._last_frame_time = time.monotonic()
+
     systemDoubleClicked =  PySide6.QtCore.Signal(int)
     systemRightClicked = PySide6.QtCore.Signal(int)
     systemChanged = PySide6.QtCore.Signal(str)
     regionChanged = PySide6.QtCore.Signal(str)
     constellationChanged = PySide6.QtCore.Signal(str)
+
+    webViewNavigateForward = PySide6.QtCore.Signal()
+    webViewNavigateBackward = PySide6.QtCore.Signal()
+    webViewNavigateUpdate = PySide6.QtCore.Signal()
 
     def updateJumpBridges(self,jump_bridge_vertices: Optional[np.ndarray]):
         self.bridge_line_vertices = (jump_bridge_vertices if jump_bridge_vertices is not None else np.array([], dtype=np.float32))
@@ -2085,6 +2091,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         # Keep the GL surface opaque to avoid translucent compositing artifacts.
         glClearColor(float(r), float(g), float(b), 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self._text_dynamic_rebuild_pending = self._system_rebuild_pending = any(sys.is_dirty for sys in self.systems)
         if not ( self.orbiting or self.panning):
             if self._update_jump_bridges:
                 self._refresh_jump_bridges()
@@ -2101,15 +2108,15 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                 self._show_intel_minutes = False
                 self._text_dynamic_rebuild_pending = True
 
-            if self._text_rebuild_pending:
+            if self._text_rebuild_pending or self._text_thera_rebuild_pending:
                 self._refresh_text_instances(now_utc)
-            elif self._text_dynamic_rebuild_pending:
+            if self._text_dynamic_rebuild_pending:
                 self._refresh_text_dynamic_instances(now_utc)
 
-        self._system_rebuild_pending = any( sys.is_dirty for sys in self.systems )
         if self._system_rebuild_pending:
             self._refresh_system_instances()
             self._system_rebuild_pending = False
+
         dpr = self.devicePixelRatioF()
         screen_width = max(int(self.width() * dpr), 1)
         screen_height = max(int(self.height() * dpr), 1)
@@ -2380,7 +2387,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     glBindVertexArray(self.text_statistic_vao)
                     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_statistic_instance_count)
                 if self.text_thera_instance_count and self.show_jumpbridges:
-                    glUniform1f(self.u_text_angle, float(math.radians(self.text_angle_degrees+65.0)))
+                    glUniform1f(self.u_text_angle, float(math.radians(self.text_angle_degrees+70.0)))
                     glBindVertexArray(self.text_thera_vao)
                     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.text_thera_instance_count)
 
@@ -2437,7 +2444,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             )
 
         glDisable(GL_POLYGON_OFFSET_FILL)
-        self._draw_hud()
+        #  self._draw_hud()
         # self.update()
 
 
@@ -2669,8 +2676,8 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
 
         if self._text_rebuild_pending:
             self.text_timer_instances = text_timer_instances
-            self.text_statistic_instances = text_statistic_instances
             self.text_timer_instance_count = self.text_timer_instances.shape[0] if self.text_timer_instances.size else 0
+            self.text_statistic_instances = text_statistic_instances
             self.text_statistic_instance_count = self.text_statistic_instances.shape[0] if self.text_statistic_instances.size else 0
 
             if self.text_timer_instance_vbo:
@@ -2682,6 +2689,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     GL_DYNAMIC_DRAW,
                 )
                 glBindBuffer(GL_ARRAY_BUFFER, 0)
+
             if self.text_statistic_instance_vbo:
                 glBindBuffer(GL_ARRAY_BUFFER, self.text_statistic_instance_vbo)
                 glBufferData(
@@ -3457,7 +3465,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.text_angle_degrees = float(angle_degrees)
         self.update()
 
-    def _focus_on_system(self, system: System|Region|Constellation,animate:bool) -> None:
+    def _focus_on_system(self, system: System|Region|Constellation|Position,animate:bool) -> None:
         """Recenter orbit controls and camera target on a specific system.
 
         Args:
@@ -3478,8 +3486,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         else:
             self.target[0] = -float(system.x)
             self.target[1] = -float(system.y)
-
-
 
     def set_mouse_mode_3d(self, enabled: bool) -> None:
         """Toggle orbit-style mouse interactions.
@@ -3542,12 +3548,16 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             self.systemChanged.emit(requested_object.name)
             self.regionChanged.emit(requested_object.region_name)
             self.constellationChanged.emit(requested_object.constellation_name)
+            self._focus_on_system(requested_object,animate)
+            self.webViewNavigateUpdate.emit()
         elif type(requested_object) is Constellation:
             self.regionChanged.emit(requested_object.name)
             self.constellationChanged.emit(requested_object.constellation_name)
+            self._focus_on_system(requested_object,animate)
         elif type(requested_object) is Region:
             self.regionChanged.emit(requested_object.name)
-        self._focus_on_system(requested_object,animate)
+            self._focus_on_system(requested_object, animate)
+
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         """Start panning when the left mouse button is pressed.
@@ -3564,8 +3574,13 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             if hovered_id is not None:
                 self.systemRightClicked.emit(int(hovered_id))
                 event.accept()
-                print(" mousePressEvent Hover ID {}".format(hovered_id))
                 return
+
+        if event.button() == QtCore.Qt.MouseButton.BackButton:
+            self.webViewNavigateBackward.emit()
+
+        if event.button() == QtCore.Qt.MouseButton.ForwardButton:
+            self.webViewNavigateForward.emit()
 
         if self.mouse_3d:
             if event.button() == QtCore.Qt.MouseButton.LeftButton:
@@ -3616,6 +3631,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             self.panning = False
             self.unsetCursor()
             event.accept()
+
+    def mouseClickEvent(self, event: QtGui.QMouseEvent) -> None:
+        pass
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         """Emit the double-clicked system ID and optionally recenter in 3D mode.
@@ -3686,7 +3704,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             self.target[0] += float(delta.x()) * world_per_px_x
             self.target[1] -= float(delta.y()) * world_per_px_y
             self.last_pos = pos
-            #print("Panning {} {}".format(self.target[0],self.target[1]  ))
         event.accept()
 
     def leaveEvent(self, event: QtCore.QEvent) -> None:
@@ -3750,7 +3767,6 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         self.target[0] = (ndc_x * half_w) / new_zoom - anchor_x
         self.target[1] = (ndc_y * half_h) / new_zoom - anchor_y
         self.zoom = new_zoom
-        #print("Zoom {}".format(self.zoom))
         event.accept()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:

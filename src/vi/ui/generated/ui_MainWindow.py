@@ -1159,6 +1159,7 @@ class Ui_MainWindow(object):
         self.mapView.regionChanged.connect(self.regionNameField.setCurrentText)
         self.mapView.systemChanged.connect(MainWindow.theraSystemChanged)
         self.actionWormhole_connection_update.triggered.connect(self.mapView.updateWormholeBridgesFromCache)
+        self.mapView.webViewNavigateUpdate.connect(MainWindow.navigateUpdate)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
