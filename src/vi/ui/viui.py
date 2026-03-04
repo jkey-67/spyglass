@@ -155,7 +155,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.searchSystem.setChecked(False),
             self.changeRegionBySystemID(Universe.systemIdByName(system_name=self.ui.systemNames.text())),
             self.markSystemOnMap(self.ui.systemNames.text()),
-            ))
+        ))
         self.ui.systemNames.hide()
 
         # add completer system names
@@ -264,7 +264,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._update_splash_window_info("Apply theme.")
         self._update_splash_window_info("EVE-Spy perform an initial scan of all intel files.")
-        self.rescanIntel()
         self.tool_widget = None
 
         self._update_splash_window_info("EVE-Spy preparing the map view.")
@@ -273,6 +272,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._update_splash_window_info("Application startup succeeded.")
 
+        self.ui.actionRescanIntelNow.trigger()
 
     def checkForUpdate(self, update_avail):
         if update_avail[0]:
@@ -435,7 +435,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def selectESIChar(self, character_name):
         evegate.setEsiCharName(character_name)
         self.statisticsThread.fetchLocation(fetch=True)
-        # self.rescanIntel()
         self.players_changed.emit()
 
     def regionNameChanged(self, new_region_name):
@@ -823,7 +822,7 @@ class MainWindow(QtWidgets.QMainWindow):
         model = QSqlQueryModel()
 
         def callOnUpdate():
-            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', " 
+            model.setQuery("SELECT (src||' » ' ||jumpbridge.dst)as 'Gate Information', "
                            "datetime(modified,'unixepoch','localtime') as 'last update', "
                            "( case used when 2 then 'API fetched' else 'User input' END ) 'Source' FROM jumpbridge")
             self.ui.mapView.updateJumpBridgesFromCache()
@@ -996,7 +995,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zkillboard = ZKillMonitor(parent=self)
         self.zkillboard.report_system_kill.connect(self.updateKillboard, Qt.ConnectionType.QueuedConnection)
         self.zkillboard.status_kill_mail.connect(lambda online: self.ui.m_qLedZKillboarOnline.setPixmap(
-                    QPixmap(u":/Icons/res/online.svg" if online else QPixmap(u":/Icons/res/offline.svg"))))
+            QPixmap(u":/Icons/res/online.svg" if online else QPixmap(u":/Icons/res/offline.svg"))))
 
 
         logging.info("Set up threads and their connections done.")
@@ -1142,7 +1141,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return svg
 
         file_name = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "mapdata", "{0}.svg".format(
-                evegate.convertRegionNameForDotlan(region_name)))
+            evegate.convertRegionNameForDotlan(region_name)))
         if os.path.exists(file_name):
             with open(file_name) as svgFile:
                 svg = svgFile.read()
@@ -1180,7 +1179,7 @@ class MainWindow(QtWidgets.QMainWindow):
             res_file_name = os.path.join("vi", "ui", "res", "mapdata",
                                          "{}.jsonl".format(dotlan_file_name))
             user_file_name = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "mapdata",
-                                     "{}.jsonl".format(dotlan_file_name))
+                                          "{}.jsonl".format(dotlan_file_name))
             if os.path.exists(user_file_name):
                 with jsonlines.open( user_file_name, mode='r') as reader:
                     res = dict(reader)
@@ -1292,7 +1291,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._updateIntelActions(intel_time)
         Globals().intel_time = intel_time
         self.ui.timeInfo.setText("All Intel (past {} minutes)".format(Globals().intel_time))
-        self.rescanIntel()
+        self.ui.actionRescanIntelNow.trigger()
 
     @Slot(object)
     def changeTheme(self, th=None):
@@ -1572,15 +1571,37 @@ class MainWindow(QtWidgets.QMainWindow):
     def clipboardChanged(self):
         """ the content of the clip board is used to set jump bridge and poi
         """
-        jb_changed = False
+        jb_changed = poi_changed = False
         clip_content = self.clipboard.text()
         if clip_content != self.oldClipboardContent and clip_content != "":
+            all_cb_data = list()
             for full_line_content in clip_content.splitlines():
                 for line_content in tokenize_eve_formatted_text(full_line_content):
-                    cb_type, cb_data = evaluateClipboardData(line_content)
-                    if cb_type == "poi":
-                        self._enqueuePoiNotification(cb_data)
-                    elif cb_type == "jumpbridge":
+                    all_cb_data.append( (evaluateClipboardData(line_content) ))
+                    if 0:
+                        if cb_type == "poi":
+                            self._enqueuePoiNotification(cb_data)
+                        elif cb_type == "jumpbridge":
+                            if self.cache.putJumpGate(
+                                    src=cb_data["src"],
+                                    dst=cb_data["dst"],
+                                    src_id=cb_data["id_src"],
+                                    dst_id=cb_data["id_dst"],
+                                    json_src=cb_data["json_src"],
+                                    json_dst=cb_data["json_dst"]):
+                                jb_changed = True
+                        elif cb_type == "link":
+                            QDesktopServices.openUrl(cb_data)
+                    else:
+                        pass
+            poi_output = ""
+            if len(all_cb_data) == 1:
+                cb_type, cb_data = all_cb_data[0]
+                if cb_type == "poi":
+                    self._enqueuePoiNotification(cb_data)
+            else:
+                for cb_type, cb_data  in all_cb_data:
+                    if cb_type == "jumpbridge":
                         if self.cache.putJumpGate(
                                 src=cb_data["src"],
                                 dst=cb_data["dst"],
@@ -1589,9 +1610,20 @@ class MainWindow(QtWidgets.QMainWindow):
                                 json_src=cb_data["json_src"],
                                 json_dst=cb_data["json_dst"]):
                             jb_changed = True
-                    elif cb_type == "link":
-                        QDesktopServices.openUrl(cb_data)
-            self.oldClipboardContent = clip_content
+                    elif cb_type == "poi":
+                        poi_output += "{},{},{},{}\n".format(cb_data.get("type_id"),cb_data.get("structure_id"),cb_data.get("sys"),cb_data.get("name"))
+                        poi_changed = True
+
+            if poi_changed:
+                self.oldClipboardContent = poi_output
+                clipboard = QtGui.QGuiApplication.clipboard()
+                clipboard.setText(poi_output, QtGui.QClipboard.Mode.Clipboard)
+                if clipboard.supportsSelection():
+                    clipboard.setText(poi_output, QtGui.QClipboard.Mode.Selection)
+                QtGui.QGuiApplication.processEvents()  # flush clipboard update
+            else:
+                self.oldClipboardContent = clip_content
+
             if jb_changed:
                 self.jbs_changed.emit()
 

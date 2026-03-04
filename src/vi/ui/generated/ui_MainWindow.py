@@ -1117,7 +1117,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.rescanIntel.clicked.connect(MainWindow.rescanIntel)
-        self.clearIntel.clicked.connect(MainWindow.clearIntelChat)
+        self.clearIntel.clicked.connect(self.actionClear_Intel_Chat.trigger)
         self.zoomInButton.clicked.connect(MainWindow.zoomMapIn)
         self.zoomOutButton.clicked.connect(MainWindow.zoomMapOut)
         self.chatLargeButton.clicked.connect(MainWindow.chatLarger)

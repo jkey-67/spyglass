@@ -2560,8 +2560,8 @@
   <connection>
    <sender>clearIntel</sender>
    <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>clearIntelChat()</slot>
+   <receiver>actionClear_Intel_Chat</receiver>
+   <slot>trigger()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>1286</x>

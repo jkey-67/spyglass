@@ -2337,7 +2337,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
                     glBindVertexArray(draw["fill_vao"])
                     glDrawArraysInstanced(GL_TRIANGLES, 0, draw["fill_count"], draw["instance_count"])
             # Border pass in white
-            glUniform3f(self.u_struct_color, 1.0, 1.0, 1.0)
+            glUniform3f(self.u_struct_color, 0.8, 0.8, 0.8)
             for draw in self.structure_draws:
                 if draw["border_vao"] and draw["border_count"]:
                     glBindVertexArray(draw["border_vao"])

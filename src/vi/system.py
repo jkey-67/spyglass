@@ -123,7 +123,7 @@ class System(object):
         self.stargates:list[int] = kwargs["stargates"]
         self.stations:list[int] = []
         self.structures:list[dict] = []
-        self.ticker:str = "-?-"
+        self.ticker:str = self.constellation_name
         self._system_messages = []
         self.jumpBridges:set = set()
         self.theraWormholes:set = set()
@@ -173,6 +173,7 @@ class System(object):
         self.marking_scale = 1.0
         self.has_upwell_cyno_jammer = False
         self.has_upwell_cyno_beacon = False
+        self.has_upwell_jump_bridge = False
 
     def out_rect(self)->QRectF:
         if self.is_system_text_visible:
@@ -206,7 +207,7 @@ class System(object):
 
     @property
     def structure(self)->int:
-        return 0
+        return self.structure_type
 
     @property
     def intel_status(self) -> int:
@@ -723,6 +724,16 @@ def _ApplyIceToSystem(data):
                 logging.error("Invalid line systax in file : {} line : {} '{}'".format(filename, line_no, current_line))
 
 def _applyStructuresToSystem(data, system_id_app, tokens):
+    """
+        see https://eveworkbench.com/market/buy/10000020/37534
+    Args:
+        data:
+        system_id_app:
+        tokens:
+
+    Returns:
+
+    """
     if len(tokens) > 2:
         new_data = {"type_id": int(tokens[0]), "structure_id": int(tokens[1]), "name": tokens[3]}
         type_id = int(tokens[0])
@@ -731,14 +742,15 @@ def _applyStructuresToSystem(data, system_id_app, tokens):
                 data[system_id_app].structures = [new_data]
             else:
                 data[system_id_app].structures.append(new_data)
-        elif type_id == 2017:
-            data[system_id_app].has_cyno_beacon = True
-
+        elif type_id == 35840:
+            data[system_id_app].has_upwell_cyno_beacon = True
+        elif type_id == 37534:
+            data[system_id_app].has_upwell_cyno_jammer = True
+        elif type_id == 35841:
+            data[system_id_app].has_upwell_jump_bridge = True
 
 def _ApplyStructuresToSystem(data):
-
     filename = os.path.join(os.path.expanduser("~"), "Documents", "EVE", "spyglass", "Structures.txt")
-
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
             try:
