@@ -111,9 +111,15 @@ class System(object):
         self.name:str = kwargs["names"]["en"]
         self.names:dict = kwargs["names"]
         self.constellation_id = kwargs["constellation_id"]
-        self.constellation_name: str = Universe.CONSTELLATIONS_ID_OBJS.get(self.constellation_id).name
+        constellation = Universe.CONSTELLATIONS_ID_OBJS.get(self.constellation_id)
+        if constellation is None:
+            logging.warning("Incomplete constellation {}".format(self.constellation_id))
+        self.constellation_name: str = constellation.name if constellation else "-"
         self.region_id:int = kwargs["region_id"]
-        self.region_name:str = Universe.REGIONS_ID_OBJ.get(self.region_id).name
+        region = Universe.REGIONS_ID_OBJ.get(self.region_id)
+        if region is None:
+            logging.warning("Incomplete region {}".format(self.region_id))
+        self.region_name:str = region.name if region else "-"
         self.planets:list[int] = kwargs["planets"]
         self.position2D:Position = Position(**kwargs["position2D"])
         self.position3D: Position = Position(**kwargs["position"])

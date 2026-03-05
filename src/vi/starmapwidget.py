@@ -924,21 +924,21 @@ def load_info_objects(path: str) -> dict:
 
 STRUCTURE_GRIDS: dict[int, List[str]] = {
     1: [
-        "  ******    ",
-        "  ****+*    ",
-        "  ******    ",
+        "  ******  ",
+        "  ******  ",
+        "  ***+**  ",
     ],
     2: [
-        "   **     ",
-        "   **     ",
-        " ****+*   ",
-        " ******   ",
+        "    **    ",
+        "    **    ",
+        "  ******  ",
+        "  ***+**  ",
     ],
     3: [
-        " **  **   ",
-        " **  **   ",
-        " ****+*   ",
-        " ******   ",
+        "  **  **  ",
+        "  **  **  ",
+        "  ******  ",
+        "  ***+**  ",
     ],
 }
 
@@ -2313,49 +2313,51 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             glUniform1i(self.u_system_pass, 1)
             glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, self.system_instance_count)
 
-        if True and self.structure_draws:
-            glEnable(GL_DEPTH_TEST)
-            glEnable(GL_POLYGON_OFFSET_FILL)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            glUseProgram(self.structure_program)
-            glPolygonOffset(0.1, 2.0)
-            glUniformMatrix4fv(self.u_struct_view, 1, False, view)
-            glUniformMatrix4fv(self.u_struct_proj, 1, False, system_proj)
-            glUniform2f(self.u_struct_screen, float(screen_width), float(screen_height))
-            glUniform1f(self.u_struct_scale, float(label_scale))
-            glUniform1f(self.u_struct_depth_scale, float(depth_scale))
-            glUniform1f(self.u_struct_depth_enabled, float(depth_enabled))
-            # Fill pass (match label fill)
-            glUniform3f(
-                self.u_struct_color,
-                float(self.rect_fill_color[0]),
-                float(self.rect_fill_color[1]),
-                float(self.rect_fill_color[2]),
-            )
-            for draw in self.structure_draws:
-                if draw["fill_vao"] and draw["fill_count"]:
-                    glBindVertexArray(draw["fill_vao"])
-                    glDrawArraysInstanced(GL_TRIANGLES, 0, draw["fill_count"], draw["instance_count"])
-            # Border pass in white
-            glUniform3f(self.u_struct_color, 0.8, 0.8, 0.8)
-            for draw in self.structure_draws:
-                if draw["border_vao"] and draw["border_count"]:
-                    glBindVertexArray(draw["border_vao"])
-                    glDrawArraysInstanced(GL_LINES, 0, draw["border_count"], draw["instance_count"])
-
-        if True and ((self.text_static_instance_count or self.text_dynamic_instance_count) and self.atlas_texture):
-            if self.mouse_3d:
+        if self.mouse_3d:
+            text_alpha_scale = 1.0
+        else:
+            # Fade text out at tiny zoom levels to avoid minified atlas shimmer.
+            fade_start = float(self.text_fade_start_scale)
+            fade_end = max(float(self.text_fade_end_scale), fade_start + 1e-6)
+            if label_scale <= fade_start:
+                text_alpha_scale = 0.0
+            elif label_scale >= fade_end:
                 text_alpha_scale = 1.0
             else:
-                # Fade text out at tiny zoom levels to avoid minified atlas shimmer.
-                fade_start = float(self.text_fade_start_scale)
-                fade_end = max(float(self.text_fade_end_scale), fade_start + 1e-6)
-                if label_scale <= fade_start:
-                    text_alpha_scale = 0.0
-                elif label_scale >= fade_end:
-                    text_alpha_scale = 1.0
-                else:
-                    text_alpha_scale = (label_scale - fade_start) / (fade_end - fade_start)
+                text_alpha_scale = (label_scale - fade_start) / (fade_end - fade_start)
+
+        if True and self.structure_draws:
+            if text_alpha_scale > 0.001:
+                glEnable(GL_DEPTH_TEST)
+                glEnable(GL_POLYGON_OFFSET_FILL)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                glUseProgram(self.structure_program)
+                glPolygonOffset(0.1, 2.0)
+                glUniformMatrix4fv(self.u_struct_view, 1, False, view)
+                glUniformMatrix4fv(self.u_struct_proj, 1, False, system_proj)
+                glUniform2f(self.u_struct_screen, float(screen_width), float(screen_height))
+                glUniform1f(self.u_struct_scale, float(label_scale))
+                glUniform1f(self.u_struct_depth_scale, float(depth_scale))
+                glUniform1f(self.u_struct_depth_enabled, float(depth_enabled))
+                # Fill pass (match label fill)
+                glUniform3f(
+                    self.u_struct_color,
+                    float(self.rect_fill_color[0]),
+                    float(self.rect_fill_color[1]),
+                    float(self.rect_fill_color[2]),
+                )
+                for draw in self.structure_draws:
+                    if draw["fill_vao"] and draw["fill_count"]:
+                        glBindVertexArray(draw["fill_vao"])
+                        glDrawArraysInstanced(GL_TRIANGLES, 0, draw["fill_count"], draw["instance_count"])
+                # Border pass in white
+                glUniform3f(self.u_struct_color, 0.8, 0.8, 0.8)
+                for draw in self.structure_draws:
+                    if draw["border_vao"] and draw["border_count"]:
+                        glBindVertexArray(draw["border_vao"])
+                        glDrawArraysInstanced(GL_LINES, 0, draw["border_count"], draw["instance_count"])
+
+        if True and ((self.text_static_instance_count or self.text_dynamic_instance_count) and self.atlas_texture):
             if text_alpha_scale > 0.001:
                 glEnable(GL_DEPTH_TEST)
                 glEnable(GL_POLYGON_OFFSET_FILL)
@@ -2856,6 +2858,7 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
         """
         vertices: dict[int, dict[str, np.ndarray]] = {}
         anchor_x = self.label_width * 0.5
+        anchor_y = 0.0
         target_h = self.label_height * 0.9 * 0.7
         target_w = self.label_width * 0.35 * 0.7
         for key, (segments, rows, cols, stars, plus_row, plus_col) in STRUCTURE_TEMPLATES.items():
@@ -2868,9 +2871,9 @@ class StarMapWidget(QtOpenGLWidgets.QOpenGLWidget):
             border_verts: List[float] = []
             for x0, y0, x1, y1 in segments:
                 px0 = anchor_x + (x0 + offset_x) * cell
-                py0 = y0 * cell
+                py0 = anchor_y + y0 * cell
                 px1 = anchor_x + (x1 + offset_x) * cell
-                py1 = y1 * cell
+                py1 = anchor_y + y1 * cell
                 border_verts.extend([px0, py0, px1, py1])
             # Fill all interior cells (including enclosed gaps) using flood fill.
             star_set = set(stars)

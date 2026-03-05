@@ -46,8 +46,9 @@ def _collect_name_chars(systems: Iterable[System]) -> List[str]:
     """
     chars = set(printable)
     for sys in systems:
-        for ch in sys.name:
-            chars.add(ch)
+        for lang,sys_name in sys.names.items():
+            for ch in sys_name:
+                chars.add(ch)
     return sorted(chars)
 
 def _load_connections(
@@ -267,7 +268,7 @@ class PanningWebView(StarMapWidget):
         chars = _collect_name_chars(systems.values())
         atlas_dir = os.path.join(os.path.dirname(__file__), "atlas")
         font_family = select_font_family(["Noto Sans CJK", "Noto Sans"])
-        _, atlas_json = generate_font_atlas(atlas_dir, font_family, 32, chars, logical_font_size=8)
+        _, atlas_json = generate_font_atlas(atlas_dir, font_family, 64, chars, logical_font_size=8)
         jump_bridge_vertices = load_jump_bridges( curr_cache.getJumpGates(),ALL_SYSTEMS )
         thera_bridge_vertices = load_thera_jump_bridges(curr_cache.getThreaConnections(),ALL_SYSTEMS)
 
